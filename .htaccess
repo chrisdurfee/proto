@@ -1,0 +1,103 @@
+RewriteEngine on
+
+# Disable index browsing
+Options All -Indexes
+
+<IfModule mod_headers.c>
+    # Connection
+    Header set Connection keep-alive
+
+    # Frame Options
+    Header add X-Frame-Options "SAMEORIGIN"
+
+    # XSS Protection
+    Header set X-XSS-Protection "1; mode=block"
+
+    # Content Type Options
+    Header set X-Content-Type-Options "nosniff"
+
+    # Remove X-Powered-By
+    Header unset X-Powered-By
+
+    # Remove Server
+    Header unset Server
+
+    # Strict Transport Security
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+
+    # Content Security Policy
+    #Header add Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src 'self'; font-src 'self'; frame-ancestors 'self' https://*.dentalqore.com"
+</IfModule>
+
+# Default encoding
+AddDefaultCharset UTF-8
+
+# Disable HTTP TRACE and TRACK methods
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)
+    RewriteRule .* - [F]
+</IfModule>
+
+# Deny access to .htaccess
+<Files .htaccess>
+    order allow,deny
+    deny from all
+</Files>
+
+# Deny access to certain files
+<FilesMatch "^(.gitignore|.dockerignore|.htaccess|composer.json|composer.lock|package-lock.json|Dockerfile.*|docker-compose.*|phpunit.*|application.yaml|bitbucket-pipelines.yml)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Turn off ETags
+FileETag none
+
+# Disable server signature
+ServerSignature Off
+
+# Add support for woff2 fonts
+AddType application/font-woff2 .woff2
+
+# Block libwww-perl user agent
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_USER_AGENT} libwww-perl.*
+    RewriteRule .* – [F,L]
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain text/html text/php text/x-php text/xml text/css image/svg+xml application/php application/x-php application/x-httpd-php application/x-httpd-php-source application/xml application/xhtml+xml application/rss+xml application/javascript application/json application/x-javascript font/otf font/ttf font/eot font/woff
+</IfModule>
+
+# Deny access to certain directories
+<IfModule mod_alias.c>
+    RedirectMatch 403 /app/
+    RedirectMatch 403 /proto/
+    RedirectMatch 403 /tests/
+    RedirectMatch 403 /vendor/
+
+    # Block access to sensitive directories
+    RedirectMatch 403 /(\.git|apache|k8s|node_modules)/
+</IfModule>
+
+# URL rewriting
+<IfModule mod_rewrite.c>
+    RewriteRule ^app-share/(.*)$ /public/app-share/$1 [L,NC,QSA]
+    RewriteRule ^developer/(.*)$ /public/developer/$1 [L,NC,QSA]
+    RewriteRule ^action/(.*)$ /public/action/$1 [L,NC,QSA]
+    RewriteRule ^visitor/(.*)$ /public/visitor/$1 [L,NC,QSA]
+    RewriteRule ^embed/(.*)$ /public/embed/$1 [L,NC,QSA]
+    RewriteRule ^api/.*$ /public/api/ [L,NC,QSA]
+
+    # Text response redirect
+    # RewriteRule ^scripts/bp-reminders/cron/sms-responses.php.*$ /public/api/text-response [L,NC,QSA]
+
+    #shortlinks
+    RewriteRule ^a/([a-zA-Z0-9+-]+)*/*$ /public/a/index.php?code=$1 [L,NC,QSA]
+
+    # Redirect all page requests to main index
+    RewriteBase /
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ /public/crm/$1 [NC,L,QSA]
+</IfModule>

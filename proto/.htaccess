@@ -1,0 +1,4 @@
+RewriteEngine on
+
+# Deny access to configs
+#Deny from all
