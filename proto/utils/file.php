@@ -16,7 +16,7 @@ class File extends Util
      * @param string $path
      * @return string|bool
      */
-	public static function get(string $path)
+	public static function get(string $path): bool|string
 	{
         if (!\file_exists($path))
         {
