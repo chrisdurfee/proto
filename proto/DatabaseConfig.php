@@ -16,9 +16,10 @@ class DatabaseConfig
 	 * Retrieves database connection settings.
 	 *
 	 * @param string|null $connection
+     * @param string $env
 	 * @return object|null
 	 */
-	public static function getConnectionSettings(?string $connection = 'default'): ?object
+	public static function getConnectionSettings(?string $connection = 'default', string $env): ?object
 	{
 		$config = Config::getInstance();
 		$settings = $config->get('connections')->{$connection} ?? null;
@@ -49,10 +50,9 @@ class DatabaseConfig
 	 *
 	 * @param string $connection
 	 * @param object $settings
-     * @param string $env
 	 * @return object
 	 */
-	private static function handleMultiHost(string $connection, object $settings, string $env): object
+	private static function handleMultiHost(string $connection, object $settings): object
 	{
 		if (!isset($settings->host) || !is_array($settings->host))
         {
@@ -86,12 +86,12 @@ class DatabaseConfig
         ?string $env = 'dev'
     ): object
 	{
-		$settings = self::getConnectionSettings($connection);
+		$settings = self::getConnectionSettings($connection, $env);
 		if ($settings === null)
         {
 			throw new \RuntimeException('No connection settings are configured.');
 		}
 
-		return self::handleMultiHost($connection, (object) $settings, $env);
+		return self::handleMultiHost($connection, (object) $settings);
 	}
 }
