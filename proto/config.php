@@ -44,17 +44,6 @@ namespace Proto
 		}
 
 		/**
-		 * Retrieves the contents of the settings file.
-		 *
-		 * @return string The settings file contents
-		 */
-		private static function getFileSettings(): string
-		{
-			$path = __DIR__ . '/../app/config/.env';
-			return File::get($path);
-		}
-
-		/**
 		 * Sets the environment based on the host.
 		 *
 		 * @return void
@@ -62,32 +51,15 @@ namespace Proto
 		private function setEnv(): void
 		{
 			$host = $_SERVER['HTTP_HOST'] ?? '';
-			$url = $this->get('baseUrl');
-			if (!$host || $url === $host)
-			{
-				$this->set('env', 'prod');
-				return;
-			}
-
 			$urls = $this->get('urls');
-			if (!isset($urls))
-			{
-				return;
-			}
 
-			$staging = $urls->staging ?? '';
-			if (!empty($staging) && $staging === $host)
+			$this->set('env', match (true)
 			{
-				$this->set('env', 'staging');
-				return;
-			}
-
-			$testing = $urls->testing ?? '';
-			if (!empty($testing) && $testing === $host)
-			{
-				$this->set('env', 'testing');
-				return;
-			}
+				$host === '' || $host === $this->get('baseUrl') => 'prod',
+				isset($urls->staging) && $host === $urls->staging => 'staging',
+				isset($urls->testing) && $host === $urls->testing => 'testing',
+				default => 'dev',
+			});
 		}
 
 		/**
@@ -97,14 +69,7 @@ namespace Proto
 		 */
 		private function setErrorReporting(): void
 		{
-			$errorReporting = false;
-			$env = $this->get('env');
-			if ($env === 'dev')
-			{
-				$errorReporting = true;
-			}
-
-			$this->set('errorReporting', $errorReporting);
+			$this->set('errorReporting', $this->get('env') === 'dev');
 		}
 
 		/**
@@ -124,7 +89,7 @@ namespace Proto
 		 */
 		protected function loadSettings(): void
 		{
-			$contents = self::getFileSettings();
+			$contents = File::get(__DIR__ . '/../app/config/.env');
 			if (!$contents)
 			{
 				throw new \Exception('Unable to locate settings file.');
