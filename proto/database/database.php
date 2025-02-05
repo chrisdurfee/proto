@@ -3,6 +3,7 @@ namespace Proto\Database;
 
 use Proto\Database\Adapters\Mysqli;
 use Proto\Base;
+use Proto\Config;
 
 /**
  * Database
@@ -70,8 +71,7 @@ class Database extends Base
 	 */
 	protected function getAdapter(object $settings, bool $caching): Mysqli
 	{
-		$config = $this->getConfig();
-		if ($config->database !== 'Mysqli')
+		if (env('database') !== 'Mysqli')
 		{
 			throw new \Exception('Only Mysqli is supported.');
 		}
@@ -87,7 +87,7 @@ class Database extends Base
 	 */
 	protected function getConnectionSettings(string $connection): object
 	{
-		$config = $this->getConfig();
+		$config = Config::getInstance();
 		return $config->getDBSettings($connection);
 	}
 

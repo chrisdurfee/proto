@@ -15,10 +15,10 @@ class System
 	/**
 	 * Sets up the timezone and error reporting.
 	 *
-	 * @param object $settings Configuration settings
+	 * @param Config $settings Configuration settings
 	 * @return void
 	 */
-	public function __construct(object $settings)
+	public function __construct(Config $settings = Config::getInstance())
 	{
 		$this->setupSystem($settings);
 	}

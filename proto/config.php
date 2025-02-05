@@ -4,13 +4,12 @@ namespace Proto
 	use Proto\Patterns\Creational\Singleton;
 	use Proto\Utils\Format\JsonFormat;
 	use Proto\Utils\Files\File;
-	use Proto\Database\ConnectionSettingsCache;
+	use Proto\Database\DatabaseManager;
 
 	/**
 	 * Config Class
 	 *
-	 * Provides configuration settings management and retrieval
-	 * using the Singleton design pattern.
+	 * Manages application configuration settings using the Singleton pattern.
 	 *
 	 * @package Proto
 	 */
@@ -19,7 +18,7 @@ namespace Proto
 		/**
 		 * @var Config $instance The instance of the Config class
 		 */
-		protected static $instance = null;
+		protected static ?self $instance = null;
 
 		/**
 		 * @var object $settings The configuration settings
@@ -27,28 +26,49 @@ namespace Proto
 		protected object $settings;
 
 		/**
-		 * @var string $envUrl The cached URL for the environment
+		 * @var string $envUrl Cached URL for the environment
 		 */
 		private static string $envUrl = '';
 
 		/**
-		 * Initializes settings and environment.
-		 *
-		 * @return void
+		 * Initializes settings and environment configuration.
 		 */
 		protected function __construct()
 		{
 			$this->loadSettings();
-			$this->setEnv();
-			$this->setErrorReporting();
+			$this->detectEnvironment();
+			$this->configureErrorReporting();
 		}
 
 		/**
-		 * Sets the environment based on the host.
+		 * Loads settings from the configuration file.
 		 *
 		 * @return void
 		 */
-		private function setEnv(): void
+		private function loadSettings(): void
+		{
+			$contents = File::get(__DIR__ . '/../app/config/.env');
+
+			if (!$contents)
+			{
+				throw new \RuntimeException('Settings file not found.');
+			}
+
+			$decodedSettings = JsonFormat::decode($contents);
+			if (!$decodedSettings)
+			{
+				throw new \RuntimeException('Invalid settings file format.');
+			}
+
+			$this->settings = $decodedSettings;
+		}
+
+		/**
+		 * Detects the application environment based on the HTTP host.
+		 *
+		 * @return void
+		 */
+		private function detectEnvironment(): void
 		{
 			$host = $_SERVER['HTTP_HOST'] ?? '';
 			$urls = $this->get('urls');
@@ -63,11 +83,11 @@ namespace Proto
 		}
 
 		/**
-		 * Sets error reporting based on the environment.
+		 * Configures error reporting based on the environment.
 		 *
 		 * @return void
 		 */
-		private function setErrorReporting(): void
+		private function configureErrorReporting(): void
 		{
 			$this->set('errorReporting', $this->get('env') === 'dev');
 		}
@@ -83,29 +103,18 @@ namespace Proto
 		}
 
 		/**
-		 * Loads settings from the settings file.
+		 * Retrieves a configuration value by key.
 		 *
-		 * @return void
+		 * @param string $key The configuration key
+		 * @return mixed The configuration value
 		 */
-		protected function loadSettings(): void
+		public function get(string $key): mixed
 		{
-			$contents = File::get(__DIR__ . '/../app/config/.env');
-			if (!$contents)
-			{
-				throw new \Exception('Unable to locate settings file.');
-			}
-
-			$settings = JsonFormat::decode($contents);
-			if (!$settings)
-			{
-				throw new \Exception('The file is invalid or empty.');
-			}
-
-			$this->settings = $settings;
+			return $this->settings->{$key} ?? null;
 		}
 
 		/**
-		 * This will get the settings.
+		 * Returns the full configuration object.
 		 *
 		 * @return object
 		 */
@@ -130,22 +139,6 @@ namespace Proto
 
 			$this->settings->{$key} = $value;
 			return $this;
-		}
-
-		/**
-		 * This will get a value by key.
-		 *
-		 * @param string $key
-		 * @return mixed
-		 */
-		public function get(string $key): mixed
-		{
-			if (!isset($key))
-			{
-				return null;
-			}
-
-			return $this->settings->{$key} ?? null;
 		}
 
 		/**
@@ -185,7 +178,7 @@ namespace Proto
 		}
 
 		/**
-		 * This will get the env.
+		 * Retrieves the current environment.
 		 *
 		 * @return string|null
 		 */
@@ -195,123 +188,37 @@ namespace Proto
 		}
 
 		/**
-		 * This will get the url.
+		 * Retrieves the base URL for the current environment.
 		 *
 		 * @return string
 		 */
 		public function getUrl(): string
 		{
-			if (!empty(static::$envUrl))
+			if (!empty(self::$envUrl))
 			{
-				return static::$envUrl;
+				return self::$envUrl;
 			}
 
-			$env = $this->getEnv();
 			$urls = $this->get('urls');
-			$url = $urls->{$env} ?? '';
+			$url = $urls->{$this->getEnv()} ?? '';
 
-			/**
-			 * This will cache the url.
-			 */
-			static::$envUrl = $url;
+			// Cache the URL
+			self::$envUrl = $url;
 			return $url;
 		}
 
 		/**
-		 * This will get the url.
+		 * Static method to retrieve the environment URL.
 		 *
 		 * @return string
 		 */
 		public static function url(): string
 		{
-			$config = static::getInstance();
-			return $config->getUrl();
+			return self::getInstance()->getUrl();
 		}
 
 		/**
-		 * This wills get the db settings by connection name.
-		 *
-		 * @param string $connection
-		 * @return object|null
-		 */
-		protected function getDbEnvSettings(string $connection): ?object
-		{
-			$connections = $this->settings->connections;
-			return $connections->{$connection} ?? null;
-		}
-
-		/**
-		 * This will get the db env settings.
-		 *
-		 * @param object $settings
-		 * @return object|null
-		 */
-		protected function getEnvSettings(object $settings): ?object
-		{
-			$env = $this->getEnv();
-			return $settings->{$env} ?? $settings->prod ?? $settings;
-		}
-
-		/**
-		 * This will check if the connection more than one host.
-		 *
-		 * @param string $connection
-		 * @param object $settings
-		 * @return object
-		 */
-		private function checkMultiHost(string $connection, object $settings): object
-		{
-			$host = $settings->host ?? null;
-			if (is_array($host) === false)
-			{
-				return $settings;
-			}
-
-			/**
-			 * This will check to use chached settings if they have
-			 * been set.
-			 */
-			$cacheSettings = ConnectionSettingsCache::get($connection);
-			if (isset($cacheSettings))
-			{
-				return $cacheSettings;
-			}
-
-			/**
-			 * This will randomly select a host.
-			 */
-			$host = $host[\array_rand($host)];
-			$settings->host = $host;
-
-			/**
-			 * We need to cache the host setting to the connection
-			 * to use the same host for each request to the
-			 * connection.
-			 */
-			ConnectionSettingsCache::set($connection, $settings);
-
-			return $settings;
-		}
-
-		/**
-		 * This will check to get the db connection settings.
-		 *
-		 * @param string $connection
-		 * @return object|null
-		 */
-		protected function getConnectionSettings(?string $connection = 'default'): ?object
-		{
-			$settings = $this->getDbEnvSettings($connection);
-			if (empty($settings))
-			{
-				return null;
-			}
-
-			return $this->getEnvSettings($settings);
-		}
-
-		/**
-		 * This will get the database connection settings.
+		 * Retrieves the database connection settings.
 		 *
 		 * @param string|null $connection
 		 * @return object
@@ -319,18 +226,8 @@ namespace Proto
 		 */
 		public function getDBSettings(?string $connection = 'default'): object
 		{
-			$settings = $this->getConnectionSettings($connection);
-			if ($settings === null)
-			{
-				throw new \Exception('no connection settings are setup');
-			}
-
-			$connectionSettings = (object)$settings;
-
-			/**
-			 * This will get the connection host settings.
-			 */
-			return $this->checkMultiHost($connection, $connectionSettings);
+			$connections = $this->get('connections');
+			return DatabaseManager::getDBSettings($connections, $connection, $this->get('env'));
 		}
 	}
 }

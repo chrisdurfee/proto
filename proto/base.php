@@ -20,23 +20,25 @@ class Base
 
 	/**
 	 * Initializes the system and services.
-	 *
-	 * @param Config $config The configuration instance
 	 */
-	public function __construct(Config $config)
+	public function __construct()
 	{
-		$this->setupSystem($config);
+		$this->setupSystem();
 	}
 
 	/**
-	 * Sets up the system with the given configuration.
+	 * Sets up the base settings and initializes the system.
 	 *
-	 * @param Config $config The configuration instance
 	 * @return void
 	 */
-	private function setupSystem(Config $config): void
+	private function setupSystem(): void
 	{
-		self::$system = new System($config);
+		if (isset(self::$system))
+		{
+			return;
+		}
+
+		self::$system = new System();
 		ServiceManager::activate($config->services ?? []);
 	}
 }
