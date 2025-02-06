@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Proto\Http;
 
 use Proto\Config;
@@ -7,24 +8,23 @@ use Proto\Utils\Filter\Input;
 /**
  * Class Cookie
  *
- * Handles cookies.
+ * Handles cookies securely and efficiently.
  *
  * @package Proto\Http
  */
 class Cookie
 {
 	/**
-	 * @var string $env
+	 * @var string|null $env Stores the environment setting.
 	 */
-	protected static $env;
+	protected static ?string $env = null;
 
 	/**
-	 * Cookie constructor.
+	 * Constructs a Cookie instance.
 	 *
-	 * @param string $name
-	 * @param string $value
-	 * @param int $expires
-	 * @return void
+	 * @param string $name Cookie name.
+	 * @param string $value Cookie value.
+	 * @param int $expires Expiration timestamp (default: 0).
 	 */
 	public function __construct(
 		protected string $name,
@@ -35,7 +35,7 @@ class Cookie
 	}
 
 	/**
-	 * Retrieves the name.
+	 * Retrieves the cookie name.
 	 *
 	 * @return string
 	 */
@@ -45,7 +45,7 @@ class Cookie
 	}
 
 	/**
-	 * Retrieves the value.
+	 * Retrieves the cookie value.
 	 *
 	 * @return string
 	 */
@@ -55,7 +55,7 @@ class Cookie
 	}
 
 	/**
-	 * Retrieves the expires.
+	 * Retrieves the expiration timestamp.
 	 *
 	 * @return int
 	 */
@@ -65,20 +65,19 @@ class Cookie
 	}
 
 	/**
-	 * Sets the cookie.
+	 * Sets the cookie with appropriate options.
 	 *
 	 * @return void
 	 */
 	public function set(): void
 	{
-		$options = $this->getOptions();
-		setcookie($this->name, $this->value, $options);
+		setcookie($this->name, $this->value, $this->getOptions());
 	}
 
 	/**
-	 * Sets the expire time.
+	 * Sets the expiration timestamp.
 	 *
-	 * @param int $expires
+	 * @param int $expires Expiration timestamp.
 	 * @return void
 	 */
 	public function setExpires(int $expires): void
@@ -87,7 +86,7 @@ class Cookie
 	}
 
 	/**
-	 * Retrieves the config environment.
+	 * Retrieves the environment configuration.
 	 *
 	 * @return string
 	 */
@@ -99,58 +98,53 @@ class Cookie
 		}
 
 		$config = Config::getInstance();
-		return (static::$env = $config->getEnv());
+		return static::$env = $config->getEnv();
 	}
 
 	/**
-	 * Retrieves the options.
+	 * Retrieves cookie security options.
 	 *
 	 * @return array
 	 */
-	public function getOptions(): array
+	protected function getOptions(): array
 	{
-		$env = $this->getEnv();
-		$isProd = ($env !== 'dev');
+		$isProd = ($this->getEnv() !== 'dev');
 
 		return [
-			"path" => '/',
-			"expires" => $this->expires,
-			"secure" => $isProd,
-			"httponly" => $isProd,
-			"samesite" => ($isProd)? 'Strict' : 'Lax'
+			'expires' => $this->expires,
+			'path' => '/',
+			'secure' => $isProd, // Secure flag enabled for HTTPS in production
+			'httponly' => true, // Prevents JavaScript access
+			'samesite' => $isProd ? 'Strict' : 'Lax'
 		];
 	}
 
 	/**
-	 * Gets a cookie by name.
+	 * Retrieves a cookie by name.
 	 *
-	 * @param string $name
-	 * @return Cookie|null
+	 * @param string $name Cookie name.
+	 * @return Cookie|null Returns a Cookie object if found, otherwise null.
 	 */
-	public static function get(string $name): ?Cookie
+	public static function get(string $name): ?self
 	{
 		$value = Input::cookie($name);
-		if (empty($value) === true)
-		{
-			return null;
-		}
-
-		return new static($name, $value);
+		return $value !== '' ? new static($name, $value) : null;
 	}
 
 	/**
-	 * Removes a cookie with the token
+	 * Removes a cookie by setting it to expire in the past.
 	 *
-	 * @param string $name
+	 * @param string $name Cookie name.
 	 * @return void
 	 */
 	public static function remove(string $name): void
 	{
-		$cookie = static::get($name);
-		if ($cookie)
-		{
-			$expireDate = time() - (60 * 60 * 24 * 7);
-			setcookie($name, "", $expireDate, "/");
-		}
+		setcookie($name, '', [
+			'expires' => time() - 604800, // 1 week in the past
+			'path' => '/',
+			'secure' => true,
+			'httponly' => true,
+			'samesite' => 'Strict'
+		]);
 	}
 }
