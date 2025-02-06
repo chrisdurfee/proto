@@ -9,7 +9,7 @@ use Proto\Http\Loop\UpdateEvent;
 /**
  * ServerEvents
  *
- * Represents a Server-Sent Events implementation.
+ * Implements Server-Sent Events (SSE) for real-time data streaming.
  *
  * @package Proto\Http\ServerEvents
  */
@@ -18,21 +18,21 @@ class ServerEvents extends EventEmitter
 	/**
 	 * The StreamResponse instance.
 	 *
-	 * @var StreamResponse $response
+	 * @var StreamResponse
 	 */
 	protected StreamResponse $response;
 
 	/**
 	 * The connection status.
 	 *
-	 * @var bool $connected
+	 * @var bool
 	 */
-	protected bool $connected = false;
+	protected bool $connected = true;
 
 	/**
 	 * The EventLoop instance.
 	 *
-	 * @var EventLoop $loop
+	 * @var EventLoop
 	 */
 	protected EventLoop $loop;
 
@@ -40,26 +40,25 @@ class ServerEvents extends EventEmitter
 	 * Constructs a ServerEvents instance.
 	 *
 	 * @param int $interval The interval between event loop ticks in seconds.
-	 * @return void
 	 */
 	public function __construct(int $interval = 10)
 	{
 		parent::__construct();
-		$this->init($interval);
+		$this->initialize($interval);
 	}
 
 	/**
 	 * Initializes the ServerEvents instance.
 	 *
-	 * @param int $interval The interval between event loop ticks in seconds.
+	 * @param int $interval The event loop interval in seconds.
 	 * @return void
 	 */
-	protected function init(int $interval): void
+	protected function initialize(int $interval): void
 	{
 		$this->setupResponse();
+		$this->loop = new EventLoop($interval);
 
-		$loop = $this->setupLoop($interval);
-		$this->emit('connection', $loop);
+		$this->emit('connection', $this->loop);
 	}
 
 	/**
@@ -70,14 +69,9 @@ class ServerEvents extends EventEmitter
 	 */
 	public function start(callable $callback): self
 	{
-		if (!\is_callable($callback))
-		{
-			return $this;
-		}
-
 		$callback($this->loop);
+		$this->runLoop();
 
-		$this->loop();
 		return $this;
 	}
 
@@ -90,18 +84,7 @@ class ServerEvents extends EventEmitter
 	{
 		$SUCCESS_CODE = 200;
 		$this->response = new StreamResponse();
-		$this->response->headers($SUCCESS_CODE);
-	}
-
-	/**
-	 * Sets up the EventLoop instance.
-	 *
-	 * @param int $interval The interval between event loop ticks in seconds.
-	 * @return EventLoop
-	 */
-	protected function setupLoop(int $interval): EventLoop
-	{
-		return ($this->loop = new EventLoop($interval));
+		$this->response->sendHeaders($SUCCESS_CODE);
 	}
 
 	/**
@@ -109,45 +92,39 @@ class ServerEvents extends EventEmitter
 	 *
 	 * @return bool
 	 */
-	protected function isConnected(): bool
+	public function isConnected(): bool
 	{
 		return $this->connected;
 	}
 
 	/**
-	 * Starts the event loop.
+	 * Runs the event loop and handles disconnection.
 	 *
 	 * @return void
 	 */
-	protected function loop(): void
+	protected function runLoop(): void
 	{
 		$this->loop->loop();
-		$this->close();
+		$this->shutdown();
 	}
 
 	/**
-	 * This will stream the data to the client.
+	 * Streams data to the client using the event loop.
 	 *
 	 * @param callable $callback
 	 * @return self
 	 */
 	public function stream(callable $callback): self
 	{
-		$this->start(function($loop) use ($callback)
+		return $this->start(function(EventLoop $loop) use ($callback)
 		{
 			$loop->addEvent(new UpdateEvent(function(UpdateEvent $event) use ($callback, $loop)
 			{
 				$result = $callback($event);
-
-				/**
-				 * This will only run the loop once.
-				 */
-				$loop->end();
+				$loop->end(); // Runs only once
 				return $result;
 			}));
 		});
-
-		return $this;
 	}
 
 	/**
@@ -155,7 +132,7 @@ class ServerEvents extends EventEmitter
 	 *
 	 * @return void
 	 */
-	protected function close(): void
+	protected function shutdown(): void
 	{
 		$this->connected = false;
 		$this->emit('close');
