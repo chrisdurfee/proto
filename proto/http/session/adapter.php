@@ -6,8 +6,7 @@ use Proto\Patterns\Creational\Singleton;
 /**
  * Adapter
  *
- * This will create a session adpater to allow
- * different session types.
+ * Defines a session adapter to support different session types.
  *
  * @package Proto\Http\Session
  * @abstract
@@ -15,7 +14,9 @@ use Proto\Patterns\Creational\Singleton;
 abstract class Adapter extends Singleton implements SessionInterface
 {
 	/**
-	 * @var static $instance
+	 * Singleton instance of the adapter.
+	 *
+	 * @var static|null
 	 */
-	protected static $instance = null;
+	protected static ?self $instance = null;
 }
