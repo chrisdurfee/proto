@@ -7,28 +7,29 @@ use Proto\Utils\Sanitize;
 /**
  * Request
  *
- * This will handle the request.
+ * This class extends the base HTTP Request, adding input sanitization
+ * for router-specific requests.
  *
  * @package Proto\Http\Router
  */
 class Request extends BaseRequest
 {
-    /**
-	 * This will get all the inputs.
+	/**
+	 * Retrieves all request inputs and sanitizes them.
 	 *
 	 * @return array
 	 */
 	public static function all(): array
 	{
-		return static::clean($_REQUEST);
+		return static::clean($_REQUEST ?? []);
 	}
 
-    /**
-	 * This will get an input from the request.
+	/**
+	 * Retrieves a specific input from the request, with sanitization.
 	 *
-	 * @param string $name
-	 * @param mixed $default
-	 * @return mixed
+	 * @param string $name The input key to retrieve.
+	 * @param mixed $default The default value if input is not found.
+	 * @return mixed The sanitized input value.
 	 */
 	public static function input(string $name, mixed $default = null): mixed
 	{
@@ -37,13 +38,18 @@ class Request extends BaseRequest
 	}
 
 	/**
-	 * This will clean data.
+	 * Sanitizes input data, including arrays.
 	 *
-	 * @param mixed $data
-	 * @return mixed
+	 * @param mixed $data The data to sanitize.
+	 * @return mixed The sanitized data.
 	 */
 	protected static function clean(mixed $data): mixed
 	{
+		if (is_array($data))
+		{
+			return array_map([Sanitize::class, 'clean'], $data);
+		}
+
 		return Sanitize::clean($data);
 	}
 }

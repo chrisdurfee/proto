@@ -7,7 +7,7 @@ use Proto\Http\Limit;
 /**
  * Router
  *
- * This will handle the routing.
+ * Handles HTTP routing and middleware integration.
  *
  * @package Proto\Http\Router
  */
@@ -16,323 +16,270 @@ class Router
 	use MiddlewareTrait;
 
 	/**
-	 * @var string $method
+	 * @var string HTTP request method.
 	 */
 	protected string $method;
 
 	/**
-	 * @var string $basePath
+	 * @var string Base path for routing.
 	 */
-	protected string $basePath;
+	protected string $basePath = '/';
 
 	/**
-	 * @var string $path
+	 * @var string Request path.
 	 */
 	protected string $path;
 
 	/**
-	 * @var array $routes
+	 * @var array<Route> Registered routes.
 	 */
 	protected array $routes = [];
 
 	/**
-	 * Allowed HTTP methods
+	 * Allowed HTTP methods.
 	 *
-	 * @var string[]
+	 * @var array<string>
 	 */
-	protected const METHODS = [
-		'OPTIONS',
-		'GET',
-		'POST',
-		'PUT',
-		'DELETE',
-		'PATCH'
-	];
+	protected const METHODS = ['OPTIONS', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
 	/**
-	 * This will set up the router.
+	 * Initializes the router.
 	 *
 	 * @param string|null $basePath
-	 * @param bool $https
-	 * @return void
+	 * @param bool $requireHttps
 	 */
-	public function __construct(?string $basePath = null, bool $https = false)
+	public function __construct(?string $basePath = null, bool $requireHttps = false)
 	{
 		$this->setupHeaders();
 		$this->setBasePath($basePath);
 
-		if ($this->checkHttps($https))
+		if ($requireHttps && !$this->isHttps())
 		{
-			$this->setupRequestSettings();
+			$this->sendResponse(403, ['error' => 'HTTPS required.']);
 		}
+
+		$this->setupRequest();
 	}
 
 	/**
-	 * Set the base path.
+	 * Sets the base path.
 	 *
 	 * @param string|null $basePath
 	 * @return void
 	 */
 	protected function setBasePath(?string $basePath = null): void
 	{
-		if (isset($basePath))
+		if ($basePath !== null)
 		{
-			$this->basePath = $basePath;
+			$this->basePath = rtrim($basePath, '/');
 		}
 	}
 
 	/**
-	 * Check if HTTPS is required.
+	 * Checks if the request is over HTTPS.
 	 *
-	 * @param bool $https
 	 * @return bool
 	 */
-	protected function checkHttps(bool $https): bool
+	protected function isHttps(): bool
 	{
-		if ($https && !isset($_SERVER['HTTPS']))
-		{
-			$FORBIDDEN_RESPONSE = 403;
-			$this->response($FORBIDDEN_RESPONSE);
-			return false;
-		}
-		return true;
+		return isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 	}
 
 	/**
-	 * Set up response headers.
+	 * Sets up response headers.
 	 *
 	 * @return void
 	 */
 	protected function setupHeaders(): void
 	{
-		$methods = join(', ', self::METHODS);
 		header('Access-Control-Allow-Headers: *');
-		header('Access-Control-Allow-Methods: ' . $methods);
+		header('Access-Control-Allow-Methods: ' . implode(', ', self::METHODS));
 	}
 
 	/**
-	 * Set up request settings.
+	 * Initializes the request method and path.
 	 *
 	 * @return void
 	 */
-	protected function setupRequestSettings(): void
+	protected function setupRequest(): void
 	{
 		$this->method = Request::method();
-		$this->path = $this->removeBasePath(Request::path());
+		$this->path = $this->stripBasePath(Request::path());
 
-		if (!$this->checkServerMethod())
+		if (!$this->isValidMethod($this->method))
 		{
-			$this->response(405);
-			return;
+			$this->sendResponse(405, ['error' => 'Method Not Allowed']);
 		}
 	}
 
 	/**
-	 * Check if the request method is allowed.
+	 * Validates the request method.
 	 *
+	 * @param string $method
 	 * @return bool
 	 */
-	protected function checkServerMethod(): bool
+	protected function isValidMethod(string $method): bool
 	{
-		return in_array($this->method, self::METHODS);
+		return in_array($method, self::METHODS, true);
 	}
 
 	/**
-	 * Add rate limiting middleware.
+	 * Adds rate limiting middleware.
 	 *
 	 * @param Limit $limit
 	 * @return self
 	 */
 	public function limit(Limit $limit): self
 	{
-		$this->addMiddleware([
-			new RateLimiterMiddleware($limit)
-		]);
+		$this->addMiddleware([new RateLimiterMiddleware($limit)]);
 		return $this;
 	}
 
 	/**
-	 * Remove the base path from the URI.
+	 * Strips the base path from the URI.
 	 *
 	 * @param string $uri
 	 * @return string
 	 */
-	protected function removeBasePath(string $uri): string
+	protected function stripBasePath(string $uri): string
 	{
-		return isset($this->basePath) && $this->basePath !== '/' ? str_replace($this->basePath, '', $uri) : $uri;
+		return str_starts_with($uri, $this->basePath) ? substr($uri, strlen($this->basePath)) : $uri;
 	}
 
 	/**
-	 * Check if the route matches the path.
+	 * Checks if a given route matches the current request path and method.
+	 *
 	 * @param Uri $route
 	 * @return bool
 	 */
-	protected function match(Uri $route): bool
+	protected function matchesRoute(Uri $route): bool
 	{
 		return $route->match($this->path, $this->method);
 	}
 
 	/**
-	 * Add a route.
+	 * Registers a route.
 	 *
 	 * @param string $method
 	 * @param string $uri
-	 * @param callable $callBack
+	 * @param callable $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	protected function addRoute(string $method, string $uri, callable $callBack, ?array $middleware = null): self
+	protected function addRoute(string $method, string $uri, callable $callback, ?array $middleware = null): self
 	{
-		$route = new Route($method, $uri, $callBack);
-		array_push($this->routes, $route);
+		$route = new Route($method, $uri, $callback);
+		$this->routes[] = $route;
 
-		if (isset($middleware))
+		if ($middleware !== null)
 		{
 			$route->addMiddleware($middleware);
 		}
 
-		if ($this->match($route))
+		if ($this->matchesRoute($route))
 		{
-			$this->activate($route);
+			$this->activateRoute($route);
 		}
 
 		return $this;
 	}
 
 	/**
-	 * Redirect a route.
+	 * Redirects a route.
 	 *
 	 * @param string $uri
 	 * @param string $redirectUrl
-	 * @param int $responseCode
+	 * @param int $statusCode
 	 * @return self
 	 */
-	public function redirect(string $uri, string $redirectUrl, int $responseCode = 301): self
+	public function redirect(string $uri, string $redirectUrl, int $statusCode = 301): self
 	{
-		$redirect = new Redirect($uri, $redirectUrl, $responseCode);
+		$redirect = new Redirect($uri, $redirectUrl, $statusCode);
 
-		if ($this->match($redirect))
+		if ($this->matchesRoute($redirect))
 		{
-			$this->activate($redirect);
+			$this->activateRoute($redirect);
 		}
 
 		return $this;
 	}
 
 	/**
-	 * Activate the route.
+	 * Activates a route and executes its callback.
 	 *
 	 * @param Uri $route
 	 * @return void
 	 */
-	protected function activate(Uri $route): void
+	protected function activateRoute(Uri $route): void
 	{
 		$result = $route->initialize($this->middleware, Request::class);
-		if (isset($result))
+
+		if ($result !== null)
 		{
-			$code = (int)($result->code ?? 200);
-			$this->response($code, $result);
+			$statusCode = (int) ($result->code ?? 200);
+			$this->sendResponse($statusCode, $result);
 		}
 	}
 
 	/**
-	 * Add a GET route.
-	 *
-	 * @param string $uri
-	 * @param callable $callBack
-	 * @param array|null $middleware
-	 * @return self
+	 * Registers a GET route.
 	 */
-	public function get(string $uri, callable $callBack, ?array $middleware = null): self
+	public function get(string $uri, callable $callback, ?array $middleware = null): self
 	{
-		$this->addRoute('GET', $uri, $callBack, $middleware);
-		return $this;
+		return $this->addRoute('GET', $uri, $callback, $middleware);
 	}
 
 	/**
-	 * Add a PUT route.
-	 *
-	 * @param string $uri
-	 * @param callable $callBack
-	 * @param array|null $middleware
-	 * @return self
+	 * Registers a POST route.
 	 */
-	public function put(string $uri, callable $callBack, ?array $middleware = null): self
+	public function post(string $uri, callable $callback, ?array $middleware = null): self
 	{
-		$this->addRoute('PUT', $uri, $callBack, $middleware);
-		return $this;
+		return $this->addRoute('POST', $uri, $callback, $middleware);
 	}
 
 	/**
-	 * Add a POST route.
-	 *
-	 * @param string $uri
-	 * @param callable $callBack
-	 * @param array|null $middleware
-	 * @return self
+	 * Registers a PUT route.
 	 */
-	public function post(string $uri, callable $callBack, ?array $middleware = null): self
+	public function put(string $uri, callable $callback, ?array $middleware = null): self
 	{
-		$this->addRoute('POST', $uri, $callBack, $middleware);
-		return $this;
+		return $this->addRoute('PUT', $uri, $callback, $middleware);
 	}
 
 	/**
-	 * Add a PATCH route.
-	 *
-	 * @param string $uri
-	 * @param callable $callBack
-	 * @param array|null $middleware
-	 * @return self
+	 * Registers a PATCH route.
 	 */
-	public function patch(string $uri, callable $callBack, ?array $middleware = null): self
+	public function patch(string $uri, callable $callback, ?array $middleware = null): self
 	{
-		$this->addRoute('PATCH', $uri, $callBack, $middleware);
-		return $this;
-	}
-
-		/**
-	 * Add a DELETE route.
-	 *
-	 * @param string $uri
-	 * @param callable $callBack
-	 * @param array|null $middleware
-	 * @return self
-	 */
-	public function delete(string $uri, callable $callBack, ?array $middleware = null): self
-	{
-		$this->addRoute('DELETE', $uri, $callBack, $middleware);
-		return $this;
+		return $this->addRoute('PATCH', $uri, $callback, $middleware);
 	}
 
 	/**
-	 * Add a route that matches on any method.
-	 *
-	 * @param string $uri
-	 * @param callable $callBack
-	 * @param array|null $middleware
-	 * @return self
+	 * Registers a DELETE route.
 	 */
-	public function all(string $uri, callable $callBack, ?array $middleware = null): self
+	public function delete(string $uri, callable $callback, ?array $middleware = null): self
 	{
-		$this->addRoute('ALL', $uri, $callBack, $middleware);
-		return $this;
+		return $this->addRoute('DELETE', $uri, $callback, $middleware);
 	}
 
 	/**
-	 * Return the route response.
+	 * Registers a wildcard route that matches any HTTP method.
+	 */
+	public function all(string $uri, callable $callback, ?array $middleware = null): self
+	{
+		return $this->addRoute('ALL', $uri, $callback, $middleware);
+	}
+
+	/**
+	 * Sends a response and terminates execution.
 	 *
-	 * @param int $code
+	 * @param int $statusCode
 	 * @param mixed $data
 	 * @return void
 	 */
-	protected function response(int $code, mixed $data = null): void
+	protected function sendResponse(int $statusCode, mixed $data = null): void
 	{
 		$response = new Response();
-		$response
-			->headers($code)
-			->json($data);
-
-		die;
+		$response->sendHeaders($statusCode)->json($data);
+		exit;
 	}
 }

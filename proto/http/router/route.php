@@ -4,8 +4,7 @@ namespace Proto\Http\Router;
 /**
  * Route
  *
- * Route is a concrete class extending Uri, representing
- * a specific route with its associated HTTP method and
+ * Represents a specific route with its associated HTTP method and
  * callback action.
  *
  * @package Proto\Http\Router
@@ -13,39 +12,59 @@ namespace Proto\Http\Router;
 class Route extends Uri
 {
 	/**
-	 * @var string $method The HTTP method for the route.
+	 * @var string The HTTP method for the route.
 	 */
 	protected string $method;
 
 	/**
-	 * @var callable $callBack The callback action to execute when the route is activated.
+	 * @var callable The callback action to execute when the route is activated.
 	 */
-	protected $callBack;
+	protected $callback;
 
 	/**
-	 * This will set up the route.
+	 * Initializes the route.
 	 *
 	 * @param string $method The HTTP method for the route.
 	 * @param string $uri The route URI.
-	 * @param callable $callBack The callback action to execute when the route is activated.
-	 * @return void
+	 * @param callable $callback The callback action to execute when the route is activated.
 	 */
-	public function __construct(string $method, string $uri, callable $callBack)
+	public function __construct(string $method, string $uri, callable $callback)
 	{
 		parent::__construct($uri);
-
-		$this->method = $method;
-		$this->callBack = $callBack;
+		$this->setMethod($method);
+		$this->callback = $callback;
 	}
 
 	/**
-	 * Activate the route, executing the associated callback action.
+	 * Sets the HTTP method for the route.
+	 *
+	 * @param string $method The HTTP method.
+	 * @return void
+	 */
+	private function setMethod(string $method): void
+	{
+		$method = strtoupper($method);
+		$this->method = $method;
+	}
+
+	/**
+	 * Gets the HTTP method for the route.
+	 *
+	 * @return string
+	 */
+	public function getMethod(): string
+	{
+		return $this->method;
+	}
+
+	/**
+	 * Activates the route, executing the associated callback action.
 	 *
 	 * @param string $request The request URI.
 	 * @return mixed The result of the callback action.
 	 */
 	public function activate(string $request): mixed
 	{
-		return call_user_func($this->callBack, $request, $this->params);
+		return ($this->callback)($request, $this->params);
 	}
 }
