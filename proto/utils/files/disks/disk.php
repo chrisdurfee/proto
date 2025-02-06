@@ -1,153 +1,150 @@
 <?php declare(strict_types=1);
+
 namespace Proto\Utils\Files\Disks;
 
-use Proto\Utils\Files\Disks\Drivers;
+use Proto\Utils\Files\Disks\Drivers\LocalDriver;
+use Proto\Utils\Files\Disks\Drivers\S3Driver;
 
 /**
  * Disk
  *
- * This will create a new disk driver.
+ * Manages file storage using different drivers (local, S3, etc.).
  *
  * @package Proto\Utils\Files\Disks
  */
 class Disk
 {
-    /**
-     *
-     * @var object $driver This will hold the driver.
-     */
-    protected object $driver;
+	/**
+	 * @var object $driver Storage driver instance.
+	 */
+	protected object $driver;
 
-    /**
-     * This will set up the driver.
-     *
-     * @param string $driver
-     * @param string|null $bucket
-     */
-    public function __construct(
-        string $driver = 'local',
-        ?string $bucket = null
-    )
-    {
-        $this->driver = $this->getDriver($driver, $bucket);
-    }
+	/**
+	 * Initializes the disk with the appropriate driver.
+	 *
+	 * @param string $driver The storage driver type.
+	 * @param string|null $bucket The storage bucket (optional).
+	 */
+	public function __construct(
+		string $driver = 'local',
+		?string $bucket = null
+	) {
+		$this->driver = self::getDriverInstance($driver, $bucket);
+	}
 
-    /**
-     * This will get the disk driver.
-     *
-     * @param string $driver
-     * @param string|null $bucket
-     * @return object
-     */
-    protected function getDriver(string $driver, ?string $bucket = null): object
-    {
-        switch ($driver)
-        {
-            case 's3':
-                return new Drivers\S3Driver($bucket);
-            default:
-                return new Drivers\LocalDriver($bucket);
-        }
-    }
+	/**
+	 * Returns an instance of the specified driver.
+	 *
+	 * @param string $driver The storage driver type.
+	 * @param string|null $bucket The storage bucket (optional).
+	 * @return object The storage driver instance.
+	 */
+	protected static function getDriverInstance(string $driver, ?string $bucket = null): object
+	{
+		return match ($driver) {
+			's3' => new S3Driver($bucket),
+			default => new LocalDriver($bucket),
+		};
+	}
 
-    /**
-     * This will store a file.
-     *
-     * @param object $uploadFile
-     * @return bool
-     */
-    public function store(object $uploadFile): bool
-    {
-        return $this->driver->store($uploadFile);
-    }
+	/**
+	 * Stores an uploaded file.
+	 *
+	 * @param object $uploadFile The uploaded file object.
+	 * @return bool Success status.
+	 */
+	public function store(object $uploadFile): bool
+	{
+		return $this->driver->store($uploadFile);
+	}
 
-    /**
-     * This will add a file.
-     *
-     * @param string $fileName
-     * @return bool
-     */
+	/**
+	 * Adds a file to storage.
+	 *
+	 * @param string $fileName The file name.
+	 * @return bool Success status.
+	 */
 	public function add(string $fileName): bool
 	{
-        return $this->driver->add($fileName);
-    }
+		return $this->driver->add($fileName);
+	}
 
-    /**
-     * This will return the contents of a file.
-     *
-     * @param string $fileName
-     * @return string
-     */
+	/**
+	 * Retrieves the contents of a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return string File contents.
+	 */
 	public function get(string $fileName): string
 	{
-        return $this->driver->get($fileName);
-    }
+		return $this->driver->get($fileName);
+	}
 
-    /**
-     * This will get the stored path.
-     *
-     * @param string $fileName
-     * @return string
-     */
+	/**
+	 * Retrieves the stored path of a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return string The stored file path.
+	 */
 	public function getStoredPath(string $fileName): string
 	{
-        return $this->driver->getStoredPath($fileName);
-    }
+		return $this->driver->getStoredPath($fileName);
+	}
 
-    /**
-     * This will download the contents of a file.
-     *
-     * @param string $fileName
-     * @return void
-     */
+	/**
+	 * Downloads a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return void
+	 */
 	public function download(string $fileName): void
 	{
-        $this->driver->download($fileName);
-    }
+		$this->driver->download($fileName);
+	}
 
-    /**
-     * This will rename a file.
-     *
-     * @param string $oldFileName
-     * @param string $newFileName
-     * @return bool
-     */
+	/**
+	 * Renames a file.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool Success status.
+	 */
 	public function rename(string $oldFileName, string $newFileName): bool
 	{
-        return $this->driver->rename($oldFileName, $newFileName);
-    }
+		return $this->driver->rename($oldFileName, $newFileName);
+	}
 
-    /**
-     * This will move a file.
-     *
-     * @param string $oldFileName
-     * @param string $newFileName
-     * @return bool
-     */
+	/**
+	 * Moves a file to a new location.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool Success status.
+	 */
 	public function move(string $oldFileName, string $newFileName): bool
 	{
-        return $this->driver->move($oldFileName, $newFileName);
-    }
+		return $this->driver->move($oldFileName, $newFileName);
+	}
 
-    /**
-     * This will delete a file.
-     *
-     * @param string $fileName
-     * @return bool
-     */
+	/**
+	 * Deletes a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return bool Success status.
+	 */
 	public function delete(string $fileName): bool
 	{
-        return $this->driver->delete($fileName);
-    }
+		return $this->driver->delete($fileName);
+	}
 
-    /**
-     * This will get the file size.
-     *
-     * @param string $fileName
-     * @return int
-     */
-    public function getSize(string $fileName): int
-    {
-        return $this->driver->getSize($fileName);
-    }
+	/**
+	 * Retrieves the file size.
+	 *
+	 * @param string $fileName The file name.
+	 * @return int File size in bytes.
+	 */
+	public function getSize(string $fileName): int
+	{
+		return $this->driver->getSize($fileName);
+	}
 }
