@@ -17,26 +17,26 @@ $server = new ServerEvents($INTERVAL_IN_SECONDS);
  */
 $server->start(function($loop)
 {
-    $loop->addEvent(new UpdateEvent(function(UpdateEvent $event)
-    {
-        /**
-         * Perform any operation on the server and get the response.
-         */
-        $response = true;
+	$loop->addEvent(new UpdateEvent(function(UpdateEvent $event)
+	{
+		/**
+		 * Perform any operation on the server and get the response.
+		 */
+		$response = true;
 
-        /**
-         * The call back will no send any updates if null is returned.
-         */
-        if (!$response)
-        {
-            return null;
-        }
+		/**
+		 * The call back will no send any updates if null is returned.
+		 */
+		if (!$response)
+		{
+			return null;
+		}
 
-        /**
-         * This will send the response to the client.
-         */
-        return $response;
-    }));
+		/**
+		 * This will send the response to the client.
+		 */
+		return $response;
+	}));
 });
 
 /**
@@ -44,8 +44,8 @@ $server->start(function($loop)
  */
 $server->stream(function(UpdateEvent $event)
 {
-    // Perform any operation on the server and get the response.
-    return (object) [
-        'message' => 'Hello World!'
-    ];
+	// Perform any operation on the server and get the response.
+	return (object) [
+		'message' => 'Hello World!'
+	];
 });
