@@ -8,108 +8,77 @@ use Proto\Utils\Files\File;
 /**
  * UploadFile
  *
- * This will handle the upload file.
+ * Handles uploaded files, ensuring safe storage, retrieval, and manipulation.
  *
  * @package Proto\Http
  */
 class UploadFile
 {
 	/**
-	 * @var string $newFileName
+	 * Holds the newly generated unique file name.
 	 */
 	protected string $newFileName;
 
 	/**
-	 * @var string $PATH
+	 * System temporary directory.
 	 */
-	protected const PATH = '/tmp/';
+	protected string $tmpDir;
 
 	/**
-	 * This will set up the upload file.
+	 * Initializes an uploaded file instance.
 	 *
-	 * @param array $tmpFile
-	 * @return void
+	 * @param array $tmpFile PHP file upload array.
 	 */
-	public function __construct(
-		protected array $tmpFile
-	)
+	public function __construct(protected array $tmpFile)
 	{
-		$this->createNewName();
-		$this->setNewName();
+		$this->tmpDir = sys_get_temp_dir();
+		$this->newFileName = File::createNewName($this->getOriginalName());
+		$this->renameTmpFile();
 	}
 
 	/**
-	 * This will get the file path.
+	 * Retrieves the full path of the temporary file.
 	 *
 	 * @return string
 	 */
 	public function getFilePath(): string
 	{
-		$tmp = sys_get_temp_dir(); // gets the system temp dir.
-		return $tmp . "/" . $this->newFileName;
+		return "{$this->tmpDir}/{$this->newFileName}";
 	}
 
 	/**
-	 * This will set the new name.
+	 * Renames the uploaded temporary file to ensure a unique name.
 	 *
 	 * @return void
 	 */
-	protected function setNewName(): void
+	protected function renameTmpFile(): void
 	{
 		File::rename($this->getTmpName(), $this->getFilePath());
 	}
 
 	/**
-	 * This will get a file value.
+	 * Retrieves a value from the uploaded file array.
 	 *
-	 * @param string $key
-	 * @return mixed
+	 * @param string $key File attribute key.
+	 * @return string|null Sanitized value or `null` if not found.
 	 */
-	public function __get(string $key): mixed
+	protected function getValue(string $key): ?string
 	{
-		$value = $this->tmpFile[$key] ?? null;
-		if (isset($value) === false)
-		{
-			return $value;
-		}
-
-		return Sanitize::string($value);
+		return isset($this->tmpFile[$key]) ? Sanitize::string($this->tmpFile[$key]) : null;
 	}
 
 	/**
-	 * This will get the value from the tmp file.
-	 *
-	 * @param string $key
-	 * @return string
-	 */
-	protected function getValue(string $key): string
-	{
-		$value = $this->tmpFile[$key] ?? '';
-		return Sanitize::string($value);
-	}
-
-	/**
-	 * This will get the original file name.
+	 * Retrieves the original file name.
 	 *
 	 * @return string
 	 */
 	public function getOriginalName(): string
 	{
-		return $this->getValue('name');
+		return $this->getValue('name') ?? '';
 	}
 
 	/**
-	 * This will get the new name name.
-	 *
-	 * @return string
-	 */
-	public function getName(): string
-	{
-		return $this->getNewName();
-	}
-
-	/**
-	 * This will get the new unique file name.
+	 * Retrieves the new unique file name.
 	 *
 	 * @return string
 	 */
@@ -119,64 +88,52 @@ class UploadFile
 	}
 
 	/**
-	 * This will get the type.
+	 * Retrieves the file type.
 	 *
 	 * @return string
 	 */
 	public function getType(): string
 	{
-		return $this->getValue('type');
+		return $this->getValue('type') ?? '';
 	}
 
 	/**
-	 * This will get the size.
+	 * Retrieves the file size.
 	 *
-	 * @return string
+	 * @return int File size in bytes.
 	 */
-	public function getSize(): string
+	public function getSize(): int
 	{
-		return $this->getValue('size');
+		return (int) ($this->getValue('size') ?? 0);
 	}
 
 	/**
-	 * This will get the tmp name.
+	 * Retrieves the temporary file path.
 	 *
 	 * @return string
 	 */
 	public function getTmpName(): string
 	{
-		return $this->tmpFile['tmp_name'] ?? '';
+		return $this->getValue('tmp_name') ?? '';
 	}
 
 	/**
-	 * This will move the file.
+	 * Moves the file to the specified path.
 	 *
-	 * @param string $path
-	 * @return bool
+	 * @param string $destination The destination path.
+	 * @return bool True if successful, false otherwise.
 	 */
-	public function move(string $path): bool
+	public function move(string $destination): bool
 	{
-		return File::move($this->getTmpName(), $path);
+		return File::move($this->getFilePath(), $destination);
 	}
 
 	/**
-	 * This will create a unique new file name to stop
-	 * upload conflicts.
+	 * Stores the file in a specified storage driver.
 	 *
-	 * @return string
-	 */
-	protected function createNewName(): string
-	{
-		$fileName = $this->getOriginalName();
-		return ($this->newFileName = File::createNewName($fileName));
-	}
-
-	/**
-	 * This will store the file.
-	 *
-	 * @param string $driver
-	 * @param string|null $bucket
-	 * @return bool
+	 * @param string $driver The storage driver (e.g., local, S3).
+	 * @param string|null $bucket Optional storage bucket.
+	 * @return bool True if successfully stored, false otherwise.
 	 */
 	public function store(string $driver, ?string $bucket = null): bool
 	{

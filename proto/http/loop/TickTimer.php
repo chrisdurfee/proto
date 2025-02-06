@@ -1,10 +1,11 @@
 <?php declare(strict_types=1);
+
 namespace Proto\Http\Loop;
 
 /**
  * One second in microseconds.
  */
-const SECOND_IN_MICROSECONDS = 1000000;
+const MICROSECONDS_PER_SECOND = 1000000;
 
 /**
  * TickTimer
@@ -18,14 +19,14 @@ class TickTimer
 	/**
 	 * The tick interval in microseconds.
 	 *
-	 * @var int $tickInterval
+	 * @var int
 	 */
 	protected int $tickInterval;
 
 	/**
-	 * The last run time as a float.
+	 * The last run time in seconds (with microsecond precision).
 	 *
-	 * @var float $lastRunTime
+	 * @var float
 	 */
 	protected float $lastRunTime;
 
@@ -33,7 +34,6 @@ class TickTimer
 	 * Constructs a TickTimer instance.
 	 *
 	 * @param int $tickInSeconds The tick interval in seconds.
-	 * @return void
 	 */
 	public function __construct(int $tickInSeconds = 10)
 	{
@@ -49,11 +49,11 @@ class TickTimer
 	 */
 	protected static function convertToMicroseconds(int $seconds): int
 	{
-		return $seconds * SECOND_IN_MICROSECONDS;
+		return $seconds * MICROSECONDS_PER_SECOND;
 	}
 
 	/**
-	 * Gets a Unix timestamp with microseconds precision.
+	 * Gets a high-precision Unix timestamp.
 	 *
 	 * @return float
 	 */
@@ -69,44 +69,45 @@ class TickTimer
 	 */
 	public function getTickInSeconds(): int
 	{
-		return (int)($this->tickInterval / SECOND_IN_MICROSECONDS);
+		return (int)($this->tickInterval / MICROSECONDS_PER_SECOND);
 	}
 
 	/**
-	 * Gets the next run time as a float.
+	 * Gets the next scheduled run time.
 	 *
 	 * @return float
 	 */
 	public function getNextRunTime(): float
 	{
-		return $this->lastRunTime + ($this->tickInterval / SECOND_IN_MICROSECONDS);
+		return $this->lastRunTime + ($this->tickInterval / MICROSECONDS_PER_SECOND);
 	}
 
 	/**
-	 * Executes the tick and sleeps until the next run time.
+	 * Waits until the next tick cycle.
 	 *
 	 * @return void
 	 */
 	public function tick(): void
 	{
 		$nextRunTime = $this->getNextRunTime();
-		$this->sleep($nextRunTime);
+		$this->sleepUntil($nextRunTime);
 		$this->lastRunTime = self::getTimestamp();
 	}
 
 	/**
-	 * Sleeps until the next run time.
+	 * Sleeps until the given time.
 	 *
-	 * @param float $time The target time to sleep until.
+	 * @param float $time Target sleep time.
 	 * @return void
 	 */
-	public function sleep(float $time): void
+	protected function sleepUntil(float $time): void
 	{
-		$sleep = $time - self::getTimestamp();
-		if ($sleep > 0)
+		$sleepDuration = $time - self::getTimestamp();
+		if ($sleepDuration <= 0)
 		{
-			$timeInMicroseconds = (int)($sleep * SECOND_IN_MICROSECONDS);
-			usleep($timeInMicroseconds);
+			return;
 		}
+
+		usleep((int)($sleepDuration * MICROSECONDS_PER_SECOND));
 	}
 }

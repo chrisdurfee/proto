@@ -11,51 +11,44 @@ namespace Proto\Http\Loop;
  */
 abstract class Event implements EventInterface
 {
-    /**
-     * Constructs an Event instance and runs the event.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->run();
-    }
+	/**
+	 * Constructs an Event instance and runs the event.
+	 */
+	public function __construct()
+	{
+		$this->run();
+	}
 
-    /**
-     * The logic to be executed when the event is created.
-     *
-     * @return void
-     */
-    protected function run(): void
-    {
-        // Implement event-specific logic in subclasses.
-    }
+	/**
+	 * Defines the logic to be executed when the event is created.
+	 * Subclasses must implement this method.
+	 */
+	abstract protected function run(): void;
 
-    /**
-     * Encodes the given data as JSON and sends it as a message to the client.
-     *
-     * @param mixed $data The data to be sent as a message.
-     * @return void
-     */
-    public function message(mixed $data): void
-    {
-        new Message($data);
-        $this->flush();
-    }
+	/**
+	 * Encodes the given data as JSON and sends it as a message to the client.
+	 *
+	 * @param mixed $data The data to be sent as a message.
+	 */
+	public function message(mixed $data): void
+	{
+		$message = new Message($data);
+		$this->flush();
+	}
 
-    /**
-     * Flushes the output buffer, sending the data to the client.
-     *
-     * @return self
-     */
-    public function flush(): self
-    {
-        flush();
-        if ( ob_get_level() > 0)
-        {
-            @ob_flush();
-        }
+	/**
+	 * Flushes the output buffer, sending the data to the client.
+	 *
+	 * @return self
+	 */
+	public function flush(): self
+	{
+		if (ob_get_length() > 0)
+		{
+			ob_flush();
+			flush();
+		}
 
-        return $this;
-    }
+		return $this;
+	}
 }

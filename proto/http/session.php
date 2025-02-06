@@ -7,57 +7,54 @@ use Proto\Http\Session\SessionInterface;
 use Proto\Config;
 
 /**
- * Session
+ * Class Session
  *
- * This will handle the session.
+ * Manages session handling using different storage adapters (file or database).
  *
  * @package Proto\Http
  */
 class Session
 {
 	/**
-	 * @var object $instance
+	 * The session instance.
 	 */
-	protected static SessionInterface $instance;
+	protected static ?SessionInterface $instance = null;
 
 	/**
-	 * @var string $type
+	 * The session type (file or database).
 	 */
-	protected static ?string $type;
+	protected static ?string $type = null;
 
 	/**
-	 * This will set the session as a singleton.
-	 *
-	 * @return void
+	 * Private constructor to enforce singleton pattern.
 	 */
-	protected function __construct()
+	private function __construct()
 	{
 	}
 
 	/**
-	 * This will get the config session type.
+	 * Retrieves the session type from configuration.
 	 *
 	 * @return string
 	 */
 	protected static function getConfigType(): string
 	{
 		$config = Config::getInstance();
-		$session = $config->session ?? 'file';
-		return ($session === 'file')? FileSession::class : DatabaseSession::class;
+		return ($config->session ?? 'file') === 'file' ? FileSession::class : DatabaseSession::class;
 	}
 
 	/**
-	 * This will get the session adapter.
+	 * Sets the session type.
 	 *
 	 * @return string
 	 */
 	protected static function setType(): string
 	{
-		return (self::$type ?? (self::$type = self::getConfigType()));
+		return self::$type ??= self::getConfigType();
 	}
 
 	/**
-	 * This will get the session type.
+	 * Retrieves the session type.
 	 *
 	 * @return string
 	 */
@@ -67,65 +64,55 @@ class Session
 	}
 
 	/**
-	 * This will get the session instance.
+	 * Retrieves the session instance.
 	 *
 	 * @return SessionInterface
 	 */
 	public static function getInstance(): SessionInterface
 	{
-		/**
-		 * @var object $type
-		 */
 		$type = self::getType();
-		return self::$instance ?? (self::$instance = $type::getInstance());
+		return self::$instance ??= $type::getInstance();
 	}
 
 	/**
-	 * This will start the session and close it to stop session
-	 * locking.
+	 * Initializes the session and closes it to prevent session locking.
 	 *
-	 * @return object
+	 * @return SessionInterface
 	 */
-	public static function init(): object
+	public static function init(): SessionInterface
 	{
-		/**
-		 * @var object $type
-		 */
 		$type = self::getType();
 		return $type::init();
 	}
 
 	/**
-	 * This will get the session id.
+	 * Retrieves the session ID.
 	 *
 	 * @return string
 	 */
 	public static function getId(): string
 	{
-		$session = static::getInstance();
-		return $session->getId();
+		return static::getInstance()->getId();
 	}
 
 	/**
-	 * This will get the value of a key.
+	 * Retrieves a session value by key.
 	 *
 	 * @param string $key
 	 * @return mixed
 	 */
 	public static function get(string $key): mixed
 	{
-		$session = static::getInstance();
-		return $session->{$key} ?? null;
+		return static::getInstance()->{$key} ?? null;
 	}
 
 	/**
-	 * This will destroy the session.
+	 * Destroys the current session.
 	 *
 	 * @return void
 	 */
 	public static function destroy(): void
 	{
-		$session = static::getInstance();
-		$session->destroy();
+		static::getInstance()->destroy();
 	}
 }

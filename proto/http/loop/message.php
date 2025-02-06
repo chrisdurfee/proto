@@ -15,31 +15,24 @@ class Message
 	 *
 	 * @param mixed $data The data to be sent in the message.
 	 * @param bool $formatted Whether or not the data is already formatted.
-	 * @return void
 	 */
 	public function __construct(
 		private mixed $data,
 		protected bool $formatted = false
 	)
 	{
-		$this->data = $data;
 		$this->render();
 	}
 
 	/**
 	 * Encodes the given data as JSON.
 	 *
-	 * @param mixed|null $data The data to be encoded.
+	 * @param mixed $data The data to be encoded.
 	 * @return string The JSON-encoded data.
 	 */
-	public static function json(mixed $data = null): string
+	public static function json(mixed $data): string
 	{
-		if (!isset($data))
-		{
-			return '';
-		}
-
-		return json_encode($data);
+		return json_encode($data ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 	}
 
 	/**
@@ -49,12 +42,8 @@ class Message
 	 */
 	protected function render(): void
 	{
-		if ($this->formatted)
-		{
-			echo $this->data;
-			return;
-		}
-
-		echo "data: " . self::json($this->data) . "\n\n";
+		$output = $this->formatted ? (string)$this->data : "data: " . self::json($this->data) . "\n\n";
+		echo $output;
+		flush();
 	}
 }

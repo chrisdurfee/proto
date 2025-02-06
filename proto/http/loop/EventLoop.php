@@ -20,21 +20,21 @@ class EventLoop
 	/**
 	 * The tick timer instance.
 	 *
-	 * @var TickTimer $timer
+	 * @var TickTimer
 	 */
 	protected TickTimer $timer;
 
 	/**
 	 * The collection of events.
 	 *
-	 * @var SplObjectStorage $events
+	 * @var SplObjectStorage
 	 */
 	protected SplObjectStorage $events;
 
 	/**
 	 * Indicates if the loop is active.
 	 *
-	 * @var bool $active
+	 * @var bool
 	 */
 	protected bool $active = true;
 
@@ -42,7 +42,6 @@ class EventLoop
 	 * Constructs the EventLoop instance.
 	 *
 	 * @param int $tickInterval The tick interval in milliseconds.
-	 * @return void
 	 */
 	public function __construct(int $tickInterval = 10)
 	{
@@ -67,30 +66,15 @@ class EventLoop
 	 */
 	public function loop(): void
 	{
-		/**
-		 * This will loop until the loop is stopped.
-		 */
 		while ($this->isActive())
 		{
-			// Stop the loop if the client aborts the connection (closes the page).
 			if (connection_aborted())
 			{
 				$this->end();
-				break;
+				return;
 			}
 
 			$this->tick();
-
-			/**
-			 * This will check to stop if an event has
-			 * stopped the loop.
-			 */
-			if (!$this->isActive())
-			{
-				break;
-			}
-
-			// Sleep the loop until the next run time.
 			$this->timer->tick();
 		}
 	}
@@ -124,11 +108,6 @@ class EventLoop
 	 */
 	protected function tick(): void
 	{
-		if (count($this->events) < 1)
-		{
-			return;
-		}
-
 		foreach ($this->events as $event)
 		{
 			$event->tick();
