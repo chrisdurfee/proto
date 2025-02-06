@@ -7,34 +7,34 @@ use PHPUnit\Framework\TestCase;
 use Proto\Base;
 
 /**
- * Test class
+ * Abstract Test Class
  *
- * This class sets up the test base class.
+ * Serves as the base class for all test cases.
+ * Ensures the system is properly initialized before running tests.
  *
  * @package Proto\Tests
  */
 abstract class Test extends TestCase
 {
-    /**
-     * This will be called when the test is set up.
-     *
-     * @param string|null $name
-     */
-    public function __construct(?string $name = null)
-    {
-        parent::__construct($name);
+	/**
+	 * Initializes the test case.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void
+	{
+		parent::setUp();
+		$this->setupSystem();
+	}
 
-        // Set up the system
-        $this->setupSystem();
-    }
-
-    /**
-     * Sets up the base settings and initializes the system.
-     *
-     * @return void
-     */
-    private function setupSystem(): void
-    {
-        new Base();
-    }
+	/**
+	 * Sets up the system before tests run.
+	 * Can be overridden by child test classes if needed.
+	 *
+	 * @return void
+	 */
+	protected function setupSystem(): void
+	{
+		new Base();
+	}
 }

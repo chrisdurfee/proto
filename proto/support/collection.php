@@ -1,246 +1,228 @@
-<?php
-namespace Proto\Support
+<?php declare(strict_types=1);
+
+namespace Proto\Support;
+
+/**
+ * Collection class
+ *
+ * Manages a list of items with common array operations.
+ *
+ * @package Proto\Support
+ */
+class Collection implements \JsonSerializable
 {
-    /**
-     * Collection class
-     *
-     * This will handle the collection.
-     *
-     * @package Proto\Support
-     */
-    class Collection implements \JsonSerializable
-    {
-        /**
-         *
-         * @var array $items The items.
-         */
-        protected array $items = [];
+	/**
+	 * @var array $items The items in the collection.
+	 */
+	protected array $items = [];
 
-        /**
-         * This will set up the list.
-         *
-         * @param array|null $items
-         */
-        public function __construct(?array $items = null)
+	/**
+	 * Initializes the collection with an optional array of items.
+	 *
+	 * @param array|null $items The initial items.
+	 */
+	public function __construct(?array $items = null)
+	{
+		$this->items = $items ?? [];
+	}
+
+	/**
+	 * Adds an item to the collection.
+	 *
+	 * @param mixed $item The item to add.
+	 * @return self
+	 */
+	public function add(mixed $item): self
+	{
+		if ($item !== null)
         {
-            if (\is_array($items))
-            {
-                $this->items = $items;
-            }
-        }
+			$this->items[] = $item;
+		}
+		return $this;
+	}
 
-        /**
-         * This will add an item.
-         *
-         * @param mixed $item
-         * @return self
-         */
-        public function add($item): self
+	/**
+	 * Alias for add().
+	 *
+	 * @param mixed $item The item to push.
+	 * @return self
+	 */
+	public function push(mixed $item): self
+	{
+		return $this->add($item);
+	}
+
+	/**
+	 * Retrieves an item by index.
+	 *
+	 * @param int $index The index to retrieve.
+	 * @return mixed|null The item or null if not found.
+	 */
+	public function get(int $index): mixed
+	{
+		return $this->items[$index] ?? null;
+	}
+
+	/**
+	 * Checks if a key exists in the collection.
+	 *
+	 * @param int|string $key The key to check.
+	 * @return bool True if the key exists, false otherwise.
+	 */
+	public function has(int|string $key): bool
+	{
+		return \array_key_exists($key, $this->items);
+	}
+
+	/**
+	 * Removes an item from the collection.
+	 *
+	 * @param mixed $item The item to remove.
+	 * @return self
+	 */
+	public function remove(mixed $item): self
+	{
+		$this->items = array_values(array_diff($this->items, [$item]));
+		return $this;
+	}
+
+	/**
+	 * Applies a callback function to each item and returns a new collection.
+	 *
+	 * @param callable $callback The callback function.
+	 * @return self
+	 */
+	public function map(callable $callback): self
+	{
+		$this->items = array_map($callback, $this->items);
+		return $this;
+	}
+
+	/**
+	 * Filters the collection using a callback function.
+	 *
+	 * @param callable $callback The callback function.
+	 * @return self
+	 */
+	public function filter(callable $callback): self
+	{
+		$this->items = array_values(array_filter($this->items, $callback));
+		return $this;
+	}
+
+	/**
+	 * Reduces the collection using a callback function.
+	 *
+	 * @param callable $callback The callback function.
+	 * @param mixed|null $initial The initial value.
+	 * @return mixed The reduced result.
+	 */
+	public function reduce(callable $callback, mixed $initial = null): mixed
+	{
+		return array_reduce($this->items, $callback, $initial);
+	}
+
+	/**
+	 * Reverses the order of the collection.
+	 *
+	 * @return self
+	 */
+	public function reverse(): self
+	{
+		$this->items = array_reverse($this->items);
+		return $this;
+	}
+
+	/**
+	 * Retrieves all items in the collection.
+	 *
+	 * @return array The collection items.
+	 */
+	public function all(): array
+	{
+		return $this->items;
+	}
+
+	/**
+	 * Removes and returns the last item in the collection.
+	 *
+	 * @return mixed|null The popped item or null if empty.
+	 */
+	public function pop(): mixed
+	{
+		return array_pop($this->items);
+	}
+
+	/**
+	 * Retrieves the first item in the collection.
+	 *
+	 * @return mixed|null The first item or null if empty.
+	 */
+	public function first(): mixed
+	{
+		return $this->items[0] ?? null;
+	}
+
+	/**
+	 * Merges another collection or array into this one.
+	 *
+	 * @param Collection|array $collection The collection or array to merge.
+	 * @return self
+	 */
+	public function merge(Collection|array $collection): self
+	{
+		$this->items = array_merge($this->items, $collection instanceof Collection ? $collection->all() : $collection);
+		return $this;
+	}
+
+	/**
+	 * Iterates over each item with a callback function.
+	 *
+	 * @param callable $callback The callback function.
+	 * @return self
+	 */
+	public function each(callable $callback): self
+	{
+		foreach ($this->items as $key => $item)
         {
-            if (\is_null($item))
-            {
-                return $this;
-            }
+			$callback($item, $key);
+		}
+		return $this;
+	}
 
-            \array_push($this->items, $item);
-            return $this;
-        }
+	/**
+	 * Retrieves the number of items in the collection.
+	 *
+	 * @return int The number of items.
+	 */
+	public function length(): int
+	{
+		return \count($this->items);
+	}
 
-        /**
-         * This is an alias of add.
-         *
-         * @param mixed $item
-         * @return self
-         */
-        public function push($item): self
-        {
-            return $this->add($item);
-        }
-
-        /**
-         * This will get an item by index.
-         *
-         * @param int $index
-         * @return mixed|null
-         */
-        public function get(int $index): mixed
-        {
-            return $this->items[$index] ?? null;
-        }
-
-        /**
-         * This will check if a key it set.
-         *
-         * @param mixed $item
-         * @return bool
-         */
-        public function has($key): bool
-        {
-            return \array_key_exists($key, $this->items);
-        }
-
-        /**
-         * This will remove an item.
-         *
-         * @param mixed $item
-         * @return self
-         */
-        public function remove(mixed $item): self
-        {
-            $index = \array_search($item, $this->items);
-            if ($index === false)
-            {
-                return $this;
-            }
-
-            unset($this->items[$index]);
-            return $this;
-        }
-
-        /**
-         * This will map a callback to the collection.
-         *
-         * @param callable $callback
-         * @return self
-         */
-        public function map(callable $callback): self
-        {
-            $this->items = array_map($callback, $this->items);
-            return $this;
-        }
-
-        /**
-         * This will filter the collection.
-         *
-         * @param callable $callback
-         * @return array
-         */
-        public function filter(callable $callback): self
-        {
-            $this->items = array_filter($this->items, $callback);
-            return $this;
-        }
-
-        /**
-         * This will reduce the collection.
-         *
-         * @param callable $callback
-         * @return array
-         */
-        public function reduce(callable $callback): self
-        {
-            $this->items = array_reduce($this->items, $callback);
-            return $this;
-        }
-
-        /**
-         * This will reverse the collection.
-         *
-         * @return self
-         */
-        public function reverse(): self
-        {
-            $this->items = array_reverse($this->items);
-            return $this;
-        }
-
-        /**
-         * This will get all the items.
-         *
-         * @return array
-         */
-        public function all(): array
-        {
-            return $this->items;
-        }
-
-        /**
-         * This will pop and element off the end.
-         *
-         * @return mixed
-         */
-        public function pop(): mixed
-        {
-            return array_pop($this->items);
-        }
-
-        /**
-         * This will slice off the element at the begining.
-         *
-         * @return mixed
-         */
-        public function slice(): mixed
-        {
-            return array_slice($this->items, 1);
-        }
-
-        /**
-         * This is an alias for slice.
-         *
-         * @return mixed
-         */
-        public function first(): mixed
-        {
-            return $this->slice();
-        }
-
-        /**
-         * This will reverse the collection.
-         *
-         * @return self
-         */
-        public function merge(Collection $collection): self
-        {
-            $this->items = array_merge($this->items, $collection->all());
-            return $this;
-        }
-
-        /**
-         * This will map a callback to the collection.
-         *
-         * @param callable $callback
-         * @return self
-         */
-        public function each(callable $callback): self
-        {
-            $this->items = $this->map($callback);
-            return $this;
-        }
-
-        /**
-         * This will get the items length.
-         *
-         * @return int
-         */
-        public function length(): int
-        {
-            return \count($this->items);
-        }
-
-        /**
-         * This will return the collection data when json encoded.
-         *
-         * @return mixed
-         */
-        public function jsonSerialize(): mixed
-        {
-            return $this->items;
-        }
-    }
+	/**
+	 * Serializes the collection into JSON format.
+	 *
+	 * @return array The JSON-serializable data.
+	 */
+	public function jsonSerialize(): array
+	{
+		return $this->items;
+	}
 }
 
 namespace
 {
-    use Proto\Support\Collection;
+	use Proto\Support\Collection;
 
-    /**
-     * This will initialize a new collection.
-     *
-     * @param array|null $items
-     * @return Collection
-     */
-    function collect(?array $items): Collection
-    {
-        return new Collection($items);
-    }
+	/**
+	 * Creates a new collection instance.
+	 *
+	 * @param array|null $items The initial items.
+	 * @return Collection The created collection.
+	 */
+	function collect(?array $items = null): Collection
+	{
+		return new Collection($items);
+	}
 }

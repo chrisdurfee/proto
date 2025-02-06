@@ -10,5 +10,4 @@ namespace Proto\Services;
  */
 abstract class Service
 {
-
 }
