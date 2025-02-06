@@ -11,43 +11,55 @@ namespace Proto\Http\Router;
 class Redirect extends Uri
 {
 	/**
-	 * @var string $redirectUrl
+	 * Redirect target URL.
+	 *
+	 * @var string
 	 */
-    protected string $redirectUrl;
+	protected string $redirectUrl;
 
-    /**
-     * @var int $responseCode
-     */
-    protected int $responseCode;
+	/**
+	 * HTTP response code for the redirect.
+	 *
+	 * @var int
+	 */
+	protected int $responseCode;
 
-    /**
-     * This will create a new redirect route.
-     *
-     * @param string $uri
-     * @param string $redirectUrl
-     * @param int $responseCode
-     * @return void
-     */
+	/**
+	 * Creates a new redirect route.
+	 *
+	 * @param string $uri The URI to match.
+	 * @param string $redirectUrl The URL to redirect to.
+	 * @param int $responseCode The HTTP response code (default: 301).
+	 */
 	public function __construct(string $uri, string $redirectUrl, int $responseCode = 301)
 	{
-        parent::__construct($uri);
+		parent::__construct($uri);
+		$this->redirectUrl = $redirectUrl;
+		$this->responseCode = $responseCode;
+	}
 
-        $this->redirectUrl = $redirectUrl;
-        $this->responseCode = $responseCode;
-    }
+	/**
+	 * Activates the redirect route.
+	 *
+	 * @param string $request The incoming request URI.
+	 * @return never
+	 */
+	public function activate(string $request): never
+	{
+		$this->sendRedirect();
+	}
 
-    /**
-     * This will activate the route.
-     *
-     * @param string $request
-     * @return mixed
-     */
-    public function activate(string $request): mixed
-    {
-        $response = new Response();
-        $response->render($this->responseCode);
+	/**
+	 * Sends the redirect response.
+	 *
+	 * @return never
+	 */
+	protected function sendRedirect(): never
+	{
+		$response = new Response();
+		$response->render($this->responseCode);
 
-        header('Location: ' . $this->redirectUrl);
-        die;
-    }
+		header('Location: ' . $this->redirectUrl, true, $this->responseCode);
+		exit;
+	}
 }
