@@ -1,156 +1,152 @@
 <?php declare(strict_types=1);
 namespace Proto\Http;
 
-use Proto\Http\Request;
-
 /**
- * Limit
+ * Class Limit
  *
- * This will create a limit.
+ * Handles request rate limiting.
  *
  * @package Proto\Http
  */
 class Limit
 {
-    /**
-     * @var int $expireInSeconds
-     */
+	/**
+	 * Expiration time in seconds.
+	 *
+	 * @var int
+	 */
 	protected int $expireInSeconds = 60;
 
-    /**
-     * @var string $requestId
-     */
-    protected string $requestId;
-
-    /**
-     * This will set the limit.
-     *
-     * @param int $requestLimit
-     * @return void
-     */
-    public function __construct(
-        protected int $requestLimit = 0
-    )
-    {
-        $this->requestId = $this->getIp();
-    }
-
-    /**
-     * This will check if the requests are over the limit.
-     *
-     * @param int $requests
-     * @return bool
-     */
-    public function isOverLimit(int $requests): bool
-    {
-        if ($this->requestLimit === 0)
-        {
-            return false;
-        }
-
-        return ($requests > $this->requestLimit);
-    }
-
-    /**
-     * This will set a limit of none.
-     *
-     * @return Limit
-     */
-    public static function none(): Limit
-    {
-        return new static();
-    }
-
-    /**
-     * This will create a new limit per minute.
-     *
-     * @param int $requestLimit
-     * @return Limit
-     */
-    public static function perMinute(int $requestLimit): Limit
-    {
-        return new static($requestLimit);
-    }
-
-    /**
-     * This will create a new limit per hour.
-     *
-     * @param int $requestLimit
-     * @return Limit
-     */
-    public static function perHour(int $requestLimit): Limit
-    {
-        $MINUTES_PER_HOUR = 60;
-        $limit = new static($requestLimit);
-        return $limit->setTimeLimit($MINUTES_PER_HOUR * 60);
-    }
-
-    /**
-     * This will create a new limit per day.
-     *
-     * @param int $requestLimit
-     * @return Limit
-     */
-    public static function perDay(int $requestLimit): Limit
-    {
-        $MINUTES_PER_DAY = 1440;
-        $limit = new static($requestLimit);
-        return $limit->setTimeLimit($MINUTES_PER_DAY * 60);
-    }
-
-    /**
-	 * This will get the request ip.
+	/**
+	 * Request identifier (IP or custom).
 	 *
-	 * @return string|null
+	 * @var string
 	 */
-	protected function getIp(): ?string
+	protected string $requestId;
+
+	/**
+	 * Maximum number of requests allowed.
+	 *
+	 * @var int
+	 */
+	protected int $requestLimit;
+
+	/**
+	 * Limit constructor.
+	 *
+	 * @param int $requestLimit Number of allowed requests (default: 0 = unlimited).
+	 */
+	public function __construct(int $requestLimit = 0)
+	{
+		$this->requestLimit = $requestLimit;
+		$this->requestId = self::getIp() ?? 'unknown';
+	}
+
+	/**
+	 * Checks if the request count exceeds the limit.
+	 *
+	 * @param int $requests Number of requests made.
+	 * @return bool True if over limit, false otherwise.
+	 */
+	public function isOverLimit(int $requests): bool
+	{
+		return ($this->requestLimit > 0 && $requests > $this->requestLimit);
+	}
+
+	/**
+	 * Creates a limit with no restrictions.
+	 *
+	 * @return self
+	 */
+	public static function none(): self
+	{
+		return new self();
+	}
+
+	/**
+	 * Creates a per-minute limit.
+	 *
+	 * @param int $requestLimit Number of requests allowed per minute.
+	 * @return self
+	 */
+	public static function perMinute(int $requestLimit): self
+	{
+		return new self($requestLimit);
+	}
+
+	/**
+	 * Creates a per-hour limit.
+	 *
+	 * @param int $requestLimit Number of requests allowed per hour.
+	 * @return self
+	 */
+	public static function perHour(int $requestLimit): self
+	{
+		return (new self($requestLimit))->setTimeLimit(3600);
+	}
+
+	/**
+	 * Creates a per-day limit.
+	 *
+	 * @param int $requestLimit Number of requests allowed per day.
+	 * @return self
+	 */
+	public static function perDay(int $requestLimit): self
+	{
+		return (new self($requestLimit))->setTimeLimit(86400);
+	}
+
+	/**
+	 * Retrieves the client's IP address.
+	 *
+	 * @return string|null IP address or null if not found.
+	 */
+	protected static function getIp(): ?string
 	{
 		return Request::ip();
 	}
 
-    /**
-     * This will set the time limit.
-     *
-     * @param int $expireInSeconds
-     * @return self
-     */
-    public function setTimeLimit(int $expireInSeconds): self
-    {
-        $this->expireInSeconds = $expireInSeconds;
+	/**
+	 * Sets the time limit for requests.
+	 *
+	 * @param int $expireInSeconds Time limit in seconds.
+	 * @return self
+	 */
+	public function setTimeLimit(int $expireInSeconds): self
+	{
+		$this->expireInSeconds = $expireInSeconds;
+		return $this;
+	}
 
-        return $this;
-    }
+	/**
+	 * Retrieves the time limit.
+	 *
+	 * @return int Time limit in seconds.
+	 */
+	public function getTimeLimit(): int
+	{
+		return $this->expireInSeconds;
+	}
 
-    /**
-     * This will get the time limit.
-     *
-     * @return int
-     */
-    public function getTimeLimit(): int
-    {
-        return $this->expireInSeconds;
-    }
-
-    /**
-     * This will set the request id.
-     *
-     * @param string $requestId
-     * @return self
-     */
+	/**
+	 * Sets the request identifier (e.g., user ID, IP).
+	 *
+	 * @param string $requestId Custom request identifier.
+	 * @return self
+	 */
 	public function by(string $requestId): self
-    {
-        $this->requestId = $requestId;
+	{
+		$this->requestId = $requestId;
+		return $this;
+	}
 
-        return $this;
-    }
-
-    /**
-     * This will get the request id.
-     *
-     * @return string|null
-     */
-    public function id(): ?string
-    {
-        return $this->requestId;
-    }
+	/**
+	 * Retrieves the request identifier.
+	 *
+	 * @return string Request identifier.
+	 */
+	public function id(): string
+	{
+		return $this->requestId;
+	}
 }

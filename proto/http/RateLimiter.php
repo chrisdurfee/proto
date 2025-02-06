@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+
 namespace Proto\Http;
 
 use Proto\Cache\Cache;
@@ -7,6 +8,7 @@ use Proto\Utils\Format\JsonFormat;
 
 /**
  * Class RateLimiter
+ *
  * Provides rate limiting functionality.
  *
  * @package Proto\Http
@@ -14,18 +16,18 @@ use Proto\Utils\Format\JsonFormat;
 class RateLimiter
 {
 	/**
-	 * This will store all the limits.
+	 * Stores all the limits.
 	 *
-	 * @var array $limits
+	 * @var array
 	 */
 	protected static array $limits = [];
 
 	/**
 	 * Cache class reference.
 	 *
-	 * @var string $cache
+	 * @var string|null
 	 */
-	protected static string $cache;
+	protected static ?string $cache = null;
 
 	/**
 	 * Initializes the cache class reference.
@@ -44,8 +46,8 @@ class RateLimiter
 	 */
 	protected static function isCacheSupported(): bool
 	{
-		$cache = self::$cache;
-		return $cache::isSupported();
+		$cache = self::$cache ?? static::getCache();
+		return isset($cache) && $cache::isSupported();
 	}
 
 	/**
@@ -55,58 +57,56 @@ class RateLimiter
 	 */
 	protected static function getCache(): ?string
 	{
-		if (!isset(self::$cache))
+		if (self::$cache === null)
 		{
 			static::setupCache();
 		}
 
-		if (!static::isCacheSupported())
-		{
-			return null;
-		}
-
-		return self::$cache;
+		return static::isCacheSupported() ? self::$cache : null;
 	}
 
 	/**
-	 * Checks if the string is cached.
+	 * Checks if the key is cached.
 	 *
-	 * @param string $string
+	 * @param string $key
 	 * @return bool
 	 */
-	protected static function isCached(string $string): bool
+	protected static function isCached(string $key): bool
 	{
-		$cache = self::$cache;
-		return $cache::has($string);
+		$cache = self::getCache();
+		return isset($cache) && $cache::has($key);
 	}
 
 	/**
-	 * Sets the string value to 1 in the cache.
+	 * Sets a key-value pair in the cache with expiration.
 	 *
-	 * @param string $string
+	 * @param string $key
 	 * @param int $expiration
 	 * @return void
 	 */
-	protected static function set(string $string, int $expiration): void
+	protected static function set(string $key, int $expiration): void
 	{
-		$cache = self::$cache;
-		$cache::set($string, (string)1, $expiration);
+		$cache = self::getCache();
+		if ($cache)
+		{
+			$cache::set($key, '1', $expiration);
+		}
 	}
 
 	/**
-	 * Increments the string value in the cache.
+	 * Increments the value of a cached key.
 	 *
-	 * @param string $string
+	 * @param string $key
 	 * @return int
 	 */
-	protected static function incr(string $string): int
+	protected static function increment(string $key): int
 	{
-		$cache = self::$cache;
-		return $cache::incr($string);
+		$cache = self::getCache();
+		return isset($cache) ? $cache::incr($key) : 1;
 	}
 
 	/**
-	 * Checks the rate limit.
+	 * Checks if the rate limit is exceeded.
 	 *
 	 * @param Limit $limit
 	 * @return void
@@ -114,7 +114,7 @@ class RateLimiter
 	public static function check(Limit $limit): void
 	{
 		$cache = static::getCache();
-		if (!isset($cache))
+		if ($cache === null)
 		{
 			return;
 		}
@@ -126,28 +126,29 @@ class RateLimiter
 			return;
 		}
 
-		$requests = static::incr($id);
+		$requests = static::increment($id);
 		if ($limit->isOverLimit($requests))
 		{
-			static::response();
+			static::sendRateLimitResponse();
 		}
 	}
 
 	/**
-	 * Sends rate limit exceeded response.
+	 * Sends a rate limit exceeded response.
 	 *
 	 * @return void
 	 */
-	protected static function response(): void
+	protected static function sendRateLimitResponse(): void
 	{
-		$RESPONSE_CODE = 429;
+		$responseCode = 429;
 		$response = new Response();
-		$response->render($RESPONSE_CODE);
+		$response->render($responseCode);
 
-		JsonFormat::encodeAndRender((object)[
+		JsonFormat::encodeAndRender([
 			'message' => 'Too Many Requests',
 			'success' => false
 		]);
-		die;
+
+		exit;
 	}
 }

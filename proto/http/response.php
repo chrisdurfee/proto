@@ -4,46 +4,39 @@ namespace Proto\Http;
 use Proto\Utils\Format\JsonFormat as Formatter;
 
 /**
- * Response
+ * Class Response
  *
- * This will setup an object to set the http response code
- * and render the response data in json.
+ * Handles HTTP responses by setting the response code and rendering data as JSON.
  *
  * @package Proto\Http
  */
 class Response
 {
 	/**
-	 * The response code.
-	 *
-	 * @var int $code
+	 * The HTTP response code.
 	 */
 	protected int $code;
 
 	/**
 	 * The response data.
-	 *
-	 * @var object $data
 	 */
-	protected object $data;
+	protected ?object $data = null;
 
 	/**
-	 * This will setup the response and render to the
-	 * screen.
+	 * Initializes the response and renders the output.
 	 *
-	 * @param array|object $data
-	 * @param int $code
-	 * @return void
+	 * @param array|object|null $data The response data.
+	 * @param int $code The HTTP status code.
 	 */
-	public function __construct(mixed $data, int $code = 200)
+	public function __construct(mixed $data = null, int $code = 200)
 	{
 		$this->setCode($code);
 		$this->setData($data);
-		$this->encode();
+		$this->send();
 	}
 
 	/**
-	 * This will set the response code.
+	 * Sets the HTTP response code.
 	 *
 	 * @param int $code
 	 * @return void
@@ -55,39 +48,56 @@ class Response
 	}
 
 	/**
-	 * This will set the data.
+	 * Sets the response data.
 	 *
 	 * @param array|object|null $data
 	 * @return void
 	 */
-	public function setData(mixed $data = null)
+	protected function setData(mixed $data = null): void
 	{
-		if (!$data)
+		if (!empty($data))
 		{
-			return;
+			$this->data = is_array($data) ? (object)$data : $data;
 		}
-
-		if (is_array($data))
-		{
-			$data = (object)$data;
-		}
-		$this->data = $data;
 	}
 
 	/**
-	 * This will enocde the data to json.
+	 * Sends the JSON response.
 	 *
 	 * @return void
 	 */
-	public function encode(): void
+	protected function send(): void
 	{
-		$data = $this->data;
-		if (!is_object($data))
+		if (is_null($this->data))
 		{
 			return;
 		}
 
 		header('Content-Type: application/json');
-		Formatter::encodeAndRender($data);
+		Formatter::encodeAndRender($this->data);
+	}
+
+	/**
+	 * Creates and sends a success response.
+	 *
+	 * @param array|object|null $data
+	 * @param int $code
+	 * @return void
+	 */
+	public static function success(mixed $data = null, int $code = 200): void
+	{
+		new self($data, $code);
+	}
+
+	/**
+	 * Creates and sends an error response.
+	 *
+	 * @param string $message
+	 * @param int $code
+	 * @return void
+	 */
+	public static function error(string $message, int $code = 400): void
+	{
+		new self(['error' => $message], $code);
 	}
 }

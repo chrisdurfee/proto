@@ -2,11 +2,12 @@
 namespace Proto\Http;
 
 use DateTimeImmutable;
+use Exception;
 
 /**
  * Class Jwt
  *
- * Creates and retrieves JWT tokens.
+ * Handles JWT encoding and decoding securely.
  *
  * @package Proto\Http
  */
@@ -15,11 +16,11 @@ class Jwt
 	/**
 	 * Creates a new JWT encoded token.
 	 *
-	 * @param array $payload
-	 * @param string $secret
-	 * @param array|null $header
-	 * @param string $expires
-	 * @return string
+	 * @param array $payload Payload data.
+	 * @param string $secret Secret key for signing.
+	 * @param array|null $header Optional JWT header.
+	 * @param string $expires Expiration time modifier (default: +1 minute).
+	 * @return string JWT token.
 	 */
 	public static function encode(
 		array $payload,
@@ -28,143 +29,124 @@ class Jwt
 		string $expires = '+1 minute'
 	): string
 	{
-		$header = self::getHeader($header);
-		$payload = self::getPayload($payload, $expires);
-		$signature = self::getSignature($secret, $header, $payload);
+		$header = self::encodeJson($header ?? ['typ' => 'JWT', 'alg' => 'HS256']);
+		$payload = self::encodeJson(array_merge(self::getPayloadDefaults($expires), $payload));
+		$signature = self::generateSignature($secret, $header, $payload);
 
-		return $header . "." . $payload . "." . $signature;
+		return "{$header}.{$payload}.{$signature}";
 	}
 
 	/**
-	 * Encodes a header if passed or uses a default header.
+	 * Generates default payload claims.
 	 *
-	 * @param array|null $header
-	 * @return string
-	 */
-	protected static function getHeader(?array $header = null): string
-	{
-		$header = $header ?? ['typ' => 'JWT', 'alg' => 'HS256'];
-		return self::_encode($header);
-	}
-
-	/**
-	 * Gets the payload and augments it with the default payload data.
-	 *
-	 * @param array $payload
-	 * @param string $expires
-	 * @return string
-	 */
-	protected static function getPayload(array $payload, string $expires): string
-	{
-		$defaults = self::getPayloadDefaults($expires);
-		return self::_encode(array_merge($defaults, $payload));
-	}
-
-	/**
-	 * Gets the payload defaults.
-	 *
-	 * @param string $expires
-	 * @return array
+	 * @param string $expires Expiration time modifier.
+	 * @return array Default payload claims.
 	 */
 	protected static function getPayloadDefaults(string $expires): array
 	{
 		$issuedAt = new DateTimeImmutable();
+
 		return [
-			"iat" => $issuedAt->getTimestamp(),
-			"exp" => $issuedAt->modify($expires)->getTimestamp()
+			'iat' => $issuedAt->getTimestamp(),
+			'exp' => $issuedAt->modify($expires)->getTimestamp(),
 		];
 	}
 
 	/**
-	 * Gets the signature.
+	 * Generates the JWT signature.
 	 *
-	 * @param string $secret
-	 * @param string $header
-	 * @param string $payload
-	 * @return string
+	 * @param string $secret Secret key for signing.
+	 * @param string $header Encoded header.
+	 * @param string $payload Encoded payload.
+	 * @return string Encoded signature.
 	 */
-	protected static function getSignature(
+	protected static function generateSignature(
 		string $secret,
 		string $header,
 		string $payload
 	): string
 	{
-		$signature = hash_hmac('sha256', $header . "." . $payload, $secret, true);
-		return self::base64Replace($signature);
+		$signature = hash_hmac('sha256', "{$header}.{$payload}", $secret, true);
+		return self::base64UrlEncode($signature);
 	}
 
 	/**
-	 * Converts the string to base64 characters.
+	 * Decodes a JWT token and validates its integrity.
 	 *
-	 * @param string $str
-	 * @return string
-	 */
-	protected static function base64Replace(string $str): string
-	{
-		return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($str));
-	}
-
-	/**
-	 * Encodes the data.
-	 *
-	 * @param mixed $value
-	 * @return string
-	 */
-	protected static function _encode($value): string
-	{
-		$value = json_encode($value);
-		return self::base64Replace($value);
-	}
-
-	/**
-	 * Decodes a JWT token and returns the payload.
-	 *
-	 * @param string $token
-	 * @param string $secret
-	 * @return array|null
+	 * @param string $token JWT token.
+	 * @param string $secret Secret key for verification.
+	 * @return array|null Decoded payload if valid, otherwise null.
 	 */
 	public static function decode(string $token, string $secret): ?array
 	{
-		[$header, $payload, $signature] = explode('.', $token);
-
-		$calculatedSignature = self::getSignature($secret, $header, $payload);
-
-		if ($signature !== $calculatedSignature)
+		$parts = explode('.', $token);
+		if (count($parts) !== 3)
 		{
 			return null;
 		}
 
-		$payloadData = json_decode(self::base64Decode($payload), true);
+		[$header, $payload, $signature] = $parts;
+		$calculatedSignature = self::generateSignature($secret, $header, $payload);
 
-		if (!self::isTokenExpired($payloadData))
+		if (!hash_equals($signature, $calculatedSignature))
 		{
-			return $payloadData;
+			return null;
+		}
+
+		$decodedPayload = json_decode(self::base64UrlDecode($payload), true);
+		if (!self::isTokenExpired($decodedPayload))
+		{
+			return $decodedPayload;
 		}
 
 		return null;
 	}
 
 	/**
-	 * Converts the base64 characters back to the original string.
+	 * Checks if the token has expired.
 	 *
-	 * @param string $str
-	 * @return string
-	 */
-	protected static function base64Decode(string $str): string
-	{
-		$str = str_replace(['-', '_'], ['+', '/'], $str);
-		return base64_decode($str);
-	}
-
-	/**
-	 * Checks if the token is expired.
-	 *
-	 * @param array $payload
-	 * @return bool
+	 * @param array $payload Decoded payload.
+	 * @return bool True if expired, false otherwise.
 	 */
 	protected static function isTokenExpired(array $payload): bool
 	{
 		$currentTime = (new DateTimeImmutable())->getTimestamp();
 		return isset($payload['exp']) && $payload['exp'] < $currentTime;
+	}
+
+	/**
+	 * Encodes data into a base64 URL-safe format.
+	 *
+	 * @param string $data Data to encode.
+	 * @return string URL-safe base64 encoded string.
+	 */
+	protected static function base64UrlEncode(string $data): string
+	{
+		return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($data));
+	}
+
+	/**
+	 * Decodes a base64 URL-safe encoded string.
+	 *
+	 * @param string $data Encoded data.
+	 * @return string Decoded string.
+	 */
+	protected static function base64UrlDecode(string $data): string
+	{
+		$data = str_replace(['-', '_'], ['+', '/'], $data);
+		return base64_decode($data);
+	}
+
+	/**
+	 * Encodes an array to a JSON string and then base64 encodes it.
+	 *
+	 * @param mixed $data Data to encode.
+	 * @return string Base64 encoded JSON string.
+	 * @throws Exception If JSON encoding fails.
+	 */
+	protected static function encodeJson(mixed $data): string
+	{
+		$json = json_encode($data, JSON_THROW_ON_ERROR);
+		return self::base64UrlEncode($json);
 	}
 }
