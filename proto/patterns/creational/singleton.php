@@ -2,27 +2,24 @@
 namespace Proto\Patterns\Creational;
 
 /**
- * Class Singleton
+ * Singleton
  *
- * Singleton is a creational design pattern that ensures a class has only one
+ * A creational design pattern that ensures a class has only one
  * instance, while providing a global access point to this instance.
  *
  * @package Proto\Patterns\Creational
  */
-class Singleton
+abstract class Singleton
 {
 	/**
-	 * @var static $instance Holds the single instance of this class
+	 * Holds the single instance of this class.
+	 *
+	 * @var static|null
 	 */
-	protected static $instance = null;
+	protected static ?self $instance = null;
 
 	/**
-	 * Singleton constructor.
-	 *
-	 * Declared as protected to prevent creating a new instance externally
-	 * and to make the class extendable.
-	 *
-	 * @return void
+	 * Prevents direct instantiation to enforce the singleton pattern.
 	 */
 	protected function __construct()
 	{
@@ -35,18 +32,27 @@ class Singleton
 	 */
 	public static function getInstance(): static
 	{
-		return static::$instance ?? (static::$instance = new static());
+		if (static::$instance === null)
+		{
+			static::$instance = new static();
+		}
+
+		return static::$instance;
 	}
 
 	/**
-	 * Prevents the clone method from being called.
-	 *
-	 * Declared as protected to make the class extendable.
-	 *
-	 * @return void
+	 * Prevents cloning of the singleton instance.
 	 */
 	protected function __clone(): void
 	{
+	}
+
+	/**
+	 * Prevents unserialization of the singleton instance.
+	 */
+	public function __wakeup(): void
+	{
+		throw new \Exception("Cannot unserialize a singleton.");
 	}
 
 	/**
