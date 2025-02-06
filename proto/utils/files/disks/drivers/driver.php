@@ -4,96 +4,95 @@ namespace Proto\Utils\Files\Disks\Drivers;
 use Proto\Http\UploadFile;
 
 /**
- * Driver
+ * Abstract Driver Class
  *
- * This will be used as a base driver class.
+ * Defines a standard interface for file storage drivers.
  *
  * @package Proto\Utils\Files\Disks\Drivers
  * @abstract
  */
 abstract class Driver
 {
-    /**
-     * This will set up the driver.
-     *
-     * @param string|null $bucket
-     */
-    public function __construct(?string $bucket = null)
-    {
+	/**
+	 * Initializes the storage driver.
+	 *
+	 * @param string|null $bucket The storage bucket (optional).
+	 */
+	public function __construct(
+		protected ?string $bucket = null
+	) {}
 
-    }
+	/**
+	 * Stores an uploaded file.
+	 *
+	 * @param UploadFile $uploadFile The uploaded file object.
+	 * @return bool Success status.
+	 */
+	abstract public function store(UploadFile $uploadFile): bool;
 
-    /**
-     * This will store a file.
-     *
-     * @param UploadFile $uploadFile
-     * @return bool
-     */
-    abstract public function store(UploadFile $uploadFile): bool;
+	/**
+	 * Adds a file to storage.
+	 *
+	 * @param string $fileName The file name.
+	 * @return bool Success status.
+	 */
+	abstract public function add(string $fileName): bool;
 
-    /**
-     * This will add a file.
-     *
-     * @param string $fileName
-     * @return bool
-     */
-    abstract public function add(string $fileName): bool;
+	/**
+	 * Retrieves the contents of a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return string File contents.
+	 */
+	abstract public function get(string $fileName): string;
 
-    /**
-     * This will get a file.
-     *
-     * @param string $fileName
-     * @return string
-     */
-    abstract public function get(string $fileName): string;
+	/**
+	 * Retrieves the stored path of a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return string The stored file path.
+	 */
+	abstract public function getStoredPath(string $fileName): string;
 
-    /**
-     * This will get the stored file path.
-     *
-     * @param string $fileName
-     * @return string
-     */
-    abstract public function getStoredPath(string $fileName): string;
+	/**
+	 * Downloads a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return void
+	 */
+	abstract public function download(string $fileName): void;
 
-    /**
-     * This will download a file.
-     *
-     * @param string $fileName
-     * @return void
-     */
-    abstract public function download(string $fileName): void;
+	/**
+	 * Renames a file.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool Success status.
+	 */
+	abstract public function rename(string $oldFileName, string $newFileName): bool;
 
-    /**
-     * This will rename a file.
-     *
-     * @param string $oldFileName
-     * @param string $newFileName
-     * @return bool
-     */
-    abstract public function rename(string $oldFileName, string $newFileName): bool;
+	/**
+	 * Moves a file to a new location.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool Success status.
+	 */
+	abstract public function move(string $oldFileName, string $newFileName): bool;
 
-    /**
-     * This will move a file.
-     *
-     * @param string $oldFileName
-     * @param string $newFileName
-     * @return bool
-     */
-    abstract public function move(string $oldFileName, string $newFileName): bool;
+	/**
+	 * Deletes a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return bool Success status.
+	 */
+	abstract public function delete(string $fileName): bool;
 
-    /**
-     * This will delete a file.
-     *
-     * @param string $fileName
-     * @return bool
-     */
-    abstract public function delete(string $fileName): bool;
-
-    /**
-     * This will get the file size.
-     *
-     * @param string $fileName
-     * @return int
-     */
-    abstract public function getSize(string $fileName): int;
+	/**
+	 * Retrieves the file size.
+	 *
+	 * @param string $fileName The file name.
+	 * @return int File size in bytes.
+	 */
+	abstract public function getSize(string $fileName): int;
 }
