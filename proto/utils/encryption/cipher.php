@@ -6,151 +6,143 @@ use Proto\Utils\Util;
 /**
  * Cipher
  *
- * This will handle the cipher.
+ * Handles encryption and decryption using AES-256-CTR with HMAC for integrity verification.
  *
  * @package Proto\Utils\Encryption
  */
 class Cipher extends Util
 {
-    /**
-     * This is the cipher type
-     *
-     * @var string
-     */
-    private const CIPHER = 'aes-256-ctr';
+	/**
+	 * Cipher type used for encryption.
+	 */
+	private const CIPHER = 'aes-256-ctr';
 
-    /**
-     * This will get the length of the initialization vector
-     *
-     * @return int|false
-     */
-    protected static function getIvLength()
-    {
-        return \openssl_cipher_iv_length(self::CIPHER);
-    }
+	/**
+	 * Length of the HMAC hash.
+	 */
+	private const HMAC_LENGTH = 32;
 
-    /**
-     * This will get the initialization vector. This will be a new vector each time it is called
-     *
-     * @return string
-     */
-    protected static function getIv(): string
-    {
-        $ivLength = self::getIvLength();
-        return \openssl_random_pseudo_bytes($ivLength);
-    }
+	/**
+	 * Retrieves the length of the initialization vector.
+	 *
+	 * @return int
+	 */
+	protected static function getIvLength(): int
+	{
+		$length = \openssl_cipher_iv_length(self::CIPHER);
+		return $length !== false ? $length : 16; // Default IV length
+	}
 
-    /**
-     * This will return a base64 encode string
-     *
-     * @param string $message
-     * @return string
-     */
-    protected static function safe_B64_encode(string $message): string
-    {
-        $data = \base64_encode($message);
-        $data = str_replace(
-            ['+', '/', '='],
-            ['-','_',''],
-            $data
-        );
-        return $data;
-    }
+	/**
+	 * Generates a secure initialization vector (IV).
+	 *
+	 * @return string
+	 */
+	protected static function getIv(): string
+	{
+		return \random_bytes(self::getIvLength());
+	}
 
-    /**
-     * This will decode a base64 string
-     *
-     * @param string $message
-     * @return string
-     */
-    protected static function safe_B64_decode(string $message): string
-    {
-        $data = str_replace(array('-','_'), array('+','/'), $message);
-        $mod4 = strlen($data) % 4;
-        if ($mod4)
-        {
-            $data .= substr('====', $mod4);
-        }
-        return base64_decode($data);
-    }
+	/**
+	 * Safely encodes a string using Base64 with URL-safe characters.
+	 *
+	 * @param string $message
+	 * @return string
+	 */
+	protected static function safeB64Encode(string $message): string
+	{
+		$data = \base64_encode($message);
+		return str_replace(['+', '/', '='], ['-', '_', ''], $data);
+	}
 
-    /**
-     * This will encrypt the string
-     *
-     * @param string $plainText
-     * @param string $key
-     * @return string
-     */
-    public static function encrypt(string $plainText, string $key): string
-    {
-        if (!$plainText)
-        {
-            return "No text provided";
-        }
+	/**
+	 * Safely decodes a Base64-encoded string.
+	 *
+	 * @param string $message
+	 * @return string
+	 */
+	protected static function safeB64Decode(string $message): string
+	{
+		$data = str_replace(['-', '_'], ['+', '/'], $message);
+		$mod4 = \strlen($data) % 4;
+		if ($mod4)
+		{
+			$data .= \substr('====', $mod4);
+		}
+		return \base64_decode($data);
+	}
 
-        $iv = self::getIv();
-        $encrypted = openssl_encrypt(
-            $plainText,
-            self::CIPHER,
-            $key,
-            OPENSSL_RAW_DATA,
-            $iv
-        );
-        $encoded = self::safe_B64_encode($iv . self::hash($encrypted, $key) . $encrypted);
+	/**
+	 * Encrypts a string using AES-256-CTR with HMAC for integrity verification.
+	 *
+	 * @param string $plainText The plaintext to encrypt.
+	 * @param string $key The encryption key.
+	 * @return string The Base64-encoded encrypted string.
+	 */
+	public static function encrypt(string $plainText, string $key): string
+	{
+		if ($plainText === '')
+		{
+			return '';
+		}
 
-        return $encoded;
-    }
+		$iv = self::getIv();
+		$encrypted = \openssl_encrypt(
+			$plainText,
+			self::CIPHER,
+			$key,
+			OPENSSL_RAW_DATA,
+			$iv
+		);
+		$hash = self::hash($encrypted, $key);
 
-    /**
-     * This will hash the encrypted text
-     *
-     * @param string $text
-     * @return string
-     */
-    protected static function hash(string $text, string $key): string
-    {
-        return hash_hmac('sha256', $text, $key, true);
-    }
+		return self::safeB64Encode($iv . $hash . $encrypted);
+	}
 
-    /**
-     * This will decode the text
-     *
-     * @param string $text
-     * @return string
-     */
-    protected static function decodeText(string $text): string
-    {
-        return self::safe_B64_decode($text);
-    }
+	/**
+	 * Generates an HMAC hash for integrity verification.
+	 *
+	 * @param string $data The data to hash.
+	 * @param string $key The encryption key.
+	 * @return string The raw binary hash.
+	 */
+	protected static function hash(string $data, string $key): string
+	{
+		return \hash_hmac('sha256', $data, $key, true);
+	}
 
-    /**
-     * This will decrypt the text
-     *
-     * @param string $encodedText
-     * @param string $key
-     * @return string
-     */
-    public static function decrypt(string $encodedText, string $key): string
-    {
-        if (!$encodedText)
-        {
-            return "No text provided";
-        }
+	/**
+	 * Decrypts an encrypted string using AES-256-CTR and verifies its integrity using HMAC.
+	 *
+	 * @param string $encodedText The Base64-encoded encrypted string.
+	 * @param string $key The encryption key.
+	 * @return string|null The decrypted plaintext if valid, or null if the integrity check fails.
+	 */
+	public static function decrypt(string $encodedText, string $key): ?string
+	{
+		if ($encodedText === '')
+		{
+			return null;
+		}
 
-        $sha256Length = 32;
-        $text = self::decodeText($encodedText);
-        $ivLength = self::getIvLength();
-        $iv = substr($text, 0, $ivLength);
-        $hash = substr($text, $ivLength, $sha256Length);
-        $rawText = substr($text, $ivLength + $sha256Length);
-        $plainText = openssl_decrypt($rawText, self::CIPHER, $key, $options=OPENSSL_RAW_DATA, $iv);
+		$text = self::safeB64Decode($encodedText);
+		$ivLength = self::getIvLength();
+		if (\strlen($text) < ($ivLength + self::HMAC_LENGTH))
+		{
+			return null; // Invalid data format
+		}
 
-        $calculatedHash = self::hash($rawText, $key);
-        if (hash_equals($hash, $calculatedHash))
-        {
-            return $plainText;
-        }
+		$iv = \substr($text, 0, $ivLength);
+		$hash = \substr($text, $ivLength, self::HMAC_LENGTH);
+		$rawText = \substr($text, $ivLength + self::HMAC_LENGTH);
 
-        return "Hash did not match.";
-    }
+		$decrypted = \openssl_decrypt($rawText, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv);
+		if (!$decrypted)
+		{
+			return null; // Failed to decrypt
+		}
+
+		$calculatedHash = self::hash($rawText, $key);
+		return \hash_equals($hash, $calculatedHash) ? $decrypted : null;
+	}
 }
