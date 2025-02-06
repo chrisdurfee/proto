@@ -223,6 +223,11 @@ class Router
 
 	/**
 	 * Registers a GET route.
+	 *
+	 * @param string $uri
+	 * @param callable $callback
+	 * @param array|null $middleware
+	 * @return self
 	 */
 	public function get(string $uri, callable $callback, ?array $middleware = null): self
 	{
@@ -231,6 +236,11 @@ class Router
 
 	/**
 	 * Registers a POST route.
+	 *
+	 * @param string $uri
+	 * @param callable $callback
+	 * @param array|null $middleware
+	 * @return self
 	 */
 	public function post(string $uri, callable $callback, ?array $middleware = null): self
 	{
@@ -239,6 +249,11 @@ class Router
 
 	/**
 	 * Registers a PUT route.
+	 *
+	 * @param string $uri
+	 * @param callable $callback
+	 * @param array|null $middleware
+	 * @return self
 	 */
 	public function put(string $uri, callable $callback, ?array $middleware = null): self
 	{
@@ -247,6 +262,11 @@ class Router
 
 	/**
 	 * Registers a PATCH route.
+	 *
+	 * @param string $uri
+	 * @param callable $callback
+	 * @param array|null $middleware
+	 * @return self
 	 */
 	public function patch(string $uri, callable $callback, ?array $middleware = null): self
 	{
@@ -255,6 +275,11 @@ class Router
 
 	/**
 	 * Registers a DELETE route.
+	 *
+	 * @param string $uri
+	 * @param callable $callback
+	 * @param array|null $middleware
+	 * @return self
 	 */
 	public function delete(string $uri, callable $callback, ?array $middleware = null): self
 	{
@@ -263,6 +288,11 @@ class Router
 
 	/**
 	 * Registers a wildcard route that matches any HTTP method.
+	 *
+	 * @param string $uri
+	 * @param callable $callback
+	 * @param array|null $middleware
+	 * @return self
 	 */
 	public function all(string $uri, callable $callback, ?array $middleware = null): self
 	{
