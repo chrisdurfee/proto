@@ -4,257 +4,186 @@ namespace Proto\Http\Router;
 /**
  * Uri
  *
- * Uri is an abstract class responsible for managing
- * routes and their associated functionality.
+ * Abstract class responsible for managing routes and their associated functionality.
  *
  * @package Proto\Http\Router
  * @abstract
  */
 abstract class Uri
 {
-    use MiddlewareTrait;
+	use MiddlewareTrait;
 
-    /**
-     * @var object|null $params The route parameters.
-     */
-    protected ?object $params = null;
+	/**
+	 * @var ?object $params Route parameters.
+	 */
+	protected ?object $params = null;
 
-    /**
-     * @var array $paramNames The names of the route parameters.
-     */
-    protected array $paramNames = [];
+	/**
+	 * @var array<string> $paramNames Names of the route parameters.
+	 */
+	protected array $paramNames = [];
 
-    /**
-     * @var string $uri The route URI.
-     */
-    protected string $uri;
+	/**
+	 * @var string $uri The route URI.
+	 */
+	protected string $uri;
 
-    /**
-     * @var string $method The HTTP method associated with the route.
-     */
-    protected string $method;
+	/**
+	 * @var string|null $method The HTTP method associated with the route.
+	 */
+	protected ?string $method = null;
 
-    /**
-     * @var string $uriQuery The URI pattern used for matching against request URIs.
-     */
-    protected string $uriQuery = '';
+	/**
+	 * @var string $uriQuery The compiled regex pattern for matching URIs.
+	 */
+	protected string $uriQuery = '';
 
-    /**
-     * This will set up the route.
-     *
-     * @param string $uri The route URI.
-     * @return void
-     */
-    public function __construct(string $uri)
-    {
-        $this->uri = $uri;
+	/**
+	 * Initializes the route.
+	 *
+	 * @param string $uri The route URI.
+	 */
+	public function __construct(string $uri)
+	{
+		$this->uri = $uri;
+		$this->setupParamKeys($uri);
+		$this->setupUriQuery($uri);
+	}
 
-        $this->setupParamKeys($uri);
-        $this->setupUriQuery($uri);
-    }
+	/**
+	 * Compiles the URI pattern into a regex for matching.
+	 *
+	 * @param string $uri The route URI.
+	 * @return void
+	 */
+	protected function setupUriQuery(string $uri): void
+	{
+		if ($uri === '')
+		{
+			$this->uriQuery = '/.*/';
+			return;
+		}
 
-    /**
-     * Set up the URI query pattern for matching against request URIs.
-     *
-     * @param string $uri The route URI.
-     * @return void
-     */
-    protected function setupUriQuery(string $uri = ''): void
-    {
-        if (empty($uri))
-        {
-            $this->uriQuery = '/.*/';
-            return;
-        }
+		// Escape slashes
+		$uriQuery = preg_replace('/\//', '\/', $uri);
+		// Replace optional parameters
+		$uriQuery = preg_replace('/:(\w+)\?/', '(?P<\1>[^\/]*)?', $uriQuery);
+		// Replace required parameters
+		$uriQuery = preg_replace('/:(\w+)/', '(?P<\1>[^\/]+)', $uriQuery);
+		// Wildcard match
+		$uriQuery = str_replace('*', '.*', $uriQuery);
 
-        $uriQuery = '/^';
-        // escape slashes
-        $uriQuery .= preg_replace('/\//', '\/', $uri);
-        // add slash before optional param
-        $uriQuery = preg_replace('/(?:(\\*\/):[^\/(]*?\?)/', '(?:$|\/)', $uriQuery);
-        // add slash after optional param
-        $uriQuery = preg_replace('/(\?\\\\\/+\*?)/', '?\/*', $uriQuery);
+		$this->uriQuery = '/^' . $uriQuery . '$/';
+	}
 
-        // params
-        $paramCallBack = function($matches)
-        {
-            if(strpos($matches[0], '.') === false)
-            {
-                return '([^\/|?]+)';
-            }
+	/**
+	 * Extracts and stores the names of route parameters.
+	 *
+	 * @param string $uri The route URI.
+	 * @return void
+	 */
+	protected function setupParamKeys(string $uri): void
+	{
+		preg_match_all('/:(\w+)\??/', $uri, $matches);
+		$this->paramNames = $matches[1] ?? [];
+	}
 
-            return '([^\/|?]+.*)';
-        };
+	/**
+	 * Stores the matched parameters from the request.
+	 *
+	 * @param array<string> $matches The regex matches.
+	 * @return void
+	 */
+	protected function setParams(array $matches): void
+	{
+		if (!empty($matches) && !empty($this->paramNames))
+		{
+			$this->params = (object) array_combine($this->paramNames, array_slice($matches, 1));
+		}
+	}
 
-        $uriQuery = preg_replace_callback('/(:[^\/?&$\\\]+)/', $paramCallBack, $uriQuery);
+	/**
+	 * Retrieves route parameters.
+	 *
+	 * @return ?object
+	 */
+	protected function getParams(): ?object
+	{
+		return $this->params;
+	}
 
-        // wild card to allow all
-        $uriQuery = preg_replace('/(?<!\.)(\*)/', '.*', $uriQuery);
+	/**
+	 * Initializes the route and executes middleware.
+	 *
+	 * @param array $globalMiddleWare The global middleware to apply.
+	 * @param string $request The request URI.
+	 * @return mixed
+	 */
+	public function initialize(array $globalMiddleWare, string $request): mixed
+	{
+		$middleware = array_merge($globalMiddleWare, $this->middleware);
 
-        // this will only add the end string char if the uri has no wild cards
-        $uriQuery .= (strpos($uriQuery, '*') === false)? '$/' : '/';
+		if (empty($middleware))
+		{
+			return $this->activate($request);
+		}
 
-        $this->uriQuery = $uriQuery;
-    }
+		// Reduce middleware array into callable chain
+		$next = array_reduce(
+			array_reverse($middleware),
+			fn ($next, $item) => fn ($req) => $item->handle($req, $next),
+			fn ($req) => $this->activate($req)
+		);
 
-    /**
-     * Set up the names of the route parameters.
-     *
-     * @param string $uri The route URI.
-     * @return void
-     */
-    protected function setupParamKeys(string $uri): void
-    {
-        if (empty($uri))
-        {
-            return;
-        }
+		return $next($request);
+	}
 
-        $keys = [];
-        $uri = str_replace('[\*?]', '', $uri);
+	/**
+	 * Activates the route and processes the request.
+	 *
+	 * @param string $request The request URI.
+	 * @return mixed
+	 */
+	abstract public function activate(string $request): mixed;
 
-        // this will get the param names
-        preg_match_all('/(?::(.[^.\/?&($]+)\?*)/', $uri, $matches);
-        if (!empty($matches))
-        {
-            foreach($matches[1] as $match)
-            {
-                array_push($keys, $match);
-            }
-        }
+	/**
+	 * Checks if the request method matches the route method.
+	 *
+	 * @param string $method The HTTP method to check.
+	 * @return bool
+	 */
+	protected function checkMethod(string $method): bool
+	{
+		if ($this->method === null || strtolower($this->method) === 'all')
+		{
+			return true;
+		}
 
-        $this->paramNames = $keys;
-    }
+		return strtolower($this->method) === strtolower($method);
+	}
 
-    /**
-     * Set the route parameters based on the provided matches.
-     *
-     * @param array $matches The parameter matches from the URI.
-     * @return void
-     */
-    protected function setParams(array $matches): void
-    {
-        if (!empty($matches))
-        {
-            $names = $this->paramNames;
-            if (empty($names) || count($names) < 1)
-            {
-                return;
-            }
+	/**
+	 * Checks if a given URI and method match the route.
+	 *
+	 * @param string $uri The request URI.
+	 * @param string $method The HTTP method.
+	 * @return bool
+	 */
+	public function match(string $uri, string $method): bool
+	{
+		if (!$this->checkMethod($method))
+		{
+			return false;
+		}
 
-            array_shift($matches);
+		$matches = [];
+		$result = preg_match($this->uriQuery, $uri, $matches);
 
-            $params = (object)[];
-            for ($i = 0, $length = count($names); $i < $length; $i++)
-            {
-                $value = $matches[$i] ?? null;
-                if ($value !== null)
-                {
-                    $params->{$names[$i]} = $value;
-                }
-            }
-            $this->params = $params;
-        }
-    }
+		if ($result === 1)
+		{
+			$this->setParams($matches);
+		}
 
-    /**
-     * Get the route parameters.
-     *
-     * @return object|null
-     */
-    protected function getParams(): ?object
-    {
-        return $this->params;
-    }
-
-    /**
-     * Initialize the route, applying any middleware and handling the request.
-     *
-     * @param array $globalMiddleWare The global middleware to apply.
-     * @param string $request The request URI.
-     * @return mixed
-     */
-    public function initialize(array $globalMiddleWare, string $request): mixed
-    {
-        $middleware = array_merge($globalMiddleWare, $this->middleware);
-        if (count($middleware) < 1)
-        {
-            return $this->activate($request);
-        }
-
-        /**
-         * This is the first callback that will call
-         * the route activate to be passed to the
-         * first middleware.
-         */
-        $self = $this;
-        $next = function(string $request) use($self)
-        {
-            return $self->activate($request);
-        };
-
-        /**
-         * This will reverse the array to se the last
-         * middleware to call the route activate.
-         */
-        $middleware = array_reverse($middleware);
-        foreach ($middleware as $item)
-        {
-            $next = $this->setupMiddlewareCallback($item, $next);
-        }
-
-        return $next($request);
-    }
-
-    /**
-     * Activate the route, performing the associated action.
-     *
-     * @param string $request The request URI.
-     */
-    abstract public function activate(string $request): mixed;
-
-    /**
-     * Check if the given method matches the route's method.
-     *
-     * @param string $method The HTTP method to check.
-     * @return bool
-     */
-    protected function checkMethod(string $method): bool
-    {
-        if (isset($this->method) === false)
-        {
-            return true;
-        }
-
-        $uriMethod = strtolower($this->method);
-        if ($uriMethod === 'all')
-        {
-            return true;
-        }
-
-        $method = strtolower($method);
-        return ($uriMethod === $method);
-    }
-
-    /**
-     * Check if a given URI and method match the route's URI and method.
-     *
-     * @param string $uri The request URI.
-     * @param string $method The HTTP method.
-     * @return bool
-     */
-    public function match(string $uri, string $method): bool
-    {
-        if ($this->checkMethod($method) === false)
-        {
-            return false;
-        }
-
-        $result = preg_match($this->uriQuery, $uri, $matches);
-        if ($result)
-        {
-            $this->setParams($matches);
-        }
-        return ($result === 1);
-    }
+		return $result === 1;
+	}
 }
