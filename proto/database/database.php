@@ -2,7 +2,6 @@
 namespace Proto\Database;
 
 use Proto\Database\Adapters\Mysqli;
-use Proto\Base;
 use Proto\Config;
 
 /**
@@ -13,94 +12,92 @@ use Proto\Config;
  *
  * @package Proto\Database
  */
-class Database extends Base
+class Database
 {
 	/**
-	 * This will check if we are caching the connection.
+	 * Determines if connection caching is enabled.
 	 *
-	 * @param bool $caching
+	 * @param bool $caching Force-enable caching if true
 	 * @return bool
 	 */
 	protected function isCaching(bool $caching = false): bool
 	{
-		$dbCaching = env('dbCaching') ?? false;
-		return ($caching === true)? true : $dbCaching;
+		return $caching ? true : env('dbCaching') ?? false;
 	}
 
 	/**
-	 * Connect to the database.
+	 * Connects to the database.
 	 *
 	 * @param string $connection Connection name from the config file.
 	 * @param bool $caching Whether to use the connection caching or not.
-	 * @return Mysqli|bool Returns Mysqli instance or false if settings not found.
+	 * @return Mysqli|null Returns Mysqli instance or null if settings are not found.
 	 */
-	public function connect(string $connection = 'proto', bool $caching = false): Mysqli|bool
+	public function connect(string $connection = 'default', bool $caching = false): ?Mysqli
 	{
 		$settings = $this->getConnectionSettings($connection);
-		if (!isset($settings))
+		if (!$settings)
 		{
-			return false;
+			return null;
 		}
 
 		$caching = $this->isCaching($caching);
 		if ($caching)
 		{
-			$cache = ConnectionCache::get($connection);
-			if ($cache)
+			$cachedConnection = ConnectionSettingsCache::get($connection);
+			if ($cachedConnection instanceof Mysqli)
 			{
-				return $cache;
+				return $cachedConnection;
 			}
 		}
 
-		$db = $this->getAdapter($settings, $caching);
+		$db = $this->createAdapter($settings, $caching);
 
 		if ($caching)
 		{
-			ConnectionCache::set($connection, $db);
+			ConnectionSettingsCache::set($connection, $db);
 		}
+
 		return $db;
 	}
 
 	/**
-	 * Get the adapter based on the config settings.
+	 * Creates a database adapter based on the config settings.
 	 *
 	 * @param object $settings Connection settings.
 	 * @param bool $caching Whether to use the connection caching or not.
 	 * @return Mysqli Returns Mysqli instance.
-	 * @throws \Exception Throws exception if unsupported adapter is found in the config.
+	 * @throws \RuntimeException If an unsupported adapter is found in the config.
 	 */
-	protected function getAdapter(object $settings, bool $caching): Mysqli
+	protected function createAdapter(object $settings, bool $caching): Mysqli
 	{
 		if (env('database') !== 'Mysqli')
 		{
-			throw new \Exception('Only Mysqli is supported.');
+			throw new \RuntimeException('Only Mysqli is supported.');
 		}
 
 		return new Mysqli($settings, $caching);
 	}
 
 	/**
-	 * Get the connection settings from the config.
+	 * Retrieves the connection settings from the config.
 	 *
 	 * @param string $connection Connection name.
 	 * @return object Returns an object containing connection settings.
 	 */
 	protected function getConnectionSettings(string $connection): object
 	{
-		$config = Config::getInstance();
-		return $config->getDBSettings($connection);
+		return Config::getInstance()->getDBSettings($connection);
 	}
 
 	/**
-	 * Get a database connection.
+	 * Retrieves a database connection.
 	 *
 	 * @param string $connection Connection name.
 	 * @param bool $caching Whether to use the connection caching or not.
-	 * @return Mysqli|bool Returns Mysqli instance or false if settings not found.
+	 * @return Mysqli|null Returns Mysqli instance or null if settings are not found.
 	 */
-	public static function getConnection(string $connection = 'proto', bool $caching = false): Mysqli|bool
+	public static function getConnection(string $connection = 'default', bool $caching = false): ?Mysqli
 	{
-		$db = new static();
-		return $db->connect($connection);
+		return (new self())->connect($connection, $caching);
 	}
 }

@@ -1,60 +1,57 @@
 <?php declare(strict_types=1);
 namespace Proto\Utils;
 
-use Proto\Base;
-
 /**
- * Arrays
+ * Arrays Utility Class
  *
- * This will handle the arrays.
+ * Provides utility functions for array manipulation.
  *
  * @package Proto\Utils
  */
-class Arrays extends Base
+class Arrays
 {
 	/**
-	 * This will check if the array is associative.
+	 * Checks if an array is associative.
 	 *
 	 * @param array $array
 	 * @return bool
 	 */
-    public static function isAssoc(array $array): bool
+	public static function isAssoc(array $array): bool
 	{
-		$keys = static::keys($array);
-		return (static::keys($keys) !== $keys);
+		return array_keys($array) !== range(0, count($array) - 1);
 	}
 
 	/**
-	 * This will get the difference between two arrays.
+	 * Returns the difference between two arrays.
 	 *
 	 * @param array $needles
 	 * @param array $haystack
 	 * @return array
 	 */
-    public static function diff(array $needles, array $haystack): array
-    {
-        return array_diff($needles, $haystack);
-    }
+	public static function diff(array $needles, array $haystack): array
+	{
+		return array_diff($needles, $haystack);
+	}
 
 	/**
-	 * This will get the values of the array.
+	 * Returns the values of an array.
 	 *
 	 * @param array $items
 	 * @return array
 	 */
-    public static function values(array $items): array
-    {
-        return array_values($items);
-    }
+	public static function values(array $items): array
+	{
+		return array_values($items);
+	}
 
 	/**
-	 * This will get the keys of the array.
+	 * Returns the keys of an array.
 	 *
 	 * @param array $items
 	 * @return array
 	 */
-    public static function keys(array $items): array
-    {
-        return array_keys($items);
-    }
+	public static function keys(array $items): array
+	{
+		return array_keys($items);
+	}
 }

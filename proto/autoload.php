@@ -3,24 +3,30 @@
 /**
  * Autoloads class files using the namespace as the path.
  *
- * This function will register with spl_autoload_register() to autoload
- * classes by converting the namespace to a file path and including
- * the corresponding PHP file.
+ * Registers with spl_autoload_register() to autoload classes by converting
+ * the namespace to a file path and including the corresponding PHP file.
  */
-spl_autoload_register(function(string $class)
+spl_autoload_register(function(string $class): void
 {
-	// Replace namespace separator with the directory separator
-	$class = str_replace('\\', '/', $class);
+	// Convert namespace to path (replace \ with /)
+	$path = str_replace('\\', DIRECTORY_SEPARATOR, $class);
 
-	// Convert camel case to kebab case (e.g. ClassName -> class-name)
-	$fileName = strtolower(preg_replace('/([a-z]|[0-9])([A-Z])/', '\\1-\\2', $class));
+	// Convert all folder names to lowercase, except for the file itself
+	$segments = explode(DIRECTORY_SEPARATOR, $path);
+	$segmentsCount = count($segments);
 
-	// Construct the file path
-	$path = __DIR__ . "/../{$fileName}.php";
-
-	// Include the file if it exists
-	if (file_exists($path))
+	// Loop through and convert each folder name (except the last, which is the file)
+	for ($i = 0; $i < $segmentsCount - 1; $i++)
 	{
-		include $path;
+		$segments[$i] = strtolower($segments[$i]);
+	}
+
+	// Reconstruct the correct path
+	$finalPath = __DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $segments) . ".php";
+
+	// Require the file if it exists
+	if (file_exists($finalPath))
+	{
+		require_once $finalPath;
 	}
 });

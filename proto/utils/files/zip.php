@@ -2,152 +2,148 @@
 namespace Proto\Utils\Files;
 
 use Proto\Utils\Files\File;
+use ZipArchive;
 
 /**
  * Zip
  *
- * This will handle zip archives.
+ * Handles the creation and management of zip archives.
  *
  * @package Proto\Utils\Files
  */
 class Zip
 {
-    /**
-     * This will create a zip archive.
-     *
-     * @param string|array $files
-     * @return string|bool
-     */
-	public static function archive($files, string $archiveName = 'temp')
+	/**
+	 * Creates a zip archive.
+	 *
+	 * @param string|array $files List of files to include in the archive.
+	 * @param string $archiveName Name of the zip archive.
+	 * @return string|false The archive file name on success, false on failure.
+	 */
+	public static function archive(string|array $files, string $archiveName = 'temp'): string|false
 	{
-        $files = static::formatFiles($files);
-        $zip = static::open($archiveName);
-        if (!static::addFiles($zip, $files))
-        {
-            return false;
-        }
+		$files = self::formatFiles($files);
+		$zip = self::open($archiveName);
 
-        static::close($zip);
-        return $archiveName . '.zip';
-    }
+		if (!self::addFiles($zip, $files))
+		{
+			self::close($zip);
+			return false;
+		}
 
-    /**
-     * This will flormat the files array.
-     *
-     * @param array|object $files
-     * @return array
-     */
-    protected static function formatFiles($files): array
-    {
-        if (\gettype($files) === 'array')
-        {
-            return $files;
-        }
+		self::close($zip);
+		return $archiveName . '.zip';
+	}
 
-        return [$files];
-    }
+	/**
+	 * Formats the input into an array of file paths.
+	 *
+	 * @param string|array $files
+	 * @return array
+	 */
+	protected static function formatFiles(string|array $files): array
+	{
+		return is_array($files) ? $files : [$files];
+	}
 
-    /**
-     * This will open a zip archive.
-     *
-     * @param string $archiveName
-     * @return \ZipArchive
-     */
-    protected static function open(string $archiveName): \ZipArchive
-    {
-        $zip = new \ZipArchive();
-        $zip->open($archiveName . '.zip', \ZipArchive::CREATE);
-        return $zip;
-    }
+	/**
+	 * Opens a zip archive.
+	 *
+	 * @param string $archiveName
+	 * @return ZipArchive
+	 */
+	protected static function open(string $archiveName): ZipArchive
+	{
+		$zip = new ZipArchive();
+		$zip->open($archiveName . '.zip', ZipArchive::CREATE | ZipArchive::OVERWRITE);
+		return $zip;
+	}
 
-    /**
-     * This will close the zip archive.
-     *
-     * @param \ZipArchive $zip
-     * @return void
-     */
-    protected static function close(\ZipArchive $zip): void
-    {
-        $zip->close();
-    }
+	/**
+	 * Closes the zip archive.
+	 *
+	 * @param ZipArchive $zip
+	 * @return void
+	 */
+	protected static function close(ZipArchive $zip): void
+	{
+		$zip->close();
+	}
 
-    /**
-     * This will add the files to the zip archive.
-     *
-     * @param \ZipArchive $zip
-     * @param array $files
-     * @return bool
-     */
-    protected static function addFiles(\ZipArchive $zip, array $files): bool
-    {
-        foreach ($files as $file)
-        {
-            $customName = null;
-            $fileName = $file;
-            if (is_object($file))
-            {
-                $customName = $file->customName ?? null;
-                $fileName = $file->url;
-            }
+	/**
+	 * Adds files to the zip archive.
+	 *
+	 * @param ZipArchive $zip
+	 * @param array $files
+	 * @return bool True if files were added successfully, false otherwise.
+	 */
+	protected static function addFiles(ZipArchive $zip, array $files): bool
+	{
+		foreach ($files as $file)
+		{
+			$customName = null;
+			$fileName = is_object($file) ? ($file->url ?? '') : $file;
+			$customName = is_object($file) ? ($file->customName ?? null) : null;
 
-            $contents = File::get($fileName, true);
-            if (!$contents)
-            {
-                return false;
-            }
+			$contents = File::get($fileName, true);
+			if ($contents === false)
+			{
+				return false;
+			}
 
-            $fileName = static::getS3FileName($fileName) ?? static::getBasename($fileName);
-            if (isset($customName) && !empty($customName))
-            {
-                $fileName = static::addExtension($fileName, $customName);
-            }
+			$fileName = self::getS3FileName($fileName) ?? self::getBasename($fileName);
 
-            $zip->addFromString($fileName, $contents);
-        }
+			if (!empty($customName))
+			{
+				$fileName = self::addExtension($fileName, $customName);
+			}
 
-        return true;
-    }
+			$zip->addFromString($fileName, $contents);
+		}
 
-    /**
-     * This will ensure the
-     * custom name has the correct extension.
-     *
-     * @param string $fileName
-     * @param string $customName
-     * @return string
-     */
-    protected static function addExtension(string $fileName, string $customName): string
-    {
-        $extension = \pathinfo($fileName, PATHINFO_EXTENSION);
-        return $customName . '.' . $extension;
-    }
+		return true;
+	}
 
-    /**
-     * This will get the file name from an
-     * s3 file url or return null if the match
-     * isn't made.
-     *
-     * @param string $url
-     * @return string|null
-     */
-    protected static function getS3FileName(string $url): ?string
-    {
-        return preg_match('/(\w+\-\w*\.\w{3})/', $url, $matches) ? $matches[0] : null;
-    }
+	/**
+	 * Ensures the custom name has the correct file extension.
+	 *
+	 * @param string $fileName
+	 * @param string $customName
+	 * @return string
+	 */
+	protected static function addExtension(string $fileName, string $customName): string
+	{
+		$extension = pathinfo($fileName, PATHINFO_EXTENSION);
+		return $customName . '.' . $extension;
+	}
 
-    /**
-     * Temporary function until the vault util
-     * is finished so I can access the s3 bucket
-     */
-    protected static function getBasename(string $path)
-    {
-        $search = 'fileName=';
-        if (!$index = \strpos($path, $search))
-        {
-            return \basename($path);
-        }
+	/**
+	 * Extracts the file name from an S3 URL, if applicable.
+	 *
+	 * @param string $url
+	 * @return string|null
+	 */
+	protected static function getS3FileName(string $url): ?string
+	{
+		return preg_match('/([\w\-]+\.\w{3,4})$/', $url, $matches) ? $matches[0] : null;
+	}
 
-        $index += \strlen($search);
-        return \substr($path, $index);
-    }
+	/**
+	 * Extracts the file name from a file path.
+	 *
+	 * @param string $path
+	 * @return string
+	 */
+	protected static function getBasename(string $path): string
+	{
+		$search = 'fileName=';
+		$index = strpos($path, $search);
+
+		if ($index === false)
+		{
+			return basename($path);
+		}
+
+		return substr($path, $index + strlen($search));
+	}
 }

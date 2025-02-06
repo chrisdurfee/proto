@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Tests;
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 use PHPUnit\Framework\TestCase;
 use Proto\Base;
 
@@ -17,12 +19,10 @@ abstract class Test extends TestCase
      * This will be called when the test is set up.
      *
      * @param string|null $name
-     * @param array $data
-     * @param string|int $dataName
      */
-    public function __construct(?string $name = null, array $data = [], string|int $dataName = '')
+    public function __construct(?string $name = null)
     {
-        parent::__construct($name, $data, $dataName);
+        parent::__construct($name);
 
         // Set up the system
         $this->setupSystem();

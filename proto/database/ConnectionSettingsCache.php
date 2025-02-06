@@ -8,12 +8,12 @@ namespace Proto\Database;
  * connections to ensure the same host is used for each subsequent
  * connection.
  *
- * @package Proto
+ * @package Proto\Database
  */
 final class ConnectionSettingsCache
 {
 	/**
-	 * @var array $cache The cache of database connections
+	 * @var array<string, object> $cache The cache of database connections
 	 */
 	private static array $cache = [];
 
@@ -33,11 +33,11 @@ final class ConnectionSettingsCache
 	 * Checks if a connection is present in the cache.
 	 *
 	 * @param string $connection The connection name
-	 * @return bool Whether the connection is in the cache or not
+	 * @return bool Whether the connection is in the cache
 	 */
 	public static function has(string $connection): bool
 	{
-		return (!empty(self::get($connection)));
+		return isset(self::$cache[$connection]);
 	}
 
 	/**
@@ -49,5 +49,26 @@ final class ConnectionSettingsCache
 	public static function get(string $connection): ?object
 	{
 		return self::$cache[$connection] ?? null;
+	}
+
+	/**
+	 * Clears a specific connection from the cache.
+	 *
+	 * @param string $connection The connection name
+	 * @return void
+	 */
+	public static function clear(string $connection): void
+	{
+		unset(self::$cache[$connection]);
+	}
+
+	/**
+	 * Clears all cached connections.
+	 *
+	 * @return void
+	 */
+	public static function clearAll(): void
+	{
+		self::$cache = [];
 	}
 }

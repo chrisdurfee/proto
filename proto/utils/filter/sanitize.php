@@ -1,162 +1,143 @@
 <?php declare(strict_types=1);
+
 namespace Proto\Utils\Filter;
 
 /**
  * Sanitize
  *
- * This will handle the sanitize.
+ * Handles input sanitization for various data types.
  *
  * @package Proto\Utils\Filter
  */
 class Sanitize extends Filter
 {
 	/**
-     * This will sanitize an email.
-     *
-     * @param string|null $email
-     * @return string|null
-     */
-    public static function email(?string $email): ?string
-    {
-        return static::filter($email, FILTER_SANITIZE_EMAIL);
-    }
+	 * Sanitizes an email address.
+	 *
+	 * @param string|null $email
+	 * @return string|null
+	 */
+	public static function email(?string $email): ?string
+	{
+		return self::filter($email, FILTER_SANITIZE_EMAIL);
+	}
 
-    /**
-     * This will sanitize a phone.
-     *
-     * @param string $phone
-     * @return string|null
-     */
-    public static function phone($phone = null): ?string
-    {
-        if (empty($phone))
-        {
-            return null;
-        }
+	/**
+	 * Sanitizes a phone number (removes non-numeric characters).
+	 *
+	 * @param string|null $phone
+	 * @return string|null
+	 */
+	public static function phone(?string $phone): ?string
+	{
+		if ($phone === null || trim($phone) === '')
+		{
+			return null;
+		}
 
-        $phone = \preg_replace('/[^0-9]/', '', $phone);
-        return (strlen($phone) === 10)? $phone : null;
-    }
+		$phone = preg_replace('/\D/', '', $phone);
+		return (strlen($phone) === 10) ? $phone : null;
+	}
 
-    /**
-     * This will sanitize an ip.
-     *
-     * @param string $ip
-     * @return string|null
-     */
-    public static function ip($ip = null): ?string
-    {
-        if (empty($ip))
-        {
-            return null;
-        }
+	/**
+	 * Sanitizes an IP address.
+	 *
+	 * @param string|null $ip
+	 * @return string|null
+	 */
+	public static function ip(?string $ip): ?string
+	{
+		return filter_var($ip, FILTER_VALIDATE_IP) ?: null;
+	}
 
-        return \preg_replace('/[^0-9.]/', '', $ip);
-    }
+	/**
+	 * Sanitizes a MAC address.
+	 *
+	 * @param string|null $mac
+	 * @return string|null
+	 */
+	public static function mac(?string $mac): ?string
+	{
+		return filter_var($mac, FILTER_VALIDATE_MAC) ?: null;
+	}
 
-    /**
-     * This will sanitize a mac.
-     *
-     * @param string $mac
-     * @return string|null
-     */
-    public static function mac($mac = null): ?string
-    {
-        if (empty($mac))
-        {
-            return null;
-        }
+	/**
+	 * Sanitizes a boolean value.
+	 *
+	 * @param mixed $bool
+	 * @return bool|null
+	 */
+	public static function bool(mixed $bool): ?bool
+	{
+		return filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+	}
 
-        return \preg_replace('/[^0-9a-zA-Z.-]/', '', $mac);
-    }
+	/**
+	 * Sanitizes an integer value.
+	 *
+	 * @param int|string|null $int
+	 * @return int|null
+	 */
+	public static function int(int|string|null $int): ?int
+	{
+		$result = self::filter($int, FILTER_SANITIZE_NUMBER_INT);
+		return ($result !== null) ? (int)$result : null;
+	}
 
-    /**
-     * This will sanitize a bool.
-     *
-     * @param string $bool
-     * @return bool|null
-     */
-    public static function bool($bool = null): ?bool
-    {
-        if (is_null($bool))
-        {
-            return null;
-        }
+	/**
+	 * Sanitizes a float value.
+	 *
+	 * @param float|string|null $number
+	 * @return float|null
+	 */
+	public static function float(float|string|null $number): ?float
+	{
+		$result = filter_var($number, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+		return ($result !== false) ? (float)$result : null;
+	}
 
-        return (bool)$bool;
-    }
+	/**
+	 * Sanitizes a string.
+	 *
+	 * @param string|null $string
+	 * @return string|null
+	 */
+	public static function string(?string $string): ?string
+	{
+		return self::filter($string, FILTER_SANITIZE_SPECIAL_CHARS);
+	}
 
-    /**
-     * This will sanitize an int.
-     *
-     * @param int $int
-     * @return int|null
-     */
-    public static function int($int): ?int
-    {
-        $result = static::filter($int, FILTER_SANITIZE_NUMBER_INT);
-        return ($result !== null)? (int)$result : null;
-    }
+	/**
+	 * Sanitizes a URL.
+	 *
+	 * @param string|null $url
+	 * @return string|null
+	 */
+	public static function url(?string $url): ?string
+	{
+		return self::filter($url, FILTER_SANITIZE_URL);
+	}
 
-    /**
-     * This will sanitize a float.
-     *
-     * @param float $number
-     * @return float|bool
-     */
-    public static function float($number): ?float
-    {
-        $result = \filter_var($number, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        return ($result !== false)? (float)$result : null;
-    }
+	/**
+	 * Sanitizes a domain name (alias for `url()`).
+	 *
+	 * @param string|null $url
+	 * @return string|null
+	 */
+	public static function domain(?string $url): ?string
+	{
+		return self::url($url);
+	}
 
-    /**
-     * This will sanitize a string.
-     *
-     * @param string $string
-     * @return string|null
-     */
-    public static function string($string): ?string
-    {
-        return static::filter($string, FILTER_UNSAFE_RAW);
-    }
-
-    /**
-     * This will sanitize a url.
-     *
-     * @param string $url
-     * @return string|null
-     */
-    public static function url($url): ?string
-    {
-        return static::filter($url, FILTER_SANITIZE_URL);
-    }
-
-    /**
-     * This will sanitize a domain.
-     *
-     * @param string $url
-     * @return string|null
-     */
-    public static function domain($url): ?string
-    {
-        return static::url($url);
-    }
-
-    /**
-     * This will validate the key by flag.
-     *
-     * @param mixed $key
-     * @param mixed $flag
-     * @return mixed
-     */
-    protected static function filter($key, $flag)
-    {
-        if (is_null($key))
-        {
-            return null;
-        }
-
-        return \filter_var($key, $flag, FILTER_NULL_ON_FAILURE);
-    }
+	/**
+	 * Validates and sanitizes an input value using a given filter flag.
+	 *
+	 * @param mixed $key
+	 * @param int $flag
+	 * @return mixed
+	 */
+	protected static function filter(mixed $key, int $flag): mixed
+	{
+		return ($key !== null) ? filter_var($key, $flag, FILTER_NULL_ON_FAILURE) : null;
+	}
 }

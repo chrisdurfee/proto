@@ -18,43 +18,43 @@ class System
 	 * @param Config $settings Configuration settings
 	 * @return void
 	 */
-	public function __construct(Config $settings = Config::getInstance())
+	public function __construct(
+		protected Config $settings = Config::getInstance()
+	)
 	{
-		$this->setupSystem($settings);
+		$this->setupSystem();
 	}
 
 	/**
 	 * Sets up the system settings.
 	 *
-	 * @param object $settings Configuration settings
 	 * @return void
 	 */
-	protected function setupSystem(object $settings): void
+	protected function setupSystem(): void
 	{
-		$this->setTimeZone($settings);
-		$this->setErrorReporting($settings);
+		$this->setTimeZone();
+		$this->setErrorReporting();
 	}
 
 	/**
 	 * Sets the timezone based on the configuration settings.
 	 *
-	 * @param object $settings Configuration settings
 	 * @return void
 	 */
-	protected function setTimeZone(object $settings): void
+	protected function setTimeZone(): void
 	{
-		date_default_timezone_set($settings->timeZone);
+		$timezone = $this->settings->timeZone ?? 'UTC';
+		date_default_timezone_set($timezone);
 	}
 
 	/**
 	 * Sets the application error reporting based on the configuration settings.
 	 *
-	 * @param object $settings Configuration settings
 	 * @return void
 	 */
-	protected function setErrorReporting(object $settings): void
+	protected function setErrorReporting(): void
 	{
-		$errorReporting = $settings->errorReporting;
+		$errorReporting = $this->settings->errorReporting;
 		Error::enable($errorReporting);
 	}
 }

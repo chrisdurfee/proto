@@ -6,246 +6,207 @@ use Proto\Utils\Util;
 /**
  * File
  *
- * This will handle files.
+ * Handles file operations such as reading, writing, deleting, and streaming.
  *
  * @package Proto\Utils\Files
  */
 class File extends Util
 {
-    /**
-     * This will return the contents of a file.
-     *
-     * @param string $path
-     * @param bool $allowRemote
-     * @return string|bool
-     */
-	public static function get(string $path, bool $allowRemote = false)
+	/**
+	 * Retrieves the contents of a file.
+	 *
+	 * @param string $path The file path.
+	 * @param bool $allowRemote Whether remote files are allowed.
+	 * @return string|false The file contents or false on failure.
+	 */
+	public static function get(string $path, bool $allowRemote = false): string|false
 	{
-        if ($allowRemote === false && !\file_exists($path))
-        {
-            return false;
-        }
+		if (!$allowRemote && !\file_exists($path))
+		{
+			return false;
+		}
 
-		return \file_get_contents($path);
-    }
-
-    /**
-     * This will return the contents of a file.
-     *
-     * @param string $path
-     * @param string $contents
-     * @return bool
-     */
-	public static function put(string $path, string $contents): bool
-	{
-        static::checkDir($path);
-
-        $result = \file_put_contents($path, $contents);
-        return ($result !== false);
+		return \file_get_contents($path) ?: false;
 	}
 
-    /**
-     * This will check if a directory exists and create it if it does not.
-     *
-     * @param string $path
-     * @return void
-     */
-    public static function checkDir(string $path): void
-    {
-        $PERMISSIONS = 0755;
-        $dir = dirname($path);
-        if (!is_dir($dir))
-        {
-            mkdir($dir, $PERMISSIONS, true);
-        }
-        else
-        {
-            chmod($dir, $PERMISSIONS);
-        }
-    }
-
-    /**
-     * This will get the file name from a path.
-     *
-     * @param string $path
-     * @return string|null
-     */
-    public static function getName(string $path): ?string
-    {
-        $baseName = \basename($path);
-        $parts = \explode("?", $baseName);
-        return $parts[0] ?? null;
-    }
-
-    /**
-	 * This will create a unique new file name to stop
-	 * upload conflicts.
+	/**
+	 * Writes contents to a file.
 	 *
-     * @param string $fileName
-	 * @return string
+	 * @param string $path The file path.
+	 * @param string $contents The contents to write.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function put(string $path, string $contents): bool
+	{
+		static::checkDir($path);
+
+		return (\file_put_contents($path, $contents) !== false);
+	}
+
+	/**
+	 * Ensures the directory exists; creates it if necessary.
+	 *
+	 * @param string $path The file path.
+	 * @return void
+	 */
+	public static function checkDir(string $path): void
+	{
+		$dir = dirname($path);
+		if (!is_dir($dir))
+		{
+            $PERMISSIONS = 0755;
+			mkdir($dir, $PERMISSIONS, true);
+		}
+	}
+
+	/**
+	 * Retrieves the file name from a given path.
+	 *
+	 * @param string $path The file path.
+	 * @return string|null The file name or null if not found.
+	 */
+	public static function getName(string $path): ?string
+	{
+		return pathinfo($path, PATHINFO_FILENAME);
+	}
+
+	/**
+	 * Generates a unique file name to prevent upload conflicts.
+	 *
+	 * @param string $fileName The original file name.
+	 * @return string The new unique file name.
 	 */
 	public static function createNewName(string $fileName): string
 	{
-		$parts = \explode(".", $fileName);
-		$ext = end($parts);
-
-		$microTimeStamp = \round(\microtime(true)) . '-' . rand(0, 10000000);
-		return "{$microTimeStamp}.{$ext}";
+		$ext = pathinfo($fileName, PATHINFO_EXTENSION);
+		return uniqid() . '.' . $ext;
 	}
 
-    /**
-     * This will rename a file.
-     *
-     * @param string $oldFileName
-     * @param string $newFileName
-     * @return bool
-     */
+	/**
+	 * Renames a file.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool True on success, false on failure.
+	 */
 	public static function rename(string $oldFileName, string $newFileName): bool
 	{
-        if (!\file_exists($oldFileName))
-        {
-            return false;
-        }
+		return \file_exists($oldFileName) ? \rename($oldFileName, $newFileName) : false;
+	}
 
-		return \rename($oldFileName, $newFileName);
-    }
-
-    /**
-     * This will move a file.
-     *
-     * @param string $oldFileName
-     * @param string $newFileName
-     * @return bool
-     */
+	/**
+	 * Moves a file.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool True on success, false on failure.
+	 */
 	public static function move(string $oldFileName, string $newFileName): bool
 	{
-        return static::rename($oldFileName, $newFileName);
-    }
+		return static::rename($oldFileName, $newFileName);
+	}
 
-    /**
-     * This will delete a file.
-     *
-     * @param string $fileName
-     * @return bool
-     */
+	/**
+	 * Deletes a file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return bool True on success, false on failure.
+	 */
 	public static function delete(string $fileName): bool
 	{
-        if (!\file_exists($fileName))
-        {
-            return false;
-        }
+		return \file_exists($fileName) ? \unlink($fileName) : false;
+	}
 
-		return \unlink($fileName);
-    }
-
-    /**
-     * This will copy a file.
-     *
-     * @param string $path
-     * @return bool
-     */
+	/**
+	 * Copies a file.
+	 *
+	 * @param string $file The source file.
+	 * @param string $newFile The destination file.
+	 * @return bool True on success, false on failure.
+	 */
 	public static function copy(string $file, string $newFile): bool
 	{
-        if (!\file_exists($file))
-        {
-            return false;
-        }
+		return \file_exists($file) ? \copy($file, $newFile) : false;
+	}
 
-		return \copy($file, $newFile);
-    }
-
-    /**
-     * This will get the file mime type.
-     *
-     * @param string $path
-     * @return string|bool
-     */
-    public static function getMimeType(string $path): string|bool
-    {
-        $parts = \explode("?", $path);
-        $path = $parts[0];
-
-        $finfo = \finfo_open(FILEINFO_MIME_TYPE);
-		$result = \finfo_file($finfo, $path);
-        \finfo_close($finfo);
-        return $result;
-    }
-
-    /**
-     * This will get the size of a file.
-     *
-     * @param string $fileName
-     * @return int
-     */
-    public static function getSize(string $fileName): int
-    {
-        return \filesize($fileName);
-    }
-
-    /**
-     * This will create a new tmp file name.
-     *
-     * @param string $prefix
-     * @return string|bool
-     */
-    public static function createTmpName(string $prefix = 'proto'): string|bool
-    {
-        $tmpDir = sys_get_temp_dir();
-        return tempnam($tmpDir, $prefix);
-    }
-
-    /**
-     * This will download a file.
-     *
-     * @param string $path
-     * @return void
-     */
-    public static function download(string $path): void
-    {
-        $ALLOW_REMOTE = true;
-        $content = static::get($path, $ALLOW_REMOTE);
-        if (empty($content))
-        {
-            return;
-        }
-
-        /**
-         * We need to create a local tmp file to get the file mimie type to allow
-         * the download to work.
-         */
-        $tmpFile = static::createTmpName();
-        static::put($tmpFile, $content);
-
-        /**
-         * This will add the file content type to the download.
-         */
-        $contentType = static::getMimeType($tmpFile);
-        if ($contentType)
-        {
-            header("Content-Type: {$contentType}");
-        }
-
-        /**
-         * Setting the Content-Disposition header to prompt for download.
-         */
-        $fileName = static::getName($path);
-        header("Content-Disposition: attachment; filename=\"{$fileName}\"");
-        header('Content-Length: ' . strlen($content));
-
-        echo $content;
-
-        /**
-         * We need to remove the tmp file.
-         */
-        unlink($tmpFile);
-        die;
-    }
-
-    /**
-	 * This will render the file to stream to the browser.
+	/**
+	 * Retrieves the MIME type of a file.
 	 *
-	 * @param string $path
-     * @param bool $unlink
+	 * @param string $path The file path.
+	 * @return string|false The MIME type or false on failure.
+	 */
+	public static function getMimeType(string $path): string|false
+	{
+		if (!\file_exists($path)) {
+			return false;
+		}
+
+		$finfo = \finfo_open(FILEINFO_MIME_TYPE);
+		$mimeType = \finfo_file($finfo, $path);
+		\finfo_close($finfo);
+
+		return $mimeType ?: false;
+	}
+
+	/**
+	 * Retrieves the file size.
+	 *
+	 * @param string $fileName The file name.
+	 * @return int The file size in bytes.
+	 */
+	public static function getSize(string $fileName): int
+	{
+		return \file_exists($fileName) ? \filesize($fileName) : 0;
+	}
+
+	/**
+	 * Generates a temporary file name.
+	 *
+	 * @param string $prefix The file prefix.
+	 * @return string|false The temporary file name or false on failure.
+	 */
+	public static function createTmpName(string $prefix = 'proto'): string|false
+	{
+		return \tempnam(sys_get_temp_dir(), $prefix);
+	}
+
+	/**
+	 * Handles file downloads.
+	 *
+	 * @param string $path The file path.
+	 * @return void
+	 */
+	public static function download(string $path): void
+	{
+		$content = static::get($path, true);
+		if (!$content)
+		{
+			return;
+		}
+
+		$tmpFile = static::createTmpName();
+		static::put($tmpFile, $content);
+
+		$contentType = static::getMimeType($tmpFile);
+		if ($contentType)
+		{
+			header("Content-Type: {$contentType}");
+		}
+
+		$fileName = static::getName($path);
+		header("Content-Disposition: attachment; filename=\"{$fileName}\"");
+		header('Content-Length: ' . strlen($content));
+
+		echo $content;
+		unlink($tmpFile);
+		exit;
+	}
+
+	/**
+	 * Streams a file to the browser.
+	 *
+	 * @param string $path The file path.
+	 * @param bool $unlink Whether to delete the file after streaming.
 	 * @return void
 	 */
 	public static function stream(string $path, bool $unlink = false): void
@@ -255,23 +216,19 @@ class File extends Util
 			return;
 		}
 
-		// get the file's mime type to send the correct content type header
 		$mimeType = static::getMimeType($path);
-        $publicName = static::getName($path);
+		$publicName = static::getName($path);
 
-		// send the headers
 		header("Content-Disposition: attachment; filename={$publicName};");
 		header("Content-Type: {$mimeType}");
 		header('Content-Length: ' . static::getSize($path));
 
-		// stream the file
-		$fp = fopen($path, 'rb');
-		fpassthru($fp);
+		readfile($path);
 
-        if ($unlink === true)
-        {
-            unlink($path);
-        }
+		if ($unlink)
+		{
+			unlink($path);
+		}
 
 		exit;
 	}

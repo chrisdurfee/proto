@@ -5,10 +5,9 @@ use Proto\Database\Migrations\Migration;
 class TestMigration extends Migration
 {
     /**
-     *
-     * @var string
+     * @var string $connection The database connection name.
      */
-    protected $connection = 'whmcs';
+    protected $connection = 'default';
 
     /**
      * Run the migration.

@@ -1,17 +1,16 @@
 <?php declare(strict_types=1);
 namespace Proto\Utils;
 
-use Proto\Base;
-
 /**
- * Util
+ * Util Class
  *
- * This will handle the utils.
+ * Provides utility functions for the application.
+ * This is an abstract class meant to be extended.
  *
  * @package Proto\Utils
  * @abstract
  */
-abstract class Util extends Base
+abstract class Util
 {
 
 }
