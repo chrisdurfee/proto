@@ -6,38 +6,41 @@ use Proto\Utils\Format\JsonFormat;
 /**
  * Response
  *
- * This will handle the response.
+ * Handles API responses, supporting JSON decoding.
  *
  * @package Proto\Http\Rest
  */
 class Response
 {
-    /**
-     * This will create the response.
-     *
-     * @param int $code
-     * @param mixed $data
-     * @param bool $json
-     * @return void
-     */
+	/**
+	 * Initializes the response.
+	 *
+	 * @param int $code HTTP status code.
+	 * @param mixed $data Response data.
+	 * @param bool $json Whether the data is in JSON format.
+	 */
 	public function __construct(
-        public readonly int $code,
-        public mixed $data,
-        public readonly bool $json = true
-    )
-    {
-        $this->data = $this->data($data);
-    }
+		public readonly int $code,
+		public mixed $data,
+		public readonly bool $json = true
+	)
+	{
+		$this->data = $this->processData($data);
+	}
 
-    /**
-     * This will set the response data.
-     *
-     * @param mixed $data
-     * @return mixed
-     */
-    protected function data(mixed $data): mixed
-    {
-        // this will decode the json data
-        return ($this->json === true && !empty($data))? JsonFormat::decode($data) : $data;
-    }
+	/**
+	 * Processes the response data.
+	 *
+	 * @param mixed $data Response data.
+	 * @return mixed Processed data.
+	 */
+	protected function processData(mixed $data): mixed
+	{
+		if (!$this->json || empty($data))
+		{
+			return $data;
+		}
+
+		return JsonFormat::decode($data);
+	}
 }
