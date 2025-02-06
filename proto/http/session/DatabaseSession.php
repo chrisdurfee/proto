@@ -8,7 +8,7 @@ use Proto\Utils\Format\JsonFormat;
 /**
  * DatabaseSession
  *
- * This class handles database sessions.
+ * Handles database-backed session management.
  *
  * @package Proto\Http\Session
  */
@@ -17,30 +17,30 @@ class DatabaseSession extends Adapter
 	/**
 	 * Session token.
 	 *
-	 * @var string $token
+	 * @var string|null
 	 */
-	protected static string $token;
+	protected static ?string $token = null;
 
 	/**
 	 * Session data.
 	 *
-	 * @var array $data
+	 * @var array
 	 */
 	protected array $data = [];
 
 	/**
 	 * User session model.
 	 *
-	 * @var UserSession $model
+	 * @var UserSession
 	 */
 	protected UserSession $model;
 
 	/**
-	 * Initializes and starts a new session or resumes an existing session.
+	 * Initializes and starts a new session or resumes an existing one.
 	 *
-	 * @return DatabaseSession
+	 * @return static
 	 */
-	public static function init(): DatabaseSession
+	public static function init(): static
 	{
 		$instance = static::getInstance();
 		$instance->start();
@@ -48,25 +48,14 @@ class DatabaseSession extends Adapter
 	}
 
 	/**
-	 * Sets the session token.
-	 *
-	 * @param string $token
-	 * @return void
-	 */
-	protected function setToken(string $token): void
-	{
-		static::$token = $token;
-	}
-
-	/**
-	 * Retrieves the session token from the cookie.
+	 * Retrieves or generates the session token.
 	 *
 	 * @return string
 	 */
 	protected function getToken(): string
 	{
 		$cookie = Token::get();
-		return !$cookie ? Token::create() : $cookie->getValue();
+		return $cookie ? $cookie : Token::create();
 	}
 
 	/**
@@ -74,10 +63,12 @@ class DatabaseSession extends Adapter
 	 *
 	 * @return void
 	 */
-	public function setupToken(): void
+	protected function setupToken(): void
 	{
-		$token = $this->getToken();
-		$this->setToken($token);
+		if (static::$token === null)
+		{
+			static::$token = $this->getToken();
+		}
 	}
 
 	/**
@@ -87,65 +78,48 @@ class DatabaseSession extends Adapter
 	 */
 	public static function getId(): string
 	{
-		return self::$token;
+		return static::$token ?? '';
 	}
 
 	/**
-	 * Sets up the UserSession model.
+	 * Initializes the UserSession model.
 	 *
 	 * @return void
 	 */
 	protected function setupModel(): void
 	{
-		$result = UserSession::get(self::$token);
-		if ($result)
-		{
-			$this->model = $result;
-			return;
-		}
+		$this->model = UserSession::get(static::$token) ?? new UserSession((object)['id' => static::$token]);
 
-		$this->model = new UserSession((object)[
-			'id' => self::$token
-		]);
-		$this->model->add();
+		if (!$this->model->exists())
+		{
+			$this->model->add();
+		}
 	}
 
 	/**
-	 * Retrieves the session data from the table.
+	 * Loads session data from the database.
 	 *
 	 * @return void
 	 */
-	protected function getData(): void
+	protected function loadData(): void
 	{
-		$data = $this->model->getData()->data ?? false;
-		if (!$data)
-		{
-			return;
-		}
+		$data = $this->model->getData()->data ?? null;
 
-		$data = JsonFormat::decode($data);
-		if (!$data)
+		if ($data !== null)
 		{
-			return;
+			$this->data = JsonFormat::decode($data) ?: [];
 		}
-
-		$this->data = (array)$data;
 	}
 
 	/**
-	 * Updates the session data in the table.
+	 * Saves the session data to the database.
 	 *
 	 * @return bool
 	 */
-	protected function updateData(): bool
+	protected function saveData(): bool
 	{
-		$data = JsonFormat::encode((array)$this->data);
-		if (!$data)
-		{
-			return false;
-		}
-
-		return $this->model->set('data', $data)->update();
+		$data = JsonFormat::encode($this->data);
+		return $data !== false && $this->model->set('data', $data)->update();
 	}
 
 	/**
@@ -155,14 +129,14 @@ class DatabaseSession extends Adapter
 	 */
 	public function start(): void
 	{
-		if (isset(self::$token))
+		if (static::$token !== null)
 		{
 			return;
 		}
 
 		$this->setupToken();
 		$this->setupModel();
-		$this->getData();
+		$this->loadData();
 	}
 
 	/**
@@ -175,19 +149,29 @@ class DatabaseSession extends Adapter
 	public function __set(string $key, mixed $value): void
 	{
 		$this->data[$key] = $value;
-		$this->updateData();
+		$this->saveData();
 	}
 
 	/**
 	 * Gets a session value.
 	 *
 	 * @param string $key
-	 *
 	 * @return mixed
 	 */
 	public function __get(string $key): mixed
 	{
 		return $this->data[$key] ?? null;
+	}
+
+	/**
+	 * Checks if a session key exists.
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public function __isset(string $key): bool
+	{
+		return isset($this->data[$key]);
 	}
 
 	/**
@@ -199,7 +183,7 @@ class DatabaseSession extends Adapter
 	public function __unset(string $key): void
 	{
 		unset($this->data[$key]);
-		$this->updateData();
+		$this->saveData();
 	}
 
 	/**
@@ -210,6 +194,14 @@ class DatabaseSession extends Adapter
 	public function destroy(): bool
 	{
 		Token::remove();
-		return $this->model->delete();
+		$this->data = [];
+
+		if ($this->model->delete())
+		{
+			static::$token = null;
+			return true;
+		}
+
+		return false;
 	}
 }

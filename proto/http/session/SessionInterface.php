@@ -4,28 +4,28 @@ namespace Proto\Http\Session;
 /**
  * SessionInterface
  *
- * This will define the session interface.
+ * Defines the contract for session management implementations.
  *
  * @package Proto\Http\Session
  */
 interface SessionInterface
 {
-    /**
-	 * This setup the session adapter.
+	/**
+	 * Initializes the session adapter.
 	 *
-	 * @return SessionInterface
+	 * @return static
 	 */
-	public static function init(): SessionInterface;
+	public static function init(): static;
 
 	/**
-	 * This will get the session id.
+	 * Retrieves the session ID.
 	 *
 	 * @return string
 	 */
 	public static function getId(): string;
 
 	/**
-	 * This will set a session value.
+	 * Sets a session value.
 	 *
 	 * @param string $key
 	 * @param mixed $value
@@ -34,7 +34,7 @@ interface SessionInterface
 	public function __set(string $key, mixed $value): void;
 
 	/**
-	 * This will get a session value.
+	 * Retrieves a session value.
 	 *
 	 * @param string $key
 	 * @return mixed
@@ -42,14 +42,23 @@ interface SessionInterface
 	public function __get(string $key): mixed;
 
 	/**
-	 * This will unset a session value.
+	 * Checks if a session key exists.
 	 *
 	 * @param string $key
+	 * @return bool
+	 */
+	public function __isset(string $key): bool;
+
+	/**
+	 * Unsets a session value.
+	 *
+	 * @param string $key
+	 * @return void
 	 */
 	public function __unset(string $key): void;
 
 	/**
-	 * This will destroy the session.
+	 * Destroys the session and clears session data.
 	 *
 	 * @return bool
 	 */

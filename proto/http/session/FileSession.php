@@ -4,7 +4,7 @@ namespace Proto\Http\Session;
 /**
  * FileSession
  *
- * Handles file-based session management.
+ * Manages file-based PHP sessions securely and efficiently.
  *
  * @package Proto\Http\Session
  */
@@ -13,23 +13,23 @@ class FileSession extends Adapter
 	/**
 	 * Indicates if the session is started.
 	 *
-	 * @var bool $started
+	 * @var bool
 	 */
 	protected bool $started = false;
 
 	/**
 	 * Indicates if the session is opened.
 	 *
-	 * @var bool $opened
+	 * @var bool
 	 */
 	protected bool $opened = false;
 
 	/**
-	 * Starts the session and closes it to prevent session locking.
+	 * Initializes the session and closes it to prevent locking.
 	 *
-	 * @return FileSession
+	 * @return static
 	 */
-	public static function init(): FileSession
+	public static function init(): static
 	{
 		$instance = static::getInstance();
 		$instance->start();
@@ -54,28 +54,26 @@ class FileSession extends Adapter
 	 */
 	public function isStarted(): bool
 	{
-		return ($this->started === true);
+		return $this->started;
 	}
 
 	/**
-	 * Starts the session.
+	 * Starts the session securely.
 	 *
 	 * @return bool
 	 */
 	public function start(): bool
 	{
-		if ($this->isStarted())
+		if ($this->isStarted() || session_status() !== PHP_SESSION_NONE)
 		{
 			return false;
 		}
 
+		$this->configureSession();
 		$this->opened = true;
-		$this->started = true;
-		if (session_status() == PHP_SESSION_NONE)
-		{
-			return session_start();
-		}
-		return true;
+		$this->started = session_start();
+
+		return $this->started;
 	}
 
 	/**
@@ -87,31 +85,40 @@ class FileSession extends Adapter
 	{
 		if (!$this->opened)
 		{
-			$this->opened = true;
-			ini_set('session.use_only_cookies', '0');
-			ini_set('session.use_cookies', '0');
-			ini_set('session.use_trans_sid', '0');
-			ini_set('session.cache_limiter', '');
-			session_start();
+			$this->configureSession();
+			$this->opened = session_status() === PHP_SESSION_ACTIVE || session_start();
 		}
 	}
 
 	/**
-	 * Closes the session to stop session locking.
+	 * Configures session settings.
+	 *
+	 * @return void
+	 */
+	protected function configureSession(): void
+	{
+		ini_set('session.use_only_cookies', '1');
+		ini_set('session.use_cookies', '1');
+		ini_set('session.use_trans_sid', '0');
+		ini_set('session.cache_limiter', 'nocache');
+	}
+
+	/**
+	 * Closes the session to prevent session locking.
 	 *
 	 * @return void
 	 */
 	public function close(): void
 	{
-		if ($this->opened === true)
+		if ($this->opened)
 		{
-			$this->opened = false;
 			session_write_close();
+			$this->opened = false;
 		}
 	}
 
 	/**
-	 * Sets a session value.
+	 * Sets a session variable.
 	 *
 	 * @param string $key
 	 * @param mixed $value
@@ -125,29 +132,44 @@ class FileSession extends Adapter
 	}
 
 	/**
-	 * Retrieves a session value.
+	 * Retrieves a session variable.
 	 *
 	 * @param string $key
 	 * @return mixed
 	 */
 	public function __get(string $key): mixed
 	{
+		$this->open();
 		return $_SESSION[$key] ?? null;
 	}
 
 	/**
-	 * Unsets a session value.
+	 * Checks if a session variable is set.
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public function __isset(string $key): bool
+	{
+		$this->open();
+		return isset($_SESSION[$key]);
+	}
+
+	/**
+	 * Unsets a session variable.
 	 *
 	 * @param string $key
 	 * @return void
 	 */
 	public function __unset(string $key): void
 	{
+		$this->open();
 		unset($_SESSION[$key]);
+		$this->close();
 	}
 
 	/**
-	 * Destroys the session.
+	 * Destroys the session and removes session data.
 	 *
 	 * @return bool
 	 */
@@ -159,10 +181,12 @@ class FileSession extends Adapter
 		}
 
 		$this->open();
-
 		$this->started = false;
+
+		$_SESSION = [];
+		session_unset();
+
 		$result = session_destroy();
-		unset($_SESSION);
 
 		$this->close();
 		return $result;
