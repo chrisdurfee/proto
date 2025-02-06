@@ -4,39 +4,38 @@ namespace Proto\Http\Rest;
 /**
  * Request
  *
- * This will handle the request.
+ * Handles HTTP requests with authentication and headers.
  *
  * @package Proto\Http\Rest
  */
 class Request
 {
 	/**
-	 * @var string $username
+	 * Username for authentication.
 	 */
-	public string $username;
+	public ?string $username = null;
 
 	/**
-	 * @var string $password
+	 * Password for authentication.
 	 */
-	public string $password;
+	public ?string $password = null;
 
 	/**
-	 * @var array $error
+	 * Stores errors encountered during requests.
 	 */
 	public static array $error = [];
 
 	/**
-	 * @var bool $debug
+	 * Enables debugging mode.
 	 */
 	protected bool $debug = false;
 
 	/**
-	 * This will set up the request.
+	 * Initializes a new request instance.
 	 *
-	 * @param string $baseUrl
-	 * @param array $headers
-	 * @param bool $json
-	 * @return void
+	 * @param string $baseUrl The base URL for the request.
+	 * @param array $headers Headers to be sent with the request.
+	 * @param bool $json Whether the response should be formatted as JSON.
 	 */
 	public function __construct(
 		protected string $baseUrl = '',
@@ -47,7 +46,7 @@ class Request
 	}
 
 	/**
-	 * This will set the authenitcation for the request.
+	 * Sets authentication credentials.
 	 *
 	 * @param string $username
 	 * @param string $password
@@ -60,12 +59,12 @@ class Request
 	}
 
 	/**
-	 * This will make a curl request.
+	 * Creates a cURL request instance.
 	 *
-	 * @param string $url
-	 * @param string $method
-	 * @param mixed $params
-	 * @return object
+	 * @param string $url The request URL.
+	 * @param string $method The HTTP method.
+	 * @param mixed $params Request parameters.
+	 * @return object The response object.
 	 */
 	protected function createCurl(
 		string $url,
@@ -76,7 +75,7 @@ class Request
 		$curl = new Curl($this->debug);
 		$curl->addHeaders($this->headers);
 
-		if (isset($this->username) && isset($this->password))
+		if (!empty($this->username) && !empty($this->password))
 		{
 			$curl->setAuthentication($this->username, $this->password);
 		}
@@ -85,129 +84,122 @@ class Request
 	}
 
 	/**
-	 * This will make the request.
+	 * Makes an HTTP request.
 	 *
-	 * @param string $url
-	 * @param string $method
-	 * @param string $params
-	 * @return Response
+	 * @param string $url The request URL.
+	 * @param string $method The HTTP method.
+	 * @param mixed $params Request parameters.
+	 * @return Response The response object.
 	 */
 	public function request(
 		string $url,
-		string $method = 'post',
+		string $method = 'POST',
 		mixed $params = null
 	): Response
 	{
 		$url = $this->addBaseToUrl($url);
-		$results = $this->createCurl($url, $method, $params);
+		$results = $this->createCurl($url, strtoupper($method), $params);
 
 		return new Response($results->code, $results->data, $this->json);
 	}
 
 	/**
-	 * This will add the url to the base url.
+	 * Combines the base URL with the provided endpoint.
 	 *
-	 * @param string $url
-	 * @return string
+	 * @param string|null $url The endpoint URL.
+	 * @return string The full request URL.
 	 */
 	protected function addBaseToUrl(?string $url = null): string
 	{
-		if (!isset($url))
+		if (empty($url))
 		{
 			return $this->baseUrl;
 		}
 
-		if (!empty($this->baseUrl))
-		{
-			/* we want to check that the join area doesn't have
-			a slash on both ends of the join */
-			$url = (substr($this->baseUrl, -1, 1) == '/' && substr($url, 0, 1) == '/')?
-				substr($this->baseUrl, 0, -1) . $url
-			:
-				$this->baseUrl . $url;
-		}
+		$base = rtrim($this->baseUrl, '/');
+		$endpoint = ltrim($url, '/');
 
-		return $url;
+		return "{$base}/{$endpoint}";
 	}
 
 	/**
-	 * This will make a get request.
+	 * Makes a GET request.
 	 *
-	 * @param string|null $url
-	 * @param mixed $params
-	 * @return object
+	 * @param string|null $url The request URL.
+	 * @param mixed $params Request parameters.
+	 * @return Response The response object.
 	 */
-	public function get(?string $url = null, mixed $params = null): object
+	public function get(?string $url = null, mixed $params = null): Response
 	{
-		return $this->request($url, 'GET', $params);
+		return $this->request($url ?? '', 'GET', $params);
 	}
 
 	/**
-	 * This will make a post request.
+	 * Makes a POST request.
 	 *
-	 * @param string|null $url
-	 * @param mixed $params
-	 * @return object
+	 * @param string|null $url The request URL.
+	 * @param mixed $params Request parameters.
+	 * @return Response The response object.
 	 */
-	public function post(?string $url = null, mixed $params = null): object
+	public function post(?string $url = null, mixed $params = null): Response
 	{
-		return $this->request($url, 'POST', $params);
+		return $this->request($url ?? '', 'POST', $params);
 	}
 
 	/**
-	 * This will make a patch request.
+	 * Makes a PATCH request.
 	 *
-	 * @param string|null $url
-	 * @param mixed $params
-	 * @return object
+	 * @param string|null $url The request URL.
+	 * @param mixed $params Request parameters.
+	 * @return Response The response object.
 	 */
-	public function patch(?string $url = null, mixed $params = null): object
+	public function patch(?string $url = null, mixed $params = null): Response
 	{
-		return $this->request($url, 'PATCH', $params);
+		return $this->request($url ?? '', 'PATCH', $params);
 	}
 
 	/**
-	 * This will make a put request.
+	 * Makes a PUT request.
 	 *
-	 * @param string|null $url
-	 * @param mixed $params
-	 * @return object
+	 * @param string|null $url The request URL.
+	 * @param mixed $params Request parameters.
+	 * @return Response The response object.
 	 */
-	public function put(?string $url = null, mixed $params = null): object
+	public function put(?string $url = null, mixed $params = null): Response
 	{
-		return $this->request($url, 'PUT', $params);
+		return $this->request($url ?? '', 'PUT', $params);
 	}
 
 	/**
-	 * This will make a delete request.
+	 * Makes a DELETE request.
 	 *
-	 * @param string|null $url
-	 * @param mixed $params
-	 * @return object
+	 * @param string|null $url The request URL.
+	 * @param mixed $params Request parameters.
+	 * @return Response The response object.
 	 */
-	public function delete(?string $url = null, mixed $params = null): object
+	public function delete(?string $url = null, mixed $params = null): Response
 	{
-		return $this->request($url, 'DELETE', $params);
+		return $this->request($url ?? '', 'DELETE', $params);
 	}
 
 	/**
-	 * This will handle the errors.
+	 * Stores an error message.
 	 *
-	 * @param mixed $error
+	 * @param mixed $error The error to store.
 	 * @return void
 	 */
-	protected static function handleError($error): void
+	protected static function handleError(mixed $error): void
 	{
-		array_push(self::$error, $error);
+		self::$error[] = $error;
 	}
 
 	/**
-	 * This will get the last error.
+	 * Retrieves the last error.
 	 *
-	 * @return mixed
+	 * @return mixed The last stored error.
 	 */
 	public static function getLastError(): mixed
 	{
-		return (array_pop(self::$error));
+		return array_pop(self::$error) ?: null;
 	}
 }
