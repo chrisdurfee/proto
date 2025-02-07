@@ -8,8 +8,7 @@ use Proto\Tests\Debug;
 /**
  * Abstract Adapter Class
  *
- * Provides a base implementation for extending
- * to connect to different database types.
+ * Provides a base implementation for database connections.
  *
  * @package Proto\Database\Adapters
  * @abstract
@@ -17,102 +16,85 @@ use Proto\Tests\Debug;
 abstract class Adapter
 {
 	/**
-	 * @var ConnectionSettings $settings
+	 * @var ConnectionSettings $settings Connection settings instance.
 	 */
 	protected ConnectionSettings $settings;
 
 	/**
-	 * @var object $connection
+	 * @var object|null $connection Database connection instance.
 	 */
-	protected $connection;
+	private ?object $connection = null;
 
 	/**
-	 * @var bool $connected
+	 * @var bool $connected Connection status.
 	 */
-	protected bool $connected = false;
+	private bool $connected = false;
 
 	/**
-	 * @var object|null $lastError
+	 * @var object|null $lastError Stores the last database error.
 	 */
-	protected ?object $lastError = null;
+	private ?object $lastError = null;
 
 	/**
-	 * @var int|null $lastId
+	 * @var int|null $lastId Last inserted ID.
 	 */
-	protected ?int $lastId = null;
+	private ?int $lastId = null;
 
 	/**
-	 * @var bool $caching
+	 * @var bool $caching Enables or disables query caching.
 	 */
-	protected $caching = false;
+	private bool $caching = false;
 
 	/**
-	 * Sets the connection settings upon instantiation.
+	 * Constructor
 	 *
-	 * @param object $settings
-	 * @param bool $caching
-	 * @return void
+	 * @param array|object $settings Raw connection settings.
+	 * @param bool $caching Enable or disable caching.
 	 */
-	public function __construct(
-		object $settings,
-		bool $caching = false
-	)
+	public function __construct(array|object $settings, bool $caching = false)
 	{
 		$this->caching = $caching;
 		$this->setSettings($settings);
 	}
 
 	/**
-	 * Sets up the connection settings.
+	 * Converts and stores the connection settings.
 	 *
-	 * @param object $settings
+	 * @param array|object $settings Raw settings data.
 	 * @return void
 	 */
-	protected function setSettings(object $settings): void
+	protected function setSettings(array|object $settings): void
 	{
 		$this->settings = new ConnectionSettings($settings);
 	}
 
 	/**
-	 * Starts the database connection.
+	 * Initializes the database connection.
 	 *
 	 * @abstract
-	 * @return bool
+	 * @return bool Connection success.
 	 */
 	abstract protected function startConnection(): bool;
 
 	/**
-	 * Connects to the database.
+	 * Establishes a database connection.
 	 *
-	 * @return object|false
+	 * @return object|null Connection instance or null on failure.
 	 */
-	protected function connect()
+	protected function connect(): ?object
 	{
-		if ($this->connected === true)
+		if ($this->connected)
 		{
 			return $this->connection;
 		}
 
-		$result = $this->startConnection();
-		if ($result === false)
+		if (!$this->startConnection())
 		{
-			return false;
+			return null;
 		}
 
 		$this->setConnected(true);
 		return $this->connection;
-	}
-
-	/**
-	 * Sets up a query handler to use a query builder.
-	 *
-	 * @param string $tableName
-	 * @param string|null $alias
-	 * @return QueryHandler
-	 */
-	public function table(string $tableName, ?string $alias = null): QueryHandler
-	{
-		return QueryHandler::table($tableName, $alias, $this);
 	}
 
 	/**
@@ -126,36 +108,41 @@ abstract class Adapter
 	/**
 	 * Disconnects from the database.
 	 *
-	 * @return bool
+	 * @return bool Disconnection success.
 	 */
 	protected function disconnect(): bool
 	{
-		if ($this->connected === false)
+		if (!$this->connected || $this->caching)
 		{
 			return false;
-		}
-
-		/**
-		 * If caching is enabled, do not disconnect.
-		 */
-		if ($this->caching === true)
-		{
-			return true;
 		}
 
 		$this->stopConnection();
 		$this->setConnection(null);
 		$this->setConnected(false);
+
 		return true;
 	}
 
 	/**
-	 * Sets the connection.
+	 * Gets a query builder for a specific table.
 	 *
-	 * @param object|null $connection
+	 * @param string $tableName Table name.
+	 * @param string|null $alias Table alias.
+	 * @return QueryHandler Query handler instance.
+	 */
+	public function table(string $tableName, ?string $alias = null): QueryHandler
+	{
+		return QueryHandler::table($tableName, $alias, $this);
+	}
+
+	/**
+	 * Sets the database connection instance.
+	 *
+	 * @param object|null $connection Connection instance.
 	 * @return void
 	 */
-	protected function setConnection($connection): void
+	protected function setConnection(?object $connection): void
 	{
 		$this->connection = $connection;
 	}
@@ -163,20 +150,19 @@ abstract class Adapter
 	/**
 	 * Sets the connection status.
 	 *
-	 * @param bool $connected
+	 * @param bool $connected Connection status.
 	 * @return void
 	 */
-	protected function setConnected(bool $connected = true): void
+	protected function setConnected(bool $connected): void
 	{
 		$this->connected = $connected;
 	}
 
 	/**
-	 * Sets the last error and displays the SQL and error
-	 * if error reporting is enabled.
+	 * Logs an error and sets the last error state.
 	 *
-	 * @param object|string $sql
-	 * @param object|null $error
+	 * @param object|string $sql SQL query that caused the error.
+	 * @param object|null $error Error object.
 	 * @return void
 	 */
 	protected function error(object|string $sql, ?object $error = null): void
@@ -186,26 +172,24 @@ abstract class Adapter
 	}
 
 	/**
-	 * Sets the last error.
+	 * Sets the last database error.
 	 *
-	 * @param object|null $error
+	 * @param object|null $error Error object.
 	 * @return void
 	 */
-	protected function setLastError(?object $error = null): void
+	protected function setLastError(?object $error): void
 	{
-		if (!$error)
+		if ($error !== null)
 		{
-			return;
+			$this->displayError($error);
+			$this->lastError = $error;
 		}
-
-		$this->displayError($error);
-		$this->lastError = $error;
 	}
 
 	/**
 	 * Displays the error if error reporting is enabled.
 	 *
-	 * @param mixed $error
+	 * @param mixed $error Error data.
 	 * @return void
 	 */
 	protected function displayError(mixed $error): void
@@ -217,9 +201,9 @@ abstract class Adapter
 	}
 
 	/**
-	 * Retrieves the last error.
+	 * Retrieves the last database error.
 	 *
-	 * @return object|null
+	 * @return object|null Last error object or null.
 	 */
 	public function getLastError(): ?object
 	{
@@ -227,9 +211,9 @@ abstract class Adapter
 	}
 
 	/**
-	 * Sets the last ID.
+	 * Sets the last inserted ID.
 	 *
-	 * @param int $id
+	 * @param int $id Inserted record ID.
 	 * @return void
 	 */
 	protected function setLastId(int $id): void
@@ -238,11 +222,11 @@ abstract class Adapter
 	}
 
 	/**
-	 * Retrieves the last ID.
+	 * Retrieves the last inserted ID.
 	 *
-	 * @return int
+	 * @return int|null Last inserted ID or null if not set.
 	 */
-	public function getLastId(): int
+	public function getLastId(): ?int
 	{
 		return $this->lastId;
 	}

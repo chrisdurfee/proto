@@ -17,20 +17,20 @@ class Database
 	/**
 	 * Determines if connection caching is enabled.
 	 *
-	 * @param bool $caching Force-enable caching if true
-	 * @return bool
+	 * @param bool $caching Force-enable caching if true.
+	 * @return bool True if caching is enabled, otherwise false.
 	 */
 	protected function isCaching(bool $caching = false): bool
 	{
-		return $caching ? true : env('dbCaching') ?? false;
+		return $caching || (bool) env('dbCaching');
 	}
 
 	/**
 	 * Connects to the database.
 	 *
 	 * @param string $connection Connection name from the config file.
-	 * @param bool $caching Whether to use the connection caching or not.
-	 * @return Mysqli|null Returns Mysqli instance or null if settings are not found.
+	 * @param bool $caching Whether to use connection caching or not.
+	 * @return Mysqli|null Returns Mysqli instance or null if settings are missing.
 	 */
 	public function connect(string $connection = 'default', bool $caching = false): ?Mysqli
 	{
@@ -64,7 +64,7 @@ class Database
 	 * Creates a database adapter based on the config settings.
 	 *
 	 * @param object $settings Connection settings.
-	 * @param bool $caching Whether to use the connection caching or not.
+	 * @param bool $caching Whether to use connection caching.
 	 * @return Mysqli Returns Mysqli instance.
 	 * @throws \RuntimeException If an unsupported adapter is found in the config.
 	 */
@@ -82,7 +82,7 @@ class Database
 	 * Retrieves the connection settings from the config.
 	 *
 	 * @param string $connection Connection name.
-	 * @return object Returns an object containing connection settings.
+	 * @return object Connection settings object.
 	 */
 	protected function getConnectionSettings(string $connection): object
 	{
@@ -93,8 +93,8 @@ class Database
 	 * Retrieves a database connection.
 	 *
 	 * @param string $connection Connection name.
-	 * @param bool $caching Whether to use the connection caching or not.
-	 * @return Mysqli|null Returns Mysqli instance or null if settings are not found.
+	 * @param bool $caching Whether to use connection caching.
+	 * @return Mysqli|null Returns Mysqli instance or null if settings are missing.
 	 */
 	public static function getConnection(string $connection = 'default', bool $caching = false): ?Mysqli
 	{

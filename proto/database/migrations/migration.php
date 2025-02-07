@@ -7,192 +7,186 @@ use Proto\Database\QueryBuilder\Drop;
 /**
  * Migration
  *
- * This class will handle migrations.
+ * Handles database migrations.
  *
  * @package Proto\Database\Migrations
  * @abstract
  */
 abstract class Migration
 {
-    /**
-     * @var string $connection
-     */
-    protected string $connection = '';
+	/**
+	 * @var string $connection The database connection name.
+	 */
+	protected string $connection = '';
 
-    /**
-     * @var string $fileName
-     */
-    protected string $fileName = '';
+	/**
+	 * @var string $fileName The migration file name.
+	 */
+	private string $fileName = '';
 
-    /**
-     * @var int|null $id
-     */
-    protected ?int $id;
+	/**
+	 * @var int|null $id The migration ID (if stored).
+	 */
+	private ?int $id = null;
 
-    /**
-     * @var array $queries
-     */
-    protected array $queries = [];
+	/**
+	 * @var array $queries List of migration queries.
+	 */
+	protected array $queries = [];
 
-    /**
-     * This will get the connection.
-     *
-     * @return string
-     */
-    public function getConnection(): string
-    {
-        return $this->connection;
-    }
+	/**
+	 * Gets the database connection name.
+	 *
+	 * @return string The connection name.
+	 */
+	public function getConnection(): string
+	{
+		return $this->connection;
+	}
 
-    /**
-     * This will set the file name.
-     *
-     * @param string $fileName
-     * @return void
-     */
-    public function setFileName(string $fileName): void
-    {
-        $this->fileName = $fileName;
-    }
+	/**
+	 * Sets the migration file name.
+	 *
+	 * @param string $fileName The migration file name.
+	 * @return void
+	 */
+	public function setFileName(string $fileName): void
+	{
+		$this->fileName = $fileName;
+	}
 
-    /**
-     * This will get the file name.
-     *
-     * @return string
-     */
-    public function getFileName(): string
-    {
-        return $this->fileName;
-    }
+	/**
+	 * Gets the migration file name.
+	 *
+	 * @return string The migration file name.
+	 */
+	public function getFileName(): string
+	{
+		return $this->fileName;
+	}
 
-    /**
-     * This will set the id.
-     *
-     * @param string $id
-     * @return void
-     */
-    public function setId(int $id): void
-    {
-        $this->id = $id;
-    }
+	/**
+	 * Sets the migration ID.
+	 *
+	 * @param int $id The migration ID.
+	 * @return void
+	 */
+	public function setId(int $id): void
+	{
+		$this->id = $id;
+	}
 
-    /**
-     * This will get the id.
-     *
-     * @return int|null
-     */
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+	/**
+	 * Gets the migration ID.
+	 *
+	 * @return int|null The migration ID or null if not set.
+	 */
+	public function getId(): ?int
+	{
+		return $this->id;
+	}
 
-    /**
-     * This will get the migration queries.
-     *
-     * @return array
-     */
-    public function getQueries(): array
-    {
-        return $this->queries;
-    }
+	/**
+	 * Gets the stored migration queries.
+	 *
+	 * @return array List of queries.
+	 */
+	public function getQueries(): array
+	{
+		return $this->queries;
+	}
 
-    /**
-     * This will create a query handler.
-     *
-     * @param string $tableName
-     * @return QueryHandler
-     */
-    protected function createQueryHandler(string $tableName): QueryHandler
-    {
-        return new QueryHandler($tableName);
-    }
+	/**
+	 * Creates a new query handler.
+	 *
+	 * @param string $tableName The name of the table.
+	 * @return QueryHandler Query handler instance.
+	 */
+	protected function createQueryHandler(string $tableName): QueryHandler
+	{
+		return new QueryHandler($tableName);
+	}
 
-    /**
-     * This will create a new query handler.
-     *
-     * @param string $tableName
-     * @param callable $callBack
-     * @return void
-     */
-    protected function create(string $tableName, $callBack): void
-    {
-        $table = $this->createQueryHandler($tableName);
-        $query = $table->create($callBack);
-        array_push($this->queries, $query);
-    }
+	/**
+	 * Creates a new table migration query.
+	 *
+	 * @param string $tableName The table name.
+	 * @param callable $callback The table schema definition callback.
+	 * @return void
+	 */
+	protected function create(string $tableName, callable $callback): void
+	{
+		$table = $this->createQueryHandler($tableName);
+		$this->queries[] = $table->create($callback);
+	}
 
-    /**
-     * This will create a new query builder to create a view.
-     *
-     * @param string $viewName
-     * @return object
-     */
-    protected function createView(string $viewName): object
-    {
-        $table = $this->createQueryHandler($viewName);
-        $query = $table->createView();
-        array_push($this->queries, $query);
-        return $query;
-    }
+	/**
+	 * Creates a new view migration query.
+	 *
+	 * @param string $viewName The view name.
+	 * @return object The generated query.
+	 */
+	protected function createView(string $viewName): object
+	{
+		$table = $this->createQueryHandler($viewName);
+		$query = $table->createView();
+		$this->queries[] = $query;
 
-    /**
-     * This will create a new alter table builder.
-     *
-     * @param string $tableName
-     * @param callable $callBack
-     * @return void
-     */
-    protected function alter(string $tableName, $callBack): void
-    {
-        $table = $this->createQueryHandler($tableName);
-        $query = $table->alter($callBack);
-        array_push($this->queries, $query);
-    }
+		return $query;
+	}
 
-    /**
-     * This will drop a view.
-     *
-     * @param string $viewName
-     * @return void
-     */
-    protected function dropView(string $viewName): void
-    {
-        $this->drop($viewName, 'view');
-    }
+	/**
+	 * Modifies an existing table structure.
+	 *
+	 * @param string $tableName The table name.
+	 * @param callable $callback The schema modification callback.
+	 * @return void
+	 */
+	protected function alter(string $tableName, callable $callback): void
+	{
+		$table = $this->createQueryHandler($tableName);
+		$this->queries[] = $table->alter($callback);
+	}
 
-    /**
-     * This will create a drop query builder.
-     *
-     * @param string $tableName
-     * @return void
-     */
-    protected function drop(string $tableName, ?string $type = null): void
-    {
-        $query = new Drop($tableName);
-        if(isset($type) === true)
-        {
-            $query->type($type);
-        }
-        array_push($this->queries, $query);
-    }
+	/**
+	 * Drops a view.
+	 *
+	 * @param string $viewName The view name.
+	 * @return void
+	 */
+	protected function dropView(string $viewName): void
+	{
+		$this->drop($viewName, 'view');
+	}
 
-    /**
-     * Run the migration.
-     *
-     * @return void
-     */
-    public function up()
-    {
+	/**
+	 * Drops a table or view.
+	 *
+	 * @param string $tableName The table or view name.
+	 * @param string|null $type The type to drop (e.g., 'view').
+	 * @return void
+	 */
+	protected function drop(string $tableName, ?string $type = null): void
+	{
+		$query = new Drop($tableName);
+		if ($type !== null)
+		{
+			$query->type($type);
+		}
+		$this->queries[] = $query;
+	}
 
-    }
+	/**
+	 * Runs the migration (must be implemented in subclasses).
+	 *
+	 * @return void
+	 */
+	abstract public function up(): void;
 
-    /**
-     * Revert the migration.
-     *
-     * @return void
-     */
-    public function down()
-    {
-
-    }
+	/**
+	 * Reverts the migration (must be implemented in subclasses).
+	 *
+	 * @return void
+	 */
+	abstract public function down(): void;
 }
