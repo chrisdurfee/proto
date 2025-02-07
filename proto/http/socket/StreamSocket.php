@@ -85,7 +85,8 @@ class StreamSocket implements SocketInterface
 	 */
 	protected static function validateStream(mixed $stream): mixed
 	{
-		if (!is_resource($stream)) {
+		if (!is_resource($stream))
+		{
 			exit('Error: Invalid stream socket.');
 		}
 
@@ -241,7 +242,8 @@ class StreamSocket implements SocketInterface
 	 */
 	public function close(): void
 	{
-		if (is_resource($this->stream)) {
+		if (is_resource($this->stream))
+		{
 			fclose($this->stream);
 		}
 	}
