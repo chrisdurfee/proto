@@ -4,83 +4,78 @@ namespace Proto\Html;
 use Proto\Utils\Sanitize;
 
 /**
- * Template
+ * Class Template
  *
- * This will create a base class to extend tempates to generate
- * files by a type.
+ * Abstract base class for generating HTML templates.
  *
- * @package Proto\Generators\Templates
- * @abstract
+ * @package Proto\Html
  */
 abstract class Template
 {
 	/**
-	 * @var object $props
+	 * @var object|null $props Template properties.
 	 */
-	protected $props;
+	protected ?object $props = null;
 
 	/**
-	 * @var bool $sanitize
+	 * @var bool $sanitize Determines whether properties should be sanitized.
 	 */
-	protected bool $sanitize  = true;
+	protected bool $sanitize = true;
 
 	/**
-	 * This will setup the template.
+	 * Initializes the template with given properties.
 	 *
-	 * @param object|array|null $props
-	 * @return void
+	 * @param object|array|null $props Properties for the template.
 	 */
-	public function __construct($props = null)
+	public function __construct(object|array|null $props = null)
 	{
 		$this->setupProps($props);
 	}
 
 	/**
-	 * This will setup the template props.
+	 * Sets up template properties.
 	 *
-	 * @param object|array|null $props
-	 * @return void
+	 * @param object|array|null $props Properties to be assigned.
 	 */
-	protected function setupProps($props = null): void
+	protected function setupProps(object|array|null $props = null): void
 	{
-		if (!$props)
+		if ($props === null)
 		{
+			$this->props = new \stdClass();
 			return;
 		}
 
-		if (is_array($props))
+		$this->props = is_array($props) ? (object)$props : $props;
+
+		// Sanitize the properties if enabled
+		if ($this->sanitize)
 		{
-			$props = (object)$props;
+			$this->props = Sanitize::cleanHtmlEntities($this->props);
 		}
-
-		$this->props = $props;
-
-		// this will sanitize the data to be rendered in the html email.
-		//$this->props = ($this->sanitize === true)? Sanitize::cleanHtmlEntities($props) : $props;
 	}
 
 	/**
-	 * This will get a prop by key.
+	 * Retrieves a property by its name.
 	 *
-	 * @param string $propName
-	 * @return mixed
+	 * @param string $propName The name of the property.
+	 * @return mixed|null Returns the property value or null if not found.
 	 */
-	protected function get($propName): mixed
+	protected function get(string $propName): mixed
 	{
 		return $this->props->{$propName} ?? null;
 	}
 
 	/**
-	 * This should be overriden to return the html of the component.
-	 * @abstract
-	 * @return string
+	 * Returns the HTML content of the component.
+	 *
+	 * @return string The HTML body.
 	 */
-	abstract protected function getBody();
+	abstract protected function getBody(): string;
 
 	/**
-	 * This will render the html to the screen.
+	 * Renders the template into an HTML string.
 	 *
-	 * @return string
+	 * @return string The rendered HTML.
 	 */
 	public function render(): string
 	{
@@ -88,10 +83,9 @@ abstract class Template
 	}
 
 	/**
-	 * This will override the toString to return the
-	 * rendered template.
+	 * Converts the template to a string by rendering it.
 	 *
-	 * @return string
+	 * @return string The rendered template.
 	 */
 	public function __toString(): string
 	{

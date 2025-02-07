@@ -11,18 +11,21 @@ namespace Proto\Utils;
 class Sanitize
 {
 	/**
-	 * Removes script tags from an HTML string.
+	 * Cleans an HTML string by removing scripts and dangerous tags.
 	 *
 	 * @param string $str
 	 * @return string
 	 */
 	public static function cleanHtml(string $str): string
 	{
-		return trim(self::removeScripts($str));
+		$str = self::removeScripts($str);
+		$str = self::stripDangerousTags($str);
+		$str = self::stripUnsafeAttributes($str);
+		return trim($str);
 	}
 
 	/**
-	 * Removes potentially harmful script tags from an HTML string.
+	 * Removes <script> tags, PHP tags, inline event handlers, and javascript: URLs.
 	 *
 	 * @param string $str
 	 * @return string
@@ -32,8 +35,33 @@ class Sanitize
 		$patterns = [
 			'/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i', // Remove <script>...</script> tags
 			'/<\?.*?\?>/s', // Remove PHP tags
+			'/javascript\s*:\s*/i', // Remove javascript: URLs
+			'/<link\b[^<]*(?:(?!<\/link>)<[^<]*)*<\/link>/i', // Remove <link> tags that may load scripts
 		];
+
 		return preg_replace($patterns, '', $str) ?? $str;
+	}
+
+	/**
+	 * Strips dangerous tags like <iframe>, <object>, and <embed> from an HTML string.
+	 *
+	 * @param string $str
+	 * @return string
+	 */
+	public static function stripDangerousTags(string $str): string
+	{
+		return preg_replace('/<(iframe|object|embed|form|meta|base|applet|svg)[^>]*>.*?<\/\1>/is', '', $str);
+	}
+
+	/**
+	 * Removes unsafe attributes like inline event handlers (on*) and styles.
+	 *
+	 * @param string $str
+	 * @return string
+	 */
+	public static function stripUnsafeAttributes(string $str): string
+	{
+		return preg_replace('/\s*(on\w+|style|href)\s*=\s*(["\']?).*?\2/si', '', $str);
 	}
 
 	/**
@@ -131,13 +159,14 @@ class Sanitize
 	}
 
 	/**
-	 * Encodes a string for safe HTML output.
+	 * Encodes a string for safe HTML output, removing dangerous elements.
 	 *
 	 * @param string $str
 	 * @return string
 	 */
 	public static function htmlEntities(string $str): string
 	{
+		$str = self::cleanHtml($str);
 		return htmlspecialchars($str, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 	}
 }
