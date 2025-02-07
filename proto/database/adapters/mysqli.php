@@ -13,6 +13,8 @@ SQL::init();
 /**
  * Mysqli adapter class.
  *
+ * Provides a MySQLi implementation of the database adapter.
+ *
  * @package Proto\Database\Adapters
  */
 class Mysqli extends Adapter
@@ -20,45 +22,54 @@ class Mysqli extends Adapter
 	use MysqliBindTrait;
 
 	/**
-	 * Start the database connection.
+	 * Starts the database connection.
 	 *
-	 * @return bool True if the connection is successful, false otherwise.
+	 * @return bool True if connection was successful, false otherwise.
 	 */
-	protected function startConnection(): bool
+	protected function startConnection() : bool
 	{
 		$settings = $this->settings;
-		$connection = new \mysqli('p:' . $settings->host, $settings->username, $settings->password, $settings->database, $settings->port);
+		$connection = new \mysqli(
+			'p:' . $settings->host,
+			$settings->username,
+			$settings->password,
+			$settings->database,
+			$settings->port
+		);
 
-		$error = $connection->connect_error;
-		if ($error)
+		if ($connection->connect_error)
 		{
-			$this->setLastError(new \Exception($error));
+			$this->setLastError(new \Exception($connection->connect_error));
 			return false;
 		}
 
 		$this->setConnection($connection);
 		$connection->set_charset('utf8mb4');
+
 		return true;
 	}
 
 	/**
-	 * Stop the database connection.
+	 * Stops the database connection.
 	 *
 	 * @return void
 	 */
-	protected function stopConnection(): void
+	protected function stopConnection() : void
 	{
-		$this->connection->close();
+		if ($this->connection instanceof \mysqli)
+		{
+			$this->connection->close();
+		}
 	}
 
 	/**
-	 * Bind statement parameters.
+	 * Binds parameters to a prepared statement.
 	 *
-	 * @param \mysqli_stmt $stmt
-	 * @param array|object $params
+	 * @param \mysqli_stmt $stmt The prepared statement.
+	 * @param array|object $params The parameters to bind.
 	 * @return void
 	 */
-	protected static function bindParams(\mysqli_stmt $stmt, $params = []): void
+	protected static function bindParams(\mysqli_stmt $stmt, array|object $params = []) : void
 	{
 		if (empty($params))
 		{
@@ -71,15 +82,15 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * Prepare statement by binding the params array.
+	 * Prepares a SQL statement.
 	 *
-	 * @param string $sql
-	 * @param array|object $params
-	 * @return \mysqli_stmt|bool
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return \mysqli_stmt|bool The prepared statement or false on failure.
 	 */
-	protected function prepare(string $sql, $params = []): \mysqli_stmt|bool
+	protected function prepare(string $sql, array|object $params = []) : \mysqli_stmt|bool
 	{
-		if ($this->connected === false)
+		if (!$this->connected)
 		{
 			return false;
 		}
@@ -96,13 +107,37 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will execute the query.
+	 * Prepares and executes a SQL statement.
 	 *
-	 * @param string $sql
-	 * @param array|object $params
-	 * @return bool
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return \mysqli_stmt|bool The executed statement or false on failure.
 	 */
-	public function execute(string $sql, $params = []): bool
+	protected function prepareAndExecute(string $sql, array|object $params = []) : \mysqli_stmt|bool
+	{
+		$stmt = $this->prepare($sql, $params);
+		if (!$stmt)
+		{
+			return false;
+		}
+
+		if (!$stmt->execute())
+		{
+			$this->error($sql, $this->connection->error);
+			return false;
+		}
+
+		return $stmt;
+	}
+
+	/**
+	 * Executes a SQL query.
+	 *
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return bool True on success, false on failure.
+	 */
+	public function execute(string $sql, array|object $params = []) : bool
 	{
 		$db = $this->connect();
 		if (!$db)
@@ -119,45 +154,20 @@ class Mysqli extends Adapter
 
 		$this->setLastId($db->insert_id);
 		$stmt->close();
-
 		$this->disconnect();
+
 		return true;
 	}
 
 	/**
-	 * This will prepare and execute a query.
+	 * Fetches the results of a SQL query.
 	 *
-	 * @param string $sql
-	 * @param array|object $params
-	 * @return object|bool
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @param string $resultType The type of results: 'object' or 'array'.
+	 * @return array|bool The fetched results as an array, or false on failure.
 	 */
-	protected function prepareAndExecute(string $sql, $params = [])
-	{
-		$stmt = $this->prepare($sql, $params);
-		if (!$stmt)
-		{
-			return false;
-		}
-
-		$result = ($stmt->execute() === true);
-		if ($result === false)
-		{
-			$this->error($sql, $this->connection->error);
-			return false;
-		}
-
-		return ($result === true)? $stmt : false;
-	}
-
-	/**
-	 * This will return the results of a query.
-	 *
-	 * @param string $sql
-	 * @param array|object $params
-	 * @param string $resultType
-	 * @return array|bool
-	 */
-	public function fetch(string $sql, $params = [], string $resultType = 'object')
+	public function fetch(string $sql, array|object $params = [], string $resultType = 'object') : array|bool
 	{
 		$db = $this->connect();
 		if (!$db)
@@ -165,8 +175,8 @@ class Mysqli extends Adapter
 			return false;
 		}
 
-		$rows = [];
 		$stmt = $this->prepareAndExecute($sql, $params);
+		$rows = [];
 		if ($stmt)
 		{
 			$rows = $this->fetchStatementResults($stmt, $resultType);
@@ -178,26 +188,26 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will execute a query.
+	 * Executes a SQL query.
 	 *
-	 * @param string $sql
-	 * @param array|object $params
-	 * @return bool
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return bool True on success, false on failure.
 	 */
-	public function query(string $sql, $params = []): bool
+	public function query(string $sql, array|object $params = []) : bool
 	{
 		return $this->execute($sql, $params);
 	}
 
 	/**
-	 * This will set the state of autocommit.
+	 * Enables or disables autocommit mode.
 	 *
-	 * @param bool $enable
+	 * @param bool $enable True to enable, false to disable.
 	 * @return void
 	 */
-	public function autoCommit(bool $enable): void
+	public function autoCommit(bool $enable) : void
 	{
-		if ($this->connected === false)
+		if (!$this->connected)
 		{
 			return;
 		}
@@ -206,13 +216,13 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will start a trasaction.
+	 * Begins a database transaction.
 	 *
-	 * @return bool
+	 * @return bool True on success, false on failure.
 	 */
-	public function beginTransaction(): bool
+	public function beginTransaction() : bool
 	{
-		if ($this->connected === false)
+		if (!$this->connected)
 		{
 			return false;
 		}
@@ -222,12 +232,12 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will set the last error if the result is false.
+	 * Checks the result of a database operation.
 	 *
-	 * @param bool $result
-	 * @return bool
+	 * @param bool $result The result to check.
+	 * @return bool The original result.
 	 */
-	protected function checkResult(bool $result): bool
+	protected function checkResult(bool $result) : bool
 	{
 		if (!$result)
 		{
@@ -237,13 +247,13 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will create a transaction.
+	 * Executes a transaction with a single query.
 	 *
-	 * @param string $sql
-	 * @param array|object $params
-	 * @return bool
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return bool True on success, false on failure.
 	 */
-	public function transaction(string $sql, $params = []): bool
+	public function transaction(string $sql, array|object $params = []) : bool
 	{
 		if (!$this->beginTransaction())
 		{
@@ -261,13 +271,13 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will commit a transaction.
+	 * Commits a database transaction.
 	 *
-	 * @return bool
+	 * @return bool True on success, false on failure.
 	 */
-	public function commit(): bool
+	public function commit() : bool
 	{
-		if ($this->connected === false)
+		if (!$this->connected)
 		{
 			return false;
 		}
@@ -277,13 +287,13 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will rollback a transaction.
+	 * Rolls back a database transaction.
 	 *
-	 * @return bool
+	 * @return bool True on success, false on failure.
 	 */
-	public function rollback(): bool
+	public function rollback() : bool
 	{
-		if ($this->connected === false)
+		if (!$this->connected)
 		{
 			return false;
 		}
@@ -293,72 +303,57 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * This will insert into a table.
+	 * Inserts data into a table.
 	 *
-	 * @param string $tableName
-	 * @param array|object $data
-	 * @return bool
+	 * @param string $tableName The table name.
+	 * @param array|object $data The data to insert.
+	 * @return bool True on success, false on failure.
 	 */
-	public function insert(string $tableName, $data): bool
+	public function insert(string $tableName, array|object $data) : bool
 	{
 		$params = $this->createParamsFromData($data, 'id', true);
 
-		/* this will setup  the insert column names
-		and convert it to a string */
-		$cols = $params->cols;
-		$columns = implode(', ', $cols);
+		$columns = implode(', ', $params->cols);
+		$placeholders = $this->setupPlaceholders($params->cols);
 
-		/* this will setup the values placeholder and
-		convert it to a string */
-		$values = $this->setupPlaceholders($cols);
-
-		$sql = "INSERT INTO {$tableName}
-			({$columns})
-		VALUES
-			({$values});";
+		$sql = "INSERT INTO {$tableName} ({$columns}) VALUES ({$placeholders});";
 
 		return $this->execute($sql, $params->values);
 	}
 
 	/**
-	 * This will update a table.
+	 * Updates data in a table.
 	 *
-	 * @param string $tableName
-	 * @param array|object $data
-	 * @param string $idColumn
-	 * @return bool
+	 * @param string $tableName The table name.
+	 * @param array|object $data The data to update.
+	 * @param string $idColumn The column representing the primary key.
+	 * @return bool True on success, false on failure.
 	 */
-	public function update(string $tableName, $data, string $idColumn = 'id'): bool
+	public function update(string $tableName, array|object $data, string $idColumn = 'id') : bool
 	{
 		$params = $this->createParamsFromData($data, $idColumn, true);
-		$update = $this->setUpdatePairs($params);
+		$updatePairs = $this->setUpdatePairs($params);
 
-		/* this will check to stop any query that doesn't
-		have an id or set columns to update. */
-		if (!$update)
+		if (empty($updatePairs))
 		{
 			return false;
 		}
 
 		$idColumn = Sanitize::cleanColumn($idColumn);
-		$sql = "UPDATE {$tableName} SET
-			{$update}
-		WHERE
-			{$idColumn} = ?;";
+		$sql = "UPDATE {$tableName} SET {$updatePairs} WHERE {$idColumn} = ?;";
 
-		/* we need to add the id to the end of the
-		values array to add it to the params */
-		array_push($params->values, $params->id);
+		$params->values[] = $params->id;
+
 		return $this->execute($sql, $params->values);
 	}
 
 	/**
-	 * This will create the replace column values.
+	 * Retrieves replace values from data.
 	 *
-	 * @param array|object $data
-	 * @return object
+	 * @param array|object $data The data for replacement.
+	 * @return object An object containing columns and values.
 	 */
-	protected function getReplaceValues(array|object $data): object
+	protected function getReplaceValues(array|object $data) : object
 	{
 		$cols = [];
 		$values = [];
@@ -374,171 +369,210 @@ class Mysqli extends Adapter
 			$values = array_values($data);
 		}
 
-		/**
-		 * This will clean the column names.
-		 */
-		$cols = array_map(function($col)
+		$cols = array_map(static function($col) : string
 		{
 			return Sanitize::cleanColumn($col);
 		}, $cols);
 
 		return (object) [
-			'cols' => $cols,
-			'values' => $values
+			'cols'   => $cols,
+			'values' => $values,
 		];
 	}
 
 	/**
-	 * This will replace into a table.
+	 * Replaces data in a table.
 	 *
-	 * @param string $tableName
-	 * @param array|object $data
-	 * @return bool
+	 * @param string $tableName The table name.
+	 * @param array|object $data The data to replace.
+	 * @return bool True on success, false on failure.
 	 */
-	public function replace(string $tableName, object|array $data): bool
+	public function replace(string $tableName, array|object $data) : bool
 	{
 		$params = $this->getReplaceValues($data);
+		$placeholders = $this->setupPlaceholders($params->values);
+		$columns = implode(', ', $params->cols);
 
-		/* this will setup the values placeholder and
-		convert it to a string */
-		$values = $this->setupPlaceholders($params->values);
-		$cols = implode(', ', $params->cols);
-
-		$sql = "REPLACE INTO {$tableName}
-					({$cols})
-				VALUES
-					({$values});";
+		$sql = "REPLACE INTO {$tableName} ({$columns}) VALUES ({$placeholders});";
 
 		return $this->execute($sql, $params->values);
 	}
 
 	/**
-	 * This will delete from a table.
+	 * Deletes data from a table.
 	 *
-	 * @param string $tableName
-	 * @param array|int $id
-	 * @param string $idColumn
-	 * @return bool
+	 * @param string $tableName The table name.
+	 * @param int|array $id The ID or IDs to delete.
+	 * @param string $idColumn The column representing the primary key.
+	 * @return bool True on success, false on failure.
 	 */
-	public function delete($tableName, $id, string $idColumn = 'id'): bool
+	public function delete(string $tableName, int|array $id, string $idColumn = 'id') : bool
 	{
-		if (is_null($id))
+		if (empty($id))
 		{
 			return false;
 		}
 
 		if (is_array($id))
 		{
-			/* this will setup the values placehoder and
-			convert itto  a string */
-			$values = $this->setupPlaceholders($id);
+			$placeholders = $this->setupPlaceholders($id);
 		}
 		else
 		{
-			$values = '?';
+			$placeholders = '?';
 			$id = [$id];
 		}
 
-		$sql = "DELETE FROM {$tableName}
-		WHERE
-			{$idColumn} IN ({$values});";
+		$sql = "DELETE FROM {$tableName} WHERE {$idColumn} IN ({$placeholders});";
 
 		return $this->execute($sql, $id);
 	}
 
 	/**
-	 * This will get a string used to limit a query.
+	 * Generates a LIMIT clause for SQL queries.
 	 *
-	 * @param int|null $offset
-	 * @param int|null $count
-	 * @return string
+	 * @param int|null $offset The offset value.
+	 * @param int|null $count The count value.
+	 * @return string The LIMIT clause.
 	 */
-	protected function getLimit(?int $offset = null, ?int $count = null): string
+	protected function getLimit(?int $offset = null, ?int $count = null) : string
 	{
 		$limit = '';
-		if (!is_null($offset))
+		if ($offset !== null)
 		{
-			$int = (int)$offset;
-			if (!is_numeric($int))
+			$limit = " LIMIT {$offset}";
+			if ($count !== null)
 			{
-				return $limit;
-			}
-
-			$limit .= " LIMIT " . $int;
-
-			if (!is_null($count))
-			{
-				$int = (int)$count;
-				if( !is_numeric($int))
-				{
-					return $limit;
-				}
-
-				$limit .= ", " . $int;
+				$limit .= ", {$count}";
 			}
 		}
 		return $limit;
 	}
 
 	/**
-	 * This will select from a table.
+	 * Selects data from a table.
 	 *
-	 * @param string $tableName
-	 * @param string $where
-	 * @param array|object $params
-	 * @param int $offset
-	 * @param int $count
-	 * @return array|bool
+	 * @param string $tableName The table name.
+	 * @param string $where The WHERE clause.
+	 * @param array|object $params The parameters for the WHERE clause.
+	 * @param int|null $offset The offset value.
+	 * @param int|null $count The count value.
+	 * @return array|bool The fetched results as an array, or false on failure.
 	 */
 	public function select(
 		string $tableName,
 		string $where = '',
-		$params = [],
-		int $offset = null,
-		int $count = null
-	)
+		array|object $params = [],
+		?int $offset = null,
+		?int $count = null
+	) : array|bool
 	{
 		$limit = $this->getLimit($offset, $count);
-		$sql = "SELECT
-			*
-		FROM
-			{$tableName}
-		WHERE
-			{$where}
-		{$limit}
-			;";
+		$whereClause = $where ? "WHERE {$where}" : "";
+		$sql = "SELECT * FROM {$tableName} {$whereClause} {$limit};";
 
 		return $this->fetch($sql, $params);
 	}
 
 	/**
-	 * This will return results from a statement.
+	 * Fetches results from a prepared statement.
 	 *
-	 * @param object $stmt
-	 * @param string $resultType
-	 * @return array
+	 * @param \mysqli_stmt $stmt The prepared statement.
+	 * @param string $resultType The type of result: 'object' or 'array'.
+	 * @return array The fetched results.
 	 */
-	protected function fetchStatementResults($stmt, string $resultType = 'object'): array
+	protected function fetchStatementResults(\mysqli_stmt $stmt, string $resultType = 'object') : array
 	{
 		$rows = [];
-
 		$result = $stmt->get_result();
 		if ($resultType === 'array')
 		{
 			while ($row = $result->fetch_array())
 			{
-				array_push($rows, $row);
+				$rows[] = $row;
 			}
 		}
 		else
 		{
 			while ($row = $result->fetch_object())
 			{
-				array_push($rows, $row);
+				$rows[] = $row;
 			}
 		}
 
 		$result->free();
 		return $rows;
+	}
+
+	/**
+	 * Creates parameters from data for insert or update queries.
+	 *
+	 * Extracts column names and values from an array or object. If the column
+	 * matching the provided ID column is found and removal is enabled, that value
+	 * is stored separately.
+	 *
+	 * @param array|object $data The input data.
+	 * @param string $idColumn The primary key column to exclude.
+	 * @param bool $removeId Whether to remove the ID from data.
+	 * @return object An object containing 'cols', 'values', and optionally 'id'.
+	 */
+	protected function createParamsFromData(array|object $data, string $idColumn, bool $removeId = true) : object
+	{
+		$columns = [];
+		$values = [];
+		$id = null;
+
+		if (is_object($data))
+		{
+			$data = get_object_vars($data);
+		}
+
+		foreach ($data as $column => $value)
+		{
+			$cleanColumn = Sanitize::cleanColumn($column);
+			if ($removeId && $cleanColumn === Sanitize::cleanColumn($idColumn))
+			{
+				$id = $value;
+				continue;
+			}
+			$columns[] = $cleanColumn;
+			$values[] = $value;
+		}
+
+		return (object) [
+			'cols'   => $columns,
+			'values' => $values,
+			'id'     => $id,
+		];
+	}
+
+	/**
+	 * Generates a string of placeholders for SQL queries.
+	 *
+	 * @param array $params The parameters array.
+	 * @return string A string of placeholders.
+	 */
+	protected function setupPlaceholders(array $params) : string
+	{
+		return implode(', ', array_fill(0, count($params), '?'));
+	}
+
+	/**
+	 * Creates update pairs for SQL UPDATE queries.
+	 *
+	 * Converts an array of column names into a string of column assignments.
+	 *
+	 * @param object $params The parameters object containing 'cols'.
+	 * @return string A string of column assignments for the UPDATE query.
+	 */
+	protected function setUpdatePairs(object $params) : string
+	{
+		$pairs = [];
+		foreach ($params->cols as $column)
+		{
+			$cleanColumn = Sanitize::cleanColumn($column);
+			$pairs[] = "{$cleanColumn} = ?";
+		}
+		return implode(', ', $pairs);
 	}
 }
