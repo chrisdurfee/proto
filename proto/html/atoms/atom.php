@@ -4,9 +4,9 @@ namespace Proto\Html\Atoms;
 use Proto\Html\Template;
 
 /**
- * Atom
+ * Class Atom
  *
- * This will create an atom.
+ * A base class for atomic UI elements.
  *
  * @package Proto\Html\Atoms
  * @abstract

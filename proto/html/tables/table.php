@@ -1,55 +1,69 @@
 <?php declare(strict_types=1);
+
 namespace Proto\Html\Tables;
 
 use Proto\Html\Template;
 
 /**
- * Table
+ * Class Table
+ *
+ * Base class for generating HTML tables.
+ *
+ * @package Proto\Html\Tables
  * @abstract
  */
 abstract class Table extends Template
 {
 	/**
-	 * This will setup the table rows.
+	 * Generates the table rows.
 	 *
-	 * @return string
+	 * @return string The generated table body.
 	 */
-	protected function setupRows()
+	protected function setupRows(): string
 	{
 		$body = '';
 		$rows = $this->get('rows') ?? [];
-		if(count($rows))
+		if (!empty($rows))
 		{
-			foreach($rows as $row)
+			foreach ($rows as $row)
 			{
 				$body .= $this->createRow($row);
 			}
 		}
+
 		return $body;
 	}
 
-	protected function getBody()
+	/**
+	 * Generates the full table body.
+	 *
+	 * @return string The rendered HTML table.
+	 */
+	protected function getBody(): string
 	{
-		return <<<EOT
+		$titleRow = $this->createTitleRow();
+		$rows = $this->setupRows();
+
+		return <<<HTML
 		<table>
-			{$this->createTitleRow()}
-			{$this->setupRows()}
+			{$titleRow}
+			{$rows}
 		</table>
-EOT;
+HTML;
 	}
 
 	/**
-	 * This should return the title row.
-	 * @abstract
-	 * @return string
+	 * Generates the title row of the table.
+	 *
+	 * @return string The HTML for the title row.
 	 */
-	abstract protected function createTitleRow();
+	abstract protected function createTitleRow(): string;
 
 	/**
-	 * This should return a row.
-	 * @abstract
-	 * @param object $row
-	 * @return string
+	 * Generates a table row.
+	 *
+	 * @param array|object $row The row data.
+	 * @return string The HTML for a single row.
 	 */
-	abstract protected function createRow($row);
+	abstract protected function createRow(array|object $row): string;
 }

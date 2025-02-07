@@ -5,131 +5,115 @@ use Proto\Html\Template;
 use Proto\Html\Atoms\InlineStyle;
 
 /**
- * Email
+ * Class Email
  *
- * This will create an email template.
+ * Base class for generating email templates.
  *
  * @package Proto\Html\Email
  * @abstract
  */
 abstract class Email extends Template
 {
-    /**
-     * @var string $styles
-     */
-    protected string $styles;
+	/**
+	 * @var string $styles Inline styles for the email.
+	 */
+	protected string $styles = '';
 
-    /**
-	 * This will get the title text.
+	/**
+	 * Returns the title text for the email.
 	 *
 	 * @return string
 	 */
 	protected function getTitle(): string
 	{
 		return $this->get('title') ?? 'DentalQore';
-    }
+	}
 
-    /**
-     * This will get the email content.
-     *
-     * @return string
-     */
-    protected function getContent()
-    {
-        return <<<EOT
-            <table class="main_container" cellpadding="0" cellspacing="0" align="center">
-                <tr>
-                    <td>
-                        {$this->addHeader()}
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        {$this->addBody()}
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        {$this->addFooter()}
-                    </td>
-                </tr>
-            </table>
-EOT;
-    }
-
-    /**
-     * This will get the header.
-     *
-     * @return string
-     */
-    protected function addHeader()
-    {
-        return <<<EOT
-
-EOT;
-    }
-
-    /**
-     * This will get the body.
-     *
-     * @return string
-     */
-    protected function addBody()
-    {
-        return <<<EOT
-
-EOT;
-    }
-
-    /**
-     * This will get the footer.
-     *
-     * @return string
-     */
-    protected function addFooter()
-    {
-        return <<<EOT
-
-EOT;
-    }
-
-    /**
-     * This will get the email content.
-     *
-     * @return string
-     */
-    protected function getStyles()
-    {
-        $styles = $this->styles ?? '';
-        if (!$styles)
-        {
-            return '';
-        }
-
-        return new InlineStyle($styles);
-    }
-
-    /**
-     * This will get the email body.
-     *
-     * @return string
-     */
-    protected function getBody()
+	/**
+	 * Generates the email's main content structure.
+	 *
+	 * @return string
+	 */
+	protected function getContent(): string
 	{
-        return <<<EOT
-        <!doctype html>
-        <html>
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=697">
-                <meta name="x-apple-disable-message-reformatting">
-                <title>{$this->getTitle()}</title>
-                {$this->getStyles()}
-            </head>
-            <body>
-                {$this->getContent()}
-            </body>
+		return <<<HTML
+		<table class="main_container" cellpadding="0" cellspacing="0" align="center">
+			<tbody>
+				<tr>
+					<td>{$this->addHeader()}</td>
+				</tr>
+				<tr>
+					<td>{$this->addBody()}</td>
+				</tr>
+				<tr>
+					<td>{$this->addFooter()}</td>
+				</tr>
+			</tbody>
+		</table>
+HTML;
+	}
+
+	/**
+	 * Generates the email header content.
+	 *
+	 * @return string
+	 */
+	protected function addHeader(): string
+	{
+		return '';
+	}
+
+	/**
+	 * Generates the email body content.
+	 *
+	 * @return string
+	 */
+	protected function addBody(): string
+	{
+		return '';
+	}
+
+	/**
+	 * Generates the email footer content.
+	 *
+	 * @return string
+	 */
+	protected function addFooter(): string
+	{
+		return '';
+	}
+
+	/**
+	 * Returns the inline styles for the email.
+	 *
+	 * @return string
+	 */
+	protected function getStyles(): string
+	{
+		return !empty($this->styles) ? (new InlineStyle($this->styles))->__toString() : '';
+	}
+
+	/**
+	 * Generates the full HTML email.
+	 *
+	 * @return string
+	 */
+	protected function getBody(): string
+	{
+		return <<<HTML
+		<!doctype html>
+		<html>
+			<head>
+				<meta charset="utf-8">
+				<meta name="viewport" content="width=697">
+				<meta name="x-apple-disable-message-reformatting">
+				<title>{$this->getTitle()}</title>
+				{$this->getStyles()}
+			</head>
+			<body>
+				{$this->getContent()}
+			</body>
 		</html>
-EOT;
+HTML;
 	}
 }
