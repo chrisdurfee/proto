@@ -2,60 +2,63 @@
 namespace Proto\Http\Socket\WebSocket;
 
 /**
- * Headers
+ * Class Headers
  *
- * This will get the socket headers.
+ * Handles WebSocket handshake headers.
  *
  * @package Proto\Http\Socket\WebSocket
  */
 class Headers
 {
-    /**
-     * This will get the socket key.
-     *
-     * @param string $request
-     * @return string|null
-     */
-    private static function getSocketKey(string $request): ?string
-    {
-        preg_match('#Sec-WebSocket-Key: (.*)\r\n#', $request, $matches);
-        return $matches[1] ?? null;
-    }
+	/**
+	 * Extracts the Sec-WebSocket-Key from the request headers.
+	 *
+	 * @param string $request The raw HTTP request headers.
+	 * @return string|null The extracted WebSocket key or null if not found.
+	 */
+	private static function getSocketKey(string $request): ?string
+	{
+		preg_match('#Sec-WebSocket-Key:\s*(\S+)#', $request, $matches);
+		return isset($matches[1]) ? trim($matches[1]) : null;
+	}
 
-    /**
-     * This will encode the socket key.
-     *
-     * @param string $key
-     * @return string
-     */
-    private static function encodeSockeyKey(string $key): string
-    {
-        return base64_encode(pack(
-            'H*',
-            sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
-        ));
-    }
+	/**
+	 * Encodes the WebSocket key according to the WebSocket protocol.
+	 *
+	 * @param string $key The extracted WebSocket key.
+	 * @return string The encoded WebSocket accept key.
+	 */
+	private static function encodeSocketKey(string $key): string
+	{
+		return base64_encode(pack(
+			'H*',
+			sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
+		));
+	}
 
-    /**
-     * This will get the socket headers.
-     *
-     * @param string $request
-     * @return string|null
-     */
+	/**
+	 * Generates the WebSocket handshake response headers.
+	 *
+	 * @param string $request The raw HTTP request headers.
+	 * @return string|null The formatted WebSocket handshake headers or null if the key is missing.
+	 */
 	public static function get(string $request): ?string
-    {
-        $key = self::getSocketKey($request);
-        if (!isset($key))
-        {
-            return null;
-        }
+	{
+		$key = self::getSocketKey($request);
+		if ($key === null)
+		{
+			return null;
+		}
 
-        $encodedKey = static::encodeSockeyKey($key);
-        $headers = "HTTP/1.1 101 Switching Protocols\r\n";
-        $headers .= "Upgrade: websocket\r\n";
-        $headers .= "Connection: Upgrade\r\n";
-        $headers .= "Sec-WebSocket-Version: 13\r\n";
-        $headers .= "Sec-WebSocket-Accept: {$encodedKey}\r\n\r\n";
-        return $headers;
-    }
+		$encodedKey = self::encodeSocketKey($key);
+
+		return sprintf(
+			"HTTP/1.1 101 Switching Protocols\r\n".
+			"Upgrade: websocket\r\n".
+			"Connection: Upgrade\r\n".
+			"Sec-WebSocket-Version: 13\r\n".
+			"Sec-WebSocket-Accept: %s\r\n\r\n",
+			$encodedKey
+		);
+	}
 }

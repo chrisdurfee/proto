@@ -1,20 +1,19 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Socket\WebSocket;
 
-use Proto\Http\Socket\WebSocket\Headers;
 use Proto\Http\Socket\Connection as BaseConnection;
 
 /**
- * Connection
+ * Class Connection
  *
- * This class represents a connection and provides methods to read and write data.
+ * Represents a WebSocket connection with methods for reading, writing, and upgrading connections.
  *
  * @package Proto\Http\Socket\WebSocket
  */
 class Connection extends BaseConnection
 {
 	/**
-	 * Read data from the socket.
+	 * Reads data from the socket.
 	 *
 	 * @return string|null Returns the read data or null if an error occurs.
 	 */
@@ -27,30 +26,30 @@ class Connection extends BaseConnection
 			return null;
 		}
 
-        /**
-         * This will unseal the message.
-         */
-        $response = MessageHandler::unseal($response);
-		$this->emit('data', $response);
-		return $response;
+		$unsealedResponse = MessageHandler::unseal($response);
+		$this->emit('data', $unsealedResponse);
+
+		return $unsealedResponse;
 	}
 
 	/**
-	 * This will upgrade the connection to a WebSocket connection.
+	 * Upgrades the connection to a WebSocket connection.
 	 *
 	 * @return void
 	 */
 	public function upgrade(): void
 	{
 		$request = $this->socket->receiveFrom(self::MAX_LENGTH);
-		if ($request === null)
+		if (empty($request))
 		{
+			$this->error('No request received for upgrade.');
 			return;
 		}
 
 		$headers = Headers::get($request);
-		if (!isset($headers))
+		if ($headers === null)
 		{
+			$this->error('Invalid headers received during upgrade.');
 			return;
 		}
 
@@ -58,18 +57,21 @@ class Connection extends BaseConnection
 	}
 
 	/**
-	 * Write data to the socket.
+	 * Writes data to the socket.
 	 *
 	 * @param string|null $data The data to write.
-	 * @return int Returns the number of bytes written or null if an error occurs.
+	 * @return int Returns the number of bytes written or 0 if an error occurs.
 	 */
 	public function write(?string $data): int
 	{
-        /**
-         * This will seal the message.
-         */
-        $data = MessageHandler::seal($data);
-		$result = $this->socket->sendTo($data);
+		if ($data === null || $data === '')
+		{
+			$this->error('Attempted to write empty data to the socket.');
+			return 0;
+		}
+
+		$sealedData = MessageHandler::seal($data);
+		$result = $this->socket->sendTo($sealedData);
 		if ($result === false)
 		{
 			$this->error('Unable to write to the socket.');
