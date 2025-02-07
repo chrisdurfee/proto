@@ -19,9 +19,10 @@ class Select extends Atom
 	{
 		$body = '';
 		$options = $this->get('options') ?? [];
-
-		if (!empty($options)) {
-			foreach ($options as $option) {
+		if (!empty($options))
+        {
+			foreach ($options as $option)
+            {
 				$body .= $this->createOption($option);
 			}
 		}
@@ -54,8 +55,8 @@ HTML;
 	protected function getDefault(): string
 	{
 		$label = $this->get('label') ?? '';
-
-		if (!$label) {
+		if (!$label)
+        {
 			return '';
 		}
 
