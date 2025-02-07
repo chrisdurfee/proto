@@ -4,112 +4,117 @@ namespace Proto\Http\Socket;
 /**
  * Server
  *
- * This class represents a server socket and provides methods to manage its connections.
+ * Represents a server socket and manages client connections.
  *
  * @package Proto\Http\Socket
  */
 class Server extends SocketHandler
 {
 	/**
-	 * @var bool $connected
+	 * Indicates whether the server is running.
+	 *
+	 * @var bool
 	 */
 	protected bool $connected = true;
 
 	/**
-	 * Server constructor.
+	 * The socket instance.
 	 *
-	 * @param string $address
-	 * @param int $port
-	 * @return void
+	 * @var StreamSocket
+	 */
+	protected readonly StreamSocket $socket;
+
+	/**
+	 * Initializes the server.
+	 *
+	 * @param string $address The server address (e.g., "127.0.0.1").
+	 * @param int $port The server port.
 	 */
 	public function __construct(string $address, int $port)
 	{
 		parent::__construct();
-		$this->preventTimeOut();
-		$this->socket = StreamSocket::server($address . ':' . $port);
+		$this->preventTimeout();
+		$this->socket = StreamSocket::server("{$address}:{$port}");
 	}
 
 	/**
-	 * Prevent the server from timing out.
+	 * Prevents server from timing out.
 	 *
 	 * @return void
 	 */
-	protected function preventTimeOut(): void
+	protected function preventTimeout(): void
 	{
 		set_time_limit(0);
 	}
 
 	/**
-	 * Set blocking mode on the stream.
+	 * Sets the socket blocking mode.
 	 *
-	 * @param bool $enable
+	 * @param bool $enable Whether to enable blocking.
 	 * @return bool
 	 */
 	public function blocking(bool $enable): bool
 	{
-		$result = $this->socket->setBlocking($enable);
-		return $this->checkResponse($result, 'Unable to update blocking.');
+		return $this->socket->setBlocking($enable);
 	}
 
 	/**
-	 * Set the chunk size on the stream.
+	 * Sets the chunk size for data transfer.
 	 *
-	 * @param int $size
+	 * @param int $size The chunk size in bytes.
 	 * @return int|false
 	 */
-	public function chunk(int $size)
+	public function chunk(int $size): int|false
 	{
 		return $this->socket->setChunkSize($size);
 	}
 
 	/**
-	 * Set the write buffer on the stream.
+	 * Sets the write buffer size.
 	 *
-	 * @param int $size
+	 * @param int $size The buffer size in bytes.
 	 * @return int|false
 	 */
-	public function buffer(int $size)
+	public function buffer(int $size): int|false
 	{
 		return $this->socket->setWriteBuffer($size);
 	}
 
 	/**
-	 * Set the timeout period on the stream.
+	 * Sets the timeout period for connections.
 	 *
-	 * @param int $seconds
-	 * @param int $microseconds
+	 * @param int $seconds Timeout in seconds.
+	 * @param int $microseconds Timeout in microseconds (optional).
 	 * @return bool
 	 */
 	public function timeout(int $seconds, int $microseconds = 0): bool
 	{
-		$result = $this->socket->setTimeout($seconds, $microseconds);
-		return $this->checkResponse($result, 'Unable to update the timeout.');
+		return $this->socket->setTimeout($seconds, $microseconds);
 	}
 
 	/**
-	 * Enable or disable crypto on the stream.
+	 * Enables or disables SSL/TLS encryption on the socket.
 	 *
-	 * @param bool $enable
+	 * @param bool $enable Whether to enable encryption.
 	 * @return bool
 	 */
 	public function secure(bool $enable = true): bool
 	{
-		$result = $this->socket->enableCrypto($enable, STREAM_CRYPTO_METHOD_TLSv1_2_SERVER);
-		return $this->checkResponse($result, 'Unable to update the ssl settings.');
+		return $this->socket->enableCrypto($enable, STREAM_CRYPTO_METHOD_TLSv1_2_SERVER);
 	}
 
 	/**
-	 * Check if the server is connected.
+	 * Checks if the server is connected.
 	 *
 	 * @return bool
 	 */
-	protected function isConnected(): bool
+	public function isConnected(): bool
 	{
 		return $this->connected;
 	}
 
 	/**
-	 * Listen to the socket for incoming connections.
+	 * Listens for incoming connections and processes client requests.
 	 *
 	 * @return void
 	 */
@@ -118,42 +123,43 @@ class Server extends SocketHandler
 		while ($this->isConnected())
 		{
 			$connection = $this->accept();
-			if (is_null($connection))
+
+			if ($connection === null)
 			{
+				usleep(500000); // Prevent CPU overuse (wait 0.5s before retrying)
 				continue;
 			}
 
-			while (true)
+			while ($this->isConnected())
 			{
 				$input = $connection->read();
+
+				if ($input === null)
+				{
+					break; // Disconnect client if read fails
+				}
+
 				if ($input === 'exit')
 				{
 					$connection->close();
-					$this->stop();
+					$this->shutdown();
+					break 2; // Exit both loops
 				}
-				sleep(1);
+
+				usleep(100000); // Reduce CPU load (wait 0.1s)
 			}
+
+			$connection->close();
 		}
 	}
 
 	/**
-	 * This will run the server.
+	 * Starts the server and begins listening for connections.
 	 *
 	 * @return void
 	 */
 	public function run(): void
 	{
 		$this->listen();
-	}
-
-	/**
-	 * Stop the server.
-	 *
-	 * @return void
-	 */
-	protected function stop(): void
-	{
-		$this->close();
-		$this->connected = false;
 	}
 }

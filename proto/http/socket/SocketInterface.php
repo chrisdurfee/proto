@@ -10,5 +10,4 @@ namespace Proto\Http\Socket;
  */
 interface SocketInterface
 {
-
 }
