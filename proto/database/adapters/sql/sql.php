@@ -50,37 +50,23 @@ namespace Proto\Database\Adapters\SQL
 		 */
 		private static function handleJsonArray(array $data): string
 		{
-			$length = count($data);
-
-			$json = '';
-			$count = 0;
-			$limit = $length - 1;
+			$json = [];
 			foreach ($data as $key => $value)
 			{
-				$json .= "'" . $key . "', " . $value;
-				if ($count < $limit)
-				{
-					$json .= ',';
-				}
-				$count++;
+				$json[] = sprintf("'%s', %s", $key, $value);
 			}
-			return $json;
+			return implode(', ', $json);
 		}
 
 		/**
-		 * Convert the data to a string.
+		 * Convert the data to a JSON string.
 		 *
 		 * @param mixed $data
 		 * @return string
 		 */
 		private static function getJsonString(mixed $data): string
 		{
-			if (is_array($data))
-			{
-				return static::handleJsonArray($data);
-			}
-
-			return '';
+			return is_array($data) ? static::handleJsonArray($data) : '';
 		}
 
 		/**
@@ -152,6 +138,6 @@ namespace
 	 */
 	function RawAlias(string $column, string $alias): array
 	{
-		return Alias([$column], $alias);
+		return SQL::alias([$column], $alias);
 	}
 }

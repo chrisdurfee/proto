@@ -23,27 +23,27 @@ abstract class Adapter
 	/**
 	 * @var object|null $connection Database connection instance.
 	 */
-	private ?object $connection = null;
+	protected ?object $connection = null;
 
 	/**
 	 * @var bool $connected Connection status.
 	 */
-	private bool $connected = false;
+	protected bool $connected = false;
 
 	/**
 	 * @var object|null $lastError Stores the last database error.
 	 */
-	private ?object $lastError = null;
+	protected ?object $lastError = null;
 
 	/**
 	 * @var int|null $lastId Last inserted ID.
 	 */
-	private ?int $lastId = null;
+	protected ?int $lastId = null;
 
 	/**
 	 * @var bool $caching Enables or disables query caching.
 	 */
-	private bool $caching = false;
+	protected bool $caching = false;
 
 	/**
 	 * Constructor
