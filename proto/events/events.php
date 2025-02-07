@@ -5,127 +5,95 @@ use Proto\Patterns\Creational\Singleton;
 use Proto\Patterns\Structural\PubSub;
 
 /**
- * Events
+ * Class Events
  *
- * This will allow events to be emitted and listened for.
+ * Provides a Singleton-based event system for subscribing, emitting, and removing events.
  *
  * @package Proto\Events
  */
 class Events extends Singleton
 {
 	/**
-	 * @var Events $instance
+	 * @var ?Events The singleton instance.
 	 */
-    protected static $instance = null;
-
-    /**
-     * @var PubSub $pubSub
-     */
-    protected PubSub $pubSub;
+	protected static ?Events $instance = null;
 
 	/**
-	 * This will setup the PubSub to allow events to
-	 * be added, removed, and published.
+	 * Initializes the PubSub instance.
 	 *
-	 * @return void
+	 * @param PubSub $pubSub The PubSub instance to use.
 	 */
-	protected function __construct()
-    {
-		$this->setupPubSub();
+	protected function __construct(
+		protected PubSub $pubSub = new PubSub()
+	)
+	{
 	}
 
 	/**
-	 * This will setup the pub sub.
+	 * Publishes an event.
 	 *
-	 * @return void
+	 * @param string $key The event identifier.
+	 * @param mixed $payload The event data.
 	 */
-	protected function setupPubSub(): void
+	public function emit(string $key, mixed $payload): void
 	{
-		$this->pubSub = new PubSub();
-    }
-
-    /**
-     * This will publish an event.
-     *
-     * @param string $key
-     * @param mixed $payload
-     * @return void
-     */
-    public function set(string $key, mixed $payload): void
-    {
-        $this->pubSub->publish($key, $payload);
-    }
-
-    /**
-	 * This will add a subscribder.
-	 *
-	 * @param string $key
-	 * @param callable $callBack
-	 * @return string|null
-	 */
-	public function add(string $key, callable $callBack): ?string
-	{
-		if (!isset($key))
-		{
-			return null;
-		}
-
-		return $this->pubSub->subscribe($key, $callBack);
+		$this->pubSub->publish($key, $payload);
 	}
 
 	/**
-	 * This will remove a subscriber
+	 * Subscribes to an event.
 	 *
-     * @param string $key
-	 * @param string $token
-	 * @return void
+	 * @param string $key The event identifier.
+	 * @param callable $callback The function to execute when the event is triggered.
+	 * @return string|null The subscription token or null if failed.
 	 */
-	public function remove(string $key, string $token): void
+	public function subscribe(string $key, callable $callback): ?string
 	{
-		if (!isset($key))
-		{
-			return;
-		}
+		return $this->pubSub->subscribe($key, $callback);
+	}
 
+	/**
+	 * Unsubscribes from an event.
+	 *
+	 * @param string $key The event identifier.
+	 * @param string $token The subscription token to remove.
+	 */
+	public function unsubscribe(string $key, string $token): void
+	{
 		$this->pubSub->unsubscribe($key, $token);
-    }
-
-    /**
-     * This will publish an event.
-     *
-     * @param string $key
-     * @param mixed $payload
-     * @return void
-     */
-    public static function update(string $key, $payload): void
-    {
-        $events = static::getInstance();
-        $events->set($key, $payload);
-    }
-
-	/**
-	 * This will add a subscribder.
-	 *
-	 * @param string $key
-	 * @param callable $callBack
-	 * @return string|null
-	 */
-	public static function on(string $key, $callBack): ?string
-	{
-        $events = static::getInstance();
-        return $events->add($key, $callBack);
 	}
 
 	/**
-	 * This will remove a subscriber
+	 * Publishes an event (static wrapper for `emit()`).
 	 *
-     * @param string $key
-	 * @param string $token
-	 * @return void
+	 * @param string $key The event identifier.
+	 * @param mixed $payload The event data.
+	 */
+	public static function update(string $key, mixed $payload): void
+	{
+		static::getInstance()->emit($key, $payload);
+	}
+
+	/**
+	 * Subscribes to an event (static wrapper for `subscribe()`).
+	 *
+	 * @param string $key The event identifier.
+	 * @param callable $callback The function to execute when the event is triggered.
+	 * @return string|null The subscription token or null if failed.
+	 */
+	public static function on(string $key, callable $callback): ?string
+	{
+		return static::getInstance()->subscribe($key, $callback);
+	}
+
+	/**
+	 * Unsubscribes from an event (static wrapper for `unsubscribe()`).
+	 *
+	 * @param string $key The event identifier.
+	 * @param string $token The subscription token to remove.
 	 */
 	public static function off(string $key, string $token): void
 	{
-		$events = static::getInstance();
-        $events->remove($key, $token);
+		static::getInstance()->unsubscribe($key, $token);
 	}
 }
