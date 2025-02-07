@@ -21,8 +21,6 @@ class EventProxy
         protected object $object
     )
 	{
-		$this->target = $target;
-		$this->object = $object;
 	}
 
 	/**
