@@ -7,100 +7,103 @@ use Proto\Utils\Format\JsonFormat;
 /**
  * Policy
  *
- * This will be the base class for all cache policies.
+ * Base class for all cache policies.
  *
  * @package Proto\Cache\Policies
  */
 abstract class Policy
 {
-    /**
-	 * @var object $controller
+	/**
+	 * Controller instance.
+	 *
+	 * @var object
 	 */
-    protected object $controller;
+	protected object $controller;
 
-    /**
-     * @var int $expire in seconds
-     */
-    protected $expire = 300;
+	/**
+	 * Cache expiration time in seconds.
+	 *
+	 * @var int
+	 */
+	protected int $expire = 300;
 
-    /**
-     *  This will create a cache policy.
-     *
-     * @param object $controller
-     * @return void
-     */
-    public function __construct(object $controller)
-    {
-        $this->controller = $controller;
-    }
+	/**
+	 * Creates a cache policy instance.
+	 *
+	 * @param object $controller The controller instance.
+	 */
+	public function __construct(object $controller)
+	{
+		$this->controller = $controller;
+	}
 
-    /**
-     * This will get a value from the cache.
-     *
-     * @param string $key
-     * @return mixed
-     */
+	/**
+	 * Retrieves a value from the cache.
+	 *
+	 * @param string $key The cache key.
+	 * @return mixed The decoded cache value, or null if not found.
+	 */
 	public function getValue(string $key): mixed
-    {
-        $value = Cache::get($key);
-        return ($value)? JsonFormat::decode($value) : $value;
-    }
+	{
+		$value = Cache::get($key);
+		return $value !== null ? JsonFormat::decode($value) : null;
+	}
 
-    /**
-     * This will get the keys from the cache.
-     *
-     * @param string $key
-     * @return mixed
-     */
-	public function getKeys(string $key): mixed
-    {
-        return Cache::keys($key);
-    }
+	/**
+	 * Retrieves cache keys matching a pattern.
+	 *
+	 * @param string $key The key pattern.
+	 * @return array|null The list of keys, or null if none found.
+	 */
+	public function getKeys(string $key): ?array
+	{
+		return Cache::keys($key);
+	}
 
-    /**
-     * This will check if the item is in the cache.
-     *
-     * @param string $key
-     * @return bool
-     */
-    public function hasKey(string $key): bool
-    {
-        return Cache::has($key);
-    }
+	/**
+	 * Checks if a cache key exists.
+	 *
+	 * @param string $key The cache key.
+	 * @return bool True if the key exists, otherwise false.
+	 */
+	public function hasKey(string $key): bool
+	{
+		return Cache::has($key);
+	}
 
-    /**
-     * This will delete a value from the cache.
-     *
-     * @param string $key
-     * @return bool
-     */
-    public function deleteKey(string $key): bool
-    {
-        return Cache::delete($key);
-    }
+	/**
+	 * Deletes a value from the cache.
+	 *
+	 * @param string $key The cache key.
+	 * @return bool True if the key was deleted, otherwise false.
+	 */
+	public function deleteKey(string $key): bool
+	{
+		return Cache::delete($key);
+	}
 
-    /**
-     * This will set a value to the cache.
-     *
-     * @param string $key
-     * @param mixed $value
-     * @param int|null $expire
-     * @return void
-     */
-    public function setValue(string $key, mixed $value, ?int $expire = null): void
-    {
-        Cache::set($key, json_encode($value), $expire);
-    }
+	/**
+	 * Stores a value in the cache.
+	 *
+	 * @param string $key The cache key.
+	 * @param mixed $value The value to store.
+	 * @param int|null $expire Expiration time in seconds (optional).
+	 * @return void
+	 */
+	public function setValue(string $key, mixed $value, ?int $expire = null): void
+	{
+		Cache::set($key, JsonFormat::encode($value), $expire ?? $this->expire);
+	}
 
-    /**
-     * This will create a cache key.
-     *
-     * @param string $method
-     * @param mixed $params
-     * @return string
-     */
-    protected function createKey(string $method, mixed $params): string
-    {
-        return $this->controller::class . ':' . $method . ':' . (string)$params;
-    }
+	/**
+	 * Creates a unique cache key.
+	 *
+	 * @param string $method The method name.
+	 * @param mixed $params The method parameters.
+	 * @return string The generated cache key.
+	 */
+	protected function createKey(string $method, mixed $params): string
+	{
+		return $this->controller::class . ':' . $method . ':' . (string)$params;
+	}
 }
