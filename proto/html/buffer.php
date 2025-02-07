@@ -2,51 +2,57 @@
 namespace Proto\Html;
 
 /**
- * Buffer
+ * Class Buffer
  *
- * This will create a buffer.
+ * Handles output buffering operations.
  *
  * @package Proto\Html
  */
 class Buffer
 {
 	/**
-	 * This will start the buffer.
+	 * Starts output buffering.
 	 *
 	 * @return void
 	 */
-    public function start(): void
+	public function start(): void
 	{
-		ob_start();
+		if (!ob_start())
+		{
+			throw new \RuntimeException('Failed to start output buffering.');
+		}
 	}
 
 	/**
-	 * This will end the buffer and return the contents.
+	 * Returns the current buffer contents and ends the buffer.
 	 *
-	 * @return string
+	 * @return string The buffered output.
 	 */
 	public function getContentsAndEnd(): string
 	{
-		return ob_get_clean();
+		return ob_get_level() > 0 ? ob_get_clean() : '';
 	}
 
 	/**
-	 * This will get the buffer contents.
+	 * Returns the current buffer contents without ending the buffer.
 	 *
-	 * @return string
+	 * @return string The buffered output.
 	 */
 	public function getContents(): string
 	{
-		return ob_get_contents();
+		return ob_get_level() > 0 ? ob_get_contents() ?: '' : '';
 	}
 
 	/**
-	 * This will stop the buffer.
+	 * Stops output buffering and discards the contents.
 	 *
 	 * @return void
 	 */
 	public function stop(): void
 	{
-		ob_end_clean();
+		if (ob_get_level() > 0)
+		{
+			ob_end_clean();
+		}
 	}
 }
