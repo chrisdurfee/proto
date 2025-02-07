@@ -4,12 +4,24 @@ namespace Proto\Html\Atoms\Headers;
 use Proto\Html\Atoms\Atom;
 
 /**
- * header
+ * Class Header
+ *
+ * Represents a `<header>` element.
+ *
+ * @package Proto\Html\Atoms\Headers
  */
 class Header extends Atom
 {
 	/**
-	 * This will get the title text.
+	 * @param string $className The CSS class for the header (default: 'title').
+	 */
+	public function __construct(protected string $className = 'title')
+	{
+		parent::__construct();
+	}
+
+	/**
+	 * Retrieves the title text.
 	 *
 	 * @return string
 	 */
@@ -19,33 +31,17 @@ class Header extends Atom
 	}
 
 	/**
+	 * Generates the `<header>` element.
 	 *
-	 * @var string
+	 * @return string The rendered HTML.
 	 */
-	protected $className = 'title';
-
-	/**
-	 * This will get the header className.
-	 *
-	 * @return string
-	 */
-	protected function getClassName(): string
+	protected function getBody(): string
 	{
-		return $this->get('className') ?? $this->className;
-	}
+		$title = $this->getTitle();
+		$className = $this->get('className') ?? $this->className;
 
-	/**
-	 *
-	 * @return string
-	 */
-	protected function getBody()
-	{
-		$className = $this->getClassName();
-
-		return <<<EOT
-		<header class="{$className}">
-			{$this->getTitle()}
-		</header>
-EOT;
+		return <<<HTML
+		<header class="{$className}">{$title}</header>
+HTML;
 	}
 }

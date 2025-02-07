@@ -1,10 +1,17 @@
 <?php declare(strict_types=1);
 namespace Proto\Html\Atoms;
 
+/**
+ * Class A
+ *
+ * Represents an `<a>` (anchor) element.
+ *
+ * @package Proto\Html\Atoms
+ */
 class A extends Atom
 {
 	/**
-	 * This will get the text.
+	 * Retrieves the anchor text.
 	 *
 	 * @return string
 	 */
@@ -14,7 +21,7 @@ class A extends Atom
 	}
 
 	/**
-	 * This will get the url.
+	 * Retrieves the URL for the anchor.
 	 *
 	 * @return string
 	 */
@@ -24,23 +31,18 @@ class A extends Atom
 	}
 
 	/**
-	 * This will get the className.
+	 * Generates the `<a>` element.
 	 *
-	 * @return string
+	 * @return string The rendered HTML.
 	 */
-	protected function getClassName(): string
+	protected function getBody(): string
 	{
-		return $this->get('className') ?? '';
-	}
+		$url = $this->getUrl();
+		$text = $this->getText();
+		$className = $this->get('className') ?? '';
 
-	protected function getBody()
-	{
-		$className = $this->getClassName();
-
-		return <<<EOT
-		<a href="{$this->getUrl()}" class="{$className}">
-			{$this->getText()}
-		</a>
-EOT;
+		return <<<HTML
+		<a href="{$url}" class="{$className}">{$text}</a>
+HTML;
 	}
 }

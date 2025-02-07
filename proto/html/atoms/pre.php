@@ -2,18 +2,24 @@
 namespace Proto\Html\Atoms;
 
 /**
- * Pre
+ * Class Pre
+ *
+ * Represents a `<pre>` element for preformatted text.
+ *
+ * @package Proto\Html\Atoms
  */
 class Pre extends Atom
 {
-    protected function getBody()
+	/**
+	 * Generates the `<pre>` element.
+	 *
+	 * @return string The rendered HTML.
+	 */
+	protected function getBody(): string
 	{
         $content = $this->get('content') ?? '';
-
-		return <<<EOT
-<pre>
-    {$content}
-</pre>
-EOT;
+		return <<<HTML
+		<pre>{$content}</pre>
+HTML;
 	}
 }

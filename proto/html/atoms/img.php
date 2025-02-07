@@ -1,10 +1,17 @@
 <?php declare(strict_types=1);
 namespace Proto\Html\Atoms;
 
+/**
+ * Class Img
+ *
+ * Represents an `<img>` element.
+ *
+ * @package Proto\Html\Atoms
+ */
 class Img extends Atom
 {
 	/**
-	 * This will get the alt.
+	 * Retrieves the `alt` attribute for the image.
 	 *
 	 * @return string
 	 */
@@ -14,7 +21,7 @@ class Img extends Atom
 	}
 
 	/**
-	 * This will get the src.
+	 * Retrieves the `src` attribute for the image.
 	 *
 	 * @return string
 	 */
@@ -24,21 +31,18 @@ class Img extends Atom
 	}
 
 	/**
-	 * This will get the className.
+	 * Generates the `<img>` element.
 	 *
-	 * @return string
+	 * @return string The rendered HTML.
 	 */
-	protected function getClassName(): string
+	protected function getBody(): string
 	{
-		return $this->get('className') ?? '';
-	}
+		$src = $this->getSrc();
+		$alt = $this->getAlt();
+		$className = $this->get('className') ?? '';
 
-	protected function getBody()
-	{
-		$className = $this->getClassName();
-
-		return <<<EOT
-		<img src="{$this->getSrc()}" class="{$className}" alt="{$this->getAlt()}">
-EOT;
+		return <<<HTML
+		<img src="{$src}" alt="{$alt}" class="{$className}" />
+HTML;
 	}
 }
