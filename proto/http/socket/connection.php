@@ -37,14 +37,13 @@ class Connection extends SocketHandler
 	 * Reads data from the socket.
 	 *
 	 * @return string|null The read data, or null on failure.
-	 * @throws \RuntimeException If reading from the socket fails.
 	 */
 	public function read(): ?string
 	{
 		$response = $this->socket->receiveFrom(self::MAX_LENGTH);
 		if ($response === false)
 		{
-			trigger_error('Socket read error: Unable to read from the socket.', E_USER_WARNING);
+			$this->error('Unable to read from the socket.');
 			return null;
 		}
 
@@ -69,7 +68,7 @@ class Connection extends SocketHandler
 		$result = $this->socket->sendTo($data);
 		if ($result === false)
 		{
-			trigger_error('Socket write error: Unable to write to the socket.', E_USER_WARNING);
+			$this->error('Unable to write to the socket.');
 			return 0;
 		}
 

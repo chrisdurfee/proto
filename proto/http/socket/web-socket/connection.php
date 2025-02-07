@@ -61,9 +61,9 @@ class Connection extends BaseConnection
 	 * Write data to the socket.
 	 *
 	 * @param string|null $data The data to write.
-	 * @return int|null Returns the number of bytes written or null if an error occurs.
+	 * @return int Returns the number of bytes written or null if an error occurs.
 	 */
-	public function write(?string $data): ?int
+	public function write(?string $data): int
 	{
         /**
          * This will seal the message.
@@ -73,7 +73,7 @@ class Connection extends BaseConnection
 		if ($result === false)
 		{
 			$this->error('Unable to write to the socket.');
-			return null;
+			return 0;
 		}
 
 		return $result;

@@ -2,7 +2,6 @@
 namespace Proto\Http\Socket;
 
 use Proto\Events\EventEmitter;
-use RuntimeException;
 
 /**
  * SocketHandler
@@ -25,17 +24,11 @@ abstract class SocketHandler extends EventEmitter
 	 *
 	 * @param bool $remote Whether to fetch the remote address.
 	 * @return string
-	 * @throws RuntimeException If unable to retrieve the address.
 	 */
 	public function getRemoteAddress(bool $remote): string
 	{
-		$address = $this->socket->getName($remote);
-		if ($address === false)
-		{
-			throw new RuntimeException('Unable to get the remote address.');
-		}
-
-		return $address;
+		$name = $this->socket->getName($remote);
+		return $this->checkResponse($name, 'Unable to get the remote address.');
 	}
 
 	/**
@@ -71,15 +64,14 @@ abstract class SocketHandler extends EventEmitter
 	public function accept(?float $timeout = null, string &$peerName = null): ?Connection
 	{
 		$socket = $this->socket->accept($timeout, $peerName);
-		if ($socket === false)
+		if (!$socket)
 		{
-			$this->emitError('Unable to accept new connection.', ['peerName' => $peerName]);
+			$this->error('Unable to create new connection.');
 			return null;
 		}
 
 		$connection = $this->createConnection($socket);
 		$this->emit('connection', $connection);
-
 		return $connection;
 	}
 
@@ -99,37 +91,31 @@ abstract class SocketHandler extends EventEmitter
 	}
 
 	/**
-	 * Throws an exception if the response is invalid.
+	 * Check the socket response.
 	 *
-	 * @param mixed $response The response to validate.
-	 * @param string|null $message The error message (if needed).
-	 * @return mixed The original response if valid.
-	 * @throws RuntimeException If response is invalid.
+	 * @param mixed $response
+	 * @param string|null $message
+	 * @return mixed
 	 */
-	protected function validateResponse(mixed $response, ?string $message = null): mixed
+	protected function checkResponse(mixed $response, ?string $message = null): mixed
 	{
-		if ($response === false)
+		if (!$response)
 		{
-			throw new RuntimeException($message ?? 'An unexpected socket error occurred.');
+			$this->error($message);
 		}
-
 		return $response;
 	}
 
 	/**
-	 * Emits an error event with context.
+	 * Emit an error event.
 	 *
-	 * @param string $message The error message.
-	 * @param array $context Additional error context.
+	 * @param string|null $message
 	 * @return void
 	 */
-	protected function emitError(string $message, array $context = []): void
+	protected function error(?string $message = null): void
 	{
 		$this->emit('error', [
-			'message' => $message,
-			'context' => $context
+			'message' => $message
 		]);
-
-		trigger_error($message, E_USER_WARNING);
 	}
 }

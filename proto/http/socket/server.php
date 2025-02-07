@@ -123,17 +123,16 @@ class Server extends SocketHandler
 		while ($this->isConnected())
 		{
 			$connection = $this->accept();
-
 			if ($connection === null)
 			{
-				usleep(500000); // Prevent CPU overuse (wait 0.5s before retrying)
+				$DELAY = 500000; // Delay in microseconds (0.5s)
+				usleep($DELAY); // Prevent CPU overuse (wait 0.5s before retrying)
 				continue;
 			}
 
 			while ($this->isConnected())
 			{
 				$input = $connection->read();
-
 				if ($input === null)
 				{
 					break; // Disconnect client if read fails
@@ -146,7 +145,8 @@ class Server extends SocketHandler
 					break 2; // Exit both loops
 				}
 
-				usleep(100000); // Reduce CPU load (wait 0.1s)
+				$ONE_SECOND = 1000000; // One second in microseconds
+				usleep($ONE_SECOND); // Reduce CPU load (wait 1s)
 			}
 
 			$connection->close();
