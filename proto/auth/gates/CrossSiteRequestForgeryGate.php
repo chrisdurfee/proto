@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Auth;
+namespace Proto\Auth\Gates;
 
 use Proto\Http\Request;
 

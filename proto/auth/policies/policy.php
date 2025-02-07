@@ -2,28 +2,17 @@
 namespace Proto\Auth\Policies;
 
 /**
- * Policy
+ * Class Policy
  *
- * This will be the base class for all auth policies.
+ * Base class for authentication policies.
  *
  * @package Proto\Auth\Policies
  * @abstract
  */
 abstract class Policy
 {
-    /**
-     * @var object|null $controller
-     */
-    protected $controller = null;
-
-    /**
-     * This will add the controller to the policy.
-     *
-     * @param object|null $controller
-     * @return void
-     */
-    public function __construct(?object $controller = null)
-    {
-        $this->controller = $controller;
-    }
+	/**
+	 * @param object|null $controller The controller instance associated with this policy.
+	 */
+	public function __construct(protected ?object $controller = null) {}
 }
