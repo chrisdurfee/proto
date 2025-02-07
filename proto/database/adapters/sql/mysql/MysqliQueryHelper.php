@@ -5,13 +5,13 @@ use Proto\Utils\Arrays;
 use Proto\Utils\Sanitize;
 
 /**
- * MysqlQueryHelper class
+ * MysqliQueryHelper class
  *
  * Provides helper methods for building SQL queries and processing query parameters.
  *
  * @package Proto\Database\Adapters\SQL\Mysql
  */
-class MysqlQueryHelper
+class MysqliQueryHelper
 {
 	/**
 	 * Converts associative arrays or objects into sequential arrays for binding.

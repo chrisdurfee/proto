@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 namespace Proto\Database\Adapters;
 
-use Proto\Utils\Sanitize;
-use Proto\Database\Adapters\SQL\Mysql\MysqliBindTrait;
+use Proto\Database\Adapters\SQL\Mysql\MysqliQueryHelper;
 use Proto\Database\Adapters\SQL\SQL;
+use Proto\Utils\Sanitize;
 
 /**
  * Initialize SQL functions in the global scope.
@@ -19,7 +19,17 @@ SQL::init();
  */
 class Mysqli extends Adapter
 {
-	use MysqliBindTrait;
+	/**
+	 * Constructor.
+	 *
+	 * @param array|object $settings Raw connection settings.
+	 * @param bool $caching Enable or disable caching.
+	 * @param MysqliQueryHelper|null $queryHelper Optional query helper instance.
+	 */
+	public function __construct(array|object $settings, bool $caching = false, private ?MysqliQueryHelper $queryHelper = new MysqliQueryHelper())
+	{
+		parent::__construct($settings, $caching);
+	}
 
 	/**
 	 * Starts the database connection.
@@ -63,25 +73,6 @@ class Mysqli extends Adapter
 	}
 
 	/**
-	 * Binds parameters to a prepared statement.
-	 *
-	 * @param \mysqli_stmt $stmt The prepared statement.
-	 * @param array|object $params The parameters to bind.
-	 * @return void
-	 */
-	protected static function bindParams(\mysqli_stmt $stmt, array|object $params = []) : void
-	{
-		if (empty($params))
-		{
-			return;
-		}
-
-		$params = self::setupParams($params);
-		$types = str_repeat('s', count($params));
-		$stmt->bind_param($types, ...$params);
-	}
-
-	/**
 	 * Prepares a SQL statement.
 	 *
 	 * @param string $sql The SQL query.
@@ -102,7 +93,7 @@ class Mysqli extends Adapter
 			return false;
 		}
 
-		self::bindParams($stmt, $params);
+		$this->queryHelper->bindParams($stmt, $params);
 		return $stmt;
 	}
 
@@ -311,13 +302,11 @@ class Mysqli extends Adapter
 	 */
 	public function insert(string $tableName, array|object $data) : bool
 	{
-		$params = $this->createParamsFromData($data, 'id', true);
-
+		$params = $this->queryHelper->createParamsFromData($data, 'id', true);
 		$columns = implode(', ', $params->cols);
-		$placeholders = $this->setupPlaceholders($params->cols);
+		$placeholders = $this->queryHelper->setupPlaceholders($params->cols);
 
 		$sql = "INSERT INTO {$tableName} ({$columns}) VALUES ({$placeholders});";
-
 		return $this->execute($sql, $params->values);
 	}
 
@@ -331,8 +320,8 @@ class Mysqli extends Adapter
 	 */
 	public function update(string $tableName, array|object $data, string $idColumn = 'id') : bool
 	{
-		$params = $this->createParamsFromData($data, $idColumn, true);
-		$updatePairs = $this->setUpdatePairs($params);
+		$params = $this->queryHelper->createParamsFromData($data, $idColumn, true);
+		$updatePairs = $this->queryHelper->setUpdatePairs($params);
 
 		if (empty($updatePairs))
 		{
@@ -341,43 +330,9 @@ class Mysqli extends Adapter
 
 		$idColumn = Sanitize::cleanColumn($idColumn);
 		$sql = "UPDATE {$tableName} SET {$updatePairs} WHERE {$idColumn} = ?;";
-
 		$params->values[] = $params->id;
 
 		return $this->execute($sql, $params->values);
-	}
-
-	/**
-	 * Retrieves replace values from data.
-	 *
-	 * @param array|object $data The data for replacement.
-	 * @return object An object containing columns and values.
-	 */
-	protected function getReplaceValues(array|object $data) : object
-	{
-		$cols = [];
-		$values = [];
-
-		if (is_object($data))
-		{
-			$data = get_object_vars($data);
-		}
-
-		if (is_array($data))
-		{
-			$cols = array_keys($data);
-			$values = array_values($data);
-		}
-
-		$cols = array_map(static function($col) : string
-		{
-			return Sanitize::cleanColumn($col);
-		}, $cols);
-
-		return (object) [
-			'cols'   => $cols,
-			'values' => $values,
-		];
 	}
 
 	/**
@@ -389,12 +344,11 @@ class Mysqli extends Adapter
 	 */
 	public function replace(string $tableName, array|object $data) : bool
 	{
-		$params = $this->getReplaceValues($data);
-		$placeholders = $this->setupPlaceholders($params->values);
+		$params = $this->queryHelper->createParamsFromData($data, 'id', true);
+		$placeholders = $this->queryHelper->setupPlaceholders($params->values);
 		$columns = implode(', ', $params->cols);
 
 		$sql = "REPLACE INTO {$tableName} ({$columns}) VALUES ({$placeholders});";
-
 		return $this->execute($sql, $params->values);
 	}
 
@@ -415,7 +369,7 @@ class Mysqli extends Adapter
 
 		if (is_array($id))
 		{
-			$placeholders = $this->setupPlaceholders($id);
+			$placeholders = $this->queryHelper->setupPlaceholders($id);
 		}
 		else
 		{
@@ -424,7 +378,6 @@ class Mysqli extends Adapter
 		}
 
 		$sql = "DELETE FROM {$tableName} WHERE {$idColumn} IN ({$placeholders});";
-
 		return $this->execute($sql, $id);
 	}
 
@@ -459,18 +412,11 @@ class Mysqli extends Adapter
 	 * @param int|null $count The count value.
 	 * @return array|bool The fetched results as an array, or false on failure.
 	 */
-	public function select(
-		string $tableName,
-		string $where = '',
-		array|object $params = [],
-		?int $offset = null,
-		?int $count = null
-	) : array|bool
+	public function select(string $tableName, string $where = '', array|object $params = [], ?int $offset = null, ?int $count = null) : array|bool
 	{
 		$limit = $this->getLimit($offset, $count);
 		$whereClause = $where ? "WHERE {$where}" : "";
 		$sql = "SELECT * FROM {$tableName} {$whereClause} {$limit};";
-
 		return $this->fetch($sql, $params);
 	}
 
@@ -502,77 +448,5 @@ class Mysqli extends Adapter
 
 		$result->free();
 		return $rows;
-	}
-
-	/**
-	 * Creates parameters from data for insert or update queries.
-	 *
-	 * Extracts column names and values from an array or object. If the column
-	 * matching the provided ID column is found and removal is enabled, that value
-	 * is stored separately.
-	 *
-	 * @param array|object $data The input data.
-	 * @param string $idColumn The primary key column to exclude.
-	 * @param bool $removeId Whether to remove the ID from data.
-	 * @return object An object containing 'cols', 'values', and optionally 'id'.
-	 */
-	protected function createParamsFromData(array|object $data, string $idColumn, bool $removeId = true) : object
-	{
-		$columns = [];
-		$values = [];
-		$id = null;
-
-		if (is_object($data))
-		{
-			$data = get_object_vars($data);
-		}
-
-		foreach ($data as $column => $value)
-		{
-			$cleanColumn = Sanitize::cleanColumn($column);
-			if ($removeId && $cleanColumn === Sanitize::cleanColumn($idColumn))
-			{
-				$id = $value;
-				continue;
-			}
-			$columns[] = $cleanColumn;
-			$values[] = $value;
-		}
-
-		return (object) [
-			'cols'   => $columns,
-			'values' => $values,
-			'id'     => $id,
-		];
-	}
-
-	/**
-	 * Generates a string of placeholders for SQL queries.
-	 *
-	 * @param array $params The parameters array.
-	 * @return string A string of placeholders.
-	 */
-	protected function setupPlaceholders(array $params) : string
-	{
-		return implode(', ', array_fill(0, count($params), '?'));
-	}
-
-	/**
-	 * Creates update pairs for SQL UPDATE queries.
-	 *
-	 * Converts an array of column names into a string of column assignments.
-	 *
-	 * @param object $params The parameters object containing 'cols'.
-	 * @return string A string of column assignments for the UPDATE query.
-	 */
-	protected function setUpdatePairs(object $params) : string
-	{
-		$pairs = [];
-		foreach ($params->cols as $column)
-		{
-			$cleanColumn = Sanitize::cleanColumn($column);
-			$pairs[] = "{$cleanColumn} = ?";
-		}
-		return implode(', ', $pairs);
 	}
 }
