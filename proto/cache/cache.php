@@ -3,198 +3,204 @@ namespace Proto\Cache;
 
 use Proto\Patterns\Creational\Singleton;
 use Proto\Config;
+use Proto\Cache\Drivers\Driver;
 
 /**
  * Cache
  *
- * This will handle the cache.
+ * Handles caching using a configurable driver.
  *
  * @package Proto\Cache
  */
 class Cache extends Singleton
 {
-    /**
-     * @var Cache $instance
-     */
-    protected static $instance = null;
+	/**
+	 * The singleton instance.
+	 *
+	 * @var Cache|null
+	 */
+	protected static ?Cache $instance = null;
 
-    /**
-     * @var object|null $driver
-     */
-    protected ?object $driver = null;
+	/**
+	 * The cache driver instance.
+	 *
+	 * @var Driver|null
+	 */
+	protected ?Driver $driver = null;
 
-    /**
-     * @var string|null $env
-     */
-    protected static ?string $env = null;
+	/**
+	 * The environment setting.
+	 *
+	 * @var string|null
+	 */
+	protected static ?string $env = null;
 
-    /**
-     * This will load the cache driver.
-     *
-     * @return void
-     */
-    protected function __construct()
-    {
-		$this->LoadDriver();
+	/**
+	 * Initializes the cache driver.
+	 */
+	protected function __construct()
+	{
+		$this->loadDriver();
 	}
 
-    /**
-     * This will get the driver class.
-     *
-     * @return string|null
-     */
-    protected function getDriverClassName(): ?string
-    {
-        $cache = Config::access('cache');
-        $driver = $cache->driver;
-        if (empty($driver))
+	/**
+	 * Retrieves the cache driver class name.
+	 *
+	 * @return string|null The driver class name or null if not configured.
+	 */
+	protected function getDriverClassName(): ?string
+	{
+		$cache = Config::access('cache');
+		$driver = $cache->driver ?? null;
+
+		return !empty($driver) ? __NAMESPACE__ . '\\Drivers\\' . $driver : null;
+	}
+
+	/**
+	 * Loads the cache driver.
+	 *
+	 * @return void
+	 */
+	protected function loadDriver(): void
+	{
+		$class = $this->getDriverClassName();
+		if ($class !== null && class_exists($class))
         {
-            return null;
-        }
+			$this->driver = new $class();
+		}
+	}
 
-        $class = __NAMESPACE__ . '\\Drivers\\' . $driver;
-        return $class;
-    }
+	/**
+	 * Retrieves the cache driver instance.
+	 *
+	 * @return Driver|null
+	 */
+	public function getDriver(): ?Driver
+	{
+		return $this->driver;
+	}
 
-    /**
-     * This will load the cache driver.
-     *
-     * @return void
-     */
-    protected function loadDriver(): void
-    {
-        $class = $this->getDriverClassName();
-        if ($class === null)
-        {
-            return;
-        }
+	/**
+	 * Retrieves the singleton driver instance.
+	 *
+	 * @return Driver|null
+	 */
+	public static function driver(): ?Driver
+	{
+		return static::getInstance()->getDriver();
+	}
 
-        $this->driver = new $class();
-    }
-
-    /**
-     * This will get the driver.
-     *
-     * @return object|null
-     */
-    public function getDriver(): ?object
-    {
-        return $this->driver;
-    }
-
-    /**
-     * This will get the cache driver.
-     *
-     * @return object|null
-     */
-    public static function driver(): ?object
-    {
-        $cache = static::getInstance();
-        return $cache->getDriver();
-    }
-
-    /**
-     * This will get the last error.
-     *
-     * @return \Exception|null
-     */
+	/**
+	 * Retrieves the last error from the driver.
+	 *
+	 * @return \Exception|null
+	 */
 	public static function getLastError(): ?\Exception
-    {
-        return static::driver()->getLastError();
-    }
+	{
+		$driver = static::driver();
+		return $driver ? $driver->getLastError() : null;
+	}
 
-    /**
-     * This will get a value from the cache.
-     *
-     * @param string $key
-     * @return string|null
-     */
+	/**
+	 * Retrieves a value from the cache.
+	 *
+	 * @param string $key The cache key.
+	 * @return string|null The cached value or null if not found.
+	 */
 	public static function get(string $key): ?string
-    {
-        return static::driver()->get($key);
-    }
+	{
+		$driver = static::driver();
+		return $driver ? $driver->get($key) : null;
+	}
 
-    /**
-     * This will get all keys by key.
-     *
-     * @param string $key
-     * @return array|null
-     */
+	/**
+	 * Retrieves all cache keys matching a pattern.
+	 *
+	 * @param string $key The pattern to search for.
+	 * @return array|null The matching keys or null if none found.
+	 */
 	public static function keys(string $key): ?array
-    {
-        return static::driver()->keys($key);
-    }
+	{
+		$driver = static::driver();
+		return $driver ? $driver->keys($key) : null;
+	}
 
-    /**
-     * This will increment a key.
-     *
-     * @param string $key
-     * @return int
-     */
+	/**
+	 * Increments a cache value.
+	 *
+	 * @param string $key The cache key.
+	 * @return int The new incremented value or 0 if driver is unavailable.
+	 */
 	public static function incr(string $key): int
-    {
-        return static::driver()->incr($key);
-    }
+	{
+		$driver = static::driver();
+		return $driver ? $driver->incr($key) : 0;
+	}
 
-    /**
-     * This will get the environment.
-     *
-     * @return string
-     */
-    protected static function getEnv(): string
-    {
-        return (static::$env ?? static::$env = Config::access('env'));
-    }
+	/**
+	 * Retrieves the application environment.
+	 *
+	 * @return string The environment name.
+	 */
+	protected static function getEnv(): string
+	{
+		return static::$env ??= Config::access('env');
+	}
 
-    /**
-     * This will get a value from the cache.
-     *
-     * @return bool
-     */
+	/**
+	 * Checks if caching is supported.
+	 *
+	 * @return bool True if caching is enabled and supported.
+	 */
 	public static function isSupported(): bool
-    {
-        $env = static::getEnv();
-        if ($env === 'dev')
+	{
+		if (static::getEnv() === 'dev')
         {
-            return false;
-        }
+			return false;
+		}
 
-        $driver = static::driver();
-        return ($driver && $driver->isSupported());
-    }
+		$driver = static::driver();
+		return $driver && $driver->isSupported();
+	}
 
-    /**
-     * This will check if the item is in the cache.
-     *
-     * @param string $key
-     * @return bool
-     */
-    public static function has(string $key): bool
-    {
-        return static::driver()->has($key);
-    }
+	/**
+	 * Checks if a key exists in the cache.
+	 *
+	 * @param string $key The cache key.
+	 * @return bool True if the key exists, otherwise false.
+	 */
+	public static function has(string $key): bool
+	{
+		$driver = static::driver();
+		return $driver ? $driver->has($key) : false;
+	}
 
-    /**
-     * This will delete a value from the cache.
-     *
-     * @param string $key
-     * @return bool
-     */
-    public static function delete(string $key): bool
-    {
-        return static::driver()->delete($key);
-    }
+	/**
+	 * Deletes a value from the cache.
+	 *
+	 * @param string $key The cache key.
+	 * @return bool True if the key was deleted, otherwise false.
+	 */
+	public static function delete(string $key): bool
+	{
+		$driver = static::driver();
+		return $driver ? $driver->delete($key) : false;
+	}
 
-    /**
-     * This will set a value to the cache.
-     *
-     * @param string $key
-     * @param string $value
-     * @param int|null $expire
-     * @return void
-     */
-    public static function set(string $key, string $value, ?int $exipre = null): void
-    {
-        static::driver()->set($key, $value, $exipre);
-    }
+	/**
+	 * Stores a value in the cache.
+	 *
+	 * @param string $key The cache key.
+	 * @param string $value The value to store.
+	 * @param int|null $expire Expiration time in seconds (optional).
+	 * @return void
+	 */
+	public static function set(string $key, string $value, ?int $expire = null): void
+	{
+		$driver = static::driver();
+		if ($driver)
+        {
+			$driver->set($key, $value, $expire);
+		}
+	}
 }
