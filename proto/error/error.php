@@ -15,9 +15,9 @@ namespace Proto\Error
 	class Error
 	{
 		/**
-		 * Enable or disable displaying errors.
+		 * Enables or disables displaying errors.
 		 *
-		 * @param bool $displayErrors
+		 * @param bool $displayErrors Whether to display errors.
 		 * @return void
 		 */
 		public static function enable(bool $displayErrors = false): void
@@ -31,14 +31,14 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Set the app error reporting.
+		 * Sets the app's error reporting level.
 		 *
-		 * @param bool $displayErrors
+		 * @param bool $displayErrors Whether to display errors.
 		 * @return void
 		 */
 		protected static function setErrorReporting(bool $displayErrors): void
 		{
-			if ($displayErrors === false)
+			if (!$displayErrors)
 			{
 				error_reporting(0);
 				return;
@@ -50,13 +50,13 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Handle the error reporting.
+		 * Handles error logging.
 		 *
-		 * @param int $errno
-		 * @param string $errstr
-		 * @param string $errfile
-		 * @param int $errline
-		 * @return bool
+		 * @param int $errno Error number.
+		 * @param string $errstr Error message.
+		 * @param string $errfile File where the error occurred.
+		 * @param int $errline Line number where the error occurred.
+		 * @return bool Whether the error was logged successfully.
 		 */
 		public static function errorHandler(
 			int $errno,
@@ -65,13 +65,15 @@ namespace Proto\Error
 			int $errline
 		): bool
 		{
+			$backtrace = debug_backtrace();
+
 			return ErrorLog::create((object)[
 				'errorNumber' => $errno,
 				'errorMessage' => $errstr,
 				'errorFile' => $errfile,
 				'errorLine' => $errline,
 				'errorTrace' => '',
-				'backTrace' => JsonFormat::encode(debug_backtrace()),
+				'backTrace' => JsonFormat::encode($backtrace),
 				'env' => env('env'),
 				'url' => Request::fullUrlWithScheme(),
 				'query' => JsonFormat::encode(Request::all()),
@@ -80,17 +82,16 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Track errors.
+		 * Tracks errors by setting error handlers.
 		 *
 		 * @return void
 		 */
 		protected static function trackErrors(): void
 		{
-			/**
-			 * Prevent error log files from
-			 * being created on the production server.
-			 */
-			if (env('env') !== 'prod')
+			$env = env('env');
+
+			// Disable error logs in production
+			if ($env !== 'prod')
 			{
 				static::setErrorLogging();
 			}
@@ -100,7 +101,7 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Set error logging.
+		 * Enables error logging.
 		 *
 		 * @return void
 		 */
@@ -111,17 +112,18 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Get the callback for the error handler.
+		 * Returns the error handler callback.
 		 *
 		 * @return callable
 		 */
 		protected static function getErrorCallBack(): callable
 		{
-			return [static::class, 'errorHandler'];
+			return static fn(int $errno, string $errstr, string $errfile, int $errline): bool
+				=> static::errorHandler($errno, $errstr, $errfile, $errline);
 		}
 
 		/**
-		 * Set the error handler.
+		 * Sets the error handler.
 		 *
 		 * @return void
 		 */
@@ -131,22 +133,22 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Handle the exception reporting.
+		 * Handles exception logging.
 		 *
-		 * @param \Throwable $exception
-		 * @return bool
+		 * @param \Throwable $exception The exception object.
+		 * @return bool Whether the exception was logged successfully.
 		 */
-		public static function exceptionHandler(
-			\Throwable $exception
-		): bool
+		public static function exceptionHandler(\Throwable $exception): bool
 		{
+			$backtrace = debug_backtrace();
+
 			return ErrorLog::create((object)[
 				'errorNumber' => $exception->getCode(),
 				'errorMessage' => $exception->getMessage(),
 				'errorFile' => $exception->getFile(),
 				'errorLine' => $exception->getLine(),
 				'errorTrace' => $exception->getTraceAsString(),
-				'backTrace' => JsonFormat::encode(debug_backtrace()),
+				'backTrace' => JsonFormat::encode($backtrace),
 				'env' => env('env'),
 				'url' => Request::fullUrlWithScheme(),
 				'query' => JsonFormat::encode(Request::all()),
@@ -155,17 +157,18 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Get the callback for the exception handler.
+		 * Returns the exception handler callback.
 		 *
 		 * @return callable
 		 */
 		protected static function getExceptionCallBack(): callable
 		{
-			return [static::class, 'exceptionHandler'];
+			return static fn(\Throwable $exception): bool
+				=> static::exceptionHandler($exception);
 		}
 
 		/**
-		 * Set the exception handler.
+		 * Sets the exception handler.
 		 *
 		 * @return void
 		 */
@@ -181,21 +184,20 @@ namespace
 	use Proto\Error\Error;
 
 	/**
-	 * This will add the error handler to the global namespace.
+	 * Global function to log errors.
 	 *
-	 * @param int $errno
-	 * @param string $errstr
-	 * @param string $errfile
-	 * @param int $errline
-	 * @return bool
+	 * @param string $errstr Error message.
+	 * @param string $errfile File where the error occurred.
+	 * @param int $errline Line number where the error occurred.
+	 * @param int $errno Error number.
+	 * @return bool Whether the error was logged successfully.
 	 */
 	function error(
 		string $errstr,
 		string $errfile = '',
 		int $errline = -1,
 		int $errno = -1
-	): bool
-	{
+	): bool {
 		return Error::errorHandler(
 			$errno,
 			$errstr,
