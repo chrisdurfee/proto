@@ -1,72 +1,86 @@
 <?php declare(strict_types=1);
 namespace Proto\Html\Atoms;
 
+/**
+ * Class Select
+ *
+ * Represents an HTML `<select>` dropdown with options.
+ *
+ * @package Proto\Html\Atoms
+ */
 class Select extends Atom
 {
-    /**
-	 * This will setup the options.
+	/**
+	 * Generates the `<option>` elements from the provided options.
 	 *
-	 * @return string
+	 * @return string The generated options.
 	 */
-	protected function setupOptions()
+	protected function setupOptions(): string
 	{
 		$body = '';
 		$options = $this->get('options') ?? [];
-		if(count($options))
-		{
-			foreach($options as $option)
-			{
+
+		if (!empty($options)) {
+			foreach ($options as $option) {
 				$body .= $this->createOption($option);
 			}
 		}
+
 		return $body;
-    }
+	}
 
-    /**
-     * This will add an option.
-     *
-     * @param object $option
-     * @return string
-     */
-    protected function createOption($option)
-    {
-        $className = $option->className ?? '';
-
-        return <<<EOT
-            <option value="{$option->value}" class="{$className}">{$option->label}</option>
-EOT;
-    }
-
-    /**
-     * This will check to setup a default option if a
-     * label is set.
-     *
-     * @return string
-     */
-    protected function getDefault()
-    {
-        $label = $this->get('label') ?? '';
-        if(!$label)
-        {
-            return '';
-        }
-
-        return $this->createOption((object)[
-            'value' => '',
-            'label' => $label
-        ]);
-    }
-
-	protected function getBody()
+	/**
+	 * Creates a single `<option>` element.
+	 *
+	 * @param array|object $option The option data.
+	 * @return string The generated `<option>` tag.
+	 */
+	protected function createOption(array|object $option): string
 	{
-        $name = $this->get('name') ?? '';
-        $className = $this->get('className') ?? '';
+		$value = is_object($option) ? ($option->value ?? '') : ($option['value'] ?? '');
+		$label = is_object($option) ? ($option->label ?? '') : ($option['label'] ?? '');
+		$className = is_object($option) ? ($option->className ?? '') : ($option['className'] ?? '');
 
-		return <<<EOT
-        <select name="{$name}" class="{$className}">
-            {$this->getDefault()}
+		return <<<HTML
+		<option value="{$value}" class="{$className}">{$label}</option>
+HTML;
+	}
+
+	/**
+	 * Generates the default `<option>` if a label is set.
+	 *
+	 * @return string The default option or an empty string.
+	 */
+	protected function getDefault(): string
+	{
+		$label = $this->get('label') ?? '';
+
+		if (!$label) {
+			return '';
+		}
+
+		return $this->createOption([
+			'value' => '',
+			'label' => $label,
+			'className' => '',
+		]);
+	}
+
+	/**
+	 * Generates the complete `<select>` element.
+	 *
+	 * @return string The rendered HTML.
+	 */
+	protected function getBody(): string
+	{
+		$name = $this->get('name') ?? '';
+		$className = $this->get('className') ?? '';
+
+		return <<<HTML
+		<select name="{$name}" class="{$className}">
+			{$this->getDefault()}
 			{$this->setupOptions()}
 		</select>
-EOT;
+HTML;
 	}
 }
