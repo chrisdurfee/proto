@@ -20,7 +20,7 @@ use Proto\Database\Database;
 class Generator extends Base
 {
 	/**
-	 * This will check that the env is set to dev before running.
+	 * Constructor.
 	 *
 	 * @return void
 	 */
@@ -31,7 +31,7 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will check that the env is set to dev.
+	 * Checks that the env is set to dev.
 	 *
 	 * @return void
 	 */
@@ -49,12 +49,12 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will save a file.
+	 * Saves a file.
 	 *
-	 * @param string $dir
-	 * @param string $fileName
-	 * @param mixed $content
-	 * @return bool
+	 * @param string $dir The directory path.
+	 * @param string $fileName The file name.
+	 * @param mixed $content The file content.
+	 * @return bool True on success, false if the file already exists.
 	 */
 	protected function saveFile(string $dir, string $fileName, mixed $content): bool
 	{
@@ -69,33 +69,33 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will get a file name.
+	 * Gets a file name.
 	 *
-	 * @param string $str
-	 * @return string
+	 * @param string $str The base string.
+	 * @return string The generated file name.
 	 */
 	protected function getFileName(string $str): string
 	{
 		return Strings::hyphen($str) . '.php';
 	}
 
-    /**
-     * This will get a file dir.
-     *
-     * @param string $dir
-     * @return string
-     */
+	/**
+	 * Gets a file directory.
+	 *
+	 * @param string $dir The relative directory.
+	 * @return string The full directory path.
+	 */
 	protected function getDir(string $dir): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		return realpath(__DIR__ . '/../../app') . $this->convertSlashes('/'. strtolower(Strings::hyphen($dir)));
+		return realpath(__DIR__ . '/../../app') . $this->convertSlashes('/' . strtolower(Strings::hyphen($dir)));
 	}
 
 	/**
-	 * This will convert slashes.
+	 * Converts slashes in a path.
 	 *
-	 * @param string $path
-	 * @return string|array
+	 * @param string $path The path to convert.
+	 * @return string|string[] The converted path.
 	 */
 	protected function convertSlashes(string $path)
 	{
@@ -103,50 +103,50 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will get the class namespace.
+	 * Gets the class namespace.
 	 *
-	 * @param string $dir
-	 * @param string|null $namespace
-	 * @return string
+	 * @param string $dir The base directory.
+	 * @param string|null $namespace The namespace suffix.
+	 * @return string The complete namespace.
 	 */
 	protected function getNamespace(string $dir, ?string $namespace): string
 	{
-		return (!empty($namespace))? $dir . '\\' . $namespace : $dir;
+		return !empty($namespace) ? $dir . '\\' . $namespace : $dir;
 	}
 
 	/**
-	 * This will create a database table.
+	 * Creates a database table.
 	 *
-	 * @param object $settings
-	 * @return bool
+	 * @param object $settings The table settings.
+	 * @return bool True on success.
 	 */
 	public function createTable(object $settings): bool
 	{
 		$query = new Create($settings->tableName, $settings->callBack);
 		$connection = $settings->connection ?? null;
-
 		$db = $this->getConnection($connection);
 		return $db->execute($query);
 	}
 
 	/**
-	 * This will get a database connection.
+	 * Gets a database connection.
 	 *
-	 * @param string|null $connection
-	 * @return object
+	 * @param string|null $connection The connection name.
+	 * @return object The database connection.
 	 */
 	public function getConnection(?string $connection = null)
-    {
-        $db = new Database();
-        return $db->connect($connection);
-    }
+	{
+		$db = new Database();
+		return $db->connect($connection);
+	}
 
 	/**
-	 * This will create a class.
+	 * Creates a class file.
 	 *
-	 * @param object $settings
-	 * @param mixed $template
-	 * @return bool
+	 * @param object $settings The class settings.
+	 * @param mixed $template The template instance.
+	 * @param string $fileName The file name.
+	 * @return bool True on success.
 	 */
 	public function createClass(object $settings, mixed $template, string $fileName): bool
 	{
@@ -155,11 +155,11 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will get the class namespace.
+	 * Gets the class namespace from settings.
 	 *
-	 * @param object $settings
-	 * @param string|null $namespace
-	 * @return string|null
+	 * @param object $settings The settings object (passed by reference).
+	 * @param string|null $namespace An optional namespace.
+	 * @return string|null The namespace.
 	 */
 	protected function getClassNamespace(object &$settings, ?string $namespace = null): ?string
 	{
@@ -178,29 +178,25 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will setup the class namespace.
+	 * Sets up the class namespace in settings.
 	 *
-	 * @param object $settings
-	 * @param string $type
-	 * @param string|null $namespace
+	 * @param object $settings The settings object (passed by reference).
+	 * @param string $type The type directory.
+	 * @param string|null $namespace An optional namespace.
 	 * @return void
 	 */
-	protected function setupClassNamespace(
-		object &$settings,
-		string $type,
-		?string $namespace = null
-	): void
+	protected function setupClassNamespace(object &$settings, string $type, ?string $namespace = null): void
 	{
 		$namespace = $this->getClassNamespace($settings, $namespace);
 		$settings->dir = $this->getNamespace($type, $namespace);
 	}
 
 	/**
-	 * This will create a model.
+	 * Creates a model.
 	 *
-	 * @param object $settings
-	 * @param string|null $namespace
-	 * @return bool
+	 * @param object $settings The model settings.
+	 * @param string|null $namespace An optional namespace.
+	 * @return bool True on success.
 	 */
 	public function createModel(object $settings, ?string $namespace = null): bool
 	{
@@ -212,16 +208,15 @@ class Generator extends Base
 		$this->setupClassNamespace($settings, "Models", $namespace);
 		$fileName = $this->getFileName($settings->className);
 		$template = new Templates\ModelTemplate($settings);
-
 		return $this->createClass($settings, $template, $fileName);
 	}
 
 	/**
-	 * This will create a controller.
+	 * Creates a controller.
 	 *
-	 * @param object $settings
-	 * @param string|null $namespace
-	 * @return bool
+	 * @param object $settings The controller settings.
+	 * @param string|null $namespace An optional namespace.
+	 * @return bool True on success.
 	 */
 	public function createController(object $settings, ?string $namespace = null): bool
 	{
@@ -237,27 +232,22 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will get the test type.
+	 * Gets the test type.
 	 *
-	 * @param string|null $type
-	 * @return string
+	 * @param string|null $type The test type.
+	 * @return string The formatted test type.
 	 */
 	protected function getTestType(?string $type = 'unit'): string
 	{
-		if (empty($type))
-		{
-			return 'Unit';
-		}
-
-		return ucfirst($type);
+		return empty($type) ? 'Unit' : ucfirst($type);
 	}
 
 	/**
-	 * This will create a test.
+	 * Creates a test.
 	 *
-	 * @param object $settings
-	 * @param string|null $namespace
-	 * @return bool
+	 * @param object $settings The test settings.
+	 * @param string|null $namespace An optional namespace.
+	 * @return bool True on success.
 	 */
 	public function createTest(object $settings, ?string $namespace = null): bool
 	{
@@ -268,7 +258,6 @@ class Generator extends Base
 
 		$testType = $settings->type ?? null;
 		$type = $this->getTestType($testType);
-
 		$this->setupClassNamespace($settings, $type, $namespace);
 		$fileName = $this->getFileName($settings->className . 'Test');
 		$template = new Templates\TestTemplate($settings);
@@ -276,41 +265,38 @@ class Generator extends Base
 	}
 
 	/**
-     * This will get a file dir.
-     *
-     * @param string $dir
-     * @return string
-     */
+	 * Gets a test directory.
+	 *
+	 * @param string $dir The relative directory.
+	 * @return string The full test directory path.
+	 */
 	protected function getTestDir(string $dir): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		return realpath(__DIR__ . '/../../tests') . $this->convertSlashes('/'. strtolower(Strings::hyphen($dir)));
+		return realpath(__DIR__ . '/../../tests') . $this->convertSlashes('/' . strtolower(Strings::hyphen($dir)));
 	}
 
 	/**
-	 * This will create a class.
+	 * Creates a test class file.
 	 *
-	 * @param object $settings
-	 * @param mixed $template
-	 * @return bool
+	 * @param object $settings The class settings.
+	 * @param mixed $template The template instance.
+	 * @param string $fileName The file name.
+	 * @return bool True on success.
 	 */
 	public function createTestClass(object $settings, mixed $template, string $fileName): bool
 	{
 		$dir = $this->getTestDir($settings->dir);
-
-		/**
-		 * This will convert the file name to pascal case
-		 * to support the PHPUnit cli.
-		 */
+		// Convert the file name to PascalCase to support the PHPUnit CLI.
 		$formatedFileName = Strings::pascalCase($fileName);
 		return $this->saveFile($dir, $formatedFileName, $template);
 	}
 
 	/**
-	 * This will create a migration.
+	 * Creates a migration.
 	 *
-	 * @param object $settings
-	 * @return bool
+	 * @param object $settings The migration settings.
+	 * @return bool True on success.
 	 */
 	public function createMigration(object $settings): bool
 	{
@@ -327,25 +313,24 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will get the file date.
+	 * Gets the file date.
 	 *
-	 * @return string
+	 * @return string The formatted date.
 	 */
 	protected function getFileDate(): string
 	{
 		$dateTime = new \DateTime();
 		$dateTime = $dateTime->format('Y-m-d H.i.s.u');
-		$dateTime = str_replace(' ', 'T', $dateTime);
-		return $dateTime;
+		return str_replace(' ', 'T', $dateTime);
 	}
 
 	/**
-	 * This will create an api.
+	 * Creates an API resource.
 	 *
-	 * @param object $settings
-	 * @param object $policy
-	 * @param string|null $namespace
-	 * @return bool
+	 * @param object $settings The API settings.
+	 * @param object|null $policy The policy settings.
+	 * @param string|null $namespace An optional namespace.
+	 * @return bool True on success.
 	 */
 	public function createApi(object $settings, ?object $policy = null, ?string $namespace = null): bool
 	{
@@ -366,11 +351,11 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will create a policy.
+	 * Creates a policy.
 	 *
-	 * @param object $settings
-	 * @param string|null $namespace
-	 * @return bool
+	 * @param object $settings The policy settings.
+	 * @param string|null $namespace An optional namespace.
+	 * @return bool True on success.
 	 */
 	public function createPolicy(object $settings, ?string $namespace = null): bool
 	{
@@ -379,18 +364,18 @@ class Generator extends Base
 			return false;
 		}
 
-		$this->setupClassNamespace($settings, "Auth\Policies", $namespace);
+		$this->setupClassNamespace($settings, "Auth\\Policies", $namespace);
 		$fileName = $this->getFileName($settings->className . 'Policy');
 		$template = new Templates\PolicyTemplate($settings);
 		return $this->createClass($settings, $template, $fileName);
 	}
 
 	/**
-	 * This will create a storage.
+	 * Creates a storage resource.
 	 *
-	 * @param object $settings
-	 * @param string|null $namespace
-	 * @return bool
+	 * @param object $settings The storage settings.
+	 * @param string|null $namespace An optional namespace.
+	 * @return bool True on success.
 	 */
 	public function createStorage(object $settings, ?string $namespace = null): bool
 	{
@@ -406,11 +391,11 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will get the object or create it if none is found.
+	 * Gets an object from settings or creates it if it doesn't exist.
 	 *
-	 * @param object $settings
-	 * @param string $key
-	 * @return object
+	 * @param object $settings The settings object.
+	 * @param string $key The key to check.
+	 * @return object The retrieved or new object.
 	 */
 	protected function getObject(object $settings, string $key): object
 	{
@@ -420,11 +405,10 @@ class Generator extends Base
 	}
 
 	/**
-	 * This will create a controller.
+	 * Creates a complete resource (model, controller, API, policy, and storage).
 	 *
-	 * @param string $dir
-	 * @param object $settings
-	 * @return bool
+	 * @param object $settings The resource settings.
+	 * @return bool True on success.
 	 */
 	public function createResource(object $settings): bool
 	{
@@ -435,7 +419,7 @@ class Generator extends Base
 
 		$namespace = $settings->namespace ?? null;
 
-		// this will check to setup the database table
+		// Check and setup the database table if specified.
 		if (isset($settings->table))
 		{
 			$result = $this->createTable($settings->table);
@@ -445,14 +429,14 @@ class Generator extends Base
 			}
 		}
 
-		// This will create the model file
+		// Create the model file.
 		$result = $this->createModel($settings->model, $namespace);
 		if (!$result)
 		{
 			return false;
 		}
 
-		// this will create the controller
+		// Create the controller.
 		$controller = $this->getObject($settings, 'controller');
 		$result = $this->createController($controller, $namespace);
 		if (!$result)
@@ -460,7 +444,7 @@ class Generator extends Base
 			return false;
 		}
 
-		// this will create the api
+		// Create the API.
 		$api = $this->getObject($settings, 'api');
 		$policySettings = $settings->policy ?? null;
 		$result = $this->createApi($api, $policySettings, $namespace);
@@ -469,6 +453,7 @@ class Generator extends Base
 			return false;
 		}
 
+		// Create the policy if specified.
 		if (!empty($policySettings))
 		{
 			$policy = $this->getObject($settings, 'policy');
@@ -479,13 +464,13 @@ class Generator extends Base
 			}
 		}
 
-		// this will check to stop if the model does not add its own storage
+		// If the model does not require its own storage, return.
 		if ((bool)($settings->model->storage) === false)
 		{
 			return $result;
 		}
 
-		// this will create the storage
+		// Create the storage.
 		$storage = $this->getObject($settings, 'storage');
 		return $this->createStorage($storage, $namespace);
 	}
