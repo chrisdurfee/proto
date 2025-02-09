@@ -2,10 +2,9 @@
 namespace Proto\Dispatch;
 
 /**
- * Dispatch
+ * Abstract Class Dispatch
  *
- * This will create a base dispatch class. This can
- * be used to make additional dispatch types.
+ * Base dispatch class to be extended for specific dispatch types.
  *
  * @package Proto\Dispatch
  * @abstract
@@ -13,7 +12,7 @@ namespace Proto\Dispatch;
 abstract class Dispatch implements DispatchInterface
 {
 	/**
-	 * This will inherit methods to return responses.
+	 * Response handling utilities.
 	 */
 	use ResponseTrait;
 }

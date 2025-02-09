@@ -2,92 +2,81 @@
 namespace Proto\Dispatch;
 
 /**
- * Response
+ * Class Response
  *
- * This will create a response object.
+ * Creates a response object to standardize API or system responses.
  *
  * @package Proto\Dispatch
  */
 class Response
 {
-    /**
-     * @var string $sent
-     */
-    public string $sent = 'no';
+	/** @var bool Whether the response has been sent */
+	public bool $sent = false;
 
-    /**
-     * @var bool $error
-     */
-    public bool $error;
+	/** @var bool Whether the response indicates an error */
+	public bool $error;
 
-    /**
-     * @var bool $success
-     */
-    public bool $success;
+	/** @var bool Whether the response indicates success */
+	public bool $success;
 
-    /**
-     * @var string $message
-     */
-    public string $message;
+	/** @var string Response message */
+	public string $message;
 
-    /**
-     * @var mixed $data
-     */
-    protected $data;
+	/** @var mixed Response data payload */
+	protected mixed $data = null;
 
-    /**
-     * This will create a response.
-     *
-     * @param bool $error
-     * @param string $message
-     * @return void
-     */
-    public function __construct(bool $error = false, string $message = '')
-    {
-        $this->error = $error;
-        $this->success = !$error; // If error is true, success is false and vice versa.
-        $this->message = $message;
-    }
+	/**
+	 * Response constructor.
+	 *
+	 * @param bool $error Whether the response indicates an error.
+	 * @param string $message The response message.
+	 */
+	public function __construct(bool $error = false, string $message = '')
+	{
+		$this->error = $error;
+		$this->success = !$error;
+		$this->message = $message;
+	}
 
-    /**
-     * This will create a response.
-     *
-     * @param bool $error
-     * @param string $message
-     * @param mixed $data
-     * @return Response
-     */
-    public static function create(bool $error = false, string $message = '', $data = null): Response
-    {
-        $result = new static($error, $message);
-        $result->sent = ($error === true) ? 'no' : 'yes';
+	/**
+	 * Factory method to create a response instance.
+	 *
+	 * @param bool $error Whether the response indicates an error.
+	 * @param string $message The response message.
+	 * @param mixed $data Optional additional data.
+	 * @return Response The created response instance.
+	 */
+	public static function create(bool $error = false, string $message = '', mixed $data = null): Response
+	{
+		$response = new self($error, $message);
+		$response->sent = !$error;
 
-        if ($data)
+		if ($data !== null)
         {
-            $result->setData($data);
-        }
+			$response->setData($data);
+		}
 
-        return $result;
-    }
+		return $response;
+	}
 
-    /**
-     * This will set the data.
-     *
-     * @param mixed $data
-     * @return void
-     */
-    public function setData($data): void
-    {
-        $this->data = $data;
-    }
+	/**
+	 * Sets the response data.
+	 *
+	 * @param mixed $data The response data.
+	 * @return void
+	 */
+	public function setData(mixed $data): void
+	{
+		$this->data = $data;
+	}
 
-    /**
-     * This will get the data.
-     *
-     * @return mixed
-     */
-    public function getData(): mixed
-    {
-        return $this->data;
-    }
+	/**
+	 * Retrieves the response data.
+	 *
+	 * @return mixed The stored response data.
+	 */
+	public function getData(): mixed
+	{
+		return $this->data;
+	}
 }
