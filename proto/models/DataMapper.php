@@ -7,44 +7,53 @@ use Proto\Utils\Arrays;
 /**
  * Class DataMapper
  *
- * Maps the model data and provides methods to manipulate and access the data.
+ * Maps model data and provides methods to manipulate and access the data.
  *
  * @package Proto\Models
  */
 class DataMapper
 {
 	/**
-	 * @var array $joinFields Join fields.
+	 * Join fields.
+	 *
+	 * @var array
 	 */
-	protected $joinFields = [];
+	protected array $joinFields = [];
 
 	/**
-	 * @var array $alias Field aliases.
+	 * Field aliases.
+	 *
+	 * @var array
 	 */
-	protected $alias = [];
+	protected array $alias = [];
 
 	/**
-	 * @var array $fieldBlacklist Field blacklist.
+	 * Field blacklist.
+	 *
+	 * @var array
 	 */
-	protected $fieldBlacklist = [];
+	protected array $fieldBlacklist = [];
 
 	/**
-	 * @var object|null $data Data storage.
+	 * Data storage.
+	 *
+	 * @var object|null
 	 */
 	protected ?object $data = null;
 
 	/**
-	 * @var bool $isSnakeCase Whether or not the data is snake_case.
+	 * Indicates if data is snake_case.
+	 *
+	 * @var bool
 	 */
 	protected bool $isSnakeCase = true;
 
 	/**
 	 * DataMapper constructor.
 	 *
-	 * @param array $fields Fields to be mapped.
-	 * @param array $joins Join fields.
-	 * @param array $fieldBlacklist Fields to be blacklisted.
-	 * @return void
+	 * @param array $fields Fields to map.
+	 * @param array $joins Join definitions.
+	 * @param array $fieldBlacklist Fields to blacklist.
 	 */
 	public function __construct(array &$fields, array &$joins = [], array &$fieldBlacklist = [])
 	{
@@ -53,10 +62,10 @@ class DataMapper
 	}
 
 	/**
-	 * Sets up the data and adds fields and join fields.
+	 * Set up data mapper.
 	 *
-	 * @param array $fields Fields to be mapped.
-	 * @param array $joins Join fields.
+	 * @param array $fields Fields to map.
+	 * @param array $joins Join definitions.
 	 * @return void
 	 */
 	protected function setup(array &$fields = [], array &$joins = []): void
@@ -67,7 +76,7 @@ class DataMapper
 	}
 
 	/**
-	 * This will get if the data is snake_case.
+	 * Check if data is snake_case.
 	 *
 	 * @return bool
 	 */
@@ -77,9 +86,9 @@ class DataMapper
 	}
 
 	/**
-	 * This will set if the data is snake_case.
+	 * Set snake_case flag.
 	 *
-	 * @param bool $isSnakeCase Whether or not the data is snake_case.
+	 * @param bool $isSnakeCase
 	 * @return void
 	 */
 	public function setSnakeCase(bool $isSnakeCase): void
@@ -88,9 +97,9 @@ class DataMapper
 	}
 
 	/**
-	 * Adds fields to the data object.
+	 * Add fields to the data object.
 	 *
-	 * @param array $fields Fields to be mapped.
+	 * @param array $fields Fields to add.
 	 * @return void
 	 */
 	protected function setupFieldsToData(array &$fields): void
@@ -108,9 +117,9 @@ class DataMapper
 	}
 
 	/**
-	 * Adds join fields to the data object.
+	 * Add join fields to the data object.
 	 *
-	 * @param array $joins Join fields.
+	 * @param array $joins Join definitions.
 	 * @return void
 	 */
 	protected function setJoinsToData(array &$joins): void
@@ -120,7 +129,6 @@ class DataMapper
 			return;
 		}
 
-		$joinFields = &$this->joinFields;
 		foreach ($joins as $join)
 		{
 			if ($join->isMultiple())
@@ -136,36 +144,34 @@ class DataMapper
 				continue;
 			}
 
-			// Adds the fields to the data object
 			foreach ($joiningFields as $field)
 			{
 				$field = $this->checkAliasField($field);
-				array_push($joinFields, $field);
+				$this->joinFields[] = $field;
 				$this->setDataField($field, null);
 			}
 		}
 	}
 
 	/**
-	 * Checks if a field has an alias and returns the proper field name.
+	 * Check if a field has an alias and return proper field name.
 	 *
-	 * @param mixed $field Field name or field alias.
+	 * @param mixed $field Field name or alias.
 	 * @return mixed
 	 */
 	protected function checkAliasField(mixed $field): mixed
 	{
-		if (is_array($field) === false)
+		if (!is_array($field))
 		{
 			return Strings::camelCase($field);
 		}
 
-		// Tracks the alias
-		$this->alias[$field[1]] = (is_array($field[0]) === false) ? Strings::camelCase($field[0]) : $field[0];
+		$this->alias[$field[1]] = !is_array($field[0]) ? Strings::camelCase($field[0]) : $field[0];
 		return $field[1];
 	}
 
 	/**
-	 * Retrieves the mapped field name.
+	 * Get the mapped field name.
 	 *
 	 * @param string $field Field name.
 	 * @return string|null
@@ -182,10 +188,10 @@ class DataMapper
 	}
 
 	/**
-	 * Sets a field and its value in the data object.
+	 * Set a field in the data object.
 	 *
-	 * @param string $key   Field name.
-	 * @param mixed  $value Field value.
+	 * @param string $key Field name.
+	 * @param mixed $value Field value.
 	 * @return void
 	 */
 	protected function setDataField(string $key, mixed $value): void
@@ -194,24 +200,20 @@ class DataMapper
 	}
 
 	/**
-	 * Returns the data formatted into an object with snake_case keys for use in database queries.
+	 * Map data to snake_case keys.
 	 *
 	 * @return object
 	 */
 	public function map(): object
 	{
 		$obj = [];
-
-		$data = $this->data;
-		$joinFields = $this->joinFields;
-		foreach ($data as $key => $val)
+		foreach ($this->data as $key => $val)
 		{
-			if (is_null($val) || in_array($key, $joinFields) || is_array($val))
+			if (is_null($val) || in_array($key, $this->joinFields) || is_array($val))
 			{
 				continue;
 			}
 
-			// Converts the alias to the normal column name if found
 			$alias = $this->alias[$key] ?? null;
 			if ($alias && is_array($alias))
 			{
@@ -219,7 +221,6 @@ class DataMapper
 			}
 
 			$key = $alias ?? $key;
-
 			$keyName = $this->prepareKeyName($key);
 			$obj[$keyName] = $val;
 		}
@@ -227,7 +228,7 @@ class DataMapper
 	}
 
 	/**
-	 * Prepares the key name.
+	 * Prepare a key name.
 	 *
 	 * @param string $key Key name.
 	 * @return string
@@ -238,14 +239,14 @@ class DataMapper
 	}
 
 	/**
-	 * Retrieves grouped data.
+	 * Get grouped data from a string.
 	 *
 	 * @param mixed $group Group data.
 	 * @return array
 	 */
 	protected function getGroupedData(mixed $group): array
 	{
-		if (gettype($group) === 'array')
+		if (is_array($group))
 		{
 			return $group;
 		}
@@ -273,74 +274,68 @@ class DataMapper
 			$item = $this->setRowItem($list, $cols);
 			if ($item)
 			{
-				array_push($list, $item);
+				$list[] = $item;
 			}
 		}
-
 		return $list;
 	}
 
 	/**
-	 * Sets a row item.
+	 * Set a row item.
 	 *
-	 * @param array $list List of row items.
+	 * @param array $list List of rows.
 	 * @param array $cols Column data.
-	 *
-	 * @return array|object
+	 * @return array|object|null
 	 */
-	protected function setRowItem(array &$list, array $cols)
+	protected function setRowItem(array &$list, array $cols): array|object|null
 	{
 		$item = [];
-
 		foreach ($cols as $col)
 		{
 			$parts = explode('-:-', $col);
 			if (count($parts) < 2)
 			{
-				array_push($list, $parts[0]);
+				$list[] = $parts[0];
 				continue;
 			}
 
 			$key = Strings::camelCase($parts[0]);
 			$item[$key] = $parts[1];
 		}
-		return (Arrays::isAssoc($item)) ? (object)$item : null;
+		return Arrays::isAssoc($item) ? (object)$item : null;
 	}
 
 	/**
-	 * Sets field data.
+	 * Set data fields.
 	 *
 	 * @param object $newData New data object.
 	 * @return void
 	 */
-	protected function setFields($newData): void
+	protected function setFields(object $newData): void
 	{
 		if (!$newData)
 		{
 			return;
 		}
 
-		$data = $this->data;
 		foreach ($newData as $key => $val)
 		{
 			$keyCamelCase = Strings::camelCase($key);
-			if (property_exists($data, $keyCamelCase) === false)
+			if (!property_exists($this->data, $keyCamelCase))
 			{
 				continue;
 			}
 
-			// Gets grouped rows
-			if (gettype($data->{$keyCamelCase}) === 'array')
+			if (is_array($this->data->{$keyCamelCase}))
 			{
 				$val = $this->getGroupedData($val);
 			}
-
 			$this->setDataField($keyCamelCase, $val);
 		}
 	}
 
 	/**
-	 * Sets data. The parameter can be an object or key-value pair.
+	 * Set data values.
 	 *
 	 * @return void
 	 */
@@ -356,16 +351,13 @@ class DataMapper
 		if (!is_object($firstArg))
 		{
 			$value = $args[1] ?? null;
-			$firstArg = (object)[
-				$firstArg => $value
-			];
+			$firstArg = (object)[$args[0] => $value];
 		}
-
 		$this->setFields($firstArg);
 	}
 
 	/**
-	 * Retrieves the value of a data field.
+	 * Get a data field value.
 	 *
 	 * @param string $key Field name.
 	 * @return mixed
@@ -376,9 +368,9 @@ class DataMapper
 	}
 
 	/**
-	 * Converts a string to snake_case.
+	 * Convert a string to snake_case.
 	 *
-	 * @param string $str String to be converted.
+	 * @param string $str Input string.
 	 * @return string
 	 */
 	protected function snakeCase(string $str): string
@@ -387,7 +379,7 @@ class DataMapper
 	}
 
 	/**
-	 * Converts batch rows format data to mapped data.
+	 * Convert rows to mapped data.
 	 *
 	 * @param array $rows Array of rows.
 	 * @return array
@@ -400,49 +392,41 @@ class DataMapper
 		}
 
 		$formatted = [];
-		$fieldsBlacklist = $this->fieldBlacklist;
-		$data = $this->data;
-
 		foreach ($rows as $row)
 		{
 			$obj = new \stdClass;
-			foreach ($data as $key => $val)
+			foreach ($this->data as $key => $val)
 			{
-				if (array_search($key, $fieldsBlacklist) !== false)
+				if (in_array($key, $this->fieldBlacklist))
 				{
 					continue;
 				}
 
 				$keyName = $this->prepareKeyName($key);
 				$value = $row->{$keyName} ?? null;
-
-				if (gettype($val) === 'array')
+				if (is_array($val))
 				{
 					$value = $this->getGroupedData($value);
 				}
 
 				$obj->{$key} = $value;
 			}
-
-			array_push($formatted, $obj);
+			$formatted[] = $obj;
 		}
 		return $formatted;
 	}
 
 	/**
-	 * Retrieves the mapped data.
+	 * Get the mapped data.
 	 *
 	 * @return object
 	 */
 	public function getData(): object
 	{
 		$obj = [];
-
-		$fieldsBlacklist = $this->fieldBlacklist;
-		$data = $this->data;
-		foreach ($data as $key => $value)
+		foreach ($this->data as $key => $value)
 		{
-			if (array_search($key, $fieldsBlacklist) !== false)
+			if (in_array($key, $this->fieldBlacklist))
 			{
 				continue;
 			}
