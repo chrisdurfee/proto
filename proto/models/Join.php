@@ -4,24 +4,26 @@ namespace Proto\Models;
 use Proto\Utils\Strings;
 
 /**
- * Join
+ * Class Join
  *
- * This will create a join object.
+ * Represents a join configuration.
  *
  * @package Proto\Models
  */
 class Join
 {
 	/**
-	 * @var array $settings
+	 * Join settings.
+	 *
+	 * @var array
 	 */
 	protected array $settings = [];
 
 	/**
-	 * This will set up the settings.
+	 * Join constructor.
 	 *
-	 * @param string $model
-	 * @param array $settings
+	 * @param string $model Model class name.
+	 * @param array $settings Join settings.
 	 */
 	public function __construct(string $model, array $settings)
 	{
@@ -29,9 +31,9 @@ class Join
 	}
 
 	/**
-	 * This will convert a string to snake case.
+	 * Convert a string to snake_case.
 	 *
-	 * @param string $string
+	 * @param string $string Input string.
 	 * @return string
 	 */
 	protected function snakeCase(string $string): string
@@ -40,38 +42,28 @@ class Join
 	}
 
 	/**
-	 * This will prepare the column.
+	 * Prepare a column name.
 	 *
-	 * @param string $column
+	 * @param string $column Column name.
 	 * @return string
 	 */
 	protected function prepareColumn(string $column): string
 	{
-		if (isset($settings['isCamelCase']))
-		{
-			return $column;
-		}
-
 		return $this->snakeCase($column);
 	}
 
 	/**
-	 * This will get the on string/
+	 * Get the ON clause string.
 	 *
-	 * @param string $model
-	 * @param string $table
-	 * @param mixed $onSettings
-	 * @param string|null $alias
+	 * @param string $model Model class name.
+	 * @param string $table Table name.
+	 * @param mixed $onSettings ON settings.
+	 * @param string|null $alias Table alias.
 	 * @return string
 	 */
-	protected function getOnString(
-		string $model,
-		string $table,
-		mixed $onSettings,
-		?string $alias = null
-	): string
+	protected function getOnString(string $model, string $table, mixed $onSettings, ?string $alias = null): string
 	{
-		if (gettype($onSettings) === 'string')
+		if (is_string($onSettings))
 		{
 			return $onSettings;
 		}
@@ -80,35 +72,33 @@ class Join
 		$modelTableName = $alias;
 		if (!$modelTableName)
 		{
-			/**
-			 * @var object $model
-			 */
-			$modelTableName = ($joinModel)? $joinModel::table() : $model::table();
+			$modelTableName = ($joinModel) ? $joinModel::table() : $model::table();
 		}
 
-		return $modelTableName . '.' . $this->prepareColumn($onSettings['modelField']) . ' = ' . $table . '.' . $this->prepareColumn($onSettings['field']);
+		return $modelTableName . '.' . $this->prepareColumn($onSettings['modelField'])
+			. ' = ' . $table . '.' . $this->prepareColumn($onSettings['field']);
 	}
 
 	/**
-	 * This will get the join table name.
+	 * Get the join table name.
 	 *
-	 * @param array $settings
+	 * @param array $settings Join settings.
 	 * @return string
 	 */
 	protected static function getJoinTable(array $settings): string
 	{
 		$joinModel = $settings['model'] ?? null;
-		return ($joinModel)? $joinModel::table() : $settings['table'];
+		return ($joinModel) ? $joinModel::table() : $settings['table'];
 	}
 
 	/**
-	 * This will set up the multiple join.
+	 * Set up a multiple join.
 	 *
-	 * @param array $parent
-	 * @param mixed $settings
+	 * @param array $parent Parent join settings.
+	 * @param mixed $settings Multiple join settings.
 	 * @return mixed
 	 */
-	protected function setupMultipleJoin(array $parent, mixed $settings)
+	protected function setupMultipleJoin(array $parent, mixed $settings): mixed
 	{
 		if ($settings === true)
 		{
@@ -121,10 +111,10 @@ class Join
 	}
 
 	/**
-	 * This will setup the join settings.
+	 * Set up join settings.
 	 *
-	 * @param string $model
-	 * @param array $settings
+	 * @param string $model Model class name.
+	 * @param array $settings Join settings.
 	 * @return void
 	 */
 	protected function setupSettings(string $model, array $settings): void
@@ -141,12 +131,12 @@ class Join
 			'on' => $on,
 			'type' => $settings['type'] ?? 'INNER JOIN',
 			'fields' => $settings['fields'] ?? null,
-			'multiple' => (isset($settings['multiple'])? $this->setupMultipleJoin($settings, $settings['multiple']) : null)
+			'multiple' => isset($settings['multiple']) ? $this->setupMultipleJoin($settings, $settings['multiple']) : null
 		];
 	}
 
 	/**
-	 * This will get the join settings.
+	 * Get the join settings.
 	 *
 	 * @return array
 	 */

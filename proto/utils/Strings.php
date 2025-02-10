@@ -1,5 +1,4 @@
 <?php declare(strict_types=1);
-
 namespace Proto\Utils;
 
 /**
@@ -65,6 +64,40 @@ class Strings
 	public static function classToFileName(string $className): string
 	{
 		return self::hyphen(str_replace('\\', '/', $className));
+	}
+
+	/**
+	 * This will lowercase first char.
+	 *
+	 * @param string $str
+	 * @return string
+	 */
+	public static function lowercaseFirstChar(string $str): string
+	{
+		return \lcfirst($str);
+	}
+
+	/**
+	 * This will map a snake case object to camel case.
+	 *
+	 * @param object $data
+	 * @return object
+	 */
+	public static function mapToCamelCase(object $data): object
+	{
+		$obj = (object)[];
+
+		foreach ($data as $key => $val)
+		{
+			if (\is_null($val))
+			{
+				continue;
+			}
+
+			$keyCamelCase = self::camelCase($key);
+			$obj->{$keyCamelCase} = $val;
+		}
+		return $obj;
 	}
 
 	/**
