@@ -54,7 +54,7 @@ abstract class FieldQuery extends Query
             else
             {
                 $fieldSql = $fieldDefinition[0] . ' AS ' . $fieldDefinition[1];
-                $column   = $alias . '.' . $fieldSql;
+                $column = $alias . '.' . $fieldSql;
             }
         }
         else
