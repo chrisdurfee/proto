@@ -5,46 +5,50 @@ use Tests\Test;
 
 /**
  * ExampleFeatureTest
+ *
+ * Feature tests for examples.
+ *
+ * @package Tests\Feature
  */
-class ExampleFeatureTest extends Test
+final class ExampleFeatureTest extends Test
 {
-    /**
-     * This will be called when the test is set up.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        // do something on setup
-    }
+	/**
+	 * Called when the test is set up.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void
+	{
+		// do something on setup
+	}
 
-    /**
-     * This is an example bool test.
-     *
-     * @return void
-     */
-    public function testUnit(): void
-    {
-        $this->assertTrue(true);
-    }
+	/**
+	 * Example bool test.
+	 *
+	 * @return void
+	 */
+	public function testUnit(): void
+	{
+		$this->assertTrue(true);
+	}
 
-    /**
-     * This is an example has array key test.
-     *
-     * @return void
-     */
-    public function testArrayKey(): void
-    {
-        $this->assertArrayHasKey('key', ['key' => 'value']);
-    }
+	/**
+	 * Example test for array key existence.
+	 *
+	 * @return void
+	 */
+	public function testArrayKey(): void
+	{
+		$this->assertArrayHasKey('key', ['key' => 'value']);
+	}
 
-    /**
-     * This will be called when the test is torn down.
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        // do something on tear down
-    }
+	/**
+	 * Called when the test is torn down.
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void
+	{
+		// do something on tear down
+	}
 }

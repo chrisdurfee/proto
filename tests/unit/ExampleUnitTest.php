@@ -5,21 +5,23 @@ use Tests\Test;
 
 /**
  * ExampleUnitTest
+ *
+ * Unit tests for examples.
  */
-class ExampleUnitTest extends Test
+final class ExampleUnitTest extends Test
 {
 	/**
-     * This will be called when the test is set up.
-     *
-     * @return void
-     */
+	 * Called when the test is set up.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void
 	{
 		// do something on setup
 	}
 
 	/**
-	 * This is an example bool test.
+	 * Example bool test.
 	 *
 	 * @return void
 	 */
@@ -29,7 +31,7 @@ class ExampleUnitTest extends Test
 	}
 
 	/**
-	 * This is an example has array key test.
+	 * Example test for array key existence.
 	 *
 	 * @return void
 	 */
@@ -39,7 +41,7 @@ class ExampleUnitTest extends Test
 	}
 
 	/**
-	 * This is an example has array key test.
+	 * Example update test.
 	 *
 	 * @return void
 	 */
@@ -49,7 +51,7 @@ class ExampleUnitTest extends Test
 	}
 
 	/**
-	 * This is an example has array key test.
+	 * Example true test.
 	 *
 	 * @return void
 	 */
@@ -59,10 +61,10 @@ class ExampleUnitTest extends Test
 	}
 
 	/**
-     * This will be called when the test is torn down.
-     *
-     * @return void
-     */
+	 * Called when the test is torn down.
+	 *
+	 * @return void
+	 */
 	protected function tearDown(): void
 	{
 		// do something on tear down

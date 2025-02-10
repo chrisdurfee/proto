@@ -112,9 +112,12 @@ abstract class JwtService extends Oauth2Service
 	 */
 	protected function setupJwt(object $result): void
 	{
-		if ($result->code === 201 || $result->code === 200) {
+		if ($result->code === 201 || $result->code === 200)
+		{
 			$this->jwt = $result->data->token;
-		} else {
+		}
+		else
+		{
 			$this->reportError($result);
 			die();
 		}
