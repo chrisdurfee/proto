@@ -6,24 +6,20 @@ use Proto\Controllers\Controller;
 /**
  * SmsController
  *
- * This is the base sms controller class that contains
- * the send method sms controllers must follow.
+ * Base SMS controller class that defines the send method
+ * that SMS controllers must implement.
  *
  * @package Proto\Controllers\Sms
  */
 abstract class SmsController extends Controller
 {
-    /**
-	 * This will send a message.
+	/**
+	 * Sends a message.
 	 *
-	 * @param string $session
-	 * @param string $to
-	 * @param string $message
+	 * @param string $session The session identifier.
+	 * @param string $to The recipient.
+	 * @param string $message The message content.
 	 * @return object|bool
 	 */
-	abstract public function send(
-		string $session,
-		string $to,
-		string $message
-	): object|bool;
+	abstract public function send(string $session, string $to, string $message): object|bool;
 }

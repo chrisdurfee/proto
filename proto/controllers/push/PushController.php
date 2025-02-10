@@ -6,19 +6,18 @@ use Proto\Controllers\ModelController;
 /**
  * PushController
  *
- * This will be the base class for all push controllers.
+ * Base class for all push controllers.
  *
  * @package Proto\Controllers\Push
- * @abstract
  */
 abstract class PushController extends ModelController
 {
 	/**
-	 * This will send a push notification.
+	 * Sends a push notification.
 	 *
-	 * @param object $subscription
-	 * @param string $payload
+	 * @param object $subscription The subscription object.
+	 * @param string $payload The payload to send.
 	 * @return bool
 	 */
-	abstract public function send(object $subscription, string $payload);
+	abstract public function send(object $subscription, string $payload): bool;
 }
