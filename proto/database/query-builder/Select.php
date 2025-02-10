@@ -202,7 +202,7 @@ class Select extends FieldQuery
 		$groupBy = $this->getPropertyString($this->groupBy, ' GROUP BY ', ', ');
 		$having = $this->getPropertyString($this->having, ' HAVING ', ' AND ');
 
-		$query = 'SELECT' . $this->distinct . $fields .
+		return 'SELECT' . $this->distinct . $fields .
 			' FROM ' . $from . $this->index .
 			' ' . $joins .
 			$where .
@@ -211,8 +211,5 @@ class Select extends FieldQuery
 			$orderBy .
 			' ' . $unions .
 			' ' . $this->limit;
-
-		// Normalize whitespace and trim the final query.
-		return trim(preg_replace('/\s+/', ' ', $query));
 	}
 }

@@ -72,7 +72,6 @@ class Update extends Query
 		$fieldString = implode(', ', $this->fields);
 		$where = $this->getPropertyString($this->conditions, ' WHERE ', ' AND ');
 		$orderBy = $this->getPropertyString($this->orderBy, ' ORDER BY ', ', ');
-		$query = "UPDATE {$table} {$joins} SET {$fieldString}{$where}{$orderBy}{$this->limit};";
-		return trim(preg_replace('/\s+/', ' ', $query));
+		return "UPDATE {$table} {$joins} SET {$fieldString}{$where}{$orderBy}{$this->limit};";
 	}
 }
