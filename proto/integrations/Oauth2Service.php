@@ -2,9 +2,9 @@
 namespace Proto\Integrations;
 
 /**
- * Oauth2Service class
+ * Class Oauth2Service
  *
- * This will setup the oauth2 service.
+ * This will set up a service that uses OAuth2.
  *
  * @package Proto\Integrations
  * @abstract
@@ -12,21 +12,28 @@ namespace Proto\Integrations;
 abstract class Oauth2Service extends RestService
 {
 	/**
-	 * @var string $clientId
+	 * Client ID.
+	 *
+	 * @var string|null
 	 */
-	protected $clientId;
+	protected ?string $clientId;
 
 	/**
-	 * @var string $clientSecret
+	 * Client Secret.
+	 *
+	 * @var string|null
 	 */
-	protected $clientSecret;
+	protected ?string $clientSecret;
 
 	/**
-	 * @var string $redirectUrl
+	 * Redirect URL.
+	 *
+	 * @var string|null
 	 */
-	protected $redirectUrl;
+	protected ?string $redirectUrl;
 
 	/**
+	 * Constructor.
 	 *
 	 * @param string|null $clientId
 	 * @param string|null $clientSecret
@@ -47,34 +54,34 @@ abstract class Oauth2Service extends RestService
 	}
 
 	/**
-	 * This will set the client id.
+	 * Sets the client ID.
 	 *
 	 * @param string $clientId
 	 * @return void
 	 */
-	public function setClientId(string $clientId)
+	public function setClientId(string $clientId): void
 	{
 		$this->clientId = $clientId;
 	}
 
 	/**
-	 * This will set the clientSecret.
+	 * Sets the client secret.
 	 *
 	 * @param string $clientSecret
 	 * @return void
 	 */
-	public function setClientSecret(string $clientSecret)
+	public function setClientSecret(string $clientSecret): void
 	{
 		$this->clientSecret = $clientSecret;
 	}
 
 	/**
-	 * This will set the redirect url.
+	 * Sets the redirect URL.
 	 *
 	 * @param string $redirectUrl
 	 * @return void
 	 */
-	public function setRedirectUrl(string $redirectUrl)
+	public function setRedirectUrl(string $redirectUrl): void
 	{
 		$this->redirectUrl = $redirectUrl;
 	}

@@ -4,7 +4,7 @@ namespace Proto\Integrations;
 use Proto\Http\Rest\Request as Rest;
 
 /**
- * Request
+ * Class Request
  *
  * This will setup the request object.
  *
@@ -13,31 +13,42 @@ use Proto\Http\Rest\Request as Rest;
 class Request
 {
 	/**
-	 * @var string $url
+	 * URL.
+	 *
+	 * @var string
 	 */
-	protected $url = '';
+	protected string $url = '';
 
 	/**
-	 * @var bool $addCredentials
+	 * Whether to add credentials.
+	 *
+	 * @var bool
 	 */
-	public $addCredentials = false;
+	public bool $addCredentials = false;
 
 	/**
-	 * @var array $headers
+	 * Headers.
+	 *
+	 * @var array
 	 */
 	public array $headers = [];
 
 	/**
-	 * @var string|null $username
+	 * Username.
+	 *
+	 * @var string|null
 	 */
 	public ?string $username = null;
 
 	/**
-	 * @var string|null $password
+	 * Password.
+	 *
+	 * @var string|null
 	 */
 	public ?string $password = null;
 
 	/**
+	 * Constructor.
 	 *
 	 * @param string|null $url
 	 * @param array|null $headers
@@ -50,23 +61,23 @@ class Request
 	}
 
 	/**
-	 * This will set the url.
+	 * Sets the URL.
 	 *
 	 * @param string $url
 	 * @return void
 	 */
-	public function setUrl(string $url)
+	public function setUrl(string $url): void
 	{
 		$this->url = $url;
 	}
 
 	/**
-	 * This will setup the deafult headers.
+	 * Sets up the default headers.
 	 *
 	 * @param array|null $headers
 	 * @return void
 	 */
-	protected function setHeaders(?array $headers = null)
+	protected function setHeaders(?array $headers = null): void
 	{
 		$this->headers = $headers ?? [
 			'Content-Type' => 'application/x-www-form-urlencoded'
@@ -74,37 +85,36 @@ class Request
 	}
 
 	/**
-	 * This will setup the headers.
+	 * Sets up the headers.
 	 *
 	 * @param array|null $headers
 	 * @return array
 	 */
-	protected function setupHeaders(?array $headers = [])
+	protected function setupHeaders(?array $headers = []): array
 	{
-		if (sizeof($headers) < 1)
+		if (empty($headers))
 		{
-			$headers = $this->headers;
+			return $this->headers;
 		}
 		return $headers;
 	}
 
 	/**
-	 * This will create the rest object.
+	 * Creates the REST object.
 	 *
 	 * @param array|null $headers
 	 * @param string|null $url
 	 * @return Rest
 	 */
-	public function createRest(?array $headers = [], ?string $url = null)
+	public function createRest(?array $headers = [], ?string $url = null): Rest
 	{
 		$headers = $this->setupHeaders($headers);
 		$url = $url ?? $this->url;
-
 		return new Rest($url, $headers, true);
 	}
 
 	/**
-	 * This will make a rest request.
+	 * Makes a REST request.
 	 *
 	 * @param string|null $method
 	 * @param string|null $url
@@ -112,11 +122,10 @@ class Request
 	 * @param array|null $headers
 	 * @return object
 	 */
-	public function send(?string $method = 'GET', ?string $url = '', $params = '', ?array $headers = []): object
+	public function send(?string $method = 'GET', ?string $url = '', string $params = '', ?array $headers = []): object
 	{
 		$api = $this->createRest($headers);
-
-		if ($this->addCredentials == true)
+		if ($this->addCredentials)
 		{
 			$api->username = $this->username;
 			$api->password = $this->password;

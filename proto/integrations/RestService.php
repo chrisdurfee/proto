@@ -2,9 +2,9 @@
 namespace Proto\Integrations;
 
 /**
- * RestService
+ * Class RestService
  *
- * This will set up a service that uses rest.
+ * This will set up a service that uses REST.
  *
  * @package Proto\Integrations
  * @abstract
@@ -12,34 +12,37 @@ namespace Proto\Integrations;
 abstract class RestService extends Service
 {
 	/**
-	 * @var object|null $api
+	 * API client object.
+	 *
+	 * @var object|null
 	 */
 	protected ?object $api = null;
 
 	/**
-	 * This will setup the service.
+	 * The service response data type.
+	 *
+	 * @var string
+	 */
+	protected string $responseFormat = 'json';
+
+	/**
+	 * Constructor.
+	 *
+	 * Sets up the service.
 	 *
 	 * @return void
 	 */
 	public function __construct()
 	{
-		parent::__construct();
 		$this->setupRequest();
 	}
 
 	/**
-	 * This is the service response data type.
-	 *
-	 * @var string $responseFormat
-	 */
-	protected $responseFormat = 'json';
-
-	/**
-	 * This will setup the headers.
+	 * Sets up the headers.
 	 *
 	 * @return array
 	 */
-	protected function setupHeaders()
+	protected function setupHeaders(): array
 	{
 		return [
 			'Content-Type' => 'application/x-www-form-urlencoded'
@@ -47,30 +50,30 @@ abstract class RestService extends Service
 	}
 
 	/**
-	 * This will setup the service request.
+	 * Sets up the service request.
 	 *
 	 * @return void
 	 */
-	protected function setupRequest()
+	protected function setupRequest(): void
 	{
 		$headers = $this->setupHeaders();
 		$this->api = new Request($this->url, $headers);
 	}
 
 	/**
-	 * This will create the the rest used to curl the requests.
+	 * Creates the REST used to curl the requests.
 	 *
 	 * @param array|null $headers
 	 * @param string|null $url
 	 * @return object
 	 */
-	public function createRest(?array $headers = [], ?string $url = '')
+	public function createRest(?array $headers = [], ?string $url = ''): object
 	{
 		return $this->api->createRest($headers, $url);
 	}
 
 	/**
-	 * This will make a rest request.
+	 * Makes a REST request.
 	 *
 	 * @param string|null $method
 	 * @param string|null $url
@@ -83,13 +86,12 @@ abstract class RestService extends Service
 		?string $url = '',
 		mixed $params = '',
 		?array $headers = []
-	)
-	{
+	): object {
 		return $this->api->send($method, $url, $params, $headers);
 	}
 
 	/**
-	 * This will fetch a request and check the result.
+	 * Fetches a request and checks the result.
 	 *
 	 * @param string|null $method
 	 * @param string|null $url
@@ -104,21 +106,20 @@ abstract class RestService extends Service
 		mixed $params = '',
 		?array $headers = [],
 		?string $responseCode = '200'
-	)
-	{
+	): object {
 		$result = $this->request($method, $url, $params, $headers);
 		return $this->setupResponse($responseCode, $result, $this->responseFormat);
 	}
 
 	/**
-	 * This will setup a response object.
+	 * Sets up a response object.
 	 *
 	 * @param string|null $code
 	 * @param object|null $result
 	 * @param string|null $format
 	 * @return object
 	 */
-	protected function setupResponse(?string $code = '200', $result = null, ?string $format = 'json')
+	protected function setupResponse(?string $code = '200', $result = null, ?string $format = 'json'): object
 	{
 		if (!$result)
 		{
@@ -132,11 +133,11 @@ abstract class RestService extends Service
 		}
 
 		$response = $this->prepareResponse($data);
-		return ($result->code != $code)? $this->error('The API returned an error.', $data) : $this->response($response);
+		return ($result->code != $code) ? $this->error('The API returned an error.', $data) : $this->response($response);
 	}
 
 	/**
-	 * This will prepare the response
+	 * Prepares the response.
 	 *
 	 * @param mixed $data
 	 * @return mixed
@@ -147,7 +148,7 @@ abstract class RestService extends Service
 	}
 
 	/**
-	 * This will set up the user credentials.
+	 * Sets up the user credentials.
 	 *
 	 * @param string $username
 	 * @param string $password
@@ -156,6 +157,6 @@ abstract class RestService extends Service
 	protected function setupUserCredentials(string $username, string $password): void
 	{
 		$this->api->username = $username;
-        $this->api->password = $password;
+		$this->api->password = $password;
 	}
 }
