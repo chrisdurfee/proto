@@ -4,38 +4,37 @@ namespace Proto\Database\QueryBuilder;
 /**
  * Blueprint
  *
- * This will be the base class for all of the query
- * blueprints.
+ * This is the base class for all query blueprints.
  *
  * @package Proto\Database\QueryBuilder
  * @abstract
  */
 abstract class Blueprint extends Query
 {
-    /**
-     * This will construct the blueprint.
-     *
-     * @param string $tableName
-     * @param callable|null $callBack
-     * @return void
-     */
-    public function __construct(string $tableName, ?callable $callBack = null)
-    {
-        parent::__construct($tableName);
-        $this->callBack($callBack);
-    }
+	/**
+	 * Constructs the blueprint.
+	 *
+	 * @param string $tableName The table name.
+	 * @param callable|null $callback Optional callback to configure the blueprint.
+	 * @return void
+	 */
+	public function __construct(string $tableName, ?callable $callback = null)
+	{
+		parent::__construct($tableName);
+		$this->callBack($callback);
+	}
 
-    /**
-     * This will call the call back.
-     *
-     * @param callable|null $callBack
-     * @return void
-     */
-    protected function callBack(?callable $callBack = null): void
-    {
-        if (isset($callBack))
-        {
-            call_user_func($callBack, $this);
-        }
-    }
+	/**
+	 * Applies the provided callback to the blueprint.
+	 *
+	 * @param callable|null $callback The callback to apply.
+	 * @return void
+	 */
+	protected function callBack(?callable $callback = null): void
+	{
+		if ($callback !== null)
+		{
+			call_user_func($callback, $this);
+		}
+	}
 }
