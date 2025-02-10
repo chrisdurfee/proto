@@ -4,31 +4,37 @@ namespace Proto\Dispatch;
 use Proto\Config;
 
 /**
- * Sms
+ * Class Sms
  *
- * This will send an sms message.
+ * This class sends an SMS message.
  *
  * @package Proto\Dispatch
  */
 class Sms extends Dispatch
 {
 	/**
-	 * @var object $driver
+	 * SMS driver instance.
+	 *
+	 * @var object|null
 	 */
-	protected static object $driver;
+	protected static ?object $driver = null;
 
 	/**
-	 * @var object $config
+	 * Config instance.
+	 *
+	 * @var Config|null
 	 */
-	protected static $config;
+	protected static ?Config $config = null;
 
 	/**
-	 * @var object $settings
+	 * SMS settings.
+	 *
+	 * @var object
 	 */
-	protected $settings;
+	protected object $settings;
 
 	/**
-	 * This will get the app settings.
+	 * Retrieves the application configuration.
 	 *
 	 * @return Config
 	 */
@@ -38,10 +44,11 @@ class Sms extends Dispatch
 	}
 
 	/**
-	 * This will setup the driver and settings.
+	 * Constructor for the Sms class.
 	 *
-	 * @param object $settings
-	 * @param ?object $customDriver
+	 * @param object      $settings     SMS settings.
+	 * @param object|null $customDriver Optional custom SMS driver.
+	 *
 	 * @return void
 	 */
 	public function __construct(object $settings, ?object $customDriver = null)
@@ -51,33 +58,33 @@ class Sms extends Dispatch
 	}
 
 	/**
-	 * This will setup the sms driver.
+	 * Sets up the SMS driver.
 	 *
-	 * @param ?object $customDriver
+	 * @param object|null $customDriver Optional custom driver instance.
+	 *
 	 * @return void
 	 */
 	protected static function setupDriver(?object $customDriver = null): void
 	{
-		if (isset($customDriver))
+		if ($customDriver !== null)
 		{
 			self::$driver = $customDriver;
 			return;
 		}
 
-		if (isset(self::$driver))
+		if (self::$driver !== null)
 		{
 			return;
 		}
 
-		$settings = self::getConfig();
-
-		$driverName = $settings->sms->driver ?? 'TwilioDriver';
+		$config = self::getConfig();
+		$driverName = $config->sms->driver ?? 'TwilioDriver';
 		$className = __NAMESPACE__ . '\\Drivers\\Sms\\' . $driverName;
 		self::$driver = new $className();
 	}
 
 	/**
-	 * This will send the dispatch.
+	 * Sends the SMS message.
 	 *
 	 * @return Response
 	 */

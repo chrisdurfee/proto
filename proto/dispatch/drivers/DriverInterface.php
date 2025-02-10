@@ -2,14 +2,13 @@
 namespace Proto\Dispatch\Drivers;
 
 /**
- * TextDriver
+ * Interface DriverInterface
  *
- * This will create a base text driver class.
+ * This is the driver interface.
  *
  * @package Proto\Dispatch\Drivers
- * @abstract
  */
-abstract class TextDriver extends Driver
+interface DriverInterface
 {
 
 }
