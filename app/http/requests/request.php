@@ -10,7 +10,7 @@ use Proto\Http\ItemRequest;
  *
  * @package App\Http\Requests
  */
-abstract class Requests extends ItemRequest
+abstract class Request extends ItemRequest
 {
     /**
      * This will setup the request validate rules.
