@@ -8,6 +8,8 @@ use Proto\Database\Adapters\SQL\Mysql\MysqliBindTrait;
 use Proto\Utils\Strings;
 use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Database\Adapters\Adapter;
+use Proto\Storage\Helpers\FieldHelper;
+use Proto\Storage\Helpers\SubQueryHelper;
 
 /**
  * Class Storage
@@ -448,6 +450,18 @@ class Storage implements StorageInterface
 	}
 
 	/**
+	 * Create a query builder for a given table.
+	 *
+	 * @param string $tableName Table name.
+	 * @param string|null $alias Table alias.
+	 * @return QueryHandler
+	 */
+	protected function builder(string $tableName, ?string $alias = null): QueryHandler
+	{
+		return new QueryHandler($tableName, $alias, $this->db);
+	}
+
+	/**
 	 * Normalize data from snake_case to camelCase.
 	 *
 	 * @param mixed $data Raw data.
@@ -490,88 +504,14 @@ class Storage implements StorageInterface
 		$fields = $this->model->getFields();
 		foreach ($fields as $field)
 		{
-			$field = static::formatField($field, $isSnakeCase);
-			$cols[] = $field;
+			$cols[] = FieldHelper::formatField($field, $isSnakeCase);
 		}
 
 		if (count($joins) > 0)
 		{
-			$this->getJoinCols($joins, $cols);
+			$this->getJoinCols($joins, $cols, $isSnakeCase);
 		}
 		return $cols;
-	}
-
-	/**
-	 * Format an array of fields.
-	 *
-	 * @param array|null $fields
-	 * @return array|null
-	 */
-	protected function formatFields(?array $fields): ?array
-	{
-		if (count($fields) < 1)
-		{
-			return $fields;
-		}
-
-		$cols = [];
-		$isSnakeCase = $this->model->isSnakeCase();
-		foreach ($fields as $field)
-		{
-			$field = static::formatField($field, $isSnakeCase);
-			$cols[] = $field;
-		}
-		return $cols;
-	}
-
-	/**
-	 * Format a field for query use.
-	 *
-	 * @param mixed $field
-	 * @param bool $isSnakeCase
-	 * @return mixed
-	 */
-	protected static function formatField(mixed $field, bool $isSnakeCase): mixed
-	{
-		if (!is_array($field))
-		{
-			return static::prepareFieldName($field, $isSnakeCase);
-		}
-
-		if (count($field) < 2)
-		{
-			return $field;
-		}
-
-		if (!is_array($field[0]))
-		{
-			return [static::prepareFieldName($field[0], $isSnakeCase), static::prepareFieldName($field[1], $isSnakeCase)];
-		}
-
-		return [$field[0], static::prepareFieldName($field[1], $isSnakeCase)];
-	}
-
-	/**
-	 * Prepare a field name.
-	 *
-	 * @param string $field Field name.
-	 * @param bool $isSnakeCase Use snake_case.
-	 * @return string
-	 */
-	protected static function prepareFieldName(string $field, bool $isSnakeCase): string
-	{
-		return ($isSnakeCase) ? static::decamelize($field) : $field;
-	}
-
-	/**
-	 * Decamelize a string.
-	 *
-	 * @param string $str Input string.
-	 * @return string
-	 */
-	protected static function decamelize(string $str): string
-	{
-		return Strings::snakeCase($str);
 	}
 
 	/**
@@ -579,101 +519,25 @@ class Storage implements StorageInterface
 	 *
 	 * @param array &$joins Join definitions.
 	 * @param array &$cols Column list.
+	 * @param bool $isSnakeCase Snake case flag.
 	 * @return void
 	 */
-	protected function getJoinCols(array &$joins, array &$cols): void
+	protected function getJoinCols(array &$joins, array &$cols, bool $isSnakeCase): void
 	{
 		foreach ($joins as $join)
 		{
 			$table = $join->getTableName();
-			if (!$table)
+			if (!$table || !$join->isMultiple())
 			{
 				continue;
 			}
 
-			if (!$join->isMultiple())
+			$subQuery = SubQueryHelper::setupSubQuery($join, function($table, $alias)
 			{
-				continue;
-			}
-
-			$col = [$this->setupSubQuery($join)];
-			$cols[] = $col;
+				return $this->builder($table, $alias);
+			}, $isSnakeCase);
+			$cols[] = [$subQuery];
 		}
-	}
-
-	/**
-	 * Generate a GROUP_CONCAT SQL snippet.
-	 *
-	 * @param string $as Alias for the group concat.
-	 * @param array $fields Field list.
-	 * @return string
-	 */
-	protected function getGroupConcatSql(string $as, array $fields): string
-	{
-		$keys = array_map(function($field) { return "'{$field}-:-', {$field}"; }, $fields);
-		$concat = implode(", '-::-', ", $keys);
-		return "GROUP_CONCAT({$concat} SEPARATOR '-:::-') AS {$as}";
-	}
-
-	/**
-	 * Create a query builder for a given table.
-	 *
-	 * @param string $tableName Table name.
-	 * @param string|null $alias Table alias.
-	 * @return QueryHandler
-	 */
-	protected function builder(string $tableName, ?string $alias = null): QueryHandler
-	{
-		return new QueryHandler($tableName, $alias, $this->db);
-	}
-
-	/**
-	 * Recursively add child join definitions.
-	 *
-	 * @param array &$joins Parent join list.
-	 * @param object $join Join object.
-	 * @param array &$fields Field list.
-	 * @return void
-	 */
-	protected function addChildJoin(array &$joins, object $join, array &$fields): void
-	{
-		$childJoin = $join->getMultipleJoin();
-		if ($childJoin)
-		{
-			$childFields = $this->formatFields($childJoin->getFields());
-			$fields = array_merge($fields, $childFields);
-			$joins[] = [
-				'table' => $childJoin->getTableName(),
-				'type' => $childJoin->getType(),
-				'alias' => $childJoin->getAlias(),
-				'on' => $childJoin->getOn(),
-				'using' => $childJoin->getUsing()
-			];
-			$this->addChildJoin($joins, $childJoin, $fields);
-		}
-	}
-
-	/**
-	 * Build a subquery for a join.
-	 *
-	 * @param object $join Join object.
-	 * @return string
-	 */
-	protected function setupSubQuery(object $join): string
-	{
-		$tableName = $join->getTableName();
-		$alias = $join->getAlias();
-		$builder = $this->builder($tableName, $alias);
-		$fields = $this->formatFields($join->getFields());
-
-		$joins = [];
-		$this->addChildJoin($joins, $join, $fields);
-
-		$as = $join->getAs();
-		$groupConcat = $this->getGroupConcatSql($as, $fields);
-
-		$sql = $builder->select([$groupConcat])->joins($joins);
-		return '(' . $sql->where(...$join->getOn()) . ') AS ' . $as;
 	}
 
 	/**
@@ -709,7 +573,7 @@ class Storage implements StorageInterface
 				'alias' => $join->getAlias(),
 				'type' => $join->getType(),
 				'on' => $join->getOn(),
-				'fields' => ($allowFields) ? $this->formatFields($join->getFields()) : null
+				'fields' => ($allowFields) ? FieldHelper::formatFields($join->getFields()) : null
 			];
 		}
 		return $mapped;
@@ -783,10 +647,10 @@ class Storage implements StorageInterface
 	/**
 	 * Retrieve a single record by id.
 	 *
-	 * @param int|string $id Identifier.
+	 * @param mixed $id Identifier.
 	 * @return object|null
 	 */
-	public function get($id): ?object
+	public function get(mixed $id): ?object
 	{
 		return $this->select()
 			->where("{$this->alias}.id = ?")

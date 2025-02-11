@@ -35,7 +35,8 @@ interface StorageInterface
     /**
      * This will retrieve an existing record from the storage.
      *
-     * @return array The retrieved records.
+     * @param mixed $id The ID of the record to retrieve.
+     * @return object|null The retrieved record or null if not found.
      */
-    public function get(): array;
+    public function get(mixed $id): ?object;
 }
