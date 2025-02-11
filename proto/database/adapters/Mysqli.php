@@ -156,14 +156,14 @@ class Mysqli extends Adapter
 	 * @param string $sql The SQL query.
 	 * @param array|object $params The parameters to bind.
 	 * @param string $resultType The type of results: 'object' or 'array'.
-	 * @return array|bool The fetched results as an array, or false on failure.
+	 * @return array|null The fetched results as an array, or null on failure.
 	 */
-	public function fetch(string $sql, array|object $params = [], string $resultType = 'object') : array|bool
+	public function fetch(string $sql, array|object $params = [], string $resultType = 'object') : ?array
 	{
 		$db = $this->connect();
 		if (!$db)
 		{
-			return false;
+			return null;
 		}
 
 		$stmt = $this->prepareAndExecute($sql, $params);
@@ -176,6 +176,19 @@ class Mysqli extends Adapter
 
 		$this->disconnect();
 		return $rows;
+	}
+
+	/**
+	 * Fetches the first result of a SQL query.
+	 *
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return object|null The first result as an object, or null on failure.
+	 */
+	public function first(string $sql, array|object $params = []) : ?object
+	{
+		$rows = $this->fetch($sql, $params);
+		return $rows ? $rows[0] : null;
 	}
 
 	/**

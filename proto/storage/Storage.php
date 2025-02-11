@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 namespace Proto\Storage;
 
-use Proto\Base;
 use Proto\Models\ModelInterface;
 use Proto\Database\Database;
 use Proto\Database\QueryBuilder\QueryHandler;
@@ -20,7 +19,7 @@ use Proto\Database\Adapters\Adapter;
  *
  * @package Proto\Storage
  */
-class Storage extends Base
+class Storage implements StorageInterface
 {
 	use MysqliBindTrait;
 
@@ -52,7 +51,7 @@ class Storage extends Base
 	 * Connection key.
 	 * @var string
 	 */
-	protected string $connection = 'proto';
+	protected string $connection = 'default';
 
 	/**
 	 * Last error.

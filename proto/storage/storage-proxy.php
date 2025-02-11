@@ -3,6 +3,7 @@ namespace Proto\Storage;
 
 use Proto\Events\EventProxy;
 use Proto\Events\Events;
+use Proto\Models\ModelInterface;
 
 /**
  * StorageProxy
@@ -20,18 +21,18 @@ use Proto\Events\Events;
 class StorageProxy extends EventProxy
 {
     /**
-     * @var object $model
+     * @var ModelInterface $model
      */
-    protected object $model;
+    protected ModelInterface $model;
 
     /**
      * This will set up the storage proxy.
      *
-     * @param object $model
+     * @param ModelInterface $model
      * @param object $storage
      * @return void
      */
-    public function __construct(object &$model, object &$storage)
+    public function __construct(ModelInterface &$model, object &$storage)
     {
         $this->model = $model;
 
