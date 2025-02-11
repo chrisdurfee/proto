@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Controllers\Push;
+namespace Proto\Dispatch\Push\Controllers\Push;
 
 use Proto\Controllers\ModelController;
 

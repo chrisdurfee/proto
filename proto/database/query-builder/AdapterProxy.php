@@ -154,7 +154,6 @@ class AdapterProxy
 		}
 
 		$this->sql->limit(1);
-		$result = $this->db->fetch((string) $this->sql, $params);
-		return $result[0] ?? null;
+		return $this->db->first((string) $this->sql, $params);
 	}
 }

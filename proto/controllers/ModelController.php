@@ -13,13 +13,6 @@ namespace Proto\Controllers;
 abstract class ModelController extends Controller
 {
 	/**
-	 * Determines if responses should be passed directly.
-	 *
-	 * @var bool
-	 */
-	protected bool $passResponse = false;
-
-	/**
 	 * Initializes the model controller.
 	 *
 	 * @param string|null $modelClass The model class reference using ::class.
@@ -93,12 +86,6 @@ abstract class ModelController extends Controller
 		}
 
 		$result = \call_user_func_array($callable, $arguments);
-
-		if (!$this->passResponse)
-		{
-			return $result;
-		}
-
 		return $this->response(is_array($result) ? ['rows' => $result] : ['row' => $result]);
 	}
 
@@ -250,10 +237,10 @@ abstract class ModelController extends Controller
 	/**
 	 * Retrieves a model by ID.
 	 *
-	 * @param int $id The model ID.
+	 * @param mixed $id The model ID.
 	 * @return object The response.
 	 */
-	public function get(int $id): object
+	public function get(mixed $id): object
 	{
 		return $this->response(['row' => $this->modelClass::get($id)]);
 	}
