@@ -8,9 +8,6 @@ Proto is a PHP framework built to leverage the latest features of PHP 8.2+. It i
 - **Security**: Implements best practices for secure coding to mitigate common vulnerabilities such as SQL injection, Cross-Site Scripting (XSS), and Cross-Site Request Forgery (CSRF).
 - **Modular Monolith**: Designed as a modular monolith framework, allowing for better organization and separation of concerns within the codebase.
 - **Open Source**: Released under an open-source license, encouraging community contributions and collaboration.
-- **PSR Compliance**: Adheres to PHP-FIG standards (PSR-12) for a clean and uniform codebase.
-- **Dependency Injection**: Promotes the use of dependency injection to enhance testability and decouple components.
-- **Event-Driven Architecture**: Utilizes an event-driven architecture to provide a flexible and extensible system for handling application events.
 
 ## Getting Started
 
