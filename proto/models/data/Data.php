@@ -127,7 +127,6 @@ class Data
 
 		foreach ($joins as $join)
         {
-			// Assuming $join is an object with methods isMultiple(), getAs(), and getFields()
 			if ($join->isMultiple())
             {
 				$key = $this->mapper->mapKey($join->getAs());
