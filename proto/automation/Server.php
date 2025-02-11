@@ -4,16 +4,16 @@ namespace Proto\Automation;
 /**
  * Server
  *
- * This will set up the server settings.
+ * This abstract class provides methods to set up server settings such as memory limit and time limit.
  *
  * @package Proto\Automation
  */
 abstract class Server
 {
 	/**
-	 * This will set up the server settings.
+	 * Sets up the server settings based on the provided ServerSettings object.
 	 *
-	 * @param ServerSettings $settings
+	 * @param ServerSettings $settings The server settings to apply.
 	 * @return void
 	 */
 	public static function setup(ServerSettings $settings): void
@@ -28,9 +28,9 @@ abstract class Server
 	}
 
 	/**
-	 * This will set the memory limit.
+	 * Sets the memory limit for the server.
 	 *
-	 * @param string $memoryLimit
+	 * @param string $memoryLimit The memory limit to set (e.g., '256M').
 	 * @return void
 	 */
 	protected static function setMemoryLimit(string $memoryLimit): void
@@ -39,9 +39,9 @@ abstract class Server
 	}
 
 	/**
-	 * This will set the time limit.
+	 * Sets the maximum execution time for the server.
 	 *
-	 * @param int $timeLimit
+	 * @param int $timeLimit The time limit in seconds.
 	 * @return void
 	 */
 	protected static function setTimeLimit(int $timeLimit): void
