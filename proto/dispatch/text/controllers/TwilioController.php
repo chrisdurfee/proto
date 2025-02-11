@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
-namespace Proto\Controllers\Sms;
+namespace Proto\Dispatch\Text\Controllers;
 
-use Proto\Integrations\Sms\TwilioTrustHub;
-use Proto\Integrations\Sms\Twilio;
+use Proto\Dispatch\Sms\Integrations\Sms\TwilioTrustHub;
+use Proto\Dispatch\Sms\Integrations\Sms\Twilio;
 use Proto\Utils\Strings;
 
 /**
@@ -10,7 +10,7 @@ use Proto\Utils\Strings;
  *
  * Creates a Twilio controller to work with the Twilio API.
  *
- * @package Proto\Controllers\Sms
+ * @package Proto\Dispatch\Text\Controllers
  */
 class TwilioController extends SmsController
 {

@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Controllers\Sms;
+namespace Proto\Dispatch\Text\Controllers;
 
 use Proto\Controllers\Controller;
 
@@ -9,7 +9,7 @@ use Proto\Controllers\Controller;
  * Base SMS controller class that defines the send method
  * that SMS controllers must implement.
  *
- * @package Proto\Controllers\Sms
+ * @package Proto\Dispatch\Text\Controllers
  */
 abstract class SmsController extends Controller
 {
