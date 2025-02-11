@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Dispatch\Push\Controllers\Push;
 
-use Proto\Models\WebPushUser;
+use Proto\Dispatch\Push\Models\WebPushUser;
 use Proto\Dispatch\Dispatcher;
 
 /**
