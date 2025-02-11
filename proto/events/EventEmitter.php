@@ -13,16 +13,14 @@ use Proto\Patterns\Structural\PubSub;
 class EventEmitter
 {
 	/**
-	 * @var PubSub Handles event subscription and publication.
-	 */
-	protected PubSub $pubSub;
-
-	/**
 	 * Initializes the PubSub instance.
+	 *
+	 * @param PubSub $pubSub The PubSub instance.
 	 */
-	public function __construct()
+	public function __construct(
+		protected PubSub $pubSub = new PubSub()
+	)
 	{
-		$this->pubSub = new PubSub();
 	}
 
 	/**

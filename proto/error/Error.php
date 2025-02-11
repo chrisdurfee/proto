@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Error
 {
-	use Proto\Models\ErrorLog;
+	use Proto\Error\Models\ErrorLog;
 	use Proto\Http\Request;
 	use Proto\Utils\Format\JsonFormat;
 

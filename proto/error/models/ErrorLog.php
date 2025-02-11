@@ -1,7 +1,8 @@
 <?php declare(strict_types=1);
-namespace Proto\Models;
+namespace Proto\Error\Models;
 
-use Proto\Storage\ErrorLogStorage;
+use Proto\Error\Storage\ErrorLogStorage;
+use Proto\Models\Model;
 
 /**
  * ErrorLog
