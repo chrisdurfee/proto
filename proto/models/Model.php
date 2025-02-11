@@ -177,22 +177,18 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	protected function getModelJoins(): array
 	{
-		if (method_exists(static::class, 'joins'))
-		{
-			$joins = [];
-			$alias = static::$alias ?? null;
-			$builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
+		$joins = [];
+		$alias = static::$alias ?? null;
+		$builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
 
-			// Set the model class name for joins.
-			$modelClassName = static::getIdClassName();
-			$builder->setModelClassName($modelClassName);
+		// Set the model class name for joins.
+		$modelClassName = static::getIdClassName();
+		$builder->setModelClassName($modelClassName);
 
-			// Call the joins method.
-			$callback = static::class . '::joins';
-			\call_user_func($callback, $builder);
-			return $joins;
-		}
-		return static::getMappedJoins();
+		// Call the joins method.
+		$callback = static::class . '::joins';
+		\call_user_func($callback, $builder);
+		return $joins;
 	}
 
 	/**
@@ -233,22 +229,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$idName = static::getIdClassName();
 		$child->on(['id',$idName.'Id']);
 		return $child;
-	}
-
-	/**
-	 * Map joins defined in the model.
-	 *
-	 * @return array|null
-	 */
-	protected static function getMappedJoins(): ?array
-	{
-		$joins = static::$joins;
-		if (count($joins) < 1)
-		{
-			return $joins;
-		}
-		$alias = static::$alias ?? null;
-		return JoinMapper::mapJoins(static::class, static::$tableName, $alias, $joins);
 	}
 
 	/**
