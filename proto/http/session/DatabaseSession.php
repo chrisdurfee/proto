@@ -2,7 +2,7 @@
 namespace Proto\Http\Session;
 
 use Proto\Http\Token;
-use Proto\Models\UserSession;
+use Proto\Http\Session\Models\UserSession;
 use Proto\Utils\Format\JsonFormat;
 
 /**

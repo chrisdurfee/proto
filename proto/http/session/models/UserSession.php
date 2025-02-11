@@ -1,5 +1,7 @@
 <?php declare(strict_types=1);
-namespace Proto\Models;
+namespace Proto\Http\Session\Models;
+
+use Proto\Models\Model;
 
 /**
  * UserSession
@@ -14,6 +16,11 @@ class UserSession extends Model
 	 * @var string $tableName
 	 */
 	protected static $tableName = 'user_sessions';
+
+	/**
+	 * @var string $alias
+	 */
+	protected static $alias = 'us';
 
 	/**
 	 * @var array $fields
