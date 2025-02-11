@@ -1,39 +1,39 @@
 <?php declare(strict_types=1);
-namespace App\Automation;
+namespace Proto\Automation;
 
 /**
- * Benchmark
+ * Class Benchmark
  *
- * This will be a benchmark class.
+ * This class provides benchmarking functionality for measuring performance.
  *
- * @package App\Automation
+ * @package Proto\Automation
  */
 class Benchmark
 {
 	/**
-	 * @var int $timerStart
+	 * @var float $timerStart The start time of the benchmark.
 	 */
 	protected float $timerStart;
 
 	/**
-	 * @var int $timerEnd
+	 * @var float $timerEnd The end time of the benchmark.
 	 */
 	protected float $timerEnd;
 
 	/**
-	 * @var string $totalTime
+	 * @var string $totalTime The total time measured by the benchmark.
 	 */
 	protected string $totalTime = '0.0';
 
 	/**
-	 * @var string $status
+	 * @var string $status The current status of the benchmark.
 	 */
 	protected string $status = 'init';
 
 	/**
-	 * This will update the status.
+	 * Updates the status of the benchmark.
 	 *
-	 * @param string $status
+	 * @param string $status The new status.
 	 * @return void
 	 */
 	protected function setStatus(string $status): void
@@ -42,9 +42,9 @@ class Benchmark
 	}
 
 	/**
-	 * This will get the status.
+	 * Gets the current status of the benchmark.
 	 *
-	 * @return string
+	 * @return string The current status.
 	 */
 	public function getStatus(): string
 	{
@@ -52,7 +52,7 @@ class Benchmark
 	}
 
 	/**
-	 * This will start the timer.
+	 * Starts the benchmark timer.
 	 *
 	 * @return void
 	 */
@@ -63,22 +63,21 @@ class Benchmark
 	}
 
 	/**
-	 * This will stop the timer.
+	 * Stops the benchmark timer.
 	 *
 	 * @return void
 	 */
 	public function stop(): void
 	{
 		$this->timerEnd = self::getTime();
-
 		$this->totalTime = self::getTotalTime($this->timerEnd, $this->timerStart);
 		$this->setStatus('stopped');
 	}
 
 	/**
-	 * This will get the total time.
+	 * Gets the total time measured by the benchmark.
 	 *
-	 * @return string
+	 * @return string The total time.
 	 */
 	public function getTotal(): string
 	{
@@ -86,9 +85,9 @@ class Benchmark
 	}
 
 	/**
-	 * This will get the time.
+	 * Gets the current time in microseconds.
 	 *
-	 * @return float
+	 * @return float The current time.
 	 */
 	protected static function getTime(): float
 	{
@@ -96,13 +95,13 @@ class Benchmark
 	}
 
 	/**
-	 * This will get the total time.
+	 * Calculates the total time between the start and end times.
 	 *
-	 * @param float $stop
-	 * @param float $start
-	 * @return string
+	 * @param float $stop The end time.
+	 * @param float $start The start time.
+	 * @return string The total time.
 	 */
-	protected static function getTotalTime($stop = 0, $start = 0): string
+	protected static function getTotalTime(float $stop, float $start): string
 	{
 		$time = ($stop - $start);
 		return sprintf('%f', $time);

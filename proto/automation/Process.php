@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
-namespace App\Automation;
+namespace Proto\Automation;
 
-use App\Auth;
 use Proto\Base;
 use Proto\Http\Response;
 
@@ -10,7 +9,7 @@ use Proto\Http\Response;
  *
  * This class serves as the base process class for automation tasks.
  *
- * @package App\Automation
+ * @package Proto\Automation
  */
 abstract class Process extends Base
 {
