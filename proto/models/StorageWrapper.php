@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Models;
 
+use Proto\Storage\StorageInterface;
+
 /**
  * StorageWrapper
  *
@@ -11,21 +13,13 @@ namespace Proto\Models;
 class StorageWrapper
 {
 	/**
-	 * The storage object.
-	 *
-	 * @var object
-	 */
-	protected object $storage;
-
-	/**
 	 * Sets the storage object.
 	 *
-	 * @param object $storage The storage object.
+	 * @param StorageInterface $storage The storage object.
 	 * @return void
 	 */
-	public function __construct(object $storage)
+	public function __construct(protected StorageInterface $storage)
 	{
-		$this->storage = $storage;
 	}
 
 	/**
