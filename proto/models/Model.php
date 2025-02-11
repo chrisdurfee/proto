@@ -8,6 +8,7 @@ use Proto\Storage\StorageProxy;
 use Proto\Tests\Debug;
 use Proto\Support\Collection;
 use Proto\Utils\Strings;
+use Proto\Models\Joins\JoinBuilder;
 
 /**
  * Class Model
@@ -46,13 +47,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * @var array
 	 */
 	protected static array $fields = [];
-
-	/**
-	 * Determines if model should be passed in method calls.
-	 *
-	 * @var bool
-	 */
-	protected bool $passModel = false;
 
 	/**
 	 * Join definitions.
@@ -132,6 +126,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$this->setupJoins();
 		$this->setupDataMapper();
 		$this->setupStorage();
+
 		$data = static::augment($data);
 		$this->data->set($data);
 	}
@@ -227,7 +222,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$child = $builder->{$type}(static::table(), static::alias());
 		$idName = static::getIdClassName();
-		$child->on(['id',$idName.'Id']);
+		$child->on(['id', $idName . 'Id']);
 		return $child;
 	}
 
@@ -368,18 +363,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected function wrapMethodCall(callable $callable, array $arguments): mixed
 	{
 		$result = $this->callMethod($callable, $arguments);
-		if ($this->passModel === false)
-		{
-			return $result;
-		}
 		if (is_bool($result))
 		{
 			return $result;
 		}
+
 		if (!isset($result->rows) && !is_array($result))
 		{
 			return ($result) ? new static($result) : null;
 		}
+
 		if (isset($result->rows))
 		{
 			$result->rows = $this->convertRows($result->rows);
@@ -421,7 +414,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		}
 
 		$model = new static();
-		$callable = [$model->storage,$method];
+		$callable = [$model->storage, $method];
 		$result = $model->callMethod($callable, $arguments);
 		if (is_bool($result))
 		{

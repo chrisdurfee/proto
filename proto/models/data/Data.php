@@ -61,9 +61,20 @@ class Data
 	) {
 		$this->fieldBlacklist = $fieldBlacklist;
 
+		/**
+		 * This will determine the mapper type to use.
+		 */
 		$mapperType = ($snakeCase) ? 'snake' : 'default';
 		$this->mapper = Mapper::factory($mapperType);
+
+		/**
+		 * Initialize the nested data helper.
+		 */
 		$this->nestedDataHelper = new NestedDataHelper();
+
+		/**
+		 * Set up the data.
+		 */
 		$this->setup($fields, $joins);
 	}
 

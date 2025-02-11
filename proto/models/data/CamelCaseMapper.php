@@ -10,5 +10,4 @@ namespace Proto\Models\Data;
  */
 class CamelCaseMapper extends Mapper
 {
-
 }

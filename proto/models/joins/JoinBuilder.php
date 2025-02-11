@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Models;
+namespace Proto\Models\Joins;
 
 /**
  * Class JoinBuilder
@@ -11,39 +11,11 @@ namespace Proto\Models;
 class JoinBuilder
 {
 	/**
-	 * Base table name.
-	 *
-	 * @var string
-	 */
-	protected string $tableName;
-
-	/**
-	 * Table alias.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $alias;
-
-	/**
-	 * Indicates snake_case usage.
-	 *
-	 * @var bool
-	 */
-	protected bool $isSnakeCase = true;
-
-	/**
 	 * Model class name for join.
 	 *
 	 * @var string|null
 	 */
-	protected ?string $modelClassName;
-
-	/**
-	 * Array of join definitions.
-	 *
-	 * @var array
-	 */
-	protected array $joins;
+	protected ?string $modelClassName = null;
 
 	/**
 	 * JoinBuilder constructor.
@@ -53,16 +25,17 @@ class JoinBuilder
 	 * @param string|null $alias Table alias.
 	 * @param bool $isSnakeCase Indicates snake_case usage.
 	 */
-	public function __construct(array &$joins, mixed $tableName, ?string $alias = null, bool $isSnakeCase = true)
+	public function __construct(
+		protected array &$joins,
+		protected string|array $tableName,
+		protected ?string $alias = null,
+		protected bool $isSnakeCase = true
+	)
 	{
-		$this->tableName = $tableName;
-		$this->joins = &$joins;
-		$this->alias = $alias;
-		$this->isSnakeCase = $isSnakeCase;
 	}
 
 	/**
-	 * Get table settings.
+	 * Returns the table settings as an object.
 	 *
 	 * @return object
 	 */
@@ -70,12 +43,12 @@ class JoinBuilder
 	{
 		return (object)[
 			'tableName' => $this->tableName,
-			'alias' => $this->alias
+			'alias' => $this->alias,
 		];
 	}
 
 	/**
-	 * Set the model class name for join.
+	 * Sets the model class name for the join.
 	 *
 	 * @param string $modelClassName
 	 * @return self
@@ -87,7 +60,7 @@ class JoinBuilder
 	}
 
 	/**
-	 * Get the model identifier name.
+	 * Gets the model identifier name (appending "Id" to the model class name).
 	 *
 	 * @return string
 	 */
@@ -97,13 +70,13 @@ class JoinBuilder
 	}
 
 	/**
-	 * Add a new join.
+	 * Creates and adds a new join.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	protected function addJoin(mixed $tableName, ?string $alias = null): ModelJoin
+	protected function addJoin(string|array $tableName, ?string $alias = null): ModelJoin
 	{
 		$join = new ModelJoin($this, $tableName, $alias, $this->isSnakeCase);
 		$this->joins[] = $join;
@@ -111,77 +84,77 @@ class JoinBuilder
 	}
 
 	/**
-	 * Create a join.
+	 * Creates a generic join.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	public function join(mixed $tableName, ?string $alias = null): ModelJoin
+	public function join(string|array $tableName, ?string $alias = null): ModelJoin
 	{
 		return $this->addJoin($tableName, $alias);
 	}
 
 	/**
-	 * Create a left join.
+	 * Creates a left join.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	public function left(mixed $tableName, ?string $alias = null): ModelJoin
+	public function left(string|array $tableName, ?string $alias = null): ModelJoin
 	{
 		$join = $this->addJoin($tableName, $alias);
 		return $join->left();
 	}
 
 	/**
-	 * Create a right join.
+	 * Creates a right join.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	public function right(mixed $tableName, ?string $alias = null): ModelJoin
+	public function right(string|array $tableName, ?string $alias = null): ModelJoin
 	{
 		$join = $this->addJoin($tableName, $alias);
 		return $join->right();
 	}
 
 	/**
-	 * Create an outer join.
+	 * Creates an outer join.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	public function outer(mixed $tableName, ?string $alias = null): ModelJoin
+	public function outer(string|array $tableName, ?string $alias = null): ModelJoin
 	{
 		$join = $this->addJoin($tableName, $alias);
 		return $join->outer();
 	}
 
 	/**
-	 * Create a cross join.
+	 * Creates a cross join.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	public function cross(mixed $tableName, ?string $alias = null): ModelJoin
+	public function cross(string|array $tableName, ?string $alias = null): ModelJoin
 	{
 		$join = $this->addJoin($tableName, $alias);
 		return $join->cross();
 	}
 
 	/**
-	 * Create a linked join builder.
+	 * Creates a linked join builder for further chaining.
 	 *
-	 * @param mixed $tableName Base table name.
+	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return JoinBuilder
 	 */
-	public function link(mixed $tableName, ?string $alias = null): JoinBuilder
+	public function link(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
 		return new JoinBuilder($this->joins, $tableName, $alias, $this->isSnakeCase);
 	}

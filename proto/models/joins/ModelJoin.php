@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Models;
+namespace Proto\Models\Joins;
 
 use Proto\Utils\Strings;
 
@@ -22,9 +22,9 @@ class ModelJoin
 	/**
 	 * USING clause for join.
 	 *
-	 * @var string
+	 * @var string|null
 	 */
-	protected string $using;
+	protected ?string $using = null;
 
 	/**
 	 * ON conditions for join.
@@ -41,25 +41,11 @@ class ModelJoin
 	protected array $fields = [];
 
 	/**
-	 * Base table name.
-	 *
-	 * @var string|array
-	 */
-	protected string|array $tableName;
-
-	/**
-	 * Alias for the base table.
+	 * Alias designation.
 	 *
 	 * @var string|null
 	 */
-	protected ?string $alias;
-
-	/**
-	 * Alias designation.
-	 *
-	 * @var string
-	 */
-	protected string $as;
+	protected ?string $as = null;
 
 	/**
 	 * Join table name.
@@ -76,25 +62,11 @@ class ModelJoin
 	protected ?string $joinAlias;
 
 	/**
-	 * Reference to the join builder.
-	 *
-	 * @var JoinBuilder
-	 */
-	protected JoinBuilder $builder;
-
-	/**
 	 * Indicates if the join is multiple.
 	 *
 	 * @var bool
 	 */
 	protected bool $multiple = false;
-
-	/**
-	 * Indicates if using snake_case.
-	 *
-	 * @var bool
-	 */
-	protected bool $isSnakeCase = true;
 
 	/**
 	 * Holds the multiple join instance if applicable.
@@ -106,17 +78,18 @@ class ModelJoin
 	/**
 	 * ModelJoin constructor.
 	 *
-	 * @param object $builder Reference to join builder.
-	 * @param mixed $tableName Base table name.
+	 * @param JoinBuilder $builder Reference to join builder.
+	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @param bool $isSnakeCase Indicates snake_case usage.
 	 */
-	public function __construct(object &$builder, mixed $tableName, ?string $alias = null, bool $isSnakeCase = true)
+	public function __construct(
+		protected JoinBuilder $builder,
+		protected string|array $tableName,
+		protected ?string $alias = null,
+		protected bool $isSnakeCase = true
+	)
 	{
-		$this->tableName = $tableName;
-		$this->builder = $builder;
-		$this->alias = $alias;
-		$this->isSnakeCase = $isSnakeCase;
 		$this->setupJoinSettings();
 	}
 
@@ -135,11 +108,11 @@ class ModelJoin
 	/**
 	 * Override join table reference.
 	 *
-	 * @param mixed $tableName New table name.
+	 * @param string|array $tableName New table name.
 	 * @param string|null $alias New alias.
 	 * @return void
 	 */
-	protected function references(mixed $tableName, ?string $alias = null): void
+	protected function references(string|array $tableName, ?string $alias = null): void
 	{
 		$this->joinTableName = $tableName;
 		$this->joinAlias = $alias;
@@ -168,21 +141,21 @@ class ModelJoin
 	/**
 	 * Set join as multiple.
 	 *
-	 * @param mixed $tableName Optional table name.
+	 * @param string|array|null $tableName Optional table name.
 	 * @param string|null $alias Optional alias.
-	 * @return self|ModelJoin
+	 * @return self
 	 */
-	public function multiple(mixed $tableName = null, ?string $alias = null): self
+	public function multiple(string|array $tableName = null, ?string $alias = null): self
 	{
 		$this->multiple = true;
 		if (empty($tableName))
 		{
 			return $this;
 		}
-
 		$join = new ModelJoin($this->builder, $tableName, $alias);
 		$join->references($this->tableName, $this->alias);
-		return $this->multipleJoin = $join;
+		$this->multipleJoin = $join;
+		return $this;
 	}
 
 	/**
@@ -213,7 +186,7 @@ class ModelJoin
 	 */
 	public function addType(string $type = 'JOIN'): self
 	{
-		$this->type = \strtoupper($type);
+		$this->type = strtoupper($type);
 		return $this;
 	}
 
@@ -282,9 +255,9 @@ class ModelJoin
 	/**
 	 * Get the alias designation.
 	 *
-	 * @return mixed
+	 * @return string|array
 	 */
-	public function getAs(): mixed
+	public function getAs(): string|array
 	{
 		return $this->as ?? $this->tableName;
 	}
@@ -298,7 +271,7 @@ class ModelJoin
 	public function join(?string $modelClassName = null): JoinBuilder
 	{
 		$builder = $this->builder->link($this->tableName, $this->alias);
-		if (isset($modelClassName))
+		if ($modelClassName !== null)
 		{
 			$builder->setModelClassName($modelClassName);
 		}
@@ -308,10 +281,10 @@ class ModelJoin
 	/**
 	 * Add fields to the join.
 	 *
-	 * @param mixed ...$fields Field names.
+	 * @param string ...$fields Field names.
 	 * @return self
 	 */
-	public function fields(...$fields): self
+	public function fields(string ...$fields): self
 	{
 		if (count($fields) < 1)
 		{
@@ -343,7 +316,7 @@ class ModelJoin
 	 */
 	public function using(string $field): self
 	{
-		$this->using = 'USING('.$field.')';
+		$this->using = 'USING(' . $field . ')';
 		return $this;
 	}
 
@@ -395,14 +368,14 @@ class ModelJoin
 	 * @param mixed ...$on ON conditions.
 	 * @return self
 	 */
-	public function on(...$on): self
+	public function on(mixed ...$on): self
 	{
 		if (count($on) < 1)
 		{
 			return $this;
 		}
 
-		$alias = $this->alias ?? $this->tableName;
+		$baseAlias = $this->alias ?? $this->tableName;
 		$joinAlias = $this->joinAlias ?? $this->joinTableName;
 		$this->on = [];
 		foreach ($on as $condition)
@@ -414,11 +387,18 @@ class ModelJoin
 				{
 					if ($count === 2)
 					{
-						$condition = [$joinAlias.'.'.$this->prepareOnColumn($condition[0]), $alias.'.'.$this->prepareOnColumn($condition[1])];
+						$condition = [
+							$joinAlias . '.' . $this->prepareOnColumn($condition[0]),
+							$baseAlias . '.' . $this->prepareOnColumn($condition[1])
+						];
 					}
 					else
 					{
-						$condition = [$joinAlias.'.'.$this->prepareOnColumn($condition[0]), $condition[1], $alias.'.'.$this->prepareOnColumn($condition[2])];
+						$condition = [
+							$joinAlias . '.' . $this->prepareOnColumn($condition[0]),
+							$condition[1],
+							$baseAlias . '.' . $this->prepareOnColumn($condition[2])
+						];
 					}
 				}
 			}

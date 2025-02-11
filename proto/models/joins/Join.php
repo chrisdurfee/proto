@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Models;
+namespace Proto\Models\Joins;
 
 use Proto\Utils\Strings;
 
