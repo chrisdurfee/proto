@@ -112,13 +112,13 @@ class AdapterProxy
 	 * Fetches data using the adapter.
 	 *
 	 * @param array $params The query parameters.
-	 * @return mixed
+	 * @return array
 	 */
-	public function fetch(array $params = []): mixed
+	public function fetch(array $params = []): array
 	{
 		if ($this->hasAdapter() === false)
 		{
-			return false;
+			return [];
 		}
 
 		return $this->db->fetch((string) $this->sql, $params);
@@ -144,13 +144,13 @@ class AdapterProxy
 	 * Fetches the first row from the adapter.
 	 *
 	 * @param array $params The query parameters.
-	 * @return mixed
+	 * @return object|null
 	 */
-	public function first(array $params = []): mixed
+	public function first(array $params = []): ?object
 	{
 		if ($this->hasAdapter() === false)
 		{
-			return [];
+			return null;
 		}
 
 		$this->sql->limit(1);

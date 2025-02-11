@@ -8,6 +8,7 @@ use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Database\Adapters\SQL\Mysql\MysqliBindTrait;
 use Proto\Utils\Strings;
 use Proto\Database\QueryBuilder\AdapterProxy;
+use Proto\Database\Adapters\Adapter;
 
 /**
  * Class Storage
@@ -43,9 +44,9 @@ class Storage extends Base
 
 	/**
 	 * Database adapter instance.
-	 * @var object
+	 * @var Adapter
 	 */
-	protected object $db;
+	protected Adapter $db;
 
 	/**
 	 * Connection key.
@@ -100,7 +101,7 @@ class Storage extends Base
 	/**
 	 * Establish a database connection.
 	 *
-	 * @return object|false
+	 * @return Adapter|false
 	 */
 	public function setConnection(): object|false
 	{
@@ -211,7 +212,7 @@ class Storage extends Base
 	 */
 	public function table(?string $alias = null): QueryHandler
 	{
-		$alias = $alias ?? $this->model->getAlias();
+		$alias = $alias ?? $this->alias;
 		return $this->db->table($this->tableName, $alias);
 	}
 
@@ -784,9 +785,9 @@ class Storage extends Base
 	 * Retrieve a single record by id.
 	 *
 	 * @param int|string $id Identifier.
-	 * @return object|bool
+	 * @return object|null
 	 */
-	public function get($id)
+	public function get($id): ?object
 	{
 		return $this->select()
 			->where("{$this->alias}.id = ?")
@@ -799,7 +800,7 @@ class Storage extends Base
 	 * @param array|object $filter Filter criteria.
 	 * @return object|bool
 	 */
-	public function getBy($filter)
+	public function getBy($filter): mixed
 	{
 		$params = [];
 		$where = static::setFilters($filter, $params);
@@ -815,7 +816,7 @@ class Storage extends Base
 	 * @param array|null $modifiers Modifiers.
 	 * @return void
 	 */
-	protected function setOrderBy(object $sql, ?array $modifiers = null)
+	protected function setOrderBy(object $sql, ?array $modifiers = null): void
 	{
 		// Implement order-by logic as needed.
 	}
@@ -829,7 +830,7 @@ class Storage extends Base
 	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
-	public function getRows($filter = null, $offset = null, $count = null, ?array $modifiers = null)
+	public function getRows($filter = null, $offset = null, $count = null, ?array $modifiers = null): object
 	{
 		$params = [];
 		$where = static::getWhere($params, $filter, $modifiers);
@@ -889,9 +890,9 @@ class Storage extends Base
 	 * @param array|object|null $filter Filter criteria.
 	 * @param array &$params Parameter array.
 	 * @param array|null $modifiers Modifiers.
-	 * @return object
+	 * @return AdapterProxy
 	 */
-	public function where($filter, array &$params, ?array $modifiers = null): object
+	public function where($filter, array &$params, ?array $modifiers = null): AdapterProxy
 	{
 		$where = static::getWhere($params, $filter, $modifiers);
 		return $this->select()->where(...$where);
