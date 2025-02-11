@@ -112,10 +112,10 @@ class ModelPolicy extends Policy
 	/**
 	 * Retrieves model data.
 	 *
-	 * @param int $id The model ID.
+	 * @param mixed $id The model ID.
 	 * @return object The retrieved model.
 	 */
-	public function get(int $id): object
+	public function get(mixed $id): object
 	{
 		$key = $this->createKey('get', $id);
 		if ($this->hasKey($key))
