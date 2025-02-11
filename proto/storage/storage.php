@@ -7,14 +7,15 @@ use Proto\Database\Database;
 use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Database\Adapters\SQL\Mysql\MysqliBindTrait;
 use Proto\Utils\Strings;
+use Proto\Database\QueryBuilder\AdapterProxy;
 
 /**
- * Storage
+ * Class Storage
  *
- * The storage class can create objects to interact with the
- * database.
- *
- * These storage objects can do normal CRUD operations.
+ * Provides CRUD operations using a fluent query builder.
+ * SQL generation is delegated to the query builder,
+ * while filter processing and raw SQL snippet generation are
+ * handled by dedicated helper classes.
  *
  * @package Proto\Storage
  */
@@ -23,61 +24,70 @@ class Storage extends Base
 	use MysqliBindTrait;
 
 	/**
-	 * @var ModelInterface $model
+	 * Model instance.
+	 * @var ModelInterface
 	 */
 	protected ModelInterface $model;
 
 	/**
-	 * @var string $tableName
+	 * Table name.
+	 * @var string
 	 */
 	protected string $tableName;
 
 	/**
-	 * @var string $alias
+	 * Table alias.
+	 * @var string
 	 */
 	protected string $alias;
 
 	/**
-	 * @var object $db Database class.
+	 * Database adapter instance.
+	 * @var object
 	 */
 	protected object $db;
 
 	/**
-	 * @var string $connection
+	 * Connection key.
+	 * @var string
 	 */
-	protected $connection = 'proto';
+	protected string $connection = 'proto';
 
 	/**
-	 * @var object|null $lastError
+	 * Last error.
+	 * @var object|null
 	 */
 	protected ?object $lastError = null;
 
 	/**
-	 * @var string $compiledSelect
+	 * Compiled select SQL.
+	 * @var string
 	 */
 	protected static string $compiledSelect;
 
 	/**
-	 *
-	 * @param ModelInterface $model
-	 * @param string $tableName
-	 * @param string $database
-	 * @return void
+	 * Database adapter class.
+	 * @var string
 	 */
-    public function __construct(
-		ModelInterface $model,
-		string $tableName,
-		protected string $database = Database::class
-	)
-    {
-		$this->model = $model;
-        $this->tableName = $tableName;
-		$this->alias = $this->getAlias();
-		$this->setConnection();
-    }
+	protected string $database;
 
 	/**
-	 * This will set the database class.
+	 * Storage constructor.
+	 *
+	 * @param ModelInterface $model The model instance.
+	 * @param string $database The database adapter class.
+	 */
+	public function __construct(ModelInterface $model, string $database = Database::class)
+	{
+		$this->model = $model;
+		$this->tableName = $model->getTableName();
+		$this->alias = $model->getAlias();
+		$this->database = $database;
+		$this->setConnection();
+	}
+
+	/**
+	 * Set the database adapter class.
 	 *
 	 * @param string $database
 	 * @return void
@@ -88,34 +98,34 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get a connection to the database.
+	 * Establish a database connection.
 	 *
-	 * @return object|bool
+	 * @return object|false
 	 */
-    public function setConnection(): object|false
-    {
-		$connection = $this->getConnection();
-        $db = new $this->database();
-        return ($this->db = $db->connect($connection));
-    }
-
-	/**
-	 * This will get the database connection.
-	 *
-	 * @return string|bool
-	 */
-	protected function getConnection(): string|false
+	public function setConnection(): object|false
 	{
-		$connection = $this->connection;
-		if (!$connection)
-		{
-			$this->createNewError('No database connection is set');
-		}
-		return $connection ?? false;
+		$conn = $this->getConnection();
+		$db = new $this->database();
+		return $this->db = $db->connect($conn);
 	}
 
 	/**
-	 * This will set the last error.
+	 * Retrieve the connection key.
+	 *
+	 * @return string|false
+	 */
+	protected function getConnection(): string|false
+	{
+		$conn = $this->connection;
+		if (!$conn)
+		{
+			$this->createNewError('No database connection is set');
+		}
+		return $conn ?: false;
+	}
+
+	/**
+	 * Set the last error.
 	 *
 	 * @param object $error
 	 * @return void
@@ -126,7 +136,7 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get the last error.
+	 * Retrieve the last error.
 	 *
 	 * @return object|null
 	 */
@@ -136,7 +146,7 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will create a new error.
+	 * Create and set a new error.
 	 *
 	 * @param string $message
 	 * @param int|null $code
@@ -148,27 +158,21 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get the model data.
+	 * Retrieve model-mapped data.
 	 *
 	 * @return object|null
 	 */
 	protected function getData(): ?object
 	{
-		$model = $this->model;
-		if (!$model)
-		{
-			return null;
-		}
-
-		return $model->getMappedData();
+		return $this->model->getMappedData();
 	}
 
 	/**
-	 * This will fetch from the connection.
+	 * Fetch rows from the database.
 	 *
-	 * @param string|object $sql
-	 * @param array $params
-	 * @return array|bool
+	 * @param string|object $sql SQL or query builder.
+	 * @param array $params Parameter values.
+	 * @return array|false
 	 */
 	public function fetch(string|object $sql, array $params = []): array|false
 	{
@@ -176,57 +180,10 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will fetch the rows from the connection.
+	 * Execute a SQL statement.
 	 *
-	 * @param string|object $sql
-	 * @param array $params
-	 * @return array
-	 */
-	public function rows(string|object $sql, array $params = []): array
-	{
-		return $this->fetch((string)$sql, $params) ?? [];
-	}
-
-	/**
-	 * This will fetch the first row from the connection.
-	 *
-	 * @param string|object $sql
-	 * @param array $params
-	 * @return mixed
-	 */
-	public function first(string|object $sql, array $params = []): mixed
-	{
-		$result = $this->db->fetch((string)$sql, $params);
-		return $result[0] ?? null;
-	}
-
-	/**
-	 * This will get the table alias.
-	 *
-	 * @return string
-	 */
-	protected function getAlias(): string
-	{
-		return $this->model->getAlias() ?? $this->tableName;
-	}
-
-	/**
-	 * This will setup a query builder.
-	 *
-	 * @param string|null $alias
-	 * @return object
-	 */
-	public function table(?string $alias = null): object
-	{
-		$alias = $alias ?? $this->model->getAlias();
-		return $this->db->table($this->tableName, $alias);
-	}
-
-	/**
-	 * This will execute a query from the connection.
-	 *
-	 * @param string $sql
-	 * @param array $params
+	 * @param string|object $sql SQL or query builder.
+	 * @param array $params Parameter values.
 	 * @return bool
 	 */
 	public function execute(string|object $sql, array $params = []): bool
@@ -235,10 +192,10 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will make a transaction from the connection.
+	 * Execute a transaction.
 	 *
-	 * @param string|object $sql
-	 * @param array $params
+	 * @param string|object $sql SQL or query builder.
+	 * @param array $params Parameter values.
 	 * @return bool
 	 */
 	public function transaction(string|object $sql, array $params = []): bool
@@ -247,22 +204,34 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get the insert data.
+	 * Create a query builder for the model table.
+	 *
+	 * @param string|null $alias Optional table alias.
+	 * @return QueryHandler
+	 */
+	public function table(?string $alias = null): QueryHandler
+	{
+		$alias = $alias ?? $this->model->getAlias();
+		return $this->db->table($this->tableName, $alias);
+	}
+
+	/**
+	 * Prepare data for insertion.
 	 *
 	 * @return object
 	 */
-	protected function getInsertData()
+	protected function getInsertData(): object
 	{
 		$data = $this->getData();
 		if ($this->model->has('createdAt') && !isset($data->created_at))
 		{
-            $data->created_at = date('Y-m-d H:i:s');
-        }
+			$data->created_at = date('Y-m-d H:i:s');
+		}
 		return $data;
 	}
 
 	/**
-	 * This will add the model data to the table.
+	 * Add a new record.
 	 *
 	 * @return bool
 	 */
@@ -273,9 +242,9 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will insert data into the table.
+	 * Insert a record.
 	 *
-	 * @param object $data
+	 * @param object $data Data to insert.
 	 * @return bool
 	 */
 	public function insert(object $data): bool
@@ -289,32 +258,24 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will merge the model data to the table by
-	 * adding or updating the row. This needs to have a
-	 * unique key set.
+	 * Merge (insert or update) a record.
 	 *
 	 * @return bool
 	 */
 	public function merge(): bool
 	{
 		$data = $this->getInsertData();
-
-		/**
-		 * We might be updating the row so we need to
-		 * get set the updated at value.
-		 */
 		if ($this->model->has('updatedAt'))
 		{
-            $data->updated_at = date('Y-m-d H:i:s');
-        }
-
+			$data->updated_at = date('Y-m-d H:i:s');
+		}
 		return $this->replace($data);
 	}
 
 	/**
-	 * This will insert data into the table.
+	 * Replace (upsert) a record.
 	 *
-	 * @param object $data
+	 * @param object $data Data to replace.
 	 * @return bool
 	 */
 	public function replace(object $data): bool
@@ -328,9 +289,9 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will set the model id.
+	 * Set the model identifier from the last insert.
 	 *
-	 * @param bool $result
+	 * @param bool $result Operation result.
 	 * @return void
 	 */
 	protected function setModelId(bool $result = false): void
@@ -342,7 +303,7 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get the model id key name.
+	 * Retrieve the model id key.
 	 *
 	 * @return string
 	 */
@@ -352,34 +313,35 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get the model id value.
+	 * Retrieve the model id value.
 	 *
+	 * @param object $data Data object.
+	 * @param string $idKeyName Identifier key.
 	 * @return mixed
 	 */
 	protected function getModelIdValue(object $data, string $idKeyName): mixed
 	{
-		return (isset($data->{$idKeyName}))? $data->{$idKeyName} : null;
+		return $data->{$idKeyName} ?? null;
 	}
 
 	/**
-	 * This will update the item status.
+	 * Update the status of a record.
 	 *
 	 * @return bool
 	 */
-	public function updateStatus()
-    {
-        $data = $this->getUpdateData();
-
-        $dateTime = date('Y-m-d H:i:s');
-        return $this->db->update($this->tableName, [
-            'id' => $data->id,
-            'status' => $data->status,
-            'updated_at' => $dateTime
-        ]);
-    }
+	public function updateStatus(): bool
+	{
+		$data = $this->getUpdateData();
+		$dateTime = date('Y-m-d H:i:s');
+		return $this->db->update($this->tableName, [
+			'id' => $data->id,
+			'status' => $data->status,
+			'updated_at' => $dateTime
+		]);
+	}
 
 	/**
-	 * This will update the model data to the table.
+	 * Update a record.
 	 *
 	 * @return bool
 	 */
@@ -391,7 +353,7 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get the udpate data.
+	 * Prepare data for an update.
 	 *
 	 * @return object
 	 */
@@ -400,32 +362,32 @@ class Storage extends Base
 		$data = $this->getData();
 		if ($this->model->has('updatedAt'))
 		{
-            $data->updated_at = date('Y-m-d H:i:s');
-        }
+			$data->updated_at = date('Y-m-d H:i:s');
+		}
+
 		return $data;
 	}
 
 	/**
-	 * This will add or update the model to the table.
+	 * Insert or update a record based on existence.
 	 *
 	 * @return bool
 	 */
 	public function setup(): bool
 	{
 		$data = $this->getData();
-		return ($this->exists($data)? $this->update() : $this->add());
+		return ($this->exists($data) ? $this->update() : $this->add());
 	}
 
 	/**
-	 * This will setup the exist result.
+	 * Check existence based on result count.
 	 *
-	 * @param array $rows
+	 * @param array $rows Fetched rows.
 	 * @return bool
 	 */
-	protected function checkExistCount($rows): bool
+	protected function checkExistCount(array $rows): bool
 	{
-		$count = count($rows);
-		if ($count < 1)
+		if (count($rows) < 1)
 		{
 			return false;
 		}
@@ -437,30 +399,30 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will check if the table aready has the model data.
+	 * Determine if a record exists.
 	 *
-	 * @param object $data
+	 * @param object $data Data object.
 	 * @return bool
 	 */
-	protected function exists($data): bool
+	protected function exists(object $data): bool
 	{
-        $idName = $this->model->getIdKeyName();
+		$idName = $this->model->getIdKeyName();
 		$id = $data->{$idName} ?? null;
 		if (!isset($id))
 		{
 			return false;
 		}
 
-		$rows = $this->select("{$idName}")
+		$rows = $this->select($idName)
 			->where("{$this->alias}.{$idName} = ?")
 			->limit(1)
-            ->fetch([$id]);
+			->fetch([$id]);
 
 		return $this->checkExistCount($rows);
 	}
 
 	/**
-	 * This will delete the model data from the table.
+	 * Delete a record.
 	 *
 	 * @return bool
 	 */
@@ -476,9 +438,9 @@ class Storage extends Base
 
 		if ($this->model->has('deletedAt'))
 		{
-            return $this->db->update($this->tableName, [
+			return $this->db->update($this->tableName, [
 				'deleted_at' => date('Y-m-d H:i:s'),
-				"{$key}" => $id
+				$key => $id
 			]);
 		}
 
@@ -486,21 +448,9 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will decamelise a string.
+	 * Normalize data from snake_case to camelCase.
 	 *
-	 * @param string $str
-	 * @return string
-	 */
-	protected static function decamelize(string $str): string
-    {
-        return Strings::snakeCase($str);
-    }
-
-	/**
-	 * This will normalize the data results form snake
-	 * case to camel case.
-	 *
-	 * @param object|array $data
+	 * @param mixed $data Raw data.
 	 * @return mixed
 	 */
 	public function normalize(mixed $data): mixed
@@ -515,11 +465,11 @@ class Storage extends Base
 			$rows = [];
 			foreach ($data as $row)
 			{
-				array_push($rows, Strings::mapToCamelCase($row));
+				$rows[] = Strings::mapToCamelCase($row);
 			}
 			return $rows;
 		}
-		else if (is_object($data))
+		elseif (is_object($data))
 		{
 			return Strings::mapToCamelCase($data);
 		}
@@ -528,33 +478,31 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get the model fields.
+	 * Retrieve model fields with join columns.
 	 *
-	 * @param array $joins
+	 * @param array &$joins Join definitions.
 	 * @return array
 	 */
 	protected function getModelFields(array &$joins): array
 	{
 		$cols = [];
-
 		$isSnakeCase = $this->model->isSnakeCase();
 		$fields = $this->model->getFields();
 		foreach ($fields as $field)
 		{
 			$field = static::formatField($field, $isSnakeCase);
-			array_push($cols, $field);
+			$cols[] = $field;
 		}
 
 		if (count($joins) > 0)
 		{
 			$this->getJoinCols($joins, $cols);
 		}
-
 		return $cols;
 	}
 
 	/**
-	 * This will format the fields.
+	 * Format an array of fields.
 	 *
 	 * @param array|null $fields
 	 * @return array|null
@@ -571,14 +519,13 @@ class Storage extends Base
 		foreach ($fields as $field)
 		{
 			$field = static::formatField($field, $isSnakeCase);
-			array_push($cols, $field);
+			$cols[] = $field;
 		}
-
 		return $cols;
 	}
 
 	/**
-	 * This will format a field.
+	 * Format a field for query use.
 	 *
 	 * @param mixed $field
 	 * @param bool $isSnakeCase
@@ -586,44 +533,52 @@ class Storage extends Base
 	 */
 	protected static function formatField(mixed $field, bool $isSnakeCase): mixed
 	{
-		if (is_array($field) === false)
+		if (!is_array($field))
 		{
 			return static::prepareFieldName($field, $isSnakeCase);
 		}
 
-		// raw sql
 		if (count($field) < 2)
 		{
 			return $field;
 		}
 
-		//alias
-		if (is_array($field[0]) === false)
+		if (!is_array($field[0]))
 		{
 			return [static::prepareFieldName($field[0], $isSnakeCase), static::prepareFieldName($field[1], $isSnakeCase)];
 		}
 
-		//raw sql with alias
 		return [$field[0], static::prepareFieldName($field[1], $isSnakeCase)];
 	}
 
 	/**
-	 * This will prepare the field name.
+	 * Prepare a field name.
 	 *
-	 * @param string $field
-	 * @param bool $isSnakeCase
+	 * @param string $field Field name.
+	 * @param bool $isSnakeCase Use snake_case.
 	 * @return string
 	 */
 	protected static function prepareFieldName(string $field, bool $isSnakeCase): string
 	{
-		return ($isSnakeCase)? static::decamelize($field) : $field;
+		return ($isSnakeCase) ? static::decamelize($field) : $field;
 	}
 
 	/**
-	 * This will get the join columns.
+	 * Decamelize a string.
 	 *
-	 * @param array $joins
-	 * @param array $cols
+	 * @param string $str Input string.
+	 * @return string
+	 */
+	protected static function decamelize(string $str): string
+	{
+		return Strings::snakeCase($str);
+	}
+
+	/**
+	 * Append join columns to model fields.
+	 *
+	 * @param array &$joins Join definitions.
+	 * @param array &$cols Column list.
 	 * @return void
 	 */
 	protected function getJoinCols(array &$joins, array &$cols): void
@@ -636,44 +591,35 @@ class Storage extends Base
 				continue;
 			}
 
-			$multiple = $join->isMultiple();
-			if ($multiple === false)
+			if (!$join->isMultiple())
 			{
 				continue;
 			}
 
-			// add child join
 			$col = [$this->setupSubQuery($join)];
-			array_push($cols, $col);
+			$cols[] = $col;
 		}
 	}
 
 	/**
-	 * This will create a group concat string.
+	 * Generate a GROUP_CONCAT SQL snippet.
 	 *
-	 * @param string $as
-	 * @param array $fields
+	 * @param string $as Alias for the group concat.
+	 * @param array $fields Field list.
 	 * @return string
 	 */
 	protected function getGroupConcatSql(string $as, array $fields): string
 	{
-		/**
-		 * We want to create the key names for the fields.
-		 */
-		$keys = array_map(function($field)
-		{
-			return "'{$field}-:-', {$field}";
-		}, $fields);
-
+		$keys = array_map(function($field) { return "'{$field}-:-', {$field}"; }, $fields);
 		$concat = implode(", '-::-', ", $keys);
 		return "GROUP_CONCAT({$concat} SEPARATOR '-:::-') AS {$as}";
 	}
 
 	/**
-	 * This will create a new query builder.
+	 * Create a query builder for a given table.
 	 *
-	 * @param string $tableName
-	 * @param string|null $alias
+	 * @param string $tableName Table name.
+	 * @param string|null $alias Table alias.
 	 * @return QueryHandler
 	 */
 	protected function builder(string $tableName, ?string $alias = null): QueryHandler
@@ -682,11 +628,11 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will add the child join.
+	 * Recursively add child join definitions.
 	 *
-	 * @param array $joins
-	 * @param object $join
-	 * @param array $fields
+	 * @param array &$joins Parent join list.
+	 * @param object $join Join object.
+	 * @param array &$fields Field list.
 	 * @return void
 	 */
 	protected function addChildJoin(array &$joins, object $join, array &$fields): void
@@ -696,23 +642,21 @@ class Storage extends Base
 		{
 			$childFields = $this->formatFields($childJoin->getFields());
 			$fields = array_merge($fields, $childFields);
-
-			array_push($joins, [
+			$joins[] = [
 				'table' => $childJoin->getTableName(),
 				'type' => $childJoin->getType(),
 				'alias' => $childJoin->getAlias(),
 				'on' => $childJoin->getOn(),
-				'using' => $childJoin->getUsing(),
-			]);
-
+				'using' => $childJoin->getUsing()
+			];
 			$this->addChildJoin($joins, $childJoin, $fields);
 		}
 	}
 
 	/**
-	 * This will create a sub query string.
+	 * Build a subquery for a join.
 	 *
-	 * @param object $join
+	 * @param object $join Join object.
 	 * @return string
 	 */
 	protected function setupSubQuery(object $join): string
@@ -720,7 +664,6 @@ class Storage extends Base
 		$tableName = $join->getTableName();
 		$alias = $join->getAlias();
 		$builder = $this->builder($tableName, $alias);
-
 		$fields = $this->formatFields($join->getFields());
 
 		$joins = [];
@@ -728,15 +671,15 @@ class Storage extends Base
 
 		$as = $join->getAs();
 		$groupConcat = $this->getGroupConcatSql($as, $fields);
-		$sql = $builder->select([$groupConcat])->joins($joins);
 
+		$sql = $builder->select([$groupConcat])->joins($joins);
 		return '(' . $sql->where(...$join->getOn()) . ') AS ' . $as;
 	}
 
 	/**
-	 * This will get the col names.
+	 * Retrieve column names based on joins.
 	 *
-	 * @param array $joins
+	 * @param array $joins Join definitions.
 	 * @return array
 	 */
 	protected function getColNames(array $joins): array
@@ -745,10 +688,10 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will map the model joins to array.
+	 * Map join definitions to an array.
 	 *
-	 * @param array|null $joins
-	 * @param bool $allowFields
+	 * @param array|null $joins Join definitions.
+	 * @param bool $allowFields Whether to include field lists.
 	 * @return array|null
 	 */
 	protected function getMappedJoins(?array &$joins = null, bool $allowFields = true): ?array
@@ -761,46 +704,44 @@ class Storage extends Base
 		$mapped = [];
 		foreach ($joins as $join)
 		{
-			array_push($mapped, [
+			$mapped[] = [
 				'table' => $join->getTableName(),
 				'alias' => $join->getAlias(),
 				'type' => $join->getType(),
 				'on' => $join->getOn(),
-				'fields' => ($allowFields)? $this->formatFields($join->getFields()) : null
-			]);
+				'fields' => ($allowFields) ? $this->formatFields($join->getFields()) : null
+			];
 		}
 		return $mapped;
 	}
 
-    /**
-     * This will get custom fields with join fields.
-     *
-     * @param mixed ...$fields
-     * @return array
-     */
-    protected function getCustomFields(...$fields): array
-    {
-        if (count($fields))
-        {
-            $joins = $this->model->getJoins();
-            array_push($fields, $this->getColNames($joins));
-        }
-
-        return $fields;
-    }
+	/**
+	 * Merge custom fields with join columns.
+	 *
+	 * @param mixed ...$fields Custom fields.
+	 * @return array
+	 */
+	protected function getCustomFields(...$fields): array
+	{
+		if (count($fields))
+		{
+			$joins = $this->model->getJoins();
+			$fields[] = $this->getColNames($joins);
+		}
+		return $fields;
+	}
 
 	/**
-	 * This will create a query builder to select.
+	 * Create a select query builder.
 	 *
-	 * @param mixed ...$fields
-	 * @return object
+	 * @param mixed ...$fields Field list.
+	 * @return AdapterProxy
 	 */
 	public function select(...$fields)
 	{
 		$joins = $this->model->getJoins();
 		$colNames = [];
 		$allowFields = true;
-
 		if (count($fields))
 		{
 			$colNames = $fields;
@@ -810,15 +751,14 @@ class Storage extends Base
 		{
 			$colNames = $this->getColNames($joins);
 		}
-
 		$joins = $this->getMappedJoins($joins, $allowFields);
 		return $this->table()->select(...$colNames)->joins($joins);
 	}
 
 	/**
-	 * This will create a select string.
+	 * Generate a select SQL string.
 	 *
-	 * @param array|null $modifiers
+	 * @param array|null $modifiers Modifiers.
 	 * @return string
 	 */
 	protected function getSelectSql(?array $modifiers = null): string
@@ -827,12 +767,12 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will search for a row by the model id.
+	 * Search records by a search term.
 	 *
-	 * @param string $search
+	 * @param string $search Search term.
 	 * @return array
 	 */
-	public function search(string $search = '')
+	public function search(string $search = ''): array
 	{
 		return $this->select()
 			->where("{$this->alias}.id = ?")
@@ -841,9 +781,9 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get a table row by id.
+	 * Retrieve a single record by id.
 	 *
-	 * @param int|string $id
+	 * @param int|string $id Identifier.
 	 * @return object|bool
 	 */
 	public function get($id)
@@ -854,65 +794,59 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will get a table row by filter.
+	 * Retrieve a single record by filter.
 	 *
-	 * @param array|object $filter
+	 * @param array|object $filter Filter criteria.
 	 * @return object|bool
 	 */
 	public function getBy($filter)
-    {
-        $params = [];
-        $where = static::setFilters($filter, $params);
-
-        return $this->select()
-            ->where(...$where)
+	{
+		$params = [];
+		$where = static::setFilters($filter, $params);
+		return $this->select()
+			->where(...$where)
 			->first($params);
-    }
+	}
 
 	/**
-	 * This will set the getRows order by.
+	 * (Optional) Apply order-by conditions.
 	 *
-	 * @param object $sql
-	 * @param array|null $modifiers
+	 * @param object $sql Query builder instance.
+	 * @param array|null $modifiers Modifiers.
 	 * @return void
 	 */
 	protected function setOrderBy(object $sql, ?array $modifiers = null)
 	{
-
+		// Implement order-by logic as needed.
 	}
 
 	/**
-	 * This will get rows by filter, limit, and modifiers.
+	 * Retrieve rows by filter, limit, and modifiers.
 	 *
-	 * @param array|object|null $filter
-	 * @param int|null $offset
-	 * @param int|null $count
-	 * @param array|null $modifiers
+	 * @param array|object|null $filter Filter criteria.
+	 * @param int|null $offset Offset.
+	 * @param int|null $count Limit count.
+	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
 	public function getRows($filter = null, $offset = null, $count = null, ?array $modifiers = null)
 	{
 		$params = [];
 		$where = static::getWhere($params, $filter, $modifiers);
-
 		$sql = $this->select()
-            ->where(...$where)
-            ->limit($offset, $count);
+			->where(...$where)
+			->limit($offset, $count);
 
 		$this->setOrderBy($sql, $modifiers);
-
-        $rows = $this->fetch($sql, $params);
-
-		return (object)[
-		    'rows' => $rows ?? []
-        ];
+		$rows = $this->fetch($sql, $params);
+		return (object)[ 'rows' => $rows ?? [] ];
 	}
 
 	/**
-	 * This will set the filters.
+	 * Set up filters using the Filter helper.
 	 *
-	 * @param array|object|null $filter
-	 * @param array $params
+	 * @param array|object|null $filter Filter criteria.
+	 * @param array &$params Parameter array.
 	 * @return array
 	 */
 	protected static function setFilters($filter = null, array &$params = []): array
@@ -921,30 +855,25 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will allow the where to be modified by modifiers.
+	 * Allow modifiers to adjust where clauses.
 	 *
-	 * @param array $where
-	 * @param array|null $modifiers
-	 * @param array $params
-	 * @param array $filter
+	 * @param array &$where Where clauses.
+	 * @param array|null $modifiers Modifiers.
+	 * @param array &$params Parameter array.
+	 * @param mixed $filter Filter criteria.
 	 * @return void
 	 */
-	protected static function setModifiers(
-		array &$where = [],
-		?array $modifiers = null,
-		array &$params = [],
-		$filter = null
-	)
+	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], $filter = null)
 	{
-
+		// Implement modifier logic if needed.
 	}
 
 	/**
-	 * This will setup the select where condtions.
+	 * Build where clauses using filters and modifiers.
 	 *
-	 * @param array $params
-	 * @param array|object|null $filter
-	 * @param array|null $modifiers
+	 * @param array &$params Parameter array.
+	 * @param array|object|null $filter Filter criteria.
+	 * @param array|null $modifiers Modifiers.
 	 * @return array
 	 */
 	protected static function getWhere(array &$params, $filter, ?array $modifiers = null): array
@@ -955,64 +884,56 @@ class Storage extends Base
 	}
 
 	/**
-	 * This will select all rows.
+	 * Create a where-based query.
 	 *
-	 * @param array|object|null $filter
-	 * @param array $params
-	 * @param array|null $modifiers
+	 * @param array|object|null $filter Filter criteria.
+	 * @param array &$params Parameter array.
+	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
 	public function where($filter, array &$params, ?array $modifiers = null): object
 	{
 		$where = static::getWhere($params, $filter, $modifiers);
-
-		return $this->select()
-			->where(...$where);
+		return $this->select()->where(...$where);
 	}
 
 	/**
-	 * This will select all rows.
+	 * Retrieve all records by filter.
 	 *
-	 * @param array|object|null $filter
-	 * @param int|null $offset
-	 * @param int|null $count
-	 * @param array|null $modifiers
+	 * @param array|object|null $filter Filter criteria.
+	 * @param int|null $offset Offset.
+	 * @param int|null $count Limit count.
+	 * @param array|null $modifiers Modifiers.
 	 * @return array|bool
 	 */
 	public function all($filter = null, $offset = null, $count = null, ?array $modifiers = null)
 	{
 		$params = [];
-		$sql = $this->where($filter, $params, $modifiers)
-			->limit($offset, $count);
-
-		return $this->fetch($sql, $params);
+		return $this->where($filter, $params, $modifiers)
+			->limit($offset, $count)
+			->fetch($params);
 	}
 
 	/**
-	 * This will call a callBack.
+	 * Execute a callback on a query builder.
 	 *
-	 * @param callable $callBack
-	 * @param object $sql
-	 * @param array $params
+	 * @param callable $callBack Callback function.
+	 * @param object $sql Query builder instance.
+	 * @param array &$params Parameter array.
 	 * @return void
 	 */
-	protected function callBack(
-		callable $callBack,
-		object $sql,
-		array &$params = []
-	): void
-    {
-        if ($callBack)
-        {
-            call_user_func_array($callBack, [$sql, $params]);
-        }
-    }
+	public function callBack(callable $callBack, object $sql, array &$params = []): void
+	{
+		if ($callBack)
+		{
+			call_user_func_array($callBack, [$sql, $params]);
+		}
+	}
 
 	/**
-	 * This will allow a callBack to be passed to setup
-	 * a select query builder.
+	 * Find a single record using a callback.
 	 *
-	 * @param callable $callBack
+	 * @param callable $callBack Callback function.
 	 * @return mixed
 	 */
 	public function find(callable $callBack)
@@ -1020,14 +941,13 @@ class Storage extends Base
 		$params = [];
 		$sql = $this->select();
 		$this->callBack($callBack, $sql, $params);
-		return $this->first((string)$sql, $params);
+		return $sql->first($params);
 	}
 
 	/**
-	 * This will allow a callBack to be passed to setup
-	 * a select query builder.
+	 * Find multiple records using a callback.
 	 *
-	 * @param callable $callBack
+	 * @param callable $callBack Callback function.
 	 * @return array|bool
 	 */
 	public function findAll(callable $callBack)
@@ -1035,25 +955,20 @@ class Storage extends Base
 		$params = [];
 		$sql = $this->select();
 		$this->callBack($callBack, $sql, $params);
-		return $this->fetch((string)$sql, $params);
+		return $sql->fetch($params);
 	}
 
 	/**
-	 * This will get a row count.
+	 * Retrieve a row count.
 	 *
-	 * @param array|object|null $filter
-	 * @param array|null $modifiers
+	 * @param array|object|null $filter Filter criteria.
+	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
 	public function count($filter = null, ?array $modifiers = null): object
-    {
+	{
 		$params = [];
 		$where = self::getWhere($params, $filter, $modifiers);
-
-        $sql = $this->select(
-			[['COUNT(*)'], 'count']
-		)->where(...$where);
-
-        return $this->first($sql, $params);
+		return $this->select([['COUNT(*)'], 'count'])->where(...$where)->first($params);
 	}
 }
