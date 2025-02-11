@@ -429,10 +429,12 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		{
 			return static::oneToMany(...$arguments);
 		}
+
 		if ($method === 'one')
 		{
 			return static::oneToOne(...$arguments);
 		}
+
 		$model = new static();
 		$callable = [$model->storage,$method];
 		$result = $model->callMethod($callable, $arguments);
@@ -440,6 +442,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		{
 			return $result;
 		}
+
 		return $model->storage->normalize($result);
 	}
 
@@ -465,6 +468,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		{
 			return false;
 		}
+
 		return in_array($key, static::$fields);
 	}
 
@@ -721,6 +725,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		{
 			$result->rows = $instance->convertRows($result->rows);
 		}
+
 		return $result;
 	}
 
