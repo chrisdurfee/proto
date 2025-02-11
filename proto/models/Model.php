@@ -2,6 +2,7 @@
 namespace Proto\Models;
 
 use Proto\Base;
+use Proto\Models\Data\Data;
 use Proto\Storage\Storage;
 use Proto\Storage\StorageProxy;
 use Proto\Tests\Debug;
@@ -98,9 +99,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Data mapper instance.
 	 *
-	 * @var DataMapper
+	 * @var Data
 	 */
-	protected DataMapper $data;
+	protected Data $data;
 
 	/**
 	 * Indicates if the model data uses snake_case.
@@ -282,8 +283,12 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	protected function setupDataMapper(): void
 	{
-		$this->data = new DataMapper(static::$fields, $this->compiledJoins, static::$fieldsBlacklist);
-		$this->data->setSnakeCase($this->isSnakeCase);
+		$this->data = new Data(
+			static::$fields,
+			$this->compiledJoins,
+			static::$fieldsBlacklist,
+			$this->isSnakeCase
+		);
 	}
 
 	/**
