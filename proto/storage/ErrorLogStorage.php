@@ -17,7 +17,7 @@ class ErrorLogStorage extends Storage
 	 * @param array|null $modifiers
 	 * @return void
 	 */
-	protected function setOrderBy(object $sql, ?array $modifiers = null)
+	protected function setOrderBy(object $sql, ?array $modifiers = null): void
 	{
         $sql->orderBy("e.created_at DESC");
 	}
@@ -31,7 +31,7 @@ class ErrorLogStorage extends Storage
      * @param array $filter
      * @return void
      */
-	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], $filter = null)
+	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], $filter = null): void
 	{
         $custom = $modifiers['custom'] ?? '';
         if ($custom)
@@ -53,7 +53,7 @@ class ErrorLogStorage extends Storage
 	 *
 	 * @return bool
 	 */
-	public function updateResolved()
+	public function updateResolved(): bool
     {
         $data = $this->getUpdateData();
         $dateTime = date('Y-m-d H:i:s');

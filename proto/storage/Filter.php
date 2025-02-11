@@ -6,48 +6,48 @@ use Proto\Utils\Arrays;
 use Proto\Utils\Sanitize;
 
 /**
- * Filter
+ * Class Filter
  *
- * This will handle the filter.
+ * Handles filtering operations.
  *
  * @package Proto\Storage
  */
 class Filter
 {
 	/**
-	 * This will decamelise a string.
+	 * Decamelizes a string.
 	 *
 	 * @param string $str
 	 * @return string
 	 */
 	protected static function decamelize(string $str): string
-    {
-        return Strings::snakeCase($str);
-    }
+	{
+		return Strings::snakeCase($str);
+	}
 
-    /**
-     * This will get the filter array.
-     *
-     * @param array|object|null $filter
-     * @return array
-     */
-	public static function get($filter): array
+	/**
+	 * Retrieves the filter array.
+	 *
+	 * @param array|object|null $filter
+	 * @return array
+	 */
+	public static function get(array|object|null $filter): array
 	{
 		if (!$filter)
 		{
 			return [];
 		}
 
-		if (\is_object($filter))
+		if (is_object($filter))
 		{
 			$filter = (array)$filter;
 		}
 
-		return (\count($filter) > 0)? $filter : [];
+		return (count($filter) > 0) ? $filter : [];
 	}
 
 	/**
-	 * This will set up the filter.
+	 * Sets up the filter.
 	 *
 	 * @param mixed $filter
 	 * @param array $params
@@ -61,59 +61,49 @@ class Filter
 	): array
 	{
 		$filter = self::get($filter);
-		if (\count($filter) < 1)
+		if (count($filter) < 1)
 		{
 			return [];
 		}
 
-		/* this will convert the cols to a set string
-		to prepare the query */
 		$filters = [];
 		if (Arrays::isAssoc($filter))
 		{
 			foreach ($filter as $key => $val)
 			{
-				// this will decamelize the key to allow it
-				// to be used in the query
 				$key = self::prepareColumn($key, $isSnakeCase);
-				array_push($filters, [$key, '?']);
-				array_push($params, $val);
+				$filters[] = [$key, '?'];
+				$params[] = $val;
 			}
 		}
 		else
 		{
 			foreach ($filter as $item)
 			{
-				if (is_array($item) === false)
+				if (!is_array($item))
 				{
-					// raw sql
-					array_push($filters, $item);
+					$filters[] = $item;
 					continue;
 				}
 
-                $value = null;
+				$value = null;
 				$firstItem = $item[1] ?? null;
 				if (is_array($firstItem))
 				{
-					// this will setup prebuilt param string
 					$params = array_merge($params, $firstItem);
 					$value = $item[0];
 				}
 				else
 				{
-					// this will setup the column name
 					$item[0] = self::prepareColumn($item[0], $isSnakeCase);
-
-					// this will replace the valu with a placeholder
 					$end = count($item) - 1;
 					$param = $item[$end];
 					$item[$end] = '?';
-
 					$value = [...$item];
-                    array_push($params, $param);
+					$params[] = $param;
 				}
 
-				array_push($filters, $value);
+				$filters[] = $value;
 			}
 		}
 
@@ -121,7 +111,7 @@ class Filter
 	}
 
 	/**
-	 * This will prepare the column.
+	 * Prepares the column name.
 	 *
 	 * @param string $field
 	 * @param bool $isSnakeCase
@@ -129,7 +119,7 @@ class Filter
 	 */
 	protected static function prepareColumn(string $field, bool $isSnakeCase = true): string
 	{
-		$columnName = ($isSnakeCase)? self::decamelize($field) : $field;
+		$columnName = ($isSnakeCase) ? self::decamelize($field) : $field;
 		return Sanitize::cleanColumn($columnName);
 	}
 }

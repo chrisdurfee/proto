@@ -16,6 +16,7 @@ class RedisDriver extends Driver
 	/**
 	 * Redis database connection instance.
 	 *
+	 * @SuppressWarnings PHP0413
 	 * @var Redis
 	 */
 	protected Redis $db;
@@ -35,6 +36,9 @@ class RedisDriver extends Driver
 	 */
 	public function isSupported(): bool
 	{
+		/**
+		 * @SuppressWarnings PHP0413
+		 */
 		return class_exists(Redis::class);
 	}
 
