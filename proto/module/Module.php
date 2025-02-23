@@ -2,6 +2,7 @@
 namespace Proto\Module;
 
 use Proto\Events\Events;
+use Proto\Providers\ServiceManager;
 
 /**
  * Module
@@ -39,6 +40,32 @@ abstract class Module implements ModuleInterface
 	}
 
 	/**
+	 * This will return the module services.
+	 *
+	 * @return array The list of services.
+	 */
+	protected function getServices(): array
+	{
+		return [];
+	}
+
+	/**
+	 * This will add the module services.
+	 *
+	 * @return void
+	 */
+	protected function addServices(): void
+	{
+		$services = $this->getServices();
+		if (empty($services))
+		{
+			return;
+		}
+
+		ServiceManager::activate($services);
+	}
+
+	/**
 	 * This will initialize the service.
 	 *
 	 * @return void
@@ -46,6 +73,7 @@ abstract class Module implements ModuleInterface
 	public function init(): void
 	{
 		$this->addEvents();
+		$this->addServices();
 		$this->activate();
 	}
 
@@ -55,13 +83,4 @@ abstract class Module implements ModuleInterface
 	 * @return void
 	 */
 	abstract public function activate(): void;
-
-	/**
-	 * This will be called when the service is deactivated.
-	 *
-	 * @return void
-	 */
-	public function deactivate(): void
-	{
-	}
 }

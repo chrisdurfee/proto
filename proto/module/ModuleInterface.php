@@ -37,4 +37,11 @@ Interface ModuleInterface
 	 * @return void
 	 */
 	public function init(): void;
+
+    /**
+     * This will add the module services.
+     *
+     * @return void
+     */
+    protected function addServices(): void;
 }
