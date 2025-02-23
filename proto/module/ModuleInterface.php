@@ -16,32 +16,9 @@ namespace Proto\Module;
 Interface ModuleInterface
 {
 	/**
-	 * This will add an event.
-	 *
-	 * @param string $key The event key.
-	 * @param callable $callBack The callback function to execute.
-	 * @return string The event identifier.
-	 */
-	protected function event(string $key, callable $callBack): string;
-
-	/**
-	 * This will add moduile events.
-	 *
-	 * @return void
-	 */
-	protected function addEvents(): void;
-
-	/**
 	 * This will initialize the module.
 	 *
 	 * @return void
 	 */
 	public function init(): void;
-
-    /**
-     * This will add the module services.
-     *
-     * @return void
-     */
-    protected function addServices(): void;
 }

@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto;
 
+use Proto\Providers\ModuleManager;
 use Proto\Providers\ServiceManager;
 
 // Define the base path constant
@@ -42,5 +43,6 @@ class Base
 
 		self::$system = new System();
 		ServiceManager::activate($config->services ?? []);
+		ModuleManager::activate($config->modules ?? []);
 	}
 }
