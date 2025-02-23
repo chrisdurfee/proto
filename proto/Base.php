@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto;
 
+use Proto\Providers\ServiceManager;
+
 // Define the base path constant
 define('BASE_PATH', realpath(__DIR__ . '/../'));
 

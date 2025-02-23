@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto;
+namespace Proto\Providers;
 
 /**
  * ServiceManager class
@@ -20,7 +20,7 @@ class ServiceManager
 	{
 		foreach ($services as $service)
 		{
-			$className = 'App\\Providers\\' . $service;
+			$className = $service;
 			if (class_exists($className))
             {
 				$module = new $className();
