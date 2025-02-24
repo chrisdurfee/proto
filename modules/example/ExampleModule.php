@@ -19,6 +19,30 @@ class ExampleModule extends Module
      */
     public function activate(): void
     {
-        // do something
+        $this->setConfigs();
+    }
+
+    /**
+     * This will set the configs for the module.
+     *
+     * @return void
+     */
+    private function setConfigs(): void
+    {
+        setEnv('settingName', 'value');
+    }
+
+    /**
+     * This will add events to the module.
+     *
+     * @override
+     * @return void
+     */
+    protected function addEvents(): void
+    {
+        /**
+         * This will add an event for when a ticket is added.
+         */
+        $this->event('Ticket:add', fn($ticket): void => var_dump($ticket));
     }
 }
