@@ -70,7 +70,8 @@ class ModuleManager
 		// Register the module using a factory callable that returns a new instance.
 		registerModule($key, function() use ($key)
 		{
-			$path = 'Modules\\' . $key . '\\Gateway\\' . $key;
+			$pascalCaseKey = ucfirst($key);
+			$path = 'Modules\\' . $pascalCaseKey . '\\Gateway\\' . $pascalCaseKey;
 			return new $path();
 		});
 	}
