@@ -20,7 +20,7 @@ class ModuleManager
 	{
 		foreach ($modules as $module)
 		{
-			$className = $module;
+			$className = 'Module\\' . $module;
 			if (class_exists($className))
             {
 				$moduleInstance = new $className();
