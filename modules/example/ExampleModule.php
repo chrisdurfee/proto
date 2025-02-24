@@ -35,7 +35,6 @@ class ExampleModule extends Module
     /**
      * This will add events to the module.
      *
-     * @override
      * @return void
      */
     protected function addEvents(): void
