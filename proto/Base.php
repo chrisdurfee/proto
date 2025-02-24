@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto;
 
-use Proto\Providers\ModuleManager;
+use Proto\Module\ModuleManager;
 use Proto\Providers\ServiceManager;
 
 // Define the base path constant
