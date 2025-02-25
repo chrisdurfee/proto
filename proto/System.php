@@ -13,15 +13,23 @@ use Proto\Error\Error;
 class System
 {
 	/**
+	 * The configuration settings.
+	 *
+	 * @var Config
+	 */
+	protected Config $settings;
+
+	/**
 	 * Sets up the timezone and error reporting.
 	 *
-	 * @param Config $settings Configuration settings
+	 * @param Config|null $settings Configuration settings
 	 * @return void
 	 */
 	public function __construct(
-		protected Config $settings = Config::getInstance()
+		?Config $settings = null
 	)
 	{
+		$this->settings = $settings ?? Config::getInstance();
 		$this->setupSystem();
 	}
 

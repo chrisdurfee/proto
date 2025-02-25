@@ -1,8 +1,10 @@
 <?php declare(strict_types=1);
 namespace
 {
+	use Proto\Base;
 	use Proto\Http\Router\Router;
 
+	$base = new Base();
 	$basePath = env('router')->basePath ?? '/';
 	$router = new Router($basePath);
 
