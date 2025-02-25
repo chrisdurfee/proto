@@ -40,6 +40,7 @@ class ApiRateLimiterMiddleware
 	 */
 	protected function getLimit(): Limit
 	{
-		return Limit::perMinute(self::MAX_REQUESTS);
+		$maxRequests = env('router')->maxRequests ?? self::MAX_REQUESTS;
+		return Limit::perMinute($maxRequests);
 	}
 }

@@ -25,7 +25,7 @@ class Response
 	/**
 	 * Initializes the response and renders the output.
 	 *
-	 * @param array|object|null $data The response data.
+	 * @param mixed $data The response data.
 	 * @param int $code The HTTP status code.
 	 */
 	public function __construct(mixed $data = null, int $code = 200)
@@ -50,7 +50,7 @@ class Response
 	/**
 	 * Sets the response data.
 	 *
-	 * @param array|object|null $data
+	 * @param mixed $data
 	 * @return void
 	 */
 	protected function setData(mixed $data = null): void

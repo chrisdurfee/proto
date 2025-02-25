@@ -55,7 +55,8 @@ class Router
 
 		if ($requireHttps && !$this->isHttps())
 		{
-			$this->sendResponse(403, ['error' => 'HTTPS required.']);
+			$HTTPS_REQUIRED_CODE = 403;
+			$this->sendResponse($HTTPS_REQUIRED_CODE, ['error' => 'HTTPS required.']);
 		}
 
 		$this->setupRequest();
