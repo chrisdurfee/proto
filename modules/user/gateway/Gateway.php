@@ -10,13 +10,13 @@ namespace Modules\User\Gateway;
  */
 class Gateway
 {
-    /**
-     * This will add the user.
-     *
-     * @return void
-     */
-    public function add(): void
-    {
-        // implementation for adding a user
-    }
+	/**
+	 * This will add the user.
+	 *
+	 * @return void
+	 */
+	public function add(): void
+	{
+		// implementation for adding a user
+	}
 }

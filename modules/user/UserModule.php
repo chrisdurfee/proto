@@ -12,13 +12,13 @@ use Proto\Module\Module;
  */
 class UserModule extends Module
 {
-    /**
-     * This will activate the module.
-     *
-     * @return void
-     */
-    public function activate(): void
-    {
-        // do something
-    }
+	/**
+	 * This will activate the module.
+	 *
+	 * @return void
+	 */
+	public function activate(): void
+	{
+		// do something
+	}
 }
