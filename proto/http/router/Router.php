@@ -213,7 +213,6 @@ class Router
 	protected function activateRoute(Uri $route): void
 	{
 		$result = $route->initialize($this->middleware, Request::class);
-
 		if ($result !== null)
 		{
 			$statusCode = (int) ($result->code ?? 200);

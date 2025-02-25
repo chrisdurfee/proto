@@ -116,26 +116,39 @@ abstract class Uri
 	 * Initializes the route and executes middleware.
 	 *
 	 * @param array $globalMiddleWare The global middleware to apply.
-	 * @param string $request The request URI.
+	 * @param string $request The request class.
 	 * @return mixed
 	 */
 	public function initialize(array $globalMiddleWare, string $request): mixed
 	{
 		$middleware = array_merge($globalMiddleWare, $this->middleware);
+        if (count($middleware) < 1)
+        {
+            return $this->activate($request);
+        }
 
-		if (empty($middleware))
-		{
-			return $this->activate($request);
-		}
+        /**
+         * This is the first callback that will call
+         * the route activate to be passed to the
+         * first middleware.
+         */
+        $self = $this;
+        $next = function(string $request) use($self)
+        {
+            return $self->activate($request);
+        };
 
-		// Reduce middleware array into callable chain
-		$next = array_reduce(
-			array_reverse($middleware),
-			fn ($next, $item) => fn ($req) => $item->handle($req, $next),
-			fn ($req) => $this->activate($req)
-		);
+        /**
+         * This will reverse the array to se the last
+         * middleware to call the route activate.
+         */
+        $middleware = array_reverse($middleware);
+        foreach ($middleware as $item)
+        {
+            $next = $this->setupMiddlewareCallback($item, $next);
+        }
 
-		return $next($request);
+        return $next($request);
 	}
 
 	/**
