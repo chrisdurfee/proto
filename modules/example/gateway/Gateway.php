@@ -12,7 +12,10 @@ namespace Modules\Example\Gateway;
 class Gateway
 {
 	/**
-	 * This will add the example.
+	 * This is a direct method on the gateway example.
+	 *
+	 * This can be called in other modules like this:
+	 * modules()->example()->add();
 	 *
 	 * @return void
 	 */
@@ -21,7 +24,20 @@ class Gateway
 		// implementation for adding an example
 	}
 
-	// versioned gateways
+	/**
+	 * Versioned gateways
+	 *
+	 * This will return the versioned gateways.
+	 *
+	 * This allows you to call the module in other modules
+	 * like this:
+	 *
+	 * // version 1
+	 * modules()->example()->v1()->add();
+	 *
+	 * // version 2
+	 * modules()->example()->v2()->add();
+	 */
 
 	/**
 	 * This will return the v1 gateway.
