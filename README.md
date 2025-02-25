@@ -31,7 +31,7 @@ To get started with Proto, follow these steps:
 4. **Run the Application**: Start the built-in PHP server to run the application.
 
    ```sh
-   php -S localhost:8000 -t public
+   docker compose up --build
    ```
 
 ## Contributing
