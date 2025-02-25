@@ -1,8 +1,13 @@
 <?php declare(strict_types=1);
 namespace Proto\Module;
 
-use Proto\Module\registerModule;
 use Proto\Utils\Strings;
+
+/**
+ * @var Modules $modules This will load the modules class to add the
+ * modules to the global scope.
+ */
+$modules = new Modules();
 
 /**
  * ModuleManager class
@@ -71,7 +76,7 @@ class ModuleManager
 		registerModule($key, function() use ($key)
 		{
 			$pascalCaseKey = ucfirst($key);
-			$path = 'Modules\\' . $pascalCaseKey . '\\Gateway\\' . $pascalCaseKey;
+			$path = 'Modules\\' . $pascalCaseKey . '\\Gateway\\Gateway';
 			return new $path();
 		});
 	}

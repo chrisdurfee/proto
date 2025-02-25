@@ -2,16 +2,16 @@
 namespace Modules\User\Gateway;
 
 /**
- * User
+ * Gateway
  *
  * This will handle the user module gateway.
  *
  * @package Modules\User\Gateway
  */
-class User
+class Gateway
 {
     /**
-     * This will activate the user.
+     * This will add the user.
      *
      * @return void
      */
