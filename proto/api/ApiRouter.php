@@ -1,113 +1,132 @@
 <?php declare(strict_types=1);
-namespace Proto\Api;
-
-use Proto\Base;
-use Proto\Http\Response;
-use Proto\Http\Router\Router;
-use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
-use Proto\Http\Middleware\ApiRateLimiterMiddleware;
-
-/**
- * Class ApiRouter
- *
- * Handles API routing and middleware setup.
- *
- * @package Proto\Api
- */
-class ApiRouter extends Base
+namespace
 {
-	/**
-	 * HTTP status code for Not Found.
-	 *
-	 * @var int
-	 */
-	private const HTTP_NOT_FOUND = 404;
+	use Proto\Http\Router\Router;
+
+	$basePath = env('router')->basePath ?? '/';
+	$router = new Router($basePath);
 
 	/**
-	 * The router instance.
+	 * This will return the router instance.
 	 *
-	 * @var Router
+	 * @return Router
 	 */
-	public Router $router;
-
-	/**
-	 * Sets up the API service by initializing the router and adding routes.
-	 *
-	 * @return void
-	 */
-	public function setup(): void
+	function router(): Router
 	{
-		$this->setupRouter();
-		$this->addRoutes();
+		global $router;
+		return $router;
 	}
+}
+
+namespace Proto\Api
+{
+	use Proto\Base;
+	use Proto\Http\Response;
+	use Proto\Http\Router\Router;
+	use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
+	use Proto\Http\Middleware\ApiRateLimiterMiddleware;
 
 	/**
-	 * Initializes the RouterHelper instance and sets up the API service.
+	 * Class ApiRouter
 	 *
-	 * @return void
-	 */
-	public static function initialize(): void
-	{
-		$api = new static();
-		$api->setup();
-	}
-
-	/**
-	 * Sets up the router using the base path from the environment configuration.
+	 * Handles API routing and middleware setup.
 	 *
-	 * @return void
+	 * @package Proto\Api
 	 */
-	protected function setupRouter(): void
+	class ApiRouter extends Base
 	{
-		$basePath = env('router')->basePath ?? '/';
-		$this->router = new Router($basePath);
-	}
+		/**
+		 * HTTP status code for Not Found.
+		 *
+		 * @var int
+		 */
+		private const HTTP_NOT_FOUND = 404;
 
-	/**
-	 * Adds API routes to the router with the appropriate middleware.
-	 *
-	 * @return void
-	 */
-	protected function addRoutes(): void
-	{
-		$middleware = [
-			CrossSiteProtectionMiddleware::class,
-			ApiRateLimiterMiddleware::class,
-		];
+		/**
+		 * The router instance.
+		 *
+		 * @var Router
+		 */
+		protected Router $router;
 
-		$this->router->all('/api/:resource.*', function ($req, $params) use ($middleware)
+		/**
+		 * Sets up the API service by initializing the router and adding routes.
+		 *
+		 * @return void
+		 */
+		public function setup(): void
 		{
-			$resource = $params->resource ?? null;
-			if (empty($resource))
+			$this->setupRouter();
+			$this->addRoutes();
+		}
+
+		/**
+		 * Initializes the RouterHelper instance and sets up the API service.
+		 *
+		 * @return void
+		 */
+		public static function initialize(): void
+		{
+			$api = new static();
+			$api->setup();
+		}
+
+		/**
+		 * Sets up the router using the base path from the environment configuration.
+		 *
+		 * @return void
+		 */
+		protected function setupRouter(): void
+		{
+			$this->router = router();
+		}
+
+		/**
+		 * Adds API routes to the router with the appropriate middleware.
+		 *
+		 * @return void
+		 */
+		protected function addRoutes(): void
+		{
+			$middleware = [
+				CrossSiteProtectionMiddleware::class,
+				ApiRateLimiterMiddleware::class,
+			];
+
+			$this->router->all('/api/:resource.*', function ($req, $params) use ($middleware)
 			{
-				return $this->error('No resource was specified.', self::HTTP_NOT_FOUND);
-			}
+				$resource = $params->resource ?? null;
+				if (empty($resource))
+				{
+					return self::error('No resource was specified.', self::HTTP_NOT_FOUND);
+				}
 
-			$resourcePath = ResourceHelper::getResource($resource);
-			if (! $resourcePath)
-			{
-				return $this->error('The resource path is not valid.', self::HTTP_NOT_FOUND);
-			}
+				$resourcePath = ResourceHelper::getResource($resource);
+				if (! $resourcePath)
+				{
+					return self::error('The resource path is not valid.', self::HTTP_NOT_FOUND);
+				}
 
-			ResourceHelper::includeResource($resourcePath);
-		}, $middleware);
-	}
+				ResourceHelper::includeResource($resourcePath);
+			}, $middleware);
+		}
 
-	/**
-	 * Creates an error response.
-	 *
-	 * @param string $message The error message.
-	 * @param int $httpCode The HTTP status code.
-	 * @return Response The constructed error response.
-	 */
-	private function error(string $message, int $httpCode): Response
-	{
-		return new Response(
-			(object)[
-				'message' => $message,
-				'success' => false
-			],
-			$httpCode
-		);
+		/**
+		 * Creates an error response.
+		 *
+		 * @param string $message The error message.
+		 * @param int $httpCode The HTTP status code.
+		 * @return Response The constructed error response.
+		 */
+		public static function error(string $message, int $httpCode): Response
+		{
+			return new Response(
+				(object)[
+					'message' => $message,
+					'success' => false
+				],
+				$httpCode
+			);
+		}
 	}
 }
