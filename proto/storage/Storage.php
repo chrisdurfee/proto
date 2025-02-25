@@ -4,7 +4,6 @@ namespace Proto\Storage;
 use Proto\Models\ModelInterface;
 use Proto\Database\Database;
 use Proto\Database\QueryBuilder\QueryHandler;
-use Proto\Database\Adapters\SQL\Mysql\MysqliBindTrait;
 use Proto\Utils\Strings;
 use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Database\Adapters\Adapter;
@@ -23,8 +22,6 @@ use Proto\Storage\Helpers\SubQueryHelper;
  */
 class Storage implements StorageInterface
 {
-	use MysqliBindTrait;
-
 	/**
 	 * Model instance.
 	 * @var ModelInterface

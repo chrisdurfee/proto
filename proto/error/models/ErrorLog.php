@@ -14,19 +14,19 @@ use Proto\Models\Model;
 class ErrorLog extends Model
 {
 	/**
-	 * @var string $tableName
+	 * @var string|null $tableName
 	 */
-	protected static $tableName = 'proto_error_log';
+	protected static ?string $tableName = 'proto_error_log';
 
 	/**
-	 * @var string $alias
+	 * @var string|null $alias
 	 */
-    protected static $alias = 'e';
+    protected static ?string $alias = 'e';
 
 	/**
 	 * @var array $fields
 	 */
-	protected static $fields = [
+	protected static array $fields = [
 		'id',
 		'createdAt',
 		'updatedAt',
@@ -45,17 +45,7 @@ class ErrorLog extends Model
 	];
 
 	/**
-	 * This will update the model resolved status.
-	 *
-	 * @return bool
-	 */
-	public function updateResolved(): bool
-	{
-		return $this->storage->updateResolved();
-	}
-
-	/**
 	 * @var string $storageType
 	 */
-	protected static $storageType = ErrorLogStorage::class;
+	protected static string $storageType = ErrorLogStorage::class;
 }

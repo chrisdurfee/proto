@@ -72,9 +72,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Storage connection instance.
 	 *
-	 * @var object
+	 * @var object|null
 	 */
-	public object $storage;
+	public ?object $storage = null;
 
 	/**
 	 * Storage wrapper instance.
@@ -344,23 +344,28 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Call a method on a given callable.
 	 *
-	 * @param callable $callable Callable to execute.
+	 * @param array $callable Callable to execute.
 	 * @param array|null $arguments Arguments for the callable.
 	 * @return mixed
 	 */
-	public function callMethod(callable $callable, ?array $arguments): mixed
+	public function callMethod(array $callable, ?array $arguments): mixed
 	{
+		if (!\is_callable($callable))
+        {
+            return false;
+		}
+
 		return \call_user_func_array($callable, $arguments);
 	}
 
 	/**
 	 * Wrap a method call and optionally return a model instance.
 	 *
-	 * @param callable $callable Callable to execute.
+	 * @param array $callable Callable to execute.
 	 * @param array $arguments Arguments for the callable.
 	 * @return mixed
 	 */
-	protected function wrapMethodCall(callable $callable, array $arguments): mixed
+	protected function wrapMethodCall(array $callable, array $arguments): mixed
 	{
 		$result = $this->callMethod($callable, $arguments);
 		if (is_bool($result))
@@ -390,7 +395,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function __call(string $method, array $arguments): mixed
 	{
-		$callable = [$this->storage,$method];
+		$callable = [$this->storage, $method];
 		return $this->wrapMethodCall($callable, $arguments);
 	}
 
