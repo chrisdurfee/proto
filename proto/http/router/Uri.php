@@ -24,11 +24,6 @@ abstract class Uri
 	protected array $paramNames = [];
 
 	/**
-	 * @var string $uri The route URI.
-	 */
-	protected string $uri;
-
-	/**
 	 * @var string|null $method The HTTP method associated with the route.
 	 */
 	protected ?string $method = null;
@@ -43,9 +38,10 @@ abstract class Uri
 	 *
 	 * @param string $uri The route URI.
 	 */
-	public function __construct(string $uri)
+	public function __construct(
+		protected string $uri
+	)
 	{
-		$this->uri = $uri;
 		$this->setupParamKeys($uri);
 		$this->setupUriQuery($uri);
 	}
@@ -58,22 +54,7 @@ abstract class Uri
 	 */
 	protected function setupUriQuery(string $uri): void
 	{
-		if ($uri === '')
-		{
-			$this->uriQuery = '/.*/';
-			return;
-		}
-
-		// Escape slashes
-		$uriQuery = preg_replace('/\//', '\/', $uri);
-		// Replace optional parameters
-		$uriQuery = preg_replace('/:(\w+)\?/', '(?P<\1>[^\/]*)?', $uriQuery);
-		// Replace required parameters
-		$uriQuery = preg_replace('/:(\w+)/', '(?P<\1>[^\/]+)', $uriQuery);
-		// Wildcard match
-		$uriQuery = str_replace('*', '.*', $uriQuery);
-
-		$this->uriQuery = '/^' . $uriQuery . '$/';
+		$this->uriQuery = UriQuery::create($uri);
 	}
 
 	/**
@@ -191,7 +172,6 @@ abstract class Uri
 
 		$matches = [];
 		$result = preg_match($this->uriQuery, $uri, $matches);
-
 		if ($result === 1)
 		{
 			$this->setParams($matches);

@@ -12,11 +12,6 @@ namespace Proto\Http\Router;
 class Route extends Uri
 {
 	/**
-	 * @var string The HTTP method for the route.
-	 */
-	protected string $method;
-
-	/**
 	 * @var callable The callback action to execute when the route is activated.
 	 */
 	protected $callback;
@@ -65,6 +60,6 @@ class Route extends Uri
 	 */
 	public function activate(string $request): mixed
 	{
-		return ($this->callback)($request, $this->params);
+		return call_user_func($this->callback, $request, $this->params);
 	}
 }

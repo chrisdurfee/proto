@@ -5,8 +5,6 @@ namespace
 	use Proto\Http\Router\Router;
 
 	$base = new Base();
-	$basePath = env('router')->basePath ?? '/';
-	$router = new Router($basePath);
 
 	/**
 	 * This will return the router instance.
@@ -15,8 +13,8 @@ namespace
 	 */
 	function router(): Router
 	{
-		global $router;
-		return $router;
+		$basePath = env('router')->basePath ?? '/';
+		return new Router($basePath);
 	}
 }
 

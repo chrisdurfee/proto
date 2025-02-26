@@ -67,6 +67,20 @@ namespace Proto\Error
 		{
 			$backtrace = debug_backtrace();
 
+			var_dump((object)[
+				'errorNumber' => $errno,
+				'errorMessage' => $errstr,
+				'errorFile' => $errfile,
+				'errorLine' => $errline,
+				'errorTrace' => '',
+				'backTrace' => JsonFormat::encode($backtrace),
+				'env' => env('env'),
+				'url' => Request::fullUrlWithScheme(),
+				'query' => JsonFormat::encode(Request::all()),
+				'errorIp' => Request::ip()
+			]);
+			die;
+
 			return ErrorLog::create((object)[
 				'errorNumber' => $errno,
 				'errorMessage' => $errstr,
@@ -141,6 +155,20 @@ namespace Proto\Error
 		public static function exceptionHandler(\Throwable $exception): bool
 		{
 			$backtrace = debug_backtrace();
+
+			var_dump((object)[
+				'errorNumber' => $exception->getCode(),
+				'errorMessage' => $exception->getMessage(),
+				'errorFile' => $exception->getFile(),
+				'errorLine' => $exception->getLine(),
+				'errorTrace' => $exception->getTraceAsString(),
+				'backTrace' => JsonFormat::encode($backtrace),
+				'env' => env('env'),
+				'url' => Request::fullUrlWithScheme(),
+				'query' => JsonFormat::encode(Request::all()),
+				'errorIp' => Request::ip()
+			]);
+			die;
 
 			return ErrorLog::create((object)[
 				'errorNumber' => $exception->getCode(),
