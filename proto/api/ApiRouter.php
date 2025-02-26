@@ -89,7 +89,7 @@ namespace Proto\Api
 		protected function addRoutes(): void
 		{
 			$middleware = [
-				CrossSiteProtectionMiddleware::class,
+				//CrossSiteProtectionMiddleware::class,
 				ApiRateLimiterMiddleware::class,
 			];
 

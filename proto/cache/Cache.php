@@ -17,9 +17,9 @@ class Cache extends Singleton
 	/**
 	 * The singleton instance.
 	 *
-	 * @var Cache|null
+	 * @var self|null
 	 */
-	protected static ?Cache $instance = null;
+	protected static ?self $instance = null;
 
 	/**
 	 * The cache driver instance.

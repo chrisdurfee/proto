@@ -77,9 +77,26 @@ abstract class Uri
 	 */
 	protected function setParams(array $matches): void
 	{
-		if (!empty($matches) && !empty($this->paramNames))
+		if (!empty($matches))
 		{
-			$this->params = (object) array_combine($this->paramNames, array_slice($matches, 1));
+			$names = $this->paramNames;
+			if (empty($names) || count($names) < 1)
+			{
+				return;
+			}
+
+			array_shift($matches);
+
+			$params = (object)[];
+			for ($i = 0, $length = count($names); $i < $length; $i++)
+			{
+				$value = $matches[$i] ?? null;
+				if ($value !== null)
+				{
+					$params->{$names[$i]} = $value;
+				}
+			}
+			$this->params = $params;
 		}
 	}
 
@@ -103,33 +120,33 @@ abstract class Uri
 	public function initialize(array $globalMiddleWare, string $request): mixed
 	{
 		$middleware = array_merge($globalMiddleWare, $this->middleware);
-        if (count($middleware) < 1)
-        {
-            return $this->activate($request);
-        }
+		if (count($middleware) < 1)
+		{
+			return $this->activate($request);
+		}
 
-        /**
-         * This is the first callback that will call
-         * the route activate to be passed to the
-         * first middleware.
-         */
-        $self = $this;
-        $next = function(string $request) use($self)
-        {
-            return $self->activate($request);
-        };
+		/**
+		 * This is the first callback that will call
+		 * the route activate to be passed to the
+		 * first middleware.
+		 */
+		$self = $this;
+		$next = function(string $request) use($self)
+		{
+			return $self->activate($request);
+		};
 
-        /**
-         * This will reverse the array to se the last
-         * middleware to call the route activate.
-         */
-        $middleware = array_reverse($middleware);
-        foreach ($middleware as $item)
-        {
-            $next = $this->setupMiddlewareCallback($item, $next);
-        }
+		/**
+		 * This will reverse the array to se the last
+		 * middleware to call the route activate.
+		 */
+		$middleware = array_reverse($middleware);
+		foreach ($middleware as $item)
+		{
+			$next = $this->setupMiddlewareCallback($item, $next);
+		}
 
-        return $next($request);
+		return $next($request);
 	}
 
 	/**

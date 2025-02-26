@@ -14,9 +14,9 @@ use Proto\Patterns\Structural\PubSub;
 class Events extends Singleton
 {
 	/**
-	 * @var ?Events The singleton instance.
+	 * @var self|null The singleton instance.
 	 */
-	protected static ?Events $instance = null;
+	protected static ?self $instance = null;
 
 	/**
 	 * Initializes the PubSub instance.

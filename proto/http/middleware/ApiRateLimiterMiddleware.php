@@ -18,7 +18,7 @@ class ApiRateLimiterMiddleware
 	 *
 	 * @var int
 	 */
-	private const MAX_REQUESTS = 100_000;
+	private const MAX_REQUESTS = 100000;
 
 	/**
 	 * Handles API rate limiting.
