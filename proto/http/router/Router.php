@@ -195,14 +195,14 @@ class Router
 	 */
 	public function resource(string $uri, string $controller, ?array $middleware = null): self
 	{
-		$callback = function($req, $params) use ($controller)
+		$callback = function($req, $params) use ($controller): mixed
 		{
 			$resource = new Resource($controller, $params);
 			return $resource->activate($req);
 		};
 
 		$uri = $uri . '/:id?*';
-		return $this->addRoute('ALL', $uri, $callback, $middleware);
+		return $this->all($uri, $callback, $middleware);
 	}
 
 	/**
