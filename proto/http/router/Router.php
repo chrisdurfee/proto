@@ -132,7 +132,7 @@ class Router
 	 */
 	public function limit(Limit $limit): self
 	{
-		$this->addMiddleware([new RateLimiterMiddleware($limit)]);
+		$this->middleware([new RateLimiterMiddleware($limit)]);
 		return $this;
 	}
 
@@ -174,7 +174,7 @@ class Router
 
 		if ($middleware !== null)
 		{
-			$route->addMiddleware($middleware);
+			$route->middleware($middleware);
 		}
 
 		if ($this->matchesRoute($route))
@@ -193,7 +193,7 @@ class Router
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	protected function resource(string $uri, string $controller, ?array $middleware = null): self
+	public function resource(string $uri, string $controller, ?array $middleware = null): self
 	{
 		$callback = function($req, $params) use ($controller)
 		{

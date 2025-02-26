@@ -23,7 +23,7 @@ trait MiddlewareTrait
 	 * @param array<string> $middleware Array of middleware class names.
 	 * @return self
 	 */
-	public function addMiddleware(array $middleware): self
+	public function middleware(array $middleware): self
 	{
 		$this->middleware = array_merge($this->middleware, $middleware);
 		return $this;
