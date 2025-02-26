@@ -98,13 +98,15 @@ namespace Proto\Api
 				$resource = $params->resource ?? null;
 				if (empty($resource))
 				{
-					return self::error('No resource was specified.', self::HTTP_NOT_FOUND);
+					self::error('No resource was specified.', self::HTTP_NOT_FOUND);
+					return;
 				}
 
 				$resourcePath = ResourceHelper::getResource($resource);
 				if (! $resourcePath)
 				{
-					return self::error('The resource path is not valid.', self::HTTP_NOT_FOUND);
+					self::error('The resource path is not valid.', self::HTTP_NOT_FOUND);
+					return;
 				}
 
 				ResourceHelper::includeResource($resourcePath);
