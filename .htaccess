@@ -1,36 +1,50 @@
-RewriteEngine on
+RewriteEngine On
 
-# Disable index browsing
-Options All -Indexes
-
-<IfModule mod_headers.c>
-    # Connection
-    Header set Connection keep-alive
-
-    # Frame Options
-    Header add X-Frame-Options "SAMEORIGIN"
-
-    # XSS Protection
-    Header set X-XSS-Protection "1; mode=block"
-
-    # Content Type Options
-    Header set X-Content-Type-Options "nosniff"
-
-    # Remove X-Powered-By
-    Header unset X-Powered-By
-
-    # Remove Server
-    Header unset Server
-
-    # Strict Transport Security
-    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
-
-    # Content Security Policy
-    #Header add Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src 'self'; font-src 'self'; frame-ancestors 'self' https://*.dentalqore.com"
+# Force HTTPS (if not already secure)
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
-# Default encoding
+# Disable directory listing
+Options -Indexes
+
+# Default character set
 AddDefaultCharset UTF-8
+
+# Security Headers
+<IfModule mod_headers.c>
+    # Ensure persistent connection (optional)
+    Header set Connection keep-alive
+
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Enable XSS protection
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Prevent MIME-type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Remove potentially disclosing headers
+    Header unset X-Powered-By
+    Header unset Server
+
+    # Enforce HTTPS for two years including subdomains and preload (adjust as needed)
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+
+    # Content Security Policy (adjust according to your app requirements)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; font-src 'self'; frame-ancestors 'self'"
+
+    # Set Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Set Permissions Policy (formerly Feature Policy)
+    Header always set Permissions-Policy "geolocation=(self), microphone=()"
+
+    # Prevent cross-domain policy loading
+    Header always set X-Permitted-Cross-Domain-Policies "none"
+</IfModule>
 
 # Disable HTTP TRACE and TRACK methods
 <IfModule mod_rewrite.c>
@@ -38,20 +52,13 @@ AddDefaultCharset UTF-8
     RewriteRule .* - [F]
 </IfModule>
 
-# Deny access to .htaccess
-<Files .htaccess>
-    order allow,deny
-    deny from all
-</Files>
-
-# Deny access to certain files
-<FilesMatch "^(.gitignore|.dockerignore|.htaccess|composer.json|composer.lock|package-lock.json|Dockerfile.*|docker-compose.*|phpunit.*|application.yaml|bitbucket-pipelines.yml)$">
-    Order allow,deny
-    Deny from all
+# Deny access to sensitive files
+<FilesMatch "^(\.htaccess|\.gitignore|\.dockerignore|composer\.(json|lock)|package-lock\.json|Dockerfile.*|docker-compose.*|phpunit.*|application\.yaml|bitbucket-pipelines\.yml)$">
+    Require all denied
 </FilesMatch>
 
 # Turn off ETags
-FileETag none
+FileETag None
 
 # Disable server signature
 ServerSignature Off
@@ -59,45 +66,54 @@ ServerSignature Off
 # Add support for woff2 fonts
 AddType application/font-woff2 .woff2
 
-# Block libwww-perl user agent
+# Block unwanted user agents (e.g., libwww-perl)
 <IfModule mod_rewrite.c>
     RewriteCond %{HTTP_USER_AGENT} libwww-perl.*
-    RewriteRule .* – [F,L]
+    RewriteRule .* - [F,L]
 </IfModule>
 
-# Compression
+# Compression with mod_deflate
 <IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/plain text/html text/php text/x-php text/xml text/css image/svg+xml application/php application/x-php application/x-httpd-php application/x-httpd-php-source application/xml application/xhtml+xml application/rss+xml application/javascript application/json application/x-javascript font/otf font/ttf font/eot font/woff
+    AddOutputFilterByType DEFLATE text/plain text/html text/css text/javascript application/javascript application/json application/xml application/xhtml+xml text/xml font/otf font/ttf font/eot font/woff
 </IfModule>
 
-# Deny access to certain directories
+# Compression with mod_brotli (if available)
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css application/javascript application/json application/xml application/xhtml+xml text/xml image/svg+xml
+</IfModule>
+
+# Leverage browser caching for static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/x-javascript "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresDefault "access plus 2 days"
+</IfModule>
+
+# Deny access to sensitive directories
 <IfModule mod_alias.c>
-    RedirectMatch 403 /app/
-    RedirectMatch 403 /proto/
-    RedirectMatch 403 /tests/
-    RedirectMatch 403 /vendor/
-
-    # Block access to sensitive directories
-    RedirectMatch 403 /(\.git|apache|k8s|node_modules)/
+    RedirectMatch 403 /(app|proto|tests|vendor|\.git|apache|k8s|node_modules)/
 </IfModule>
 
-# URL rewriting
+# URL rewriting rules for your app
 <IfModule mod_rewrite.c>
-    RewriteRule ^app-share/(.*)$ /public/app-share/$1 [L,NC,QSA]
+    RewriteRule ^app/(.*)$ /public/app/$1 [L,NC,QSA]
     RewriteRule ^developer/(.*)$ /public/developer/$1 [L,NC,QSA]
-    RewriteRule ^action/(.*)$ /public/action/$1 [L,NC,QSA]
-    RewriteRule ^visitor/(.*)$ /public/visitor/$1 [L,NC,QSA]
     RewriteRule ^embed/(.*)$ /public/embed/$1 [L,NC,QSA]
     RewriteRule ^api/.*$ /public/api/ [L,NC,QSA]
 
-    # Text response redirect
-    # RewriteRule ^scripts/bp-reminders/cron/sms-responses.php.*$ /public/api/text-response [L,NC,QSA]
-
-    #shortlinks
-    RewriteRule ^a/([a-zA-Z0-9+-]+)*/*$ /public/a/index.php?code=$1 [L,NC,QSA]
-
-    # Redirect all page requests to main index
+    # Redirect non-existent files/directories to main index (adjust as needed)
     RewriteBase /
     RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^(.*)$ /public/crm/$1 [NC,L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ /public/app/$1 [NC,L,QSA]
 </IfModule>

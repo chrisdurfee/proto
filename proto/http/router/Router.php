@@ -186,6 +186,26 @@ class Router
 	}
 
 	/**
+	 * Registers a resource.
+	 *
+	 * @param string $uri
+	 * @param string $controller
+	 * @param array|null $middleware
+	 * @return self
+	 */
+	protected function resource(string $uri, string $controller, ?array $middleware = null): self
+	{
+		$callback = function($req, $params) use ($controller)
+		{
+			$resource = new Resource($controller, $params);
+			return $resource->activate($req);
+		};
+
+		$uri = $uri . '/:id?*';
+		return $this->addRoute('ALL', $uri, $callback, $middleware);
+	}
+
+	/**
 	 * Redirects a route.
 	 *
 	 * @param string $uri
