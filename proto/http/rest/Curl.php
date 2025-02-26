@@ -19,18 +19,14 @@ class Curl
 	protected CurlHandle $curl;
 
 	/**
-	 * Enables debug mode.
-	 */
-	protected bool $debug = false;
-
-	/**
 	 * Initializes the cURL session.
 	 *
 	 * @param bool $debug Whether to enable debugging.
 	 */
-	public function __construct(bool $debug = false)
+	public function __construct(
+		protected bool $debug = false
+	)
 	{
-		$this->debug = $debug;
 		$this->curl = curl_init();
 	}
 
