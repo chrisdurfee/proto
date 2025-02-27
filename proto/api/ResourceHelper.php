@@ -71,6 +71,12 @@ class ResourceHelper
 		$resourcePath = preg_replace('/\/$/', '', $resourcePath);
 
 		$parts = explode('/', $resourcePath);
+		// If the last segment is numeric, remove it.
+		if (!empty($parts) && is_numeric(end($parts)))
+		{
+			array_pop($parts);
+		}
+
 		$moduleName = array_shift($parts);
 
 		// Ensure the module name is present.

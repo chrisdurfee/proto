@@ -213,7 +213,7 @@ class Router
 			return $resource->activate($req);
 		};
 
-		$uri = $uri . '/:id?*';
+		$uri = $uri . '/:id?.*';
 		return $this->all($uri, $callback, $middleware);
 	}
 
