@@ -246,6 +246,21 @@ abstract class ModelController extends Controller
 	}
 
 	/**
+	 * Retrieve all records.
+	 *
+	 * @param array|object|null $filter Filter criteria.
+	 * @param int|null $offset Offset.
+	 * @param int|null $count Count.
+	 * @param array|null $modifiers Modifiers.
+	 * @return object
+	 */
+	public function all(mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null): object
+	{
+		$result = $this->modelClass::all($filter, $offset, $count, $modifiers);
+		return $this->response($result);
+	}
+
+	/**
 	 * Searches for models.
 	 *
 	 * @param mixed $search The search term.

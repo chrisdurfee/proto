@@ -18,7 +18,7 @@ class ResourceHelper
 	 */
 	protected static function getResourcePath(string $resourcePath): string
 	{
-		return __DIR__ . '/../../modules/' . $resourcePath . '/api.php';
+		return realpath(__DIR__ . '/../../modules/' . $resourcePath . '/api.php');
 	}
 
 	/**
@@ -71,11 +71,12 @@ class ResourceHelper
 		$resourcePath = preg_replace('/\/$/', '', $resourcePath);
 
 		$parts = explode('/', $resourcePath);
-		// If the last segment is numeric, remove it.
-		if (!empty($parts) && is_numeric(end($parts)))
+
+		// remove numerical segments
+		$parts = array_filter($parts, function ($part)
 		{
-			array_pop($parts);
-		}
+			return !is_numeric($part);
+		});
 
 		$moduleName = array_shift($parts);
 
@@ -85,6 +86,10 @@ class ResourceHelper
 			return false;
 		}
 
+		/**
+		 * This will place the module name at the beginning of the path
+		 * and set the rest of the path to the api directory.
+		 */
 		return $moduleName . '/api/' . implode('/', $parts);
 	}
 }

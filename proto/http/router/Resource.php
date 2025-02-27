@@ -33,18 +33,18 @@ class Resource
 	 */
 	protected function controllerHas(string $method)
 	{
+		var_dump($this->controller);
 		return is_callable([$this->controller, $method]);
 	}
 
 	/**
 	 * This will call the controller method.
 	 *
-	 * @param string $request
 	 * @param string $method
 	 * @param array $params
 	 * @return mixed
 	 */
-	protected function call(string $request, string $method, array $params = [])
+	protected function call(string $method, array $params = [])
 	{
 		if ($this->controllerHas($method))
 		{
@@ -85,17 +85,17 @@ class Resource
 			case "GET":
 				if ($resourceId !== null)
 				{
-					return $this->call($request, 'all');
+					return $this->call('all');
 				}
-				return $this->call($request, 'get', [$resourceId]);
+				return $this->call('get', [$resourceId]);
 			case "POST":
-				return $this->call($request, 'post', [$resourceId]);
+				return $this->call('post', [$resourceId]);
 			case "PUT":
-				return $this->call($request, 'put', [$resourceId]);
+				return $this->call('put', [$resourceId]);
 			case "DELETE":
-				return $this->call($request, 'delete', [$resourceId]);
+				return $this->call('delete', [$resourceId]);
 			case "PATCH":
-				return $this->call($request, 'patch', [$resourceId]);
+				return $this->call('patch', [$resourceId]);
 			default:
 				$this->notFound();
 				die;
