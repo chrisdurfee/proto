@@ -17,6 +17,21 @@ use Proto\Base;
 abstract class Controller extends Base
 {
 	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = null;
+
+	/**
+	 * This will get the policy for the controller.
+	 *
+	 * @return string|null
+	 */
+	public function getPolicy(): ?string
+	{
+		return $this->policy;
+	}
+
+	/**
 	 * Generates an error response.
 	 *
 	 * @param string $message The error message.

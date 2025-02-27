@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Router;
 
+use Proto\Auth\PolicyProxy;
+
 /**
  * Resource
  *
@@ -12,6 +14,11 @@ namespace Proto\Http\Router;
 class Resource
 {
 	/**
+	 * @var object $controller The controller instance associated with the resource.
+	 */
+	protected object $controller;
+
+	/**
 	 * Initializes the route.
 	 *
 	 * @param string $method The HTTP method for the route.
@@ -19,10 +26,35 @@ class Resource
 	 * @param callable $callback The callback action to execute when the route is activated.
 	 */
 	public function __construct(
-		protected string $controller,
+		string $controller,
 		protected object $params
 	)
 	{
+		$this->controller = $this->getController($controller);
+	}
+
+	/**
+	 * This will get the controller. If the controller has a policy
+	 * defined, it will create a policy proxy to auth the actions
+	 * before calling the methods.
+	 *
+	 * @param string $controller
+	 * @return object
+	 */
+	public function getController(string $controller): object
+	{
+		$controller = new $controller();
+		$policy = $controller->getPolicy();
+		if (!isset($policy))
+        {
+            return $controller;
+        }
+
+		/**
+		 * This will create a policy proxy to auth the actions
+		 * before calling the methods.
+		 */
+		return new PolicyProxy($controller, new $policy($controller));
 	}
 
 	/**
@@ -33,7 +65,6 @@ class Resource
 	 */
 	protected function controllerHas(string $method)
 	{
-		var_dump($this->controller);
 		return is_callable([$this->controller, $method]);
 	}
 
