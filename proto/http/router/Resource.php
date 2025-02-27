@@ -41,14 +41,14 @@ class Resource
 	 *
 	 * @param string $request
 	 * @param string $method
-	 * @param mixed $resourceId
+	 * @param array $params
 	 * @return mixed
 	 */
-	protected function call(string $request, string $method, mixed $resourceId = null)
+	protected function call(string $request, string $method, array $params = [])
 	{
 		if ($this->controllerHas($method))
 		{
-			return call_user_func([$this->controller, $method], $resourceId);
+			return call_user_func_array([$this->controller, $method], $params);
 		}
 
 		$this->notFound();
@@ -87,15 +87,15 @@ class Resource
 				{
 					return $this->call($request, 'all');
 				}
-				return $this->call($request, 'get', $resourceId);
+				return $this->call($request, 'get', [$resourceId]);
 			case "POST":
-				return $this->call($request, 'post', $resourceId);
+				return $this->call($request, 'post', [$resourceId]);
 			case "PUT":
-				return $this->call($request, 'put', $resourceId);
+				return $this->call($request, 'put', [$resourceId]);
 			case "DELETE":
-				return $this->call($request, 'delete', $resourceId);
+				return $this->call($request, 'delete', [$resourceId]);
 			case "PATCH":
-				return $this->call($request, 'patch', $resourceId);
+				return $this->call($request, 'patch', [$resourceId]);
 			default:
 				$this->notFound();
 				die;
