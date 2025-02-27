@@ -2,5 +2,15 @@
 namespace Modules\User\User\Api;
 
 use Modules\User\Controllers\UserController;
+use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 
-router()->resource('user', UserController::class);
+/**
+ * User API Routes
+ *
+ * This file contains the API routes for the User module.
+ */
+router()
+    ->resource('user', UserController::class)
+    ->middleware([
+        CrossSiteProtectionMiddleware::class
+    ]);
