@@ -105,12 +105,24 @@ class Router
 	protected function setupRequest(): void
 	{
 		$this->method = Request::method();
-		$this->path = rtrim(Request::path(), '/');
+		$this->path = $this->filterPath(Request::path());
 
 		if (!$this->isValidMethod($this->method))
 		{
 			$this->sendResponse(405, ['error' => 'Method Not Allowed']);
 		}
+	}
+
+	/**
+	 * Filters the request path to remove query parameters.
+	 *
+	 * @param string $path
+	 * @return string
+	 */
+	protected function filterPath(string $path): string
+	{
+		$path = rtrim($path, '/');
+		return explode('?', $path)[0];
 	}
 
 	/**
