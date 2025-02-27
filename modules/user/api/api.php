@@ -10,7 +10,7 @@ use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
  * This file contains the API routes for the User module.
  */
 router()
-    ->resource('user', UserController::class)
     ->middleware([
         CrossSiteProtectionMiddleware::class
-    ]);
+    ])
+    ->resource('user', UserController::class);
