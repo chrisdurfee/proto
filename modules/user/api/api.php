@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 namespace Modules\User\User\Api;
 
-use Proto\Controllers\ModelController;
+use Modules\User\Controllers\UserController;
 
-router()->resource('user', ModelController::class);
+router()->resource('user', UserController::class);
