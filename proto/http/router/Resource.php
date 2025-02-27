@@ -48,7 +48,7 @@ class Resource
 	{
 		if ($this->controllerHas($method))
 		{
-			return call_user_func([$this->controller, $method], $request, $resourceId);
+			return call_user_func([$this->controller, $method], $resourceId);
 		}
 
 		$this->notFound();
