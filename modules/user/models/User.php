@@ -20,13 +20,21 @@ class User extends Model
 	/**
 	 * @var string|null $alias
 	 */
-    protected static ?string $alias = 'u';
+	protected static ?string $alias = 'u';
 
 	/**
 	 * @var array $fields
 	 */
 	protected static array $fields = [
 		'id',
+		'username',
+		'email',
+		'password',
+		'firstName',
+		'lastName',
+		'role',
+		'status',
+		'emailVerifiedAt',
 		'createdAt',
 		'updatedAt',
 		'deletedAt'
