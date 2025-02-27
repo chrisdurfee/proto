@@ -24,15 +24,33 @@ abstract class UriQuery
 			return '/.*/';
 		}
 
-		// Escape slashes
-		$uriQuery = preg_replace('/\//', '\/', $uri);
-		// Replace optional parameters
-		$uriQuery = preg_replace('/:(\w+)\?/', '(?P<\1>[^\/]*)?', $uriQuery);
-		// Replace required parameters
-		$uriQuery = preg_replace('/:(\w+)/', '(?P<\1>[^\/]+)', $uriQuery);
-		// Wildcard match
-		$uriQuery = str_replace('*', '.*', $uriQuery);
+		$uriQuery = '/^';
+        // escape slashes
+        $uriQuery .= preg_replace('/\//', '\/', $uri);
+        // add slash before optional param
+        $uriQuery = preg_replace('/(?:(\\*\/):[^\/(]*?\?)/', '(?:$|\/)', $uriQuery);
+        // add slash after optional param
+        $uriQuery = preg_replace('/(\?\\\\\/+\*?)/', '?\/*', $uriQuery);
 
-		return '/^' . $uriQuery . '$/';
+        // params
+        $paramCallBack = function($matches)
+        {
+            if(strpos($matches[0], '.') === false)
+            {
+                return '([^\/|?]+)';
+            }
+
+            return '([^\/|?]+.*)';
+        };
+
+        $uriQuery = preg_replace_callback('/(:[^\/?&$\\\]+)/', $paramCallBack, $uriQuery);
+
+        // wild card to allow all
+        $uriQuery = preg_replace('/(?<!\.)(\*)/', '.*', $uriQuery);
+
+        // this will only add the end string char if the uri has no wild cards
+        $uriQuery .= (strpos($uriQuery, '*') === false)? '$/' : '/';
+		var_dump($uriQuery);
+		return $uriQuery;
 	}
 }

@@ -93,7 +93,7 @@ namespace Proto\Api
 				ApiRateLimiterMiddleware::class,
 			];
 
-			$this->router->all('/api/:resource.*', function ($req, $params) use ($middleware)
+			$this->router->all(':resource.*', function ($req, $params) use ($middleware)
 			{
 				$resource = $params->resource ?? null;
 				if (empty($resource))

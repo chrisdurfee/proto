@@ -105,7 +105,7 @@ class Router
 	protected function setupRequest(): void
 	{
 		$this->method = Request::method();
-		$this->path = $this->stripBasePath(Request::path());
+		$this->path = rtrim(Request::path(), '/');
 
 		if (!$this->isValidMethod($this->method))
 		{
@@ -159,6 +159,17 @@ class Router
 	}
 
 	/**
+	 * This will return the full URI.
+	 *
+	 * @param string $uri
+	 * @return string
+	 */
+	protected function getUri(string $uri): string
+	{
+		return $this->basePath . '/' . $this->stripBasePath($uri);
+	}
+
+	/**
 	 * Registers a route.
 	 *
 	 * @param string $method
@@ -169,6 +180,7 @@ class Router
 	 */
 	protected function addRoute(string $method, string $uri, callable $callback, ?array $middleware = null): self
 	{
+		$uri = $this->getUri($uri);
 		$route = new Route($method, $uri, $callback);
 		$this->routes[] = $route;
 
@@ -215,6 +227,7 @@ class Router
 	 */
 	public function redirect(string $uri, string $redirectUrl, int $statusCode = 301): self
 	{
+		$uri = $this->getUri($uri);
 		$redirect = new Redirect($uri, $redirectUrl, $statusCode);
 
 		if ($this->matchesRoute($redirect))
