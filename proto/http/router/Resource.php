@@ -85,7 +85,7 @@ class Resource
 			case "GET":
 				if ($resourceId !== null)
 				{
-					return $this->call($request, 'all', $resourceId);
+					return $this->call($request, 'all');
 				}
 				return $this->call($request, 'get', $resourceId);
 			case "POST":

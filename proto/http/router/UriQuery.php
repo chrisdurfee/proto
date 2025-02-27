@@ -50,7 +50,6 @@ abstract class UriQuery
 
         // this will only add the end string char if the uri has no wild cards
         $uriQuery .= (strpos($uriQuery, '*') === false)? '$/' : '/';
-		var_dump($uriQuery);
 		return $uriQuery;
 	}
 }
