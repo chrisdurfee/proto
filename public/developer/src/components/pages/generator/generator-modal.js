@@ -4,34 +4,34 @@ import { Icons } from "@base-framework/ui/icons";
 import { FormField, Modal } from "@base-framework/ui/molecules";
 
 /**
- * This will create a modal for adding music.
+ * This will create a modal for adding a resource.
  *
  * @param {object} props
  * @returns {object}
  */
-export const ClientModal = (props) => (
+export const GeneratorModal = (props) => (
     new Modal({
-		title: 'Add Client',
-		icon: Icons.user.plus,
-		description: "Let's add a new client.",
+		title: 'Add Resource',
+		icon: Icons.document.add,
+		description: "Let's add a new resource.",
 		size: 'sm',
 		type: 'right',
 		// @ts-ignore
 		onSubmit: () => app.notify({
 			type: "success",
-			title: "Client Added",
-			description: "The client has been added.",
+			title: "Resource Added",
+			description: "The resource has been added.",
 			icon: Icons.check
 		})
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
 			// Row for Area and Security Level
 			Div({ class: "flex flex-auto flex-col w-full gap-4" }, [
-				Fieldset({ legend: "Client Details" }, [
-					new FormField({ name: "client", label: "Client", description: "The name of the client." }, [
+				Fieldset({ legend: "Resource Details" }, [
+					new FormField({ name: "resource", label: "Resource", description: "The name of the resource." }, [
 						Input({
 							type: "text",
-							placeholder: "Client name",
+							placeholder: "Resource name",
 							required: true
 						})
 					])
