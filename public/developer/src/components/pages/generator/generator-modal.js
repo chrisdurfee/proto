@@ -2,7 +2,7 @@ import { Div } from "@base-framework/atoms";
 import { Checkbox, Fieldset, Input, Select, Textarea } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField, Modal } from "@base-framework/ui/molecules";
-import { GeneratorModel } from "./gernerator-modal";
+import { GeneratorModel } from "./generator-model.js";
 
 /**
  * Formats the specified resource type by replacing spaces with hyphens and converting to lowercase.
