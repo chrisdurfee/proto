@@ -47,14 +47,14 @@ export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
  * @param {string} type
  * @returns {Array}
  */
-function getResourceForm(type)
+function getResourceForm(type, fullResource = false)
 {
 	switch (type)
 	{
 		case "API":
 			return [
 				Fieldset({ legend: "API Settings" }, [
-					new FormField({ name: "className", label: "Class Name", description: "The class name for the API." }, [
+					fullResource === false && new FormField({ name: "className", label: "Class Name", description: "The class name for the API." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "api.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for the API." }, [
@@ -72,7 +72,7 @@ function getResourceForm(type)
 		case "Controller":
 			return [
 				Fieldset({ legend: "Controller Settings" }, [
-					new FormField({ name: "className", label: "Class Name", description: "The class name for the controller." }, [
+					fullResource === false && new FormField({ name: "className", label: "Class Name", description: "The class name for the controller." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "controller.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for the controller." }, [
@@ -117,7 +117,7 @@ function getResourceForm(type)
 		case "Storage":
 			return [
 				Fieldset({ legend: "Storage Settings" }, [
-					new FormField({ name: "className", label: "Class Name", description: "The class name for storage." }, [
+					fullResource === false && new FormField({ name: "className", label: "Class Name", description: "The class name for storage." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "storage.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for storage." }, [
@@ -210,11 +210,10 @@ $table->foreign('message_id')->references('id')->on('messages');`, rows: 6, bind
 
 		case "Full Resource":
 			return [
-				...getResourceForm("Model"),
-				...getResourceForm("API"),
-				...getResourceForm("Controller"),
-				...getResourceForm("Storage"),
-				...getResourceForm("Policy")
+				...getResourceForm("Model", true),
+				...getResourceForm("API", true),
+				...getResourceForm("Controller", true),
+				...getResourceForm("Storage", true)
 			];
 
 		default:
