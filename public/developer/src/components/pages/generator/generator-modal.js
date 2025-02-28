@@ -18,7 +18,7 @@ export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
 		title: `Add ${resourceType}`,
 		icon: Icons.document.add,
 		description: `Let's add a new ${resourceType}.`,
-		size: 'md',		// you can adjust size to 'sm', 'md', 'lg', etc.
+		size: 'md',
 		type: 'right',
 		onSubmit: () => app.notify({
 			type: "success",
@@ -49,16 +49,16 @@ function getResourceForm(type)
 			return [
 				Fieldset({ legend: "API Settings" }, [
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the API." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "api.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for the API." }, [
-						Input({ type: "text", placeholder: "e.g. ExampleSub" })
+						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "api.namespace" })
 					]),
 					new FormField({ name: "extends", label: "Extends", description: "Which class this API extends." }, [
-						Input({ type: "text", value: "BaseAPI", required: true })
+						Input({ type: "text", value: "BaseAPI", required: true, bind: "api.extends" })
 					]),
 					new FormField({ name: "policy", label: "Policy", description: "Optional policy for this API." }, [
-						Input({ type: "text", placeholder: "e.g. Policy" })
+						Input({ type: "text", placeholder: "e.g. Policy", bind: "api.policy" })
 					])
 				])
 			];
@@ -67,13 +67,13 @@ function getResourceForm(type)
 			return [
 				Fieldset({ legend: "Controller Settings" }, [
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the controller." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "controller.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for the controller." }, [
-						Input({ type: "text", placeholder: "e.g. ExampleSub" })
+						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "controller.namespace" })
 					]),
 					new FormField({ name: "extends", label: "Extends", description: "Which class this controller extends." }, [
-						Input({ type: "text", value: "Controller", required: true })
+						Input({ type: "text", value: "Controller", required: true, bind: "controller.extends" })
 					])
 				])
 			];
@@ -82,28 +82,28 @@ function getResourceForm(type)
 			return [
 				Fieldset({ legend: "Model Settings" }, [
 					new FormField({ name: "connection", label: "Connection", description: "Database connection name." }, [
-						Input({ type: "text", placeholder: "e.g. dashr" })
+						Input({ type: "text", placeholder: "e.g. dashr", bind: "storage.connection" })
 					]),
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the model." }, [
-						Input({ type: "text", placeholder: "e.g. ModelName", required: true })
+						Input({ type: "text", placeholder: "e.g. ModelName", required: true, bind: "model.className" })
 					]),
 					new FormField({ name: "tableName", label: "Table Name", description: "The database table name." }, [
-						Input({ type: "text", placeholder: "e.g. table_name" })
+						Input({ type: "text", placeholder: "e.g. table_name", required: true, bind: "model.tableName" })
 					]),
 					new FormField({ name: "alias", label: "Alias", description: "An alias used in queries." }, [
-						Input({ type: "text", placeholder: "e.g. a" })
+						Input({ type: "text", placeholder: "e.g. a", bind: "model.alias" })
 					]),
 					new FormField({ name: "fields", label: "Fields", description: "Define fields for the model." }, [
-						Textarea({ placeholder: "e.g.\nid:\ncreatedAt:\nupdatedAt:", rows: 4 })
+						Textarea({ placeholder: "e.g.\nid:\ncreatedAt:\nupdatedAt:", rows: 4, required: true, bind: "model.fields" })
 					]),
 					new FormField({ name: "joins", label: "Joins", description: "Define joins for the model." }, [
-						Textarea({ placeholder: "e.g.\n$builder->left('test_table', 't')->on('id', 'client_id');", rows: 4 })
+						Textarea({ placeholder: "e.g.\n$builder->left('test_table', 't')->on('id', 'client_id');", rows: 4, bind: "model.joins" })
 					]),
 					new FormField({ name: "extends", label: "Extends", description: "Which class this model extends." }, [
-						Input({ type: "text", value: "Model", required: true })
+						Input({ type: "text", value: "Model", required: true, bind: "model.extends" })
 					]),
 					new FormField({ name: "storage", label: "Storage", description: "Whether to attach a storage layer." }, [
-						new Checkbox({ checked: false })
+						new Checkbox({ checked: false, bind: "model.storage" })
 					])
 				])
 			];
@@ -112,16 +112,16 @@ function getResourceForm(type)
 			return [
 				Fieldset({ legend: "Storage Settings" }, [
 					new FormField({ name: "className", label: "Class Name", description: "The class name for storage." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "storage.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for storage." }, [
-						Input({ type: "text", placeholder: "e.g. ExampleSub" })
+						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "storage.namespace" })
 					]),
 					new FormField({ name: "extends", label: "Extends", description: "Which class this storage extends." }, [
-						Input({ type: "text", value: "Storage", required: true })
+						Input({ type: "text", value: "Storage", required: true, bind: "storage.extends" })
 					]),
 					new FormField({ name: "connection", label: "Connection", description: "The database/storage connection name." }, [
-						Input({ type: "text", placeholder: "e.g. prod" })
+						Input({ type: "text", placeholder: "e.g. prod", bind: "storage.connection" })
 					])
 				])
 			];
@@ -130,13 +130,13 @@ function getResourceForm(type)
 			return [
 				Fieldset({ legend: "Policy Settings" }, [
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the policy." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "policy.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for the policy." }, [
-						Input({ type: "text", placeholder: "e.g. ExampleSub" })
+						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "policy.namespace" })
 					]),
 					new FormField({ name: "extends", label: "Extends", description: "Which class this policy extends." }, [
-						Input({ type: "text", value: "Policy", required: true })
+						Input({ type: "text", value: "Policy", required: true, bind: "policy.extends" })
 					])
 				])
 			];
@@ -145,10 +145,10 @@ function getResourceForm(type)
 			return [
 				Fieldset({ legend: "Table Settings" }, [
 					new FormField({ name: "connection", label: "Connection", description: "The database connection name." }, [
-						Input({ type: "text", placeholder: "e.g. dashr" })
+						Input({ type: "text", placeholder: "e.g. dashr", bind: "table.connection" })
 					]),
 					new FormField({ name: "tableName", label: "Table Name", description: "The table name." }, [
-						Input({ type: "text", placeholder: "e.g. table_name", required: true })
+						Input({ type: "text", placeholder: "e.g. table_name", required: true, bind: "table.tableName" })
 					]),
 					new FormField({ name: "callback", label: "Call Back", description: "The table creation or modification logic." }, [
 						Textarea({ placeholder: `e.g. // fields
@@ -166,7 +166,7 @@ $table->index('email_read')->fields('id', 'read_at');
 $table->index('created')->fields('created_at');
 
 // foreign keys
-$table->foreign('message_id')->references('id')->on('messages');`, rows: 6 })
+$table->foreign('message_id')->references('id')->on('messages');`, rows: 6, bind: "table.callBack" })
 					])
 				])
 			];
@@ -175,7 +175,7 @@ $table->foreign('message_id')->references('id')->on('messages');`, rows: 6 })
 			return [
 				Fieldset({ legend: "Migration Settings" }, [
 					new FormField({ name: "className", label: "Class Name", description: "The migration class name." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "migration.className" })
 					])
 				])
 			];
@@ -184,10 +184,10 @@ $table->foreign('message_id')->references('id')->on('messages');`, rows: 6 })
 			return [
 				Fieldset({ legend: "Unit Test Settings" }, [
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the test." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "test.className" })
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for the test." }, [
-						Input({ type: "text", placeholder: "e.g. ExampleSub" })
+						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "test.namespace" })
 					]),
 					new FormField({ name: "type", label: "Type", description: "The type of test." }, [
 						Select({
@@ -195,14 +195,14 @@ $table->foreign('message_id')->references('id')->on('messages');`, rows: 6 })
 								{ label: "Unit", value: "Unit" },
 								{ label: "Feature", value: "Feature" }
 							],
-							value: "Unit"
+							value: "Unit",
+							bind: "test.type"
 						})
 					])
 				])
 			];
 
 		case "Full Resource":
-			// Combine all child form groups into one big array:
 			return [
 				...getResourceForm("API"),
 				...getResourceForm("Controller"),
@@ -215,7 +215,6 @@ $table->foreign('message_id')->references('id')->on('messages');`, rows: 6 })
 			];
 
 		default:
-			// Fallback if unknown resourceType is passed
 			return [
 				Div("No form fields are available for this resource type.")
 			];
