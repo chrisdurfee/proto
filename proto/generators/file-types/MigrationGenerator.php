@@ -36,7 +36,7 @@ class MigrationGenerator extends AbstractFileGenerator
 	 */
 	protected function getDir(string $dir): string
 	{
-		return realpath(__DIR__ . '/../../../app') . $this->convertSlashes('/Database/Migrations');
+		return realpath(__DIR__ . '/../../../common') . $this->convertSlashes('/Migrations');
 	}
 
 	/**

@@ -91,6 +91,43 @@ class Generator
 	 * Creates the appropriate file-type generator and delegates generation.
 	 *
 	 * @param string $type The file type to generate.
+	 * @param string $namespaceDir The base directory or namespace (e.g., "Models", "Controllers").
+	 * @param object $settings The settings for file generation.
+	 * @return bool True on success, false otherwise.
+	 */
+	public function createResourceType(string $type, string $namespaceDir, object $settings): bool
+	{
+		$namespace = $settings->namespace ?? null;
+		$this->setupClassNamespace($settings, $namespaceDir, $namespace);
+		return $this->generateFileResource($type, $settings);
+	}
+
+	/**
+	 * Creates a migration.
+	 *
+	 * @param object $settings The settings for file generation.
+	 * @return bool True on success, false otherwise.
+	 */
+	public function createMigration(object $settings): bool
+	{
+		return $this->generateFileResource('migration', $settings);
+	}
+
+	/**
+	 * Creates a unit test.
+	 *
+	 * @param object $settings The settings for file generation.
+	 * @return bool True on success, false otherwise.
+	 */
+	public function createTest(object $settings): bool
+	{
+		return $this->generateFileResource('test', $settings);
+	}
+
+	/**
+	 * Creates the appropriate file-type generator and delegates generation.
+	 *
+	 * @param string $type The file type to generate.
 	 * @param object $settings The settings for file generation.
 	 * @return bool True on success, false otherwise.
 	 */

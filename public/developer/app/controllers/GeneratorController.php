@@ -105,35 +105,35 @@ class GeneratorController extends Controller
 	 * Prepares the model and checks its settings before creating the resource.
 	 *
 	 * @param object $resource Resource object containing model data.
-	 * @return object Generated resource.
+	 * @return bool
 	 */
-	public function addResource(object $resource): object
+	public function addResource(object $resource): bool
 	{
 		$this->setupModel($resource->model);
 		$this->checkModelSettings($resource);
-		return $this->service->createResource($resource);
+		return $this->generator->createResource($resource);
 	}
 
 	/**
 	 * Adds an API resource.
 	 *
 	 * @param object $resource Resource object containing API data.
-	 * @return object Generated API.
+	 * @return bool
 	 */
-	public function addApi(object $resource): object
+	public function addApi(object $resource): bool
 	{
-		return $this->service->createApi($resource->api);
+		return $this->generator->createResourceType('api', 'Api', $resource->api);
 	}
 
 	/**
 	 * Adds a controller resource.
 	 *
 	 * @param object $resource Resource object containing controller data.
-	 * @return object Generated controller.
+	 * @return bool
 	 */
-	public function addController(object $resource): object
+	public function addController(object $resource): bool
 	{
-		return $this->service->createController($resource->controller);
+		return $this->generator->createResourceType('controller', 'Controllers', $resource->controller);
 	}
 
 	/**
@@ -156,36 +156,35 @@ class GeneratorController extends Controller
 	 * Sets up the model fields and passes an optional namespace.
 	 *
 	 * @param object $resource Resource object containing model data and optional namespace.
-	 * @return object Generated model.
+	 * @return bool
 	 */
-	public function addModel(object $resource): object
+	public function addModel(object $resource): bool
 	{
-		$namespace = $resource->namespace ?? null;
 		$model = $resource->model;
 		$this->setupModel($model);
-		return $this->service->createModel($model, $namespace);
+		return $this->generator->createResourceType('model', 'Models', $model);
 	}
 
 	/**
 	 * Adds a storage resource.
 	 *
 	 * @param object $resource Resource object containing storage data.
-	 * @return object Generated storage.
+	 * @return bool
 	 */
-	public function addStorage(object $resource): object
+	public function addStorage(object $resource): bool
 	{
-		return $this->service->createStorage($resource->storage);
+		return $this->generator->createResourceType('storage', 'Storage', $resource->storage);
 	}
 
 	/**
 	 * Adds a policy resource.
 	 *
 	 * @param object $resource Resource object containing policy data.
-	 * @return object Generated policy.
+	 * @return bool
 	 */
-	public function addPolicy(object $resource): object
+	public function addPolicy(object $resource): bool
 	{
-		return $this->service->createPolicy($resource->policy);
+		return $this->generator->createResourceType('policy', 'Policies', $resource->policy);
 	}
 
 	/**
@@ -211,34 +210,34 @@ class GeneratorController extends Controller
 	 * Sets up the table callback before creation.
 	 *
 	 * @param object $resource Resource object containing table data.
-	 * @return object Generated table.
+	 * @return bool
 	 */
-	public function addTable(object $resource): object
+	public function addTable(object $resource): bool
 	{
 		$table = $resource->table;
 		$this->setupTable($table);
-		return $this->service->createTable($table);
+		return $this->generator->createTable($table);
 	}
 
 	/**
 	 * Adds a migration resource.
 	 *
 	 * @param object $resource Resource object containing migration data.
-	 * @return object Generated migration.
+	 * @return bool
 	 */
-	public function addMigration(object $resource): object
+	public function addMigration(object $resource): bool
 	{
-		return $this->service->createMigration($resource->migration);
+		return $this->generator->createMigration($resource->migration);
 	}
 
 	/**
 	 * Adds a unit test resource.
 	 *
 	 * @param object $resource Resource object containing test data.
-	 * @return object Generated test.
+	 * @return bool
 	 */
-	public function addUnitTest(object $resource): object
+	public function addUnitTest(object $resource): bool
 	{
-		return $this->service->createTest($resource->test);
+		return $this->generator->createTest($resource->test);
 	}
 }
