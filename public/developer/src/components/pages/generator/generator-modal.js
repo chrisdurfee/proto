@@ -22,7 +22,7 @@ export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
 		description: `Let's add a new ${resourceType}.`,
 		size: 'md',
 		type: 'right',
-		onSubmit: (e, parent) =>
+		onSubmit: (parent) =>
 		{
 			console.log(parent)
 			app.notify({
