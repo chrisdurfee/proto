@@ -1,7 +1,7 @@
 import { Div } from "@base-framework/atoms";
 import { BlankPage } from "@base-framework/ui/pages";
-import { GeneratorCards } from "./generator-cards.js";
-import { PageHeader } from "./page-header.js";
+import { GeneratorCards } from "./molecules/generator-cards.js";
+import { PageHeader } from "./molecules/page-header.js";
 
 /**
  * This will create the generator page.

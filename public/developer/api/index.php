@@ -17,7 +17,7 @@ $router = new Router('/developer/api/');
 /**
  * This will create a new server resource from the generator.
  */
-$router->post('gererator', function($req, $params)
+$router->post('generator', function(string $req, object $params)
 {
 	$resource = $req::json('resource');
 	$type = $req::input('type');
@@ -29,9 +29,10 @@ $router->post('gererator', function($req, $params)
 /**
  * This will setup a list filter.
  *
- * @param mixed
+ * @param string $filter
+ * @return array
  */
-function getFilter($filter): array
+function getFilter(string $filter): array
 {
 	$obj = json_decode(urldecode($filter)) ?? (object)[];
 	return (array)$obj;

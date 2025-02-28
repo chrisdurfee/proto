@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const GeneratorModel = Model.extend({
-	url: '/developer/api/gererator',
+	url: 'https://proto.local/developer/api/generator',
 
 	xhr: {
 		/**
@@ -17,7 +17,7 @@ export const GeneratorModel = Model.extend({
 		objectType: 'resource',
 
 		/**
-		 * This will add the the resouce.
+		 * This will add the resource.
 		 *
 		 * @param {object} instanceParams - The instance parameters.
 		 * @param {function} callBack - The callback function.
@@ -31,4 +31,4 @@ export const GeneratorModel = Model.extend({
 			return this._post('', params, instanceParams, callBack);
 		}
 	}
-})
+});

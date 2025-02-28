@@ -1,7 +1,7 @@
 import { Div } from "@base-framework/atoms";
 import { Icons } from "@base-framework/ui/icons";
-import { GeneratorModal } from "./generator-modal.js";
-import { ResourceCard } from "./resource-card.js";
+import { ResourceCard } from "../atoms/resource-card.js";
+import { GeneratorModal } from "../modals/generator-modal.js";
 
 /**
  * GeneratorCards
