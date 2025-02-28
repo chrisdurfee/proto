@@ -2,6 +2,7 @@ import { Div } from "@base-framework/atoms";
 import { Checkbox, Fieldset, Input, Select, Textarea } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField, Modal } from "@base-framework/ui/molecules";
+import { GeneratorModel } from "./gernerator-modal";
 
 /**
  * GeneratorModal
@@ -15,17 +16,22 @@ import { FormField, Modal } from "@base-framework/ui/molecules";
 export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
 (
 	new Modal({
+		data: new GeneratorModel(),
 		title: `Add ${resourceType}`,
 		icon: Icons.document.add,
 		description: `Let's add a new ${resourceType}.`,
 		size: 'md',
 		type: 'right',
-		onSubmit: () => app.notify({
-			type: "success",
-			title: `${resourceType} Added`,
-			description: `The ${resourceType} has been added.`,
-			icon: Icons.check
-		})
+		onSubmit: (e, parent) =>
+		{
+			console.log(parent)
+			app.notify({
+				type: "success",
+				title: `${resourceType} Added`,
+				description: `The ${resourceType} has been added.`,
+				icon: Icons.check
+			});
+		}
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
 			Div({ class: "flex flex-auto flex-col w-full gap-4" }, getResourceForm(resourceType))
@@ -208,10 +214,7 @@ $table->foreign('message_id')->references('id')->on('messages');`, rows: 6, bind
 				...getResourceForm("API"),
 				...getResourceForm("Controller"),
 				...getResourceForm("Storage"),
-				...getResourceForm("Policy"),
-				...getResourceForm("Table"),
-				...getResourceForm("Migration"),
-				...getResourceForm("Unit Test")
+				...getResourceForm("Policy")
 			];
 
 		default:
