@@ -151,7 +151,22 @@ function getResourceForm(type)
 						Input({ type: "text", placeholder: "e.g. table_name", required: true })
 					]),
 					new FormField({ name: "callback", label: "Call Back", description: "The table creation or modification logic." }, [
-						Textarea({ placeholder: "e.g.\n$table->id();\n$table->createdAt();\n...", rows: 6 })
+						Textarea({ placeholder: `e.g. // fields
+$table->id();
+$table->createdAt();
+$table->updatedAt();
+$table->int('message_id', 20);
+$table->varchar('subject', 160);
+$table->text('message')->null();
+$table->dateTime('read_at');
+$table->dateTime('forwarded_at');
+
+// indices
+$table->index('email_read')->fields('id', 'read_at');
+$table->index('created')->fields('created_at');
+
+// foreign keys
+$table->foreign('message_id')->references('id')->on('messages');`, rows: 6 })
 					])
 				])
 			];
