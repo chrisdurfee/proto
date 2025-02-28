@@ -1,5 +1,4 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 namespace Proto\Database\Migrations;
 
 use Proto\Utils\Strings;
@@ -17,9 +16,44 @@ use Proto\Database\Adapters\Adapter;
 class Guide
 {
 	/**
-	 * @var string $migrationDir Path to migration files.
+	 * @var array $migrationDirs Array of paths to migration directories.
 	 */
-	protected string $migrationDir = __DIR__ . '/../../../app/database/migrations';
+	protected array $migrationDirs = [];
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct()
+	{
+		$this->setMigrationDirs();
+	}
+
+	/**
+	 * This will set the migration directories.
+	 *
+	 * @return void
+	 */
+	protected function setMigrationDirs(): void
+	{
+		$this->migrationDirs = [
+			__DIR__ . '/../../../common/migrations',
+			__DIR__ . '/../../../proto/migrations'
+		];
+
+		$modulesDir = __DIR__ . '/../../../modules';
+		if (is_dir($modulesDir))
+		{
+			$modules = array_diff(scandir($modulesDir) ?: [], ['.', '..']);
+			foreach ($modules as $module)
+			{
+				$moduleMigrationDir = $modulesDir . '/' . $module . '/migrations';
+				if (is_dir($moduleMigrationDir))
+				{
+					$this->migrationDirs[] = $moduleMigrationDir;
+				}
+			}
+		}
+	}
 
 	/**
 	 * Gets a database connection.
@@ -27,7 +61,7 @@ class Guide
 	 * @param string $connection Database connection name.
 	 * @return Adapter|null Database instance or null on failure.
 	 */
-	public function getConnection(string $connection): ?Database
+	public function getConnection(string $connection) : ?Database
 	{
 		$db = new Database();
 		return $db->connect($connection);
@@ -38,7 +72,7 @@ class Guide
 	 *
 	 * @return array Previous migration records.
 	 */
-	protected function getPreviousMigrations(): array
+	protected function getPreviousMigrations() : array
 	{
 		return MigrationModel::all()->rows;
 	}
@@ -48,20 +82,37 @@ class Guide
 	 *
 	 * @return array Last migration record.
 	 */
-	protected function getLastMigration(): array
+	protected function getLastMigration() : array
 	{
 		$model = new MigrationModel();
 		return $model->getLastMigration();
 	}
 
 	/**
-	 * Retrieves all migration files from the directory.
+	 * Retrieves all migration files from the configured directories.
 	 *
-	 * @return array List of migration file names.
+	 * @return array List of migration file paths indexed by a unique key.
 	 */
-	protected function getMigrationFiles(): array
+	protected function getMigrationFiles() : array
 	{
-		return array_diff(scandir($this->migrationDir) ?: [], ['.', '..']);
+		$migrationFiles = [];
+		foreach ($this->migrationDirs as $dir)
+		{
+			if (is_dir($dir))
+			{
+				$files = array_diff(scandir($dir) ?: [], ['.', '..']);
+				foreach ($files as $file)
+				{
+					$fullPath = $dir . '/' . $file;
+					if (is_file($fullPath) && pathinfo($file, PATHINFO_EXTENSION) === 'php')
+					{
+						// Using the full path as key ensures uniqueness.
+						$migrationFiles[$fullPath] = $file;
+					}
+				}
+			}
+		}
+		return $migrationFiles;
 	}
 
 	/**
@@ -69,17 +120,17 @@ class Guide
 	 *
 	 * @return array List of new migrations.
 	 */
-	protected function getNewMigrations(): array
+	protected function getNewMigrations() : array
 	{
 		$files = $this->getMigrationFiles();
 		$prevMigrations = array_column($this->getPreviousMigrations(), 'migration');
 
 		$newMigrations = [];
-		foreach ($files as $file)
+		foreach ($files as $fullPath => $file)
 		{
 			if (!in_array($file, $prevMigrations, true))
 			{
-				$this->loadMigration($file, $newMigrations);
+				$this->loadMigration($fullPath, $newMigrations);
 			}
 		}
 
@@ -92,7 +143,7 @@ class Guide
 	 *
 	 * @return array Last executed migrations.
 	 */
-	protected function getLastMigrations(): array
+	protected function getLastMigrations() : array
 	{
 		$migrations = $this->getLastMigration();
 		$lastMigrations = [];
@@ -109,21 +160,21 @@ class Guide
 	/**
 	 * Loads a migration file.
 	 *
-	 * @param string $fileName Migration file name.
+	 * @param string $filePath Full path to the migration file.
 	 * @param array $migrations List of migration instances.
 	 * @param int|null $id Migration ID (if applicable).
 	 * @return void
 	 */
-	protected function loadMigration(string $fileName, array &$migrations, ?int $id = null): void
+	protected function loadMigration(string $filePath, array &$migrations, ?int $id = null) : void
 	{
-		$path = "{$this->migrationDir}/{$fileName}";
-		if (!file_exists($path))
+		if (!file_exists($filePath))
 		{
 			return;
 		}
 
-		include_once realpath($path);
+		include_once realpath($filePath);
 
+		$fileName = basename($filePath);
 		$parts = explode('_', $fileName);
 		$date = $this->formatDate($parts[0]);
 		$className = $this->formatClassName($parts[1]);
@@ -145,7 +196,7 @@ class Guide
 	 * @param string $date Raw date string.
 	 * @return string Formatted date.
 	 */
-	protected function formatDate(string $date): string
+	protected function formatDate(string $date) : string
 	{
 		return str_replace('.', ':', $date);
 	}
@@ -156,7 +207,7 @@ class Guide
 	 * @param string $fileName Migration file name.
 	 * @return string Formatted class name.
 	 */
-	protected function formatClassName(string $fileName): string
+	protected function formatClassName(string $fileName) : string
 	{
 		return str_replace('.php', '', Strings::pascalCase($fileName));
 	}
@@ -168,7 +219,7 @@ class Guide
 	 * @param string $query SQL query string.
 	 * @return bool Query execution success.
 	 */
-	protected function executeQuery(string $connection, string $query): bool
+	protected function executeQuery(string $connection, string $query) : bool
 	{
 		$db = $this->getConnection($connection);
 		return $db ? $db->execute($query) : false;
@@ -181,7 +232,7 @@ class Guide
 	 * @param array $queries List of SQL queries.
 	 * @return bool Batch execution success.
 	 */
-	protected function executeBatch(string $connection, array $queries): bool
+	protected function executeBatch(string $connection, array $queries) : bool
 	{
 		if (empty($queries))
 		{
@@ -204,7 +255,7 @@ class Guide
 	 *
 	 * @return bool Migration execution success.
 	 */
-	public function run(): bool
+	public function run() : bool
 	{
 		$migrations = $this->getNewMigrations();
 		if (empty($migrations))
@@ -234,7 +285,7 @@ class Guide
 	 *
 	 * @return bool Migration rollback success.
 	 */
-	public function revert(): bool
+	public function revert() : bool
 	{
 		$migrations = $this->getLastMigrations();
 		if (empty($migrations))
@@ -264,11 +315,11 @@ class Guide
 	 * @param string $groupId Group identifier.
 	 * @return bool Record insertion success.
 	 */
-	protected function recordMigration(object $migration, string $groupId): bool
+	protected function recordMigration(object $migration, string $groupId) : bool
 	{
 		$model = new MigrationModel((object) [
 			'migration' => $migration->getFileName(),
-			'group_id' => $groupId
+			'group_id'  => $groupId
 		]);
 
 		return $model->add();
@@ -280,7 +331,7 @@ class Guide
 	 * @param object $migration Migration instance.
 	 * @return bool Record deletion success.
 	 */
-	protected function removeMigrationRecord(object $migration): bool
+	protected function removeMigrationRecord(object $migration) : bool
 	{
 		$model = new MigrationModel((object) [
 			'id' => $migration->getId()
@@ -295,7 +346,7 @@ class Guide
 	 * @param object $migration Migration instance.
 	 * @return bool Migration success.
 	 */
-	public function applyMigration(object $migration): bool
+	public function applyMigration(object $migration) : bool
 	{
 		$connection = $migration->getConnection();
 		$migration->up();
@@ -308,7 +359,7 @@ class Guide
 	 * @param object $migration Migration instance.
 	 * @return bool Rollback success.
 	 */
-	public function revertMigration(object $migration): bool
+	public function revertMigration(object $migration) : bool
 	{
 		$connection = $migration->getConnection();
 		$migration->down();

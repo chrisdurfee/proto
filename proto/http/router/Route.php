@@ -60,7 +60,6 @@ class Route extends Uri
 	 */
 	public function activate(string $request): mixed
 	{
-		var_dump($this->params);
 		return call_user_func($this->callback, $request, $this->params);
 	}
 }
