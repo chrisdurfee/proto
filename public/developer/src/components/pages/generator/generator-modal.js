@@ -204,9 +204,9 @@ $table->foreign('message_id')->references('id')->on('messages');`, rows: 6, bind
 
 		case "Full Resource":
 			return [
+				...getResourceForm("Model"),
 				...getResourceForm("API"),
 				...getResourceForm("Controller"),
-				...getResourceForm("Model"),
 				...getResourceForm("Storage"),
 				...getResourceForm("Policy"),
 				...getResourceForm("Table"),
