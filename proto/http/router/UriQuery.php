@@ -37,7 +37,7 @@ abstract class UriQuery
 		// params
 		$paramCallBack = function($matches)
 		{
-			if(strpos($matches[0], '.') === false)
+			if (strpos($matches[0], '.') === false)
 			{
 				return '([^\/|?]+)';
 			}

@@ -1,0 +1,28 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@import url('animations.css');
+@import url('base.css');
+@import url('colors/color.css');
+@import url('layout.css');
+
+/* atoms */
+@import url('components/atoms/atoms.css');
+@import url('components/atoms/buttons.css');
+@import url('components/atoms/form.css');
+
+/* molecules */
+@import url('components/molecules/molecules.css');
+@import url('components/molecules/mobile-header.css');
+@import url('components/molecules/app-navigation.css');
+@import url('components/molecules/modal.css');
+
+/* organisms */
+@import url('components/organisms/navigation.css');
+@import url('components/organisms/drawer-navigation.css');
+@import url('components/organisms/list.css');
+
+/* pages */
+@import url('components/pages/basic-page.css');
+@import url('components/organisms/overlay.css');

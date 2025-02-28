@@ -1,0 +1,138 @@
+.app-nav-container .navigation:not(.sub) {
+	top: 80px;
+}
+
+.app-nav-container .navigation.sub:hover {
+	transition-duration: .4s !important;
+}
+
+.navigation li.option {
+	height: 44px;
+	font-size: 18px;
+	@apply transition-colors;
+}
+
+.navigation li.option a,
+.navigation li.option>div {
+	height: 44px;
+	text-transform: none;
+}
+
+.navigation .rotate {
+	transform: rotate(180deg);
+	transform-origin: 50% 50%;
+}
+
+.app-nav-container .navigation.sub .option>a.selected:before {
+	content: '';
+	position: absolute;
+	width: 6px;
+	height: 6px;
+	top: calc(50% - 3px);
+	left: 21px;
+	@apply bg-primary;
+	border-radius: 50%;
+	z-index: 0;
+}
+
+.app-nav-container .navigation.sub .option .label {
+	margin: 0 0 0 61px;
+}
+
+.navigation li.option:hover,
+.navigation li.option:active,
+.mobile-link .active i {
+	@apply bg-accent;
+}
+
+.navigation li.option:hover,
+.navigation li.option:hover a {
+	color: inherit;
+	box-shadow: none;
+}
+
+.navigation li .icon.selected,
+.navigation li i.selected,
+.mobile-link .active i {
+	@apply text-primary;
+}
+
+.navigation li.option .label {
+	font-weight: 400;
+	letter-spacing: 0.25px;
+	margin-left: 30px;
+	opacity: 1;
+	transition: opacity .3s ease-in;
+}
+
+.navigation li.option .icon~.label {
+	margin-left: 0;
+}
+
+.mobile-popover-navigation {
+	backface-visibility: hidden;
+	transform: translateZ(0);
+}
+.navigation li.option .selected .label,
+.mobile-navigation .active span,
+.navigation li.option .active .label {
+	@apply text-primary;
+}
+
+.navigation li.option.selected,
+.navigation li.option.active {
+	color: inherit;
+	background: none;
+}
+
+.navigation li.option .selected {
+	@apply bg-accent;
+}
+
+.aside-container .drawer h4 {
+	font-size: 12px;
+	letter-spacing: 0.25px;
+	padding: 0 16px;
+	margin: 0;
+}
+
+.navigation .child-group>li.option>*:after {
+	content: unset;
+}
+
+.navigation li.option.sub~.navigation.sub:not(.active) {
+	display: none;
+}
+
+.child-group .navigation.sub {
+	margin: 4px 0 4px 16px;
+}
+
+.navigation li.option .selected .icon,
+.navigation li.option .active .icon {
+	opacity: 1;
+}
+
+/* .navigation li.option>*:after {
+	content: '';
+	position: absolute;
+	width: 4px;
+	height: 0;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	margin: auto 0;
+	background-color: var(--primary-color);
+	border-radius: 2px 0 0 2px;
+	z-index: 0;
+}
+
+.navigation li.option>*.selected:after {
+	transition: all .2s ease-in-out;
+	height: 42px;
+}
+
+.navigation:hover li.option>*.selected:after {
+	height: 42px;
+	right: 0;
+} */

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" class="m-0 p-0 max-w-full overscroll-none overflow-y-auto overflow-x-hidden">
+   <head>
+		<meta charset="utf-8">
+		<script type="text/javascript">
+			// Single Page Apps for GitHub Pages
+			(function(l) {
+				if (l.search[1] === '/' ) {
+				var decoded = l.search.slice(1).split('&').map(function(s) {
+					return s.replace(/~and~/g, '&')
+				}).join('?');
+				window.history.replaceState(null, null,
+					l.pathname.slice(0, -1) + decoded + l.hash
+				);
+				}
+			}(window.location))
+		</script>
+		<title>Developer</title>
+
+		<!-- content -->
+		<meta name="description" content="">
+		<meta name="keywords" content="">
+
+		<!-- styles -->
+		<link rel="preload" href="./css/dashr.css" as="style">
+		<link rel="stylesheet" type="text/css" href="./css/dashr.css">
+
+		<!-- icon -->
+		<link rel="shortcut icon" href="./favicon.ico">
+		<link rel="icon" href="./favicon.ico" type="image/x-icon">
+
+		<!-- pwa settings -->
+		<link rel="manifest" href="./manifest.json">
+		<meta name="theme-color" content="#09090b">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
+		<meta name="mobile-web-app-capable" content="yes">
+
+		<!-- ios pwa settings -->
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="apple-mobile-web-app-title" content="Base Example">
+		<link rel="apple-touch-icon" href="./images/icons/icon-512.png">
+		<link rel="icon" sizes="192x192" href="./images/icons/icon-192.png">
+
+		<!-- more pwa settings -->
+		<meta name="msapplication-TileImage" content="./images/icons/icon-192.png">
+		<meta name="msapplication-TileColor" content="#09090b">
+
+		<base href="./">
+	</head>
+	<body class="app-container bg-background relative flex flex-auto flex-col min-h-screen max-w-full will-change-contents z-10">
+		<!-- alert js error -->
+		<noscript>You need to enable JavaScript to run this app.</noscript>
+
+		<script type="module">
+			import { AppController } from './src/app-controller.js';
+
+			/**
+			 * This will start the app and add a global variable to
+			 * the app controller.
+			 *
+			 * @global
+			 * @type {object} app
+			 */
+			globalThis.app = new AppController();
+			globalThis.app.render();
+
+		</script>
+	</body>
+</html>

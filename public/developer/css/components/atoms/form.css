@@ -1,0 +1,3 @@
+input, select, textarea {
+	@apply border-input bg-input rounded-sm p-2;
+}

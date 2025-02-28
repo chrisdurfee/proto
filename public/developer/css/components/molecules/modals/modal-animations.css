@@ -1,0 +1,59 @@
+@keyframes shadowIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: .2;
+    }
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(.95);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes pullRightIn {
+    0% {
+        transform: translate3d(10%, 0, 0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate3d(0%, 0, 0);
+        opacity: 1;
+    }
+}
+
+.pullRightIn {
+    animation: pullRightIn .3s ease-out;
+    animation-fill-mode: forwards;
+
+    backface-visibility: hidden;
+    will-change: transform, opacity;
+}
+
+@keyframes pullLeftIn {
+    0% {
+        transform: translate3d(-10%, 0, 0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate3d(0%, 0, 0);
+        opacity: 1;
+    }
+}
+
+.pullLeftIn {
+    animation: pullLeftIn .3s ease-out;
+    animation-fill-mode: forwards;
+
+    backface-visibility: hidden;
+    will-change: transform, opacity;
+}
