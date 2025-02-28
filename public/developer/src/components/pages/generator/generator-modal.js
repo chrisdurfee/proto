@@ -5,6 +5,22 @@ import { FormField, Modal } from "@base-framework/ui/molecules";
 import { GeneratorModel } from "./gernerator-modal";
 
 /**
+ * Formats the specified resource type by replacing spaces with hyphens and converting to lowercase.
+ *
+ * @param {string} type
+ * @returns {string}
+ */
+const formatType = (type) =>
+{
+	if (!type)
+	{
+		return '';
+	}
+
+	return type.replace(' ', '-').toLowerCase();
+};
+
+/**
  * GeneratorModal
  *
  * A single modal that displays different fields depending on the resource type.
@@ -16,20 +32,35 @@ import { GeneratorModel } from "./gernerator-modal";
 export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
 (
 	new Modal({
-		data: new GeneratorModel(),
+		data: new GeneratorModel({
+			type: formatType(resourceType),
+		}),
 		title: `Add ${resourceType}`,
 		icon: Icons.document.add,
 		description: `Let's add a new ${resourceType}.`,
 		size: 'md',
 		type: 'right',
-		onSubmit: (parent) =>
+		onSubmit: ({ data }) =>
 		{
-			console.log(parent)
-			app.notify({
-				type: "success",
-				title: `${resourceType} Added`,
-				description: `The ${resourceType} has been added.`,
-				icon: Icons.check
+			data.xhr.add('', (response) =>
+			{
+				if (!response || response.success === false)
+				{
+					app.notify({
+						type: "destructive",
+						title: "Error",
+						description: "An error occurred while adding the resource.",
+						icon: Icons.shield
+					});
+					return;
+				}
+
+				app.notify({
+					type: "success",
+					title: `${resourceType} Added`,
+					description: `The ${resourceType} has been added.`,
+					icon: Icons.check
+				});
 			});
 		}
 	}, [
