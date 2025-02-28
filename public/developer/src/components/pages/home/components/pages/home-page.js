@@ -11,7 +11,7 @@ import { BlankPage } from "@base-framework/ui/pages";
 const MainButtonContainer = Atom(() => (
     Div({ class: 'mt-10 flex items-center justify-start gap-x-4 px-6 pb-6' }, [
 		A({
-			href: '/department',
+			href: '/generator',
 			class: 'bttn primary'
 		}, 'Get started')
 	])
@@ -55,8 +55,8 @@ const MainSection = Atom((props, children) => (
 			class: 'flex flex-auto flex-col w-full max-w-[1400px] m-auto sm:pt-8'
 		}, [
 			PageHeader({
-				title: 'Build faster together',
-				description: 'Welcome to our Team. We are excited to have you here. This application can be used as a resource to learn and share about our team.'
+				title: 'Developer Utils',
+				description: 'A collection of developer tools to help you build better applications.'
 			}),
 			MainButtonContainer(),
 			...children

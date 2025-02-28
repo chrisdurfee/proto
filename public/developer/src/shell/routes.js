@@ -28,5 +28,5 @@ export const Routes = () => [
 	/**
 	 * Department routes
 	 */
-	DynamicRoute('/department/:page?*', () => import('../components/pages/department/components/pages/department-page.js'), 'Department'),
+	DynamicRoute('/generator*', () => import('../components/pages/generator/generator-page.js'), 'Generator'),
 ];
