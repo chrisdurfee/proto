@@ -93,7 +93,7 @@ EOT;
 		$property = $this->getProtectedProperty('$alias', $this->quote($this->get('alias')), true);
 
 		return <<<EOT
-		/**
+	/**
 	 * @var string \$alias
 	 */
 	{$property}
@@ -119,7 +119,7 @@ EOT;
 		$property = $this->getProtectedProperty('$fields', $columns, true);
 
 		return <<<EOT
-		/**
+	/**
 	 * @var array \$fields
 	 */
 	{$property}
@@ -140,8 +140,7 @@ EOT;
 		}
 
 		return <<<EOT
-
-		/**
+	/**
 	 * Sets up the model joins.
 	 *
 	 * @param object \$builder
@@ -186,6 +185,6 @@ EOT;
 			$this->getStorage()
 		]);
 
-		return implode("\n\n\t", $sections);
+		return implode("\n\t", $sections);
 	}
 }

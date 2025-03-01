@@ -87,7 +87,8 @@ class GeneratorController extends Controller
 	protected function checkModelSettings(object $resource): void
 	{
 		$model = $resource->model;
-		if ($model->policy === 'false')
+		$policy = $model->policy ?? null;
+		if ($policy === 'false')
 		{
 			unset($resource->policy);
 		}
