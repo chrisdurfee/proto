@@ -37,6 +37,6 @@ class ControllerGenerator extends AbstractFileGenerator
 	protected function getDir(string $dir): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		return realpath(__DIR__ . '/../../../app') . $this->convertSlashes('/Controllers/' . strtolower(Strings::hyphen($dir)));
+		return realpath(__DIR__ . '/../../../common') . $this->convertSlashes('/Controllers/' . strtolower(Strings::hyphen($dir)));
 	}
 }

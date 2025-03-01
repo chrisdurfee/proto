@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Generators\Templates;
 
+use Proto\Utils\Strings;
+
 /**
  * ClassTemplate
  *
@@ -141,7 +143,8 @@ abstract class ClassTemplate extends Template
 	 */
 	protected function getClassName(): string
 	{
-		return $this->get('className');
+		$className = $this->get('className');
+		return Strings::pascalCase($className);
 	}
 
 	/**
@@ -185,12 +188,13 @@ abstract class ClassTemplate extends Template
 <?php
 {$useStrict}{$namespace}
 {$use}
+
 /**
  * {$className}
  *
  * @package {$this->getDir()}
  */
-{$final}{$abstract}class {$className}{$extends}
+{$final}{$abstract}class {$className} {$extends}
 {
 	{$this->getClassContent()}
 }

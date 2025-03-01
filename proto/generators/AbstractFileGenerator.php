@@ -41,7 +41,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	 */
 	protected function getFileName(string $str): string
 	{
-		return Strings::hyphen($str) . '.php';
+		return Strings::pascalCase($str) . '.php';
 	}
 
 	/**
