@@ -41,6 +41,16 @@ class MigrationTemplate extends ClassTemplate
 	}
 
 	/**
+	 * This will get the package string.
+	 *
+	 * @return string
+	 */
+	protected function getPackage(): string
+	{
+		return " ";
+	}
+
+	/**
 	 * Retrieves the class content.
 	 *
 	 * @return string

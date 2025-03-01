@@ -170,6 +170,17 @@ abstract class ClassTemplate extends Template
 	}
 
 	/**
+	 * This will get the package string.
+	 *
+	 * @return string
+	 */
+	protected function getPackage(): string
+	{
+		return "
+ * @package {$this->getDir()}";
+	}
+
+	/**
 	 * Generates the class body.
 	 *
 	 * @return string
@@ -179,6 +190,7 @@ abstract class ClassTemplate extends Template
 		$useStrict = $this->getUseStrict();
 		$namespace = $this->getFileNamespace();
 		$use = $this->getUse();
+		$package = $this->getPackage();
 		$final = $this->getFinal();
 		$abstract = $this->getAbstract();
 		$className = $this->getClassName();
@@ -191,8 +203,7 @@ abstract class ClassTemplate extends Template
 
 /**
  * {$className}
- *
- * @package {$this->getDir()}
+ * {$package}
  */
 {$final}{$abstract}class {$className} {$extends}
 {
