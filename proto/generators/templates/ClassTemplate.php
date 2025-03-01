@@ -185,8 +185,8 @@ abstract class ClassTemplate extends Template
 		$extends = $this->getExtends();
 
 		return <<<EOT
-<?php
-{$useStrict}{$namespace}
+<?php {$useStrict}
+{$namespace}
 {$use}
 
 /**
@@ -196,7 +196,7 @@ abstract class ClassTemplate extends Template
  */
 {$final}{$abstract}class {$className} {$extends}
 {
-	{$this->getClassContent()}
+{$this->getClassContent()}
 }
 EOT;
 	}
