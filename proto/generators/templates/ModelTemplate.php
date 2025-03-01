@@ -140,7 +140,7 @@ EOT;
 		}
 
 		return <<<EOT
-	/**
+/**
 	 * Sets up the model joins.
 	 *
 	 * @param object \$builder
