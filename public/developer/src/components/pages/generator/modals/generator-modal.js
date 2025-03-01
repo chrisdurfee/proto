@@ -90,12 +90,6 @@ function getResourceForm(type, fullResource = false)
 					]),
 					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace for the API." }, [
 						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "api.namespace" })
-					]),
-					new FormField({ name: "extends", label: "Extends", description: "Which class this API extends." }, [
-						Input({ type: "text", value: "BaseAPI", required: true, bind: "api.extends" })
-					]),
-					new FormField({ name: "policy", label: "Policy", description: "Optional policy for this API." }, [
-						Input({ type: "text", placeholder: "e.g. Policy", bind: "api.policy" })
 					])
 				])
 			];

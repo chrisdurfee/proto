@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Generators\Templates;
 
+use Proto\Utils\Strings;
+
 /**
  * ApiTemplate
  *
@@ -11,68 +13,6 @@ namespace Proto\Generators\Templates;
 class ApiTemplate extends ClassTemplate
 {
 	/**
-	 * Retrieves the extends string.
-	 *
-	 * @return string
-	 */
-	protected function getExtends(): string
-	{
-		$extends = $this->get('extends');
-		return 'extends ' . (!empty($extends) ? $extends : 'BaseAPI');
-	}
-
-	/**
-	 * Retrieves the controller type property.
-	 *
-	 * @return string
-	 */
-	protected function getControllerType(): string
-	{
-		$controller = $this->getControllerName();
-		$property = $this->getProtectedProperty('$controllerType', "{$controller}::class", true);
-
-		return <<<EOT
-	/**
-	 * @var string \$controllerType
-	 */
-	{$property}
-EOT;
-	}
-
-	/**
-	 * Retrieves the policy property.
-	 *
-	 * @return string
-	 */
-	protected function getPolicy(): string
-	{
-		$policy = $this->get('policy');
-		if (empty($policy))
-		{
-			return '';
-		}
-
-		$property = $this->getProperty('public', '$policy', "{$policy}::class");
-
-		return <<<EOT
-	/**
-	 * @var string \$policy
-	 */
-	{$property}
-EOT;
-	}
-
-	/**
-	 * Retrieves the API class name.
-	 *
-	 * @return string
-	 */
-	protected function getClassName(): string
-	{
-		return $this->get('className') . 'API';
-	}
-
-	/**
 	 * Retrieves the use statements.
 	 *
 	 * @return string
@@ -80,33 +20,11 @@ EOT;
 	protected function getUse(): string
 	{
 		$className = $this->getNamespace() . $this->getControllerName();
-		$policy = $this->getPolicyString();
 
 		$useStatements = [];
-		if (!empty($policy))
-		{
-			$useStatements[] = $policy;
-		}
-		$useStatements[] = "use App\\Controllers\\{$className};";
+		$useStatements[] = "use Common\\Controllers\\{$className};";
 
 		return implode("\n", $useStatements);
-	}
-
-	/**
-	 * Retrieves the policy use statement.
-	 *
-	 * @return string
-	 */
-	protected function getPolicyString(): string
-	{
-		$policy = $this->get('policy');
-		if (empty($policy))
-		{
-			return '';
-		}
-
-		$namespace = $this->getNamespace();
-		return "use App\\Auth\\Policies\\{$namespace}{$policy};";
 	}
 
 	/**
@@ -121,25 +39,30 @@ EOT;
 	}
 
 	/**
-	 * Retrieves the class content.
+	 * Generates the class body.
 	 *
 	 * @return string
 	 */
-	protected function getClassContent(): string
+	protected function getBody(): string
 	{
-		$controller = $this->getControllerType();
-		$policy = $this->getPolicy();
+		$namespace = $this->getFileNamespace();
+		$use = $this->getUse();
+		$className = $this->getClassName();
+		$controllerName = $this->getControllerName();
+		$path = Strings::hyphen($className);
 
-		$content = [];
-		if (!empty($controller))
-		{
-			$content[] = $controller;
-		}
-		if (!empty($policy))
-		{
-			$content[] = $policy;
-		}
+		return <<<EOT
+<?php declare(strict_types=1);
+{$namespace}
+{$use}
 
-		return implode("\n\n", $content);
+/**
+ * {$className} Routes
+ *
+ * This file contains the API routes for the {$className} module.
+ */
+router()
+    ->resource('{$path}', {$controllerName}::class);
+EOT;
 	}
 }
