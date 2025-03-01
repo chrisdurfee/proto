@@ -39,7 +39,7 @@ class ModelTemplate extends ClassTemplate
 
 		return <<<EOT
 
-	/**
+/**
 	 * @var string \$storageType
 	 */
 	{$property}
@@ -93,7 +93,7 @@ EOT;
 		$property = $this->getProtectedProperty('$alias', $this->quote($this->get('alias')), true);
 
 		return <<<EOT
-	/**
+		/**
 	 * @var string \$alias
 	 */
 	{$property}
@@ -119,7 +119,7 @@ EOT;
 		$property = $this->getProtectedProperty('$fields', $columns, true);
 
 		return <<<EOT
-	/**
+		/**
 	 * @var array \$fields
 	 */
 	{$property}
@@ -141,7 +141,7 @@ EOT;
 
 		return <<<EOT
 
-	/**
+		/**
 	 * Sets up the model joins.
 	 *
 	 * @param object \$builder
@@ -183,7 +183,6 @@ EOT;
 			$this->getAlias(),
 			$this->getFields(),
 			$this->getJoins(),
-			"/**\n\t * @var bool \$passModel\n\t */\n\tprotected bool \$passModel = true;",
 			$this->getStorage()
 		]);
 

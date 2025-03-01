@@ -113,7 +113,7 @@ function getResourceForm(type, fullResource = false)
 			return [
 				Fieldset({ legend: "Model Settings" }, [
 					new FormField({ name: "connection", label: "Connection", description: "Database connection name." }, [
-						Input({ type: "text", placeholder: "e.g. dashr", bind: "storage.connection" })
+						Input({ type: "text", placeholder: "e.g. default", bind: "storage.connection" })
 					]),
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the model." }, [
 						Input({ type: "text", placeholder: "e.g. ModelName", required: true, bind: "model.className" })
@@ -121,7 +121,7 @@ function getResourceForm(type, fullResource = false)
 					new FormField({ name: "tableName", label: "Table Name", description: "The database table name." }, [
 						Input({ type: "text", placeholder: "e.g. table_name", required: true, bind: "model.tableName" })
 					]),
-					new FormField({ name: "alias", label: "Alias", description: "An alias used in queries." }, [
+					new FormField({ name: "alias", label: "Alias", description: "An alias used in queries.", required: true }, [
 						Input({ type: "text", placeholder: "e.g. a", bind: "model.alias" })
 					]),
 					new FormField({ name: "fields", label: "Fields", description: "Define fields for the model." }, [
@@ -133,7 +133,7 @@ function getResourceForm(type, fullResource = false)
 					new FormField({ name: "extends", label: "Extends", description: "Which class this model extends." }, [
 						Input({ type: "text", value: "Model", required: true, bind: "model.extends" })
 					]),
-					new FormField({ name: "storage", label: "Storage", description: "Whether to attach a storage layer." }, [
+					fullResource === true && new FormField({ name: "storage", label: "Storage", description: "Whether to attach a storage layer." }, [
 						new Checkbox({ checked: false, bind: "model.storage" })
 					])
 				])

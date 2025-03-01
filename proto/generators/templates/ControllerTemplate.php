@@ -74,12 +74,6 @@ EOT;
 		$model = $this->getModelClass();
 
 		return <<<EOT
-	/**
-	 * Determines whether to pass response.
-	 *
-	 * @var bool
-	 */
-	protected bool \$passResponse = true;
 
 	{$model}
 EOT;
