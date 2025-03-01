@@ -121,6 +121,10 @@ class Generator
 	 */
 	public function createTest(object $settings): bool
 	{
+		$type = $settings->type ?? 'Unit';
+		$namespaceDir = ($type === 'Feature') ? 'Feature' : 'Unit';
+		$namespace = $settings->namespace ?? null;
+		$this->setupClassNamespace($settings, $namespaceDir, $namespace);
 		return $this->generateFileResource('test', $settings);
 	}
 
