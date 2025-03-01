@@ -112,6 +112,9 @@ function getResourceForm(type, fullResource = false)
 		case "Model":
 			return [
 				Fieldset({ legend: "Model Settings" }, [
+					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace." }, [
+						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "namespace" })
+					]),
 					new FormField({ name: "connection", label: "Connection", description: "Database connection name." }, [
 						Input({ type: "text", placeholder: "e.g. default", bind: "storage.connection" })
 					]),

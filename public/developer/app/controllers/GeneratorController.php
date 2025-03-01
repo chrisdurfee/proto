@@ -87,6 +87,8 @@ class GeneratorController extends Controller
 	protected function checkModelSettings(object $resource): void
 	{
 		$model = $resource->model;
+		$model->namespace = $resource->namespace ?? null;
+
 		$policy = $model->policy ?? null;
 		if ($policy === 'false')
 		{
@@ -163,6 +165,7 @@ class GeneratorController extends Controller
 	{
 		$model = $resource->model;
 		$this->setupModel($model);
+		$model->namespace = $resource->namespace ?? null;
 		return $this->generator->createResourceType('model', 'Models', $model);
 	}
 
