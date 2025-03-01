@@ -93,6 +93,7 @@ class Router
 	 */
 	protected function setupHeaders(): void
 	{
+		header('Access-Control-Allow-Origin: *');
 		header('Access-Control-Allow-Headers: *');
 		header('Access-Control-Allow-Methods: ' . implode(', ', self::METHODS));
 	}

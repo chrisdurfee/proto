@@ -17,7 +17,7 @@ $router = new Router('/developer/api/');
 /**
  * This will create a new server resource from the generator.
  */
-$router->post('generator', function(string $req, object $params)
+$router->post('generator', function(string $req, $params)
 {
 	$resource = $req::json('resource');
 	$type = $req::input('type');
