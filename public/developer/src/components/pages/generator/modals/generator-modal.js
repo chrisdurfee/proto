@@ -158,7 +158,7 @@ function getResourceForm(type, fullResource = false)
 						Input({ type: "text", value: "Storage", required: true, bind: "storage.extends" })
 					]),
 					new FormField({ name: "connection", label: "Connection", description: "The database/storage connection name." }, [
-						Input({ type: "text", placeholder: "e.g. prod", bind: "storage.connection" })
+						Input({ type: "text", placeholder: "e.g. default", bind: "storage.connection" })
 					])
 				])
 			];

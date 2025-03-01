@@ -37,7 +37,7 @@ class StorageTemplate extends ClassTemplate
 		$property = $this->getProtectedProperty('$connection', $this->quote($connection), true);
 
 		return <<<EOT
-	/**
+/**
 	 * @var string \$connection
 	 */
 	{$property}
