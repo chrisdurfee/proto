@@ -74,12 +74,24 @@ abstract class Template
 	}
 
 	/**
+	 * This will remove empty space from the template.
+	 *
+	 * @param string $string
+	 * @return string
+	 */
+	private function removeEmptySpace(string $string): string
+	{
+		return preg_replace('/(\r?\n\s*){3,}/', "\n\n", $string);
+	}
+
+	/**
 	 * Converts the template to a string.
 	 *
 	 * @return string The rendered output.
 	 */
 	public function __toString(): string
 	{
-		return $this->render();
+		$file = $this->render();
+		return $this->removeEmptySpace($file);
 	}
 }
