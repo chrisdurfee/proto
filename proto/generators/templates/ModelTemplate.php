@@ -93,7 +93,7 @@ EOT;
 		$property = $this->getProtectedProperty('$alias', $this->quote($this->get('alias')), true);
 
 		return <<<EOT
-	/**
+/**
 	 * @var string \$alias
 	 */
 	{$property}
@@ -119,7 +119,7 @@ EOT;
 		$property = $this->getProtectedProperty('$fields', $columns, true);
 
 		return <<<EOT
-	/**
+/**
 	 * @var array \$fields
 	 */
 	{$property}
