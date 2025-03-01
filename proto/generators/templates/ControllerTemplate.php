@@ -61,7 +61,7 @@ EOT;
 	protected function getUse(): string
 	{
 		$className = $this->getNamespace() . $this->get('className');
-		return "use App\\Models\\{$className};";
+		return "use Common\\Models\\{$className};";
 	}
 
 	/**
