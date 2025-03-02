@@ -2,7 +2,6 @@
 namespace Developer\App\Controllers;
 
 use Proto\Generators\Generator;
-use Proto\Utils\Strings;
 
 /**
  * Controller for handling generator resources.
@@ -193,6 +192,18 @@ class GeneratorController extends Controller
 	}
 
 	/**
+	 * This will replace new lines with a new line return.
+	 *
+	 * @param string $content
+	 * @return string
+	 */
+	private function replaceNewLines(string $content): string
+	{
+		return str_replace("\n", "
+		", $content);
+	}
+
+	/**
 	 * Sets up a table callback for execution.
 	 *
 	 * Wraps the provided callback code in an anonymous function that evaluates the builder code.
@@ -202,7 +213,7 @@ class GeneratorController extends Controller
 	 */
 	protected function setupTable(object &$settings): void
 	{
-		$builder = Strings::replaceNewLines($settings->callBack);
+		$builder = $this->replaceNewLines($settings->callBack);
 		$settings->callBack = function($table) use ($builder)
 		{
 			eval($builder);

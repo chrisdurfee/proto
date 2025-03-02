@@ -123,18 +123,6 @@ class Strings
 	}
 
 	/**
-	 * Replaces new lines in a string with a specified replacement.
-	 *
-	 * @param string $str
-	 * @param string $replace
-	 * @return string
-	 */
-	public static function replaceNewLines(string $str, string $replace = '\n'): string
-	{
-		return str_replace(["\r\n", "\n", "\r"], $replace, $str);
-	}
-
-	/**
 	 * Removes the dollar symbol from an amount string.
 	 *
 	 * @param string $amount

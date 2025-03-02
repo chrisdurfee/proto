@@ -241,7 +241,7 @@ $table->index('email_read')->fields('id', 'read_at');
 $table->index('created')->fields('created_at');
 
 // foreign keys
-$table->foreign('message_id')->references('id')->on('messages');`, rows: 6, bind: "table.callBack" })
+$table->foreign('message_id')->references('id')->on('messages');`, required: true, rows: 6, bind: "table.callBack" })
 					])
 				])
 			];
