@@ -220,7 +220,7 @@ function getResourceForm(type, fullResource = false)
 			return [
 				Fieldset({ legend: "Table Settings" }, [
 					new FormField({ name: "connection", label: "Connection", description: "The database connection name." }, [
-						Input({ type: "text", placeholder: "e.g. dashr", bind: "table.connection" })
+						Input({ type: "text", placeholder: "e.g. default", bind: "table.connection" })
 					]),
 					new FormField({ name: "tableName", label: "Table Name", description: "The table name." }, [
 						Input({ type: "text", placeholder: "e.g. table_name", required: true, bind: "table.tableName" })
