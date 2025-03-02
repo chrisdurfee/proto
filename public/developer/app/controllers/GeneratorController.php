@@ -2,6 +2,7 @@
 namespace Developer\App\Controllers;
 
 use Proto\Generators\Generator;
+use Proto\Utils\Strings;
 
 /**
  * Controller for handling generator resources.
@@ -201,17 +202,10 @@ class GeneratorController extends Controller
 	 */
 	protected function setupTable(object &$settings): void
 	{
-		$builder = $settings->callBack;
+		$builder = Strings::replaceNewLines($settings->callBack);
 		$settings->callBack = function($table) use ($builder)
 		{
-			$table->id();
-$table->createdAt();
-$table->updatedAt();
-$table->int('message_id', 20);
-$table->varchar('subject', 160);
-$table->text('message')->nullable();
-$table->dateTime('read_at');
-$table->dateTime('forwarded_at');
+			eval($builder);
 		};
 	}
 
