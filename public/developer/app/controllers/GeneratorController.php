@@ -202,7 +202,7 @@ class GeneratorController extends Controller
 	protected function setupTable(object &$table): void
 	{
 		$builder = $table->callBack;
-		$table->callBack = function ($table) use ($builder)
+		$table->callBack = function($table) use ($builder)
 		{
 			eval($builder);
 		};
@@ -220,7 +220,7 @@ class GeneratorController extends Controller
 	{
 		$table = $resource->table;
 		$this->setupTable($table);
-		return $this->generator->createTable($table);
+		return $this->generator->createTable(settings: $table);
 	}
 
 	/**

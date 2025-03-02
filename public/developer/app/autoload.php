@@ -21,7 +21,7 @@ spl_autoload_register(function(string $class): void
 	// Convert folder names (all segments except the last) to lowercase with dashed notation
 	for ($i = 0; $i < $segmentsCount - 1; $i++)
 	{
-		$segments[$i] = strtolower(preg_replace('/(?<!^)[A-Z]/', '-$0', $segments[$i]));
+		$segments[$i] = strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $segments[$i]));
 	}
 
 	// Reconstruct the file path and append the ".php" extension

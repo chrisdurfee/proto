@@ -18,7 +18,7 @@ spl_autoload_register(function(string $class): void
 	// Loop through and convert each folder name (except the last, which is the file)
 	for ($i = 0; $i < $segmentsCount - 1; $i++)
 	{
-		$segments[$i] = strtolower(preg_replace('/(?<!^)[A-Z]/', '-$0', $segments[$i]));
+		$segments[$i] = strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $segments[$i]));
 	}
 
 	// Reconstruct the correct path
