@@ -83,7 +83,7 @@ class CreateField extends Template
 	 * @param mixed $value Optional length or specification.
 	 * @return self
 	 */
-	public function setFieldType(string $type, $value = null):self
+	public function setFieldType(string $type, $value = null): self
 	{
 		$type = strtoupper($type);
 		$this->fieldType = isset($value)?"{$type}({$value})":$type;
@@ -96,7 +96,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function int(int $length):self
+	public function int(int $length): self
 	{
 		$this->setFieldType('INT',$length);
 		return $this;
@@ -107,7 +107,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function bit():self
+	public function bit(): self
 	{
 		$this->setFieldType('BIT',1);
 		return $this;
@@ -119,7 +119,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function smallInteger(int $length):self
+	public function smallInteger(int $length): self
 	{
 		$this->setFieldType('SMALLINT',$length);
 		return $this;
@@ -131,7 +131,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function mediumInteger(int $length):self
+	public function mediumInteger(int $length): self
 	{
 		$this->setFieldType('MEDIUMINT',$length);
 		return $this;
@@ -143,7 +143,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function bigInteger(int $length):self
+	public function bigInteger(int $length): self
 	{
 		$this->setFieldType('BIGINT',$length);
 		return $this;
@@ -155,7 +155,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function decimal(int $length):self
+	public function decimal(int $length): self
 	{
 		$this->setFieldType('DECIMAL',$length);
 		return $this;
@@ -167,7 +167,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function floatType(int $length):self
+	public function floatType(int $length): self
 	{
 		$this->setFieldType('FLOAT',$length);
 		return $this;
@@ -179,7 +179,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function doubleType(int $length):self
+	public function doubleType(int $length): self
 	{
 		$this->setFieldType('DOUBLE',$length);
 		return $this;
@@ -191,7 +191,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function char(int $length):self
+	public function char(int $length): self
 	{
 		$this->setFieldType('CHAR',$length);
 		return $this;
@@ -203,7 +203,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function varchar(int $length):self
+	public function varchar(int $length): self
 	{
 		$this->setFieldType('VARCHAR',$length);
 		return $this;
@@ -215,7 +215,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function binary(int $length):self
+	public function binary(int $length): self
 	{
 		$this->setFieldType('BINARY',$length);
 		return $this;
@@ -226,7 +226,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function tinyBlob():self
+	public function tinyBlob(): self
 	{
 		$this->setFieldType('TINYBLOB');
 		return $this;
@@ -238,7 +238,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function blob(int $length):self
+	public function blob(int $length): self
 	{
 		$this->setFieldType('BLOB',$length);
 		return $this;
@@ -250,7 +250,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function mediumBlob(int $length):self
+	public function mediumBlob(int $length): self
 	{
 		$this->setFieldType('MEDIUMBLOB',$length);
 		return $this;
@@ -262,7 +262,7 @@ class CreateField extends Template
 	 * @param int $length
 	 * @return self
 	 */
-	public function longBlob(int $length):self
+	public function longBlob(int $length): self
 	{
 		$this->setFieldType('LONGBLOB',$length);
 		return $this;
@@ -273,7 +273,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function tinyText():self
+	public function tinyText(): self
 	{
 		$this->setFieldType('TINYTEXT');
 		return $this;
@@ -284,7 +284,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function text():self
+	public function text(): self
 	{
 		$this->setFieldType('TEXT');
 		return $this;
@@ -295,7 +295,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function mediumText():self
+	public function mediumText(): self
 	{
 		$this->setFieldType('MEDIUMTEXT');
 		return $this;
@@ -306,7 +306,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function longText():self
+	public function longText(): self
 	{
 		$this->setFieldType('LONGTEXT');
 		return $this;
@@ -317,7 +317,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function json():self
+	public function json(): self
 	{
 		$this->setFieldType('JSON');
 		return $this;
@@ -328,7 +328,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function point():self
+	public function point(): self
 	{
 		$this->setFieldType('POINT');
 		return $this;
@@ -340,7 +340,7 @@ class CreateField extends Template
 	 * @param string ...$values
 	 * @return self
 	 */
-	public function enum(string ...$values):self
+	public function enum(string ...$values): self
 	{
 		$sql = "'".implode("','",$values)."'";
 		$this->setFieldType('ENUM',$sql);
@@ -352,7 +352,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function date():self
+	public function date(): self
 	{
 		$this->setFieldType('DATE');
 		return $this;
@@ -363,7 +363,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function datetime():self
+	public function datetime(): self
 	{
 		$this->setFieldType('DATETIME');
 		return $this;
@@ -374,7 +374,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function timestamp():self
+	public function timestamp(): self
 	{
 		$this->setFieldType('TIMESTAMP');
 		return $this;
@@ -386,7 +386,7 @@ class CreateField extends Template
 	 * @param mixed $value
 	 * @return self
 	 */
-	public function setDefault($value):self
+	public function setDefault($value): self
 	{
 		$this->defaultValue = "DEFAULT {$value}";
 		return $this;
@@ -397,7 +397,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function utcTimestamp():self
+	public function utcTimestamp(): self
 	{
 		$this->setDefault("UTC_TIMESTAMP");
 		return $this;
@@ -408,7 +408,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function currentTimestamp():self
+	public function currentTimestamp(): self
 	{
 		$this->setDefault("CURRENT_TIMESTAMP");
 		return $this;
@@ -420,7 +420,7 @@ class CreateField extends Template
 	 * @param string $newName New field name.
 	 * @return self
 	 */
-	public function rename(string $newName):self
+	public function rename(string $newName): self
 	{
 		$this->renameClause = "`{$this->fieldName}` `{$newName}`";
 		return $this;
@@ -432,7 +432,7 @@ class CreateField extends Template
 	 * @param string $afterField Column name after which this field should appear.
 	 * @return self
 	 */
-	public function after(string $afterField):self
+	public function after(string $afterField): self
 	{
 		$this->afterClause = "AFTER `{$afterField}`";
 		return $this;
@@ -443,7 +443,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function allowNull():self
+	public function nullable(): self
 	{
 		$this->nullConstraint = "NULL";
 		return $this;
@@ -454,7 +454,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function autoIncrement():self
+	public function autoIncrement(): self
 	{
 		$this->autoIncrementClause = "AUTO_INCREMENT";
 		return $this;
@@ -465,7 +465,7 @@ class CreateField extends Template
 	 *
 	 * @return self
 	 */
-	public function primary():self
+	public function primary(): self
 	{
 		$this->primaryKey = "PRIMARY KEY";
 		return $this;

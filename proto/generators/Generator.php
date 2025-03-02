@@ -124,6 +124,7 @@ class Generator
 		$type = $settings->type ?? 'Unit';
 		$namespaceDir = ($type === 'Feature') ? 'Feature' : 'Unit';
 		$namespace = $settings->namespace ?? null;
+
 		$this->setupClassNamespace($settings, $namespaceDir, $namespace);
 		return $this->generateFileResource('test', $settings);
 	}
@@ -155,8 +156,9 @@ class Generator
 	{
 		$query = new Create($settings->tableName, $settings->callBack);
 		$connection = $settings->connection ?? null;
+
 		$db = (new Database())->connect($connection);
-		return $db->execute($query);
+		return $db->execute((string)$query);
 	}
 
 	/**

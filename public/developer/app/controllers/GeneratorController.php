@@ -1,4 +1,4 @@
-<?php declare(strict_types=1);
+<?php
 namespace Developer\App\Controllers;
 
 use Proto\Generators\Generator;
@@ -196,15 +196,22 @@ class GeneratorController extends Controller
 	 *
 	 * Wraps the provided callback code in an anonymous function that evaluates the builder code.
 	 *
-	 * @param object $table Table object to setup (passed by reference).
+	 * @param object $settings Table object to setup (passed by reference).
 	 * @return void
 	 */
-	protected function setupTable(object &$table): void
+	protected function setupTable(object &$settings): void
 	{
-		$builder = $table->callBack;
-		$table->callBack = function($table) use ($builder)
+		$builder = $settings->callBack;
+		$settings->callBack = function($table) use ($builder)
 		{
-			eval($builder);
+			$table->id();
+$table->createdAt();
+$table->updatedAt();
+$table->int('message_id', 20);
+$table->varchar('subject', 160);
+$table->text('message')->nullable();
+$table->dateTime('read_at');
+$table->dateTime('forwarded_at');
 		};
 	}
 

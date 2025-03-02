@@ -232,7 +232,7 @@ $table->createdAt();
 $table->updatedAt();
 $table->int('message_id', 20);
 $table->varchar('subject', 160);
-$table->text('message')->null();
+$table->text('message')->nullable();
 $table->dateTime('read_at');
 $table->dateTime('forwarded_at');
 

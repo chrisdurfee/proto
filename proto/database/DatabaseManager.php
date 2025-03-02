@@ -15,14 +15,14 @@ class DatabaseManager
 	/**
 	 * Retrieves database connection settings.
 	 *
-     * @param array $connections
+     * @param object $connections
 	 * @param string|null $connection
      * @param string|null $env
 	 * @return object
 	 * @throws \Exception
 	 */
 	public static function getDBSettings(
-        array $connections,
+        object $connections,
         ?string $connection = 'default',
         ?string $env = 'dev'): object
 	{
@@ -38,12 +38,12 @@ class DatabaseManager
 	/**
 	 * Retrieves the correct connection settings for the given environment.
 	 *
-     * @param array $connections
+     * @param object $connections
 	 * @param string $connection
      * @param string $env
 	 * @return object|null
 	 */
-	private static function getConnectionSettings(array $connections, string $connection, string $env): ?object
+	private static function getConnectionSettings(object $connections, string $connection, string $env): ?object
 	{
 		if (!isset($connections->{$connection}))
 		{
