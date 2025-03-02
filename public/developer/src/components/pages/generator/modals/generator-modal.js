@@ -1,8 +1,9 @@
-import { Div } from "@base-framework/atoms";
+import { Div, UseParent } from "@base-framework/atoms";
 import { Checkbox, Fieldset, Input, Select, Textarea } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField, Modal } from "@base-framework/ui/molecules";
 import { GeneratorModel } from "../models/generator-model.js";
+import { TableModel } from "../models/table-model.js";
 
 /**
  * Formats the specified resource type by replacing spaces with hyphens and converting to lowercase.
@@ -71,6 +72,26 @@ export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
 );
 
 /**
+ * Sets the default fields for the specified columns.
+ *
+ * @param {Array} columns - The columns to set fields from.
+ * @returns {string} - A formatted string of fields.
+ */
+const setDefaultFields = (columns) =>
+{
+	let fields = '';
+	for	(var i = 0, length = columns.length; i < length; i++)
+	{
+		fields += columns[i];
+		if (i !== length - 1)
+		{
+			fields += ":\n";
+		}
+	}
+	return fields;
+};
+
+/**
  * getResourceForm
  *
  * Returns an array of fieldsets for each resource type.
@@ -111,35 +132,55 @@ function getResourceForm(type, fullResource = false)
 
 		case "Model":
 			return [
-				Fieldset({ legend: "Model Settings" }, [
-					new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace." }, [
-						Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "namespace" })
-					]),
-					new FormField({ name: "connection", label: "Connection", description: "Database connection name." }, [
-						Input({ type: "text", placeholder: "e.g. default", bind: "storage.connection" })
-					]),
-					new FormField({ name: "className", label: "Class Name", description: "The class name for the model." }, [
-						Input({ type: "text", placeholder: "e.g. ModelName", required: true, bind: "model.className" })
-					]),
-					new FormField({ name: "tableName", label: "Table Name", description: "The database table name." }, [
-						Input({ type: "text", placeholder: "e.g. table_name", required: true, bind: "model.tableName" })
-					]),
-					new FormField({ name: "alias", label: "Alias", description: "An alias used in queries.", required: true }, [
-						Input({ type: "text", placeholder: "e.g. a", bind: "model.alias" })
-					]),
-					new FormField({ name: "fields", label: "Fields", description: "Define fields for the model." }, [
-						Textarea({ placeholder: "e.g.\nid:\ncreatedAt:\nupdatedAt:", rows: 4, required: true, bind: "model.fields" })
-					]),
-					new FormField({ name: "joins", label: "Joins", description: "Define joins for the model." }, [
-						Textarea({ placeholder: "e.g.\n$builder->left('test_table', 't')->on('id', 'client_id');", rows: 4, bind: "model.joins" })
-					]),
-					new FormField({ name: "extends", label: "Extends", description: "Which class this model extends." }, [
-						Input({ type: "text", value: "Model", required: true, bind: "model.extends" })
-					]),
-					fullResource === true && new FormField({ name: "storage", label: "Storage", description: "Whether to attach a storage layer." }, [
-						new Checkbox({ checked: false, bind: "model.storage" })
-					])
-				])
+				UseParent(({ data }) =>
+				{
+					const model = new TableModel();
+					data.link(model, 'connection', 'storage.connection');
+					data.link(model, 'tableName', 'model.tableName');
+
+					const getColumns = () =>
+					{
+						model.xhr.getColumns('', (response) =>
+						{
+							if (!response || response.length < 1)
+							{
+								return false;
+							}
+
+							data.set('model.fields', setDefaultFields(response));
+						});
+					};
+
+					return Fieldset({ legend: "Model Settings" }, [
+						new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace." }, [
+							Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "namespace" })
+						]),
+						new FormField({ name: "connection", label: "Connection", description: "Database connection name." }, [
+							Input({ type: "text", placeholder: "e.g. default", bind: "storage.connection" })
+						]),
+						new FormField({ name: "className", label: "Class Name", description: "The class name for the model." }, [
+							Input({ type: "text", placeholder: "e.g. ModelName", required: true, bind: "model.className" })
+						]),
+						new FormField({ name: "tableName", label: "Table Name", description: "The database table name." }, [
+							Input({ type: "text", placeholder: "e.g. table_name", required: true, bind: "model.tableName", blur: () => getColumns() })
+						]),
+						new FormField({ name: "alias", label: "Alias", description: "An alias used in queries.", required: true }, [
+							Input({ type: "text", placeholder: "e.g. a", bind: "model.alias" })
+						]),
+						new FormField({ name: "fields", label: "Fields", description: "Define fields for the model." }, [
+							Textarea({ placeholder: "e.g.\nid:\ncreatedAt:\nupdatedAt:", rows: 4, required: true, bind: "model.fields" })
+						]),
+						new FormField({ name: "joins", label: "Joins", description: "Define joins for the model." }, [
+							Textarea({ placeholder: "e.g.\n$builder->left('test_table', 't')->on('id', 'client_id');", rows: 4, bind: "model.joins" })
+						]),
+						new FormField({ name: "extends", label: "Extends", description: "Which class this model extends." }, [
+							Input({ type: "text", value: "Model", required: true, bind: "model.extends" })
+						]),
+						fullResource === true && new FormField({ name: "storage", label: "Storage", description: "Whether to attach a storage layer." }, [
+							new Checkbox({ checked: false, bind: "model.storage" })
+						])
+					]);
+				})
 			];
 
 		case "Storage":
