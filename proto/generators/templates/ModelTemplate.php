@@ -167,7 +167,7 @@ EOT;
 		}
 
 		$storageName = $this->getNamespace() . $this->getStorageName();
-		return "use App\\Storage\\{$storageName};";
+		return "use Common\\Storage\\{$storageName};";
 	}
 
 	/**
