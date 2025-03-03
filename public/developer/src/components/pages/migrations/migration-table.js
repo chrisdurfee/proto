@@ -21,7 +21,7 @@ const MigrationHeaderRow = () => (
 );
 
 /**
- * This will render a row in the clients table.
+ * This will render a row in the migration table.
  *
  * @param {object} row - Row data
  * @param {function} onSelect - Selection callback
@@ -70,16 +70,16 @@ export const MigrationRow = (row, onSelect) => (
 );
 
 /**
- * This will create a client table for the clients page.
+ * This will create a migration table.
  *
- * @param {object} clients - List of clients
+ * @param {object} rows
  * @returns {object}
  */
-export const MigrationTable = ({ clients }) => (
+export const MigrationTable = ({ rows }) => (
     new ScrollableDataTable({
         cache: 'list',
         customHeader: MigrationHeaderRow(),
-        rows: clients,
+        rows,
         rowItem: MigrationRow,
         key: 'id',
     })
