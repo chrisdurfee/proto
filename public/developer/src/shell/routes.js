@@ -29,4 +29,9 @@ export const Routes = () => [
 	 * Department routes
 	 */
 	DynamicRoute('/generator*', () => import('../components/pages/generator/generator-page.js'), 'Generator'),
+
+	/**
+	 * Migrations routes
+	 */
+	DynamicRoute('/migrations*', () => import('../components/pages/migrations/migration-page.js'), 'Migrations'),
 ];

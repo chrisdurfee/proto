@@ -7,5 +7,6 @@ import { Icons } from '@base-framework/ui/icons';
  */
 export const Links = () => [
 	{ label: 'Home', href: '/developer/', icon: Icons.home, mobileOrder: 1, exact: true },
-	{ label: 'Code', href: '/developer/generator', icon: Icons.document.add, mobileOrder: 2 }
+	{ label: 'Code', href: '/developer/generator', icon: Icons.document.add, mobileOrder: 2 },
+	{ label: 'Migrations', href: '/developer/migrations', icon: Icons.stack, mobileOrder: 3 }
 ];
