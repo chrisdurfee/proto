@@ -26,7 +26,7 @@ class Migration extends Model
 	/**
 	 * @var array $fields The fields in the migrations table.
 	 */
-	protected static $fields = [
+	protected static array $fields = [
 		'id',
 		'createdAt',
 		'migration',
@@ -36,6 +36,6 @@ class Migration extends Model
 	/**
 	 * @var string $storageType The storage type for migrations.
 	 */
-	protected static $storageType = MigrationStorage::class;
+	protected static string $storageType = MigrationStorage::class;
 
 }

@@ -2,7 +2,7 @@
 namespace Developer\App\Controllers;
 
 use Proto\Database\Migrations\Guide;
-use App\Models\Migration;
+use Proto\Database\Migrations\Models\Migration;
 
 /**
  * MigrationController
