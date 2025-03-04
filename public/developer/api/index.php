@@ -29,11 +29,16 @@ $router->post('generator', function(string $req, $params)
 /**
  * This will setup a list filter.
  *
- * @param string $filter
+ * @param string|null $filter
  * @return array
  */
-function getFilter(string $filter): array
+function getFilter(?string $filter): array
 {
+	if (empty($filter))
+	{
+		return [];
+	}
+
 	$obj = json_decode(urldecode($filter)) ?? (object)[];
 	return (array)$obj;
 }
@@ -41,7 +46,7 @@ function getFilter(string $filter): array
 /**
  * This will get all migrations added to the migration table.
  */
-$router->get('migration/all*', function($req, $params)
+$router->get('migration*', function($req, $params)
 {
 	$filter = getFilter($req::input('filter'));
 	$offset = $req::getInt('start');

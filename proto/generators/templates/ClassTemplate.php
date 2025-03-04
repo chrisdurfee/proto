@@ -83,11 +83,13 @@ abstract class ClassTemplate extends Template
 	 * @param string $privacy Property visibility (public, protected, private).
 	 * @param string $key Property name.
 	 * @param string $value Property value.
+	 * @param string $type Property type.
 	 * @return string
 	 */
-	protected function getProperty(string $privacy, string $key, string $value): string
+	protected function getProperty(string $privacy, string $key, string $value, string $type = ''): string
 	{
-		return "{$privacy} {$key} = {$value};\n";
+		$type = $type ? " {$type}" : '';
+		return "{$privacy}{$type} {$key} = {$value};\n";
 	}
 
 	/**
@@ -107,12 +109,13 @@ abstract class ClassTemplate extends Template
 	 * @param string $key Property name.
 	 * @param string $value Property value.
 	 * @param bool $static Whether the property is static.
+	 * @param string $type Property type.
 	 * @return string
 	 */
-	protected function getProtectedProperty(string $key, string $value, bool $static = false): string
+	protected function getProtectedProperty(string $key, string $value, bool $static = false, string $type = ''): string
 	{
 		$privacy = 'protected' . ($static ? ' static' : '');
-		return $this->getProperty($privacy, $key, $value);
+		return $this->getProperty($privacy, $key, $value, $type);
 	}
 
 	/**

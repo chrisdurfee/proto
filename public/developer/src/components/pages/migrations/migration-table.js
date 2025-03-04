@@ -36,7 +36,7 @@ export const MigrationRow = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4' }, row.id),
+		Td({ class: 'p-4' }, String(row.id)),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.migration),
 		Td({ class: 'p-4 text-right justify-end' }, row.groupId)

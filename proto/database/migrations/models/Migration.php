@@ -16,12 +16,12 @@ class Migration extends Model
 	/**
 	 * @var string $tableName The name of the database table.
 	 */
-	protected static $tableName = 'migrations';
+	protected static ?string $tableName = 'migrations';
 
 	/**
 	 * @var string $alias The alias of the database table.
 	 */
-	protected static $alias = 'm';
+	protected static ?string $alias = 'm';
 
 	/**
 	 * @var array $fields The fields in the migrations table.

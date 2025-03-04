@@ -35,7 +35,7 @@ class ModelTemplate extends ClassTemplate
 		}
 
 		$storageName = $this->getStorageClassName();
-		$property = $this->getProtectedProperty('$storageType', $storageName, true);
+		$property = $this->getProtectedProperty('$storageType', $storageName, true, 'string');
 
 		return <<<EOT
 
@@ -73,11 +73,11 @@ EOT;
 	 */
 	protected function getTable(): string
 	{
-		$property = $this->getProtectedProperty('$tableName', $this->quote($this->get('tableName')), true);
+		$property = $this->getProtectedProperty('$tableName', $this->quote($this->get('tableName')), true, '?string');
 
 		return <<<EOT
 	/**
-	 * @var string \$tableName
+	 * @var string|null \$tableName
 	 */
 	{$property}
 EOT;
@@ -90,11 +90,11 @@ EOT;
 	 */
 	protected function getAlias(): string
 	{
-		$property = $this->getProtectedProperty('$alias', $this->quote($this->get('alias')), true);
+		$property = $this->getProtectedProperty('$alias', $this->quote($this->get('alias')), true, '?string');
 
 		return <<<EOT
 /**
-	 * @var string \$alias
+	 * @var string|null \$alias
 	 */
 	{$property}
 EOT;
@@ -116,7 +116,7 @@ EOT;
 		$values = implode(",\n\t\t", array_map(fn($field) => "'{$field}'", $fields));
 		$columns = "[\n\t\t{$values}\n\t]";
 
-		$property = $this->getProtectedProperty('$fields', $columns, true);
+		$property = $this->getProtectedProperty('$fields', $columns, true, 'array');
 
 		return <<<EOT
 /**

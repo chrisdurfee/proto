@@ -15,7 +15,16 @@ export const MigrationPage = () => (
                 PageHeader(),
                 Div({ class: 'flex flex-auto flex-col space-y-4' }, [
                     Div({ class: 'flex flex-col overflow-x-auto' }, [
-                        MigrationTable({})
+                        MigrationTable({
+                            rows: [
+                                {
+                                    id: 1,
+                                    createdAt: '2023-10-01',
+                                    migration: 'Initial Migration',
+                                    groupId: 'Group 1',
+                                }
+                            ]
+                        })
                     ])
                 ])
             ])
