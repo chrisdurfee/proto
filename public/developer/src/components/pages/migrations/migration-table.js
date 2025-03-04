@@ -77,7 +77,7 @@ export const MigrationRow = (row, onSelect) => (
  * @returns {object}
  */
 export const MigrationTable = ({ rows }) => (
-    new ScrollableDataTable({
+    ScrollableDataTable({
         data: new MigrationModel(),
         cache: 'list',
         customHeader: MigrationHeaderRow(),
