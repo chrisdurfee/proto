@@ -1,6 +1,5 @@
-import { A, Div, P, Td, Thead, Tr } from "@base-framework/atoms";
+import { Td, Thead, Tr } from "@base-framework/atoms";
 import { Checkbox } from "@base-framework/ui/atoms";
-import { Avatar } from "@base-framework/ui/molecules";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
 import { MigrationModel } from "./models/migration-model";
 

@@ -21,33 +21,33 @@ class ErrorLogStorage extends Storage
 	 */
 	protected function setOrderBy(object $sql, ?array $modifiers = null): void
 	{
-        $sql->orderBy("e.created_at DESC");
+		$sql->orderBy("e.created_at DESC");
 	}
 
 	/**
-     * This will allow the where to be modified by modifiers.
-     *
-     * @param array $where
-     * @param array|null $modifiers
-     * @param array $params
-     * @param array $filter
-     * @return void
-     */
+	 * This will allow the where to be modified by modifiers.
+	 *
+	 * @param array $where
+	 * @param array|null $modifiers
+	 * @param array $params
+	 * @param array $filter
+	 * @return void
+	 */
 	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], $filter = null): void
 	{
-        $custom = $modifiers['custom'] ?? '';
-        if ($custom)
-        {
+		$custom = $modifiers['custom'] ?? '';
+		if ($custom)
+		{
 			array_push($params, $custom);
-            $where[] = "e.env = ?";
-        }
+			$where[] = "e.env = ?";
+		}
 
 		$term = $modifiers['search'] ?? '';
-        if (empty($term) === false)
-        {
-            $params[] = "%{$term}%";
-            $where[] = "e.error_message LIKE ?";
-        }
+		if (empty($term) === false)
+		{
+			$params[] = "%{$term}%";
+			$where[] = "e.error_message LIKE ?";
+		}
 	}
 
 	/**
@@ -56,14 +56,14 @@ class ErrorLogStorage extends Storage
 	 * @return bool
 	 */
 	public function updateResolved(): bool
-    {
-        $data = $this->getUpdateData();
-        $dateTime = date('Y-m-d H:i:s');
+	{
+		$data = $this->getUpdateData();
+		$dateTime = date('Y-m-d H:i:s');
 
-        return $this->db->update($this->tableName, [
-            'id' => $data->id,
-            'resolved' => $data->resolved,
-            'updated_at' => $dateTime
-        ]);
-    }
+		return $this->db->update($this->tableName, [
+			'id' => $data->id,
+			'resolved' => $data->resolved,
+			'updated_at' => $dateTime
+		]);
+	}
 }

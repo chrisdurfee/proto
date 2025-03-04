@@ -21,7 +21,7 @@ class ErrorLog extends Model
 	/**
 	 * @var string|null $alias
 	 */
-    protected static ?string $alias = 'e';
+	protected static ?string $alias = 'e';
 
 	/**
 	 * @var array $fields
@@ -32,16 +32,16 @@ class ErrorLog extends Model
 		'updatedAt',
 		'deletedAt',
 		'errorNumber',
-        'errorMessage',
-        'errorFile',
-        'errorLine',
-        'errorTrace',
-        'backTrace',
-        'env',
+		'errorMessage',
+		'errorFile',
+		'errorLine',
+		'errorTrace',
+		'backTrace',
+		'env',
 		'url',
 		'query',
 		'resolved',
-        'errorIp'
+		'errorIp'
 	];
 
 	/**
