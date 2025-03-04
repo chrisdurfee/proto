@@ -13,10 +13,10 @@ const MigrationHeaderRow = () => (
 	Thead([
 		Tr({ class: 'text-muted-foreground border-b' }, [
 			CheckboxCol({ class: 'hidden md:table-cell' }),
-			HeaderCol({ key: 'name', label: 'Name'}),
-			HeaderCol({ key: 'status', label: 'Status', class: 'hidden md:table-cell'  }),
-			HeaderCol({ key: 'role', label: 'Role', class: 'hidden md:table-cell'  }),
-			HeaderCol({ key: 'totalAmount', label: 'Total', align: 'justify-end' })
+			HeaderCol({ key: 'id', label: 'ID' }),
+			HeaderCol({ key: 'createdAt', label: 'Created At', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'migration', label: 'Migration', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'groupId', label: 'Group ID', align: 'justify-end' })
 		])
 	])
 );
@@ -37,36 +37,10 @@ export const MigrationRow = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4' }, [
-			A({
-				href: `clients/${row.id}`,
-				class: 'flex items-center gap-x-4 no-underline text-inherit hover:text-primary',
-			}, [
-				Avatar({ src: row.image, alt: row.name, fallbackText: row.name }),
-				Div({ class: 'min-w-0 flex-auto' }, [
-					P({ class: 'text-base font-semibold leading-6 m-0' }, row.name),
-					P({ class: 'truncate text-sm leading-5 text-muted-foreground m-0' }, row.email)
-				])
-			])
-		]),
-		Td({ class: 'p-4 hidden md:table-cell' }, [
-			A({
-				href: `clients/${row.id}`,
-				class: 'no-underline text-inherit hover:text-primary',
-			}, row.status)
-		]),
-		Td({ class: 'p-4 hidden md:table-cell' }, [
-			A({
-				href: `clients/${row.id}`,
-				class: 'no-underline text-inherit hover:text-primary',
-			}, row.role)
-		]),
-		Td({ class: 'p-4 text-right justify-end' }, [
-			A({
-				href: `clients/${row.id}`,
-				class: 'no-underline text-inherit hover:text-primary',
-			}, `$${row.totalAmount}`)
-		])
+		Td({ class: 'p-4' }, row.id),
+		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
+		Td({ class: 'p-4 hidden md:table-cell' }, row.migration),
+		Td({ class: 'p-4 text-right justify-end' }, row.groupId)
 	])
 );
 
