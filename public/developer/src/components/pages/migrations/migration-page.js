@@ -1,6 +1,5 @@
 import { Div } from "@base-framework/atoms";
 import { BlankPage } from "@base-framework/ui/pages";
-import { clients } from "./clients.js"; // Import fake data
 import { MigrationTable } from "./migration-table.js";
 import { PageHeader } from "./page-header.js";
 
@@ -16,7 +15,7 @@ export const MigrationPage = () => (
                 PageHeader(),
                 Div({ class: 'flex flex-auto flex-col space-y-4 lg:space-y-2' }, [
                     Div({ class: 'flex flex-col overflow-x-auto' }, [
-                        MigrationTable({ clients })
+                        MigrationTable({})
                     ])
                 ])
             ])
