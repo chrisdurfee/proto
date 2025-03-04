@@ -2,7 +2,7 @@
 namespace Proto\Database\Migrations;
 
 use Proto\Utils\Strings;
-use App\Models\Migration as MigrationModel;
+use Proto\Database\Migrations\Models\Migration as MigrationModel;
 use Proto\Database\Database;
 use Proto\Database\Adapters\Adapter;
 
