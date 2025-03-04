@@ -515,7 +515,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected function setupStorage(): object
 	{
 		$className = static::$storageType;
-		$storageInstance = new $className($this, static::$tableName);
+		$storageInstance = new $className($this);
 		$eventProxy = new StorageProxy($this, $storageInstance);
 		return $this->storage = $eventProxy;
 	}

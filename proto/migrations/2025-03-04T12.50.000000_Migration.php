@@ -26,7 +26,7 @@ class CreateMigrationsTable extends Migration
 			$table->id();
 			$table->createdAt();
 			$table->varchar('migration', 255);
-			$table->int('group_id');
+			$table->int('group_id', 30);
 
 			$table->index('groupId')->fields('group_id', 'created_at');
 			$table->index('created')->fields('created_at');

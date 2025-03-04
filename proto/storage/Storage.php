@@ -23,12 +23,6 @@ use Proto\Storage\Helpers\SubQueryHelper;
 class Storage implements StorageInterface
 {
 	/**
-	 * Model instance.
-	 * @var ModelInterface
-	 */
-	protected ModelInterface $model;
-
-	/**
 	 * Table name.
 	 * @var string
 	 */
@@ -65,23 +59,18 @@ class Storage implements StorageInterface
 	protected static string $compiledSelect;
 
 	/**
-	 * Database adapter class.
-	 * @var string
-	 */
-	protected string $database;
-
-	/**
 	 * Storage constructor.
 	 *
 	 * @param ModelInterface $model The model instance.
 	 * @param string $database The database adapter class.
 	 */
-	public function __construct(ModelInterface $model, string $database = Database::class)
+	public function __construct(
+		protected ModelInterface $model,
+		protected string $database = Database::class
+	)
 	{
-		$this->model = $model;
 		$this->tableName = $model->getTableName();
 		$this->alias = $model->getAlias();
-		$this->database = $database;
 		$this->setConnection();
 	}
 

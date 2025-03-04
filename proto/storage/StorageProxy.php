@@ -16,22 +16,17 @@ use Proto\Models\ModelInterface;
 class StorageProxy extends EventProxy
 {
 	/**
-	 * The model associated with the storage proxy.
-	 *
-	 * @var ModelInterface
-	 */
-	protected ModelInterface $model;
-
-	/**
 	 * Sets up the storage proxy.
 	 *
 	 * @param ModelInterface $model The model associated with the storage proxy.
 	 * @param StorageInterface $storage The storage object.
 	 * @return void
 	 */
-	public function __construct(ModelInterface &$model, StorageInterface &$storage)
+	public function __construct(
+		protected ModelInterface &$model,
+		StorageInterface &$storage
+	)
 	{
-		$this->model = $model;
 		$target = $this->getModelName($model);
 		parent::__construct($target, $storage);
 	}
