@@ -2,6 +2,7 @@ import { A, Div, P, Td, Thead, Tr } from "@base-framework/atoms";
 import { Checkbox } from "@base-framework/ui/atoms";
 import { Avatar } from "@base-framework/ui/molecules";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
+import { MigrationModel } from "./models/migration-model";
 
 /**
  * This will render a header row in the migration table.
@@ -77,6 +78,7 @@ export const MigrationRow = (row, onSelect) => (
  */
 export const MigrationTable = ({ rows }) => (
     new ScrollableDataTable({
+        data: new MigrationModel(),
         cache: 'list',
         customHeader: MigrationHeaderRow(),
         rows,
