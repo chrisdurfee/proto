@@ -40,7 +40,7 @@ class CreateProtoErrorLogTable extends Migration
 			$table->varchar('error_ip', 45);
 
             // Indexes for faster queries on commonly searched columns
-			$table->index('created_at_resolved')->fields('created_at', 'error_ip', 'env', 'resolved');
+			$table->index('env')->fields('created_at', 'error_ip', 'env', 'resolved');
 			$table->index('created_at')->fields('created_at');
             $table->index('error_number')->fields('error_number');
 		});
