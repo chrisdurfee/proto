@@ -720,9 +720,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function convertRows(array $rows): array
 	{
-		$rows = array_map([$this,'augment'],$rows);
+		$rows = array_map([$this, 'augment'],$rows);
 		$rows = $this->data->convertRows($rows);
-		return array_map([$this,'format'],$rows);
+		return array_map([$this, 'format'],$rows);
 	}
 
 	/**

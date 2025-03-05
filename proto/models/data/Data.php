@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Models\Data;
 
+use Proto\Utils\Strings;
+
 /**
  * Class Data
  *
@@ -16,6 +18,11 @@ class Data
 	 * @var object
 	 */
 	protected object $data;
+
+	/**
+	 * @var array $alias Field aliases.
+	 */
+	protected $alias = [];
 
 	/**
 	 * Join fields.
@@ -107,9 +114,27 @@ class Data
 
 		foreach ($fields as $field)
         {
-			$key = $this->mapper->checkAliasField($field);
+			$key = $this->checkAliasField($field);
 			$this->setDataField($key, null);
 		}
+	}
+
+	/**
+	 * Checks if a field has an alias and returns the proper field name.
+	 *
+	 * @param mixed $field Field name or field alias.
+	 * @return mixed
+	 */
+	protected function checkAliasField(mixed $field): mixed
+	{
+		if (is_array($field) === false)
+		{
+			return Strings::camelCase($field);
+		}
+
+		// Tracks the alias
+		$this->alias[$field[1]] = (is_array($field[0]) === false) ? Strings::camelCase($field[0]) : $field[0];
+		return $field[1];
 	}
 
 	/**
@@ -129,7 +154,7 @@ class Data
         {
 			if ($join->isMultiple())
             {
-				$key = $this->mapper->mapKey($join->getAs());
+				$key = Strings::camelCase($join->getAs());
 				$this->setDataField($key, []);
 				continue;
 			}
@@ -142,7 +167,7 @@ class Data
 
 			foreach ($joiningFields as $field)
             {
-				$key = $this->mapper->checkAliasField($field);
+				$key = $this->checkAliasField($field);
 				$this->joinFields[] = $key;
 				$this->setDataField($key, null);
 			}
@@ -171,7 +196,7 @@ class Data
 	{
 		foreach ($newData as $key => $val)
         {
-			$keyMapped = $this->mapper->mapKey($key);
+			$keyMapped = Strings::camelCase($key);
 			if (!property_exists($this->data, $keyMapped))
             {
 				continue;
@@ -251,7 +276,8 @@ class Data
             {
 				continue;
 			}
-			$keyMapped         = $this->mapper->getMappedField($key);
+
+			$keyMapped = $this->mapper->getMappedField($key);
 			$out[$this->prepareKeyName($keyMapped)] = $val;
 		}
 		return (object)$out;
