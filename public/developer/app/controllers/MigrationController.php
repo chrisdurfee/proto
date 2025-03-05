@@ -56,9 +56,9 @@ class MigrationController extends Controller
 	/**
 	 * Runs pending migrations.
 	 *
-	 * @return mixed Result of running migrations.
+	 * @return bool Result of running migrations.
 	 */
-	public function run()
+	public function run(): bool
 	{
 		return $this->service->run();
 	}
@@ -66,9 +66,9 @@ class MigrationController extends Controller
 	/**
 	 * Reverts the last executed migrations.
 	 *
-	 * @return mixed Result of reverting migrations.
+	 * @return bool Result of reverting migrations.
 	 */
-	public function revert()
+	public function revert(): bool
 	{
 		return $this->service->revert();
 	}

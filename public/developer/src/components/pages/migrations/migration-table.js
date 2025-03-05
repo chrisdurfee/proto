@@ -46,15 +46,14 @@ export const MigrationRow = (row, onSelect) => (
 /**
  * This will create a migration table.
  *
- * @param {object} rows
  * @returns {object}
  */
-export const MigrationTable = ({ rows }) => (
+export const MigrationTable = () => (
 	ScrollableDataTable({
 		data: new MigrationModel(),
 		cache: 'list',
 		customHeader: MigrationHeaderRow(),
-		rows,
+		rows: [],
 		rowItem: MigrationRow,
 		key: 'id',
 	})

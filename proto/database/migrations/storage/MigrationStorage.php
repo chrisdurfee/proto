@@ -22,14 +22,14 @@ class MigrationStorage extends Storage
 		return $this->select()
 			->join(function($join)
 			{
-				$join->right(['
+				$join->right(["
 					SELECT
 						group_id
 					FROM
 						{$this->tableName}
 					ORDER BY created_at DESC
 					LIMIT 1
-				'], 't')->on('m.group_id = t.group_id');
+				"], 't')->on('m.group_id = t.group_id');
 			})
 			->fetch();
 	}
