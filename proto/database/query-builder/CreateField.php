@@ -114,6 +114,28 @@ class CreateField extends Template
 	}
 
 	/**
+	 * Sets the field type to TINYINT with specified length.
+	 *
+	 * @return self
+	 */
+	public function boolean(): self
+	{
+		return $this->tinyInteger();
+	}
+
+	/**
+	 * Sets the field type to TINYINT with specified length.
+	 *
+	 * @param int [$length = 1]
+	 * @return self
+	 */
+	public function tinyInteger(int $length = 1): self
+	{
+		$this->setFieldType('TINYINT', $length);
+		return $this;
+	}
+
+	/**
 	 * Sets the field type to SMALLINT with specified length.
 	 *
 	 * @param int $length

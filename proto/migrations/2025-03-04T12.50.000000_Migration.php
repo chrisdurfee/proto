@@ -1,18 +1,18 @@
 <?php declare(strict_types=1);
 
-use Proto\Database\Migrations\Migration;
+use Proto\Database\Migrations\Migration as BaseMigration;
 
 /**
  * Migration for the migrations table.
  *
  * @package Proto\Database\Migrations
  */
-class CreateMigrationsTable extends Migration
+class Migration extends BaseMigration
 {
 	/**
 	 * @var string $connection The database connection name.
 	 */
-	protected $connection = 'default';
+	protected string $connection = 'default';
 
 	/**
 	 * Run the migration.

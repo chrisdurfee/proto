@@ -7,12 +7,12 @@ use Proto\Database\Migrations\Migration;
  *
  * @package Proto\Database\Migrations
  */
-class CreateProtoErrorLogTable extends Migration
+class ErrorLog extends Migration
 {
 	/**
 	 * @var string $connection The database connection name.
 	 */
-	protected $connection = 'default';
+	protected string $connection = 'default';
 
 	/**
 	 * Run the migration.
@@ -27,16 +27,16 @@ class CreateProtoErrorLogTable extends Migration
 			$table->createdAt();
 			$table->updatedAt();
 			$table->deletedAt()->nullable();
-			$table->int('error_number');
+			$table->int('error_number', 20);
 			$table->text('error_message');
 			$table->varchar('error_file', 255);
-			$table->int('error_line');
+			$table->int('error_line', 20);
 			$table->text('error_trace')->nullable();
 			$table->text('back_trace')->nullable();
 			$table->varchar('env', 100);
 			$table->varchar('url', 255)->nullable();
 			$table->text('query')->nullable();
-			$table->boolean('resolved')->default(false);
+			$table->boolean('resolved')->setDefault(0);
 			$table->varchar('error_ip', 45);
 
             // Indexes for faster queries on commonly searched columns

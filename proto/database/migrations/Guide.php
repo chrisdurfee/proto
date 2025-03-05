@@ -61,7 +61,7 @@ class Guide
 	 * @param string $connection Database connection name.
 	 * @return Adapter|null Database instance or null on failure.
 	 */
-	public function getConnection(string $connection) : ?Database
+	public function getConnection(string $connection) : ?Adapter
 	{
 		$db = new Database();
 		return $db->connect($connection);
@@ -216,13 +216,13 @@ class Guide
 	 * Executes a query on a specific connection.
 	 *
 	 * @param string $connection Database connection name.
-	 * @param string $query SQL query string.
+	 * @param string|object $query SQL query string.
 	 * @return bool Query execution success.
 	 */
-	protected function executeQuery(string $connection, string $query) : bool
+	protected function executeQuery(string $connection, string|object $query) : bool
 	{
 		$db = $this->getConnection($connection);
-		return $db ? $db->execute($query) : false;
+		return $db ? $db->execute((string)$query) : false;
 	}
 
 	/**

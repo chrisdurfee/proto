@@ -12,7 +12,7 @@ class TestMigration extends Migration
 	/**
 	 * @var string $connection The database connection name.
 	 */
-	protected $connection = 'default';
+	protected string $connection = 'default';
 
 	/**
 	 * Run the migration.
