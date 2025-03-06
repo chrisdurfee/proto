@@ -27,9 +27,10 @@ const HeaderRow = () => (
  * This will resolve the error.
  *
  * @param {object} props
+ * @param {object} list
  * @returns {void}
  */
-const resolveError = (props) =>
+const resolveError = (props, { list }) =>
 {
 	const data = new ErrorModel({
 		id: props.id,
@@ -38,7 +39,7 @@ const resolveError = (props) =>
 
 	data.xhr.updateResolved('', (response) =>
 	{
-		props.callBack();
+		list.refresh();
 	});
 };
 
@@ -46,9 +47,10 @@ const resolveError = (props) =>
  * This will unresolve the error.
  *
  * @param {object} props
+ * @param {object} list
  * @returns {void}
  */
-const unresolveError = (props) =>
+const unresolveError = (props, { list }) =>
 {
 	const data = new ErrorModel({
 		id: props.id,
@@ -57,7 +59,7 @@ const unresolveError = (props) =>
 
 	data.xhr.updateResolved('', (response) =>
 	{
-		props.callBack();
+		list.refresh();
 	});
 };
 
@@ -67,19 +69,16 @@ const unresolveError = (props) =>
  * @param {object} props
  * @returns {object}
  */
-const ResolveButton = (props) =>
-{
-	const text = 'Resolve';
-
-	return Button({
+const ResolveButton = (props) => (
+	Button({
 		variant: 'outline',
-		text,
-		click(e)
+		text: 'Resolve',
+		click(e, parent)
 		{
-			resolveError(props);
+			resolveError(props, parent);
 		}
-	});
-};
+	})
+);
 
 /**
  * This will create a button to mark as unresolved.
@@ -87,19 +86,16 @@ const ResolveButton = (props) =>
  * @param {object} props
  * @returns {object}
  */
-const UnresolveButton = (props) =>
-{
-	let text = 'Unresolve';
-
-	return Button({
+const UnresolveButton = (props) => (
+	Button({
 		variant: 'outline',
-		text,
-		click(e)
+		text: 'Unresolve',
+		click(e, parent)
 		{
-			unresolveError(props);
+			unresolveError(props, parent);
 		}
-	});
-};
+	})
+);
 
 /**
  * This will render a row in the table.
