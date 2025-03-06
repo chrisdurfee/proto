@@ -34,4 +34,9 @@ export const Routes = () => [
 	 * Migrations routes
 	 */
 	DynamicRoute('/migrations*', () => import('../components/pages/migrations/migration-page.js'), 'Migrations'),
+
+	/**
+	 * Errors routes
+	 */
+	DynamicRoute('/errors*', () => import('../components/pages/errors/error-page.js'), 'Errors'),
 ];
