@@ -12,8 +12,8 @@ const MigrationHeaderRow = () => (
 	Thead([
 		Tr({ class: 'text-muted-foreground border-b' }, [
 			CheckboxCol({ class: 'hidden md:table-cell' }),
-			HeaderCol({ key: 'id', label: 'ID' }),
-			HeaderCol({ key: 'migration', label: 'Migration', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'id', label: 'ID', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'migration', label: 'Migration', class: 'max-w-[150px] md:max-w-none' }),
 			HeaderCol({ key: 'createdAt', label: 'Created At', class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'groupId', label: 'Group ID', align: 'justify-end' })
 		])
@@ -36,8 +36,8 @@ export const MigrationRow = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4' }, String(row.id)),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.migration),
+		Td({ class: 'p-4 hidden md:table-cell' }, String(row.id)),
+		Td({ class: 'p-4 truncate max-w-[150px] md:max-w-none' }, row.migration),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
 		Td({ class: 'p-4 text-right justify-end' }, String(row.groupId))
 	])
