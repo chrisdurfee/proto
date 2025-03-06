@@ -110,7 +110,7 @@ const UnresolveButton = (props) => (
  */
 export const Row = (row, onSelect) => (
 	Tr({
-		class: 'items-center px-4 py-2 hover:bg-muted/50',
+		class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer',
 		click: () => ErrorModal({
 			error: row
 		}).open()
