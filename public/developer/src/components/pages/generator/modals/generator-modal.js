@@ -129,6 +129,14 @@ function getResourceForm(type, fullResource = false)
 					])
 				])
 			];
+		case "Module":
+			return [
+				Fieldset({ legend: "Module Settings" }, [
+					fullResource === false && new FormField({ name: "moduleName", label: "Module Name", description: "The name for the module." }, [
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "controller.className" })
+					])
+				])
+			];
 
 		case "Model":
 			return [

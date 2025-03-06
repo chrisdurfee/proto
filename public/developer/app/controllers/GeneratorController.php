@@ -70,9 +70,37 @@ class GeneratorController extends Controller
 			case 'unit-test':
 				$result = $this->addUnitTest($resource);
 				break;
+			case 'gateway':
+				$result = $this->addGateway($resource);
+				break;
+			case 'module':
+				$result = $this->addModule($resource);
+				break;
 		}
 
 		return $this->response($result);
+	}
+
+	/**
+	 * Adds a gateway resource.
+	 *
+	 * @param object $resource Resource object containing gateway data.
+	 * @return bool
+	 */
+	public function addGateway(object $resource): bool
+	{
+		return $this->generator->createResourceType('gateway', 'Gateways', $resource->gateway);
+	}
+
+	/**
+	 * Adds a module resource.
+	 *
+	 * @param object $resource Resource object containing module data.
+	 * @return bool
+	 */
+	public function addModule(object $resource): bool
+	{
+		return $this->generator->createResourceType('module', 'Modules', $resource->module);
 	}
 
 	/**

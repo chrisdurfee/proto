@@ -82,6 +82,10 @@ class Generator
 				return new \Proto\Generators\FileTypes\PolicyGenerator();
 			case 'storage':
 				return new \Proto\Generators\FileTypes\StorageGenerator();
+			case 'gateway':
+				return new \Proto\Generators\FileTypes\GatewayGenerator();
+			case 'module':
+				return new \Proto\Generators\FileTypes\ModuleGenerator();
 			default:
 				return null;
 		}

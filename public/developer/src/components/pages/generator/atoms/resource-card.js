@@ -14,7 +14,7 @@ import { Card, Icon } from "@base-framework/ui/atoms";
  */
 export const ResourceCard = ({ title, click, icon }) =>
 (
-	Card({ class: 'flex flex-auto flex-col p-4 min-w-[280px] hover:bg-muted/50 transition-colors cursor-pointer', margin: 'm-0', click }, [
+	Card({ class: 'flex flex-auto flex-col p-4 min-w-[100px] md:min-w-[280px] hover:bg-muted/50 transition-colors cursor-pointer', margin: 'm-0', click }, [
 		Div({ class: 'flex flex-col justify-center items-center my-4' }, [
 			Icon({ size: 'md' }, icon),
 			H2({ class: 'text-base text-muted-foreground mt-4' }, title)

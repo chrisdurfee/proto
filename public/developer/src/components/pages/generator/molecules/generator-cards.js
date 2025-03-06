@@ -12,68 +12,82 @@ import { GeneratorModal } from "../modals/generator-modal.js";
  */
 export const GeneratorCards = () =>
 (
-	Div({ class: 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' }, [
+	Div({ class: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4' }, [
 		ResourceCard({
 			title: 'Full Resource',
 			click: () => GeneratorModal({
-                resourceType: 'Full Resource'
-            }),
+				resourceType: 'Full Resource'
+			}),
+			icon: Icons.document.duplicate
+		}),
+		ResourceCard({
+			title: 'Module',
+			click: () => GeneratorModal({
+				resourceType: 'Module'
+			}),
+			icon: Icons.document.duplicate
+		}),
+		ResourceCard({
+			title: 'Gateway',
+			click: () => GeneratorModal({
+				resourceType: 'Gateway'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'API',
 			click: () => GeneratorModal({
-                resourceType: 'API'
-            }),
+				resourceType: 'API'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'Controller',
 			click: () => GeneratorModal({
-                resourceType: 'Controller'
-            }),
+				resourceType: 'Controller'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'Model',
 			click: () => GeneratorModal({
-                resourceType: 'Model'
-            }),
+				resourceType: 'Model'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'Storage',
 			click: () => GeneratorModal({
-                resourceType: 'Storage'
-            }),
+				resourceType: 'Storage'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'Policy',
 			click: () => GeneratorModal({
-                resourceType: 'Policy'
-            }),
+				resourceType: 'Policy'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'Table',
 			click: () => GeneratorModal({
-                resourceType: 'Table'
-            }),
+				resourceType: 'Table'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'Migration',
 			click: () => GeneratorModal({
-                resourceType: 'Migration'
-            }),
+				resourceType: 'Migration'
+			}),
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
 			title: 'Unit Test',
 			click: () => GeneratorModal({
-                resourceType: 'Unit Test'
-            }),
+				resourceType: 'Unit Test'
+			}),
 			icon: Icons.document.duplicate
 		})
 	])
