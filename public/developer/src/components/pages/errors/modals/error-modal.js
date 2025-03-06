@@ -74,7 +74,7 @@ export const ErrorModal = (props) => new Modal(
 		{
 			...error,
             //shorten the error message for title
-            title: error.errorMessage.length > 50 ? error.errorMessage.substring(0, 50) + '...' : error.errorMessage,
+            title: error.errorMessage.length > 20 ? error.errorMessage.substring(0, 20) + '...' : error.errorMessage,
 			// Format the createdAt date, replacing space with 'T' and formatting if valid.
 			formattedDate: error.createdAt
 				? (error.createdAt.replace(' ', 'T') !== '0000-00-00T00:00:00'
@@ -103,8 +103,10 @@ export const ErrorModal = (props) => new Modal(
 	DetailBody(
 	[
 		DetailSection({ title: 'Error Details' }, [
-			SplitRow('File', '[[errorFile]]'),
 			SplitRow('Line Number', '[[errorLine]]'),
+		]),
+        DetailSection({ title: 'File' }, [
+			FormatedCode('[[errorFile]]')
 		]),
         DetailSection({ title: 'Message' }, [
 			FormatedCode('[[errorMessage]]')
