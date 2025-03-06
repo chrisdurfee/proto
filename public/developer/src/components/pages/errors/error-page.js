@@ -11,7 +11,9 @@ import { PageHeader } from "./page-header.js";
  */
 export const ErrorPage = () =>
 {
-    const data = new ErrorModel();
+    const data = new ErrorModel({
+        filter: 'all'
+    });
 
     /**
      * @type {object}

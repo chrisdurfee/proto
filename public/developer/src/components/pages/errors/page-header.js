@@ -2,7 +2,6 @@ import { Div, H1, Header } from "@base-framework/atoms";
 import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { Combobox } from "@base-framework/ui/molecules";
-import { ErrorModel } from "./models/error-model.js";
 
 /**
  * This will refresh the list.
@@ -13,14 +12,7 @@ import { ErrorModel } from "./models/error-model.js";
  */
 const refresh = (e, { list }) =>
 {
-	const data = new ErrorModel();
-	data.xhr.update('', (response) =>
-	{
-		if (response)
-		{
-			list.refresh();
-		}
-	});
+	list.refresh();
 };
 
 /**
@@ -48,21 +40,21 @@ export const PageHeader = () => (
 						const val = item.value;
 						if (val === 'all')
 						{
-							data.custom = '';
-							list.reset();
+							data.filter = '';
+							list.refresh();
 							return;
 						}
 
 						const lowerVal = val.toLowerCase();
-						data.custom = lowerVal;
-						list.reset();
+						data.filter = lowerVal;
+						list.refresh();
 					},
 					items: [
+						{ value: 'all', label: 'All' },
 						{ value: 'dev', label: 'Dev'},
 						{ value: 'testing', label: 'Testing' },
 						{ value: 'staging', label: 'Staging' },
 						{ value: 'prod', label: 'Prod' },
-						{ value: 'all', label: 'All' }
 					]
 				})
 			])
