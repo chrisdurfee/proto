@@ -1,5 +1,6 @@
 import { Td, Thead, Tr } from "@base-framework/atoms";
 import { Button, Checkbox } from "@base-framework/ui/atoms";
+import { Icons } from "@base-framework/ui/icons";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
 import { ErrorModel } from "./models/error-model.js";
 
@@ -12,9 +13,9 @@ const HeaderRow = () => (
 	Thead([
 		Tr({ class: 'text-muted-foreground border-b' }, [
 			CheckboxCol({ class: 'hidden md:table-cell' }),
-			HeaderCol({ key: 'errorFile', label: 'File', class: 'max-w-[150px] md:max-w-none' }),
+			HeaderCol({ key: 'errorFile', label: 'File', class: 'max-w-[150px]' }),
 			HeaderCol({ key: 'errorLine', label: 'Line Number' }),
-			HeaderCol({ key: 'errorMessage', label: 'Message', class: 'max-w-[150px] md:max-w-none' }),
+			HeaderCol({ key: 'errorMessage', label: 'Message', class: 'max-w-[150px]' }),
 			HeaderCol({ key: 'createdAt', label: 'Date', class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'env', label: 'Env' }),
 			HeaderCol({ key: 'errorIp', label: 'IP' }),
@@ -71,13 +72,14 @@ const unresolveError = (props, { list }) =>
  */
 const ResolveButton = (props) => (
 	Button({
-		variant: 'outline',
-		text: 'Resolve',
+		variant: 'withIcon',
+		class: 'outline',
+		icon: Icons.circleCheck,
 		click(e, parent)
 		{
 			resolveError(props, parent);
 		}
-	})
+	}, 'Resolve')
 );
 
 /**
@@ -88,13 +90,14 @@ const ResolveButton = (props) => (
  */
 const UnresolveButton = (props) => (
 	Button({
-		variant: 'outline',
-		text: 'Unresolve',
+		variant: 'withIcon',
+		class: 'outline',
+		icon: Icons.circleX,
 		click(e, parent)
 		{
 			unresolveError(props, parent);
 		}
-	})
+	}, 'Unresolve')
 );
 
 /**
@@ -113,9 +116,9 @@ export const Row = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4 truncate max-w-[150px] md:max-w-none' }, row.errorFile),
-		Td({ class: 'p-4' }, row.errorLine),
-		Td({ class: 'p-4 truncate max-w-[150px] md:max-w-none' }, row.errorMessage),
+		Td({ class: 'p-4 truncate max-w-[150px]' }, row.errorFile),
+		Td({ class: 'p-4' }, String(row.errorLine)),
+		Td({ class: 'p-4 truncate max-w-[150px]' }, row.errorMessage),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
 		Td({ class: 'p-4' }, row.env),
 		Td({ class: 'p-4' }, row.errorIp),
@@ -128,11 +131,12 @@ export const Row = (row, onSelect) => (
 /**
  * This will create a table.
  *
+ * @param {object} data
  * @returns {object}
  */
-export const ErrorTable = () => (
+export const ErrorTable = (data) => (
 	ScrollableDataTable({
-		data: new ErrorModel(),
+		data,
 		cache: 'list',
 		customHeader: HeaderRow(),
 		rows: [],

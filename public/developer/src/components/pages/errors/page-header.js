@@ -43,14 +43,27 @@ export const PageHeader = () => (
 					width: 'w-full', // this is the default value
 					maxWidth: 'max-w-[250px]', // this is the default value
 					class: '',
-					onSelect: (item) => console.log(item),
+					onSelect: (item, { data, list }) =>
+					{
+						const val = item.value;
+						if (val === 'all')
+						{
+							data.custom = '';
+							list.reset();
+							return;
+						}
+
+						const lowerVal = val.toLowerCase();
+						data.custom = lowerVal;
+						list.reset();
+					},
 					items: [
 						{ value: 'dev', label: 'Dev'},
 						{ value: 'testing', label: 'Testing' },
 						{ value: 'staging', label: 'Staging' },
 						{ value: 'prod', label: 'Prod' },
 						{ value: 'all', label: 'All' }
-					],
+					]
 				})
 			])
 		])
