@@ -192,6 +192,7 @@ export const ErrorTable = (data) => (
 		cache: 'list',
 		customHeader: HeaderRow(),
 		rows: [],
+		limit: 50,
 		rowItem: Row,
 		key: 'id',
 	})
