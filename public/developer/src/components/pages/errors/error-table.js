@@ -1,4 +1,5 @@
-import { Td, Thead, Tr } from "@base-framework/atoms";
+import { OnState, Td, Thead, Tr } from "@base-framework/atoms";
+import { Component, Jot } from "@base-framework/base";
 import { Button, Checkbox } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
@@ -41,7 +42,6 @@ const resolveError = (props, parent) =>
 
 	data.xhr.updateResolved('', (response) =>
 	{
-		parent.refresh();
 	});
 };
 
@@ -61,7 +61,6 @@ const unresolveError = (props, parent) =>
 
 	data.xhr.updateResolved('', (response) =>
 	{
-		parent.refresh();
 	});
 };
 
@@ -82,6 +81,7 @@ const ResolveButton = (props) => (
 			e.stopPropagation();
 
 			resolveError(props, parent);
+			parent.state.resolved = 1;
 		}
 	}, 'Resolve')
 );
@@ -103,9 +103,46 @@ const UnresolveButton = (props) => (
 			e.stopPropagation();
 
 			unresolveError(props, parent);
+			parent.state.resolved = 0;
 		}
 	}, 'Unresolve')
 );
+
+/**
+ * This will render the button.
+ *
+ * @type {typeof Component}
+ */
+const ResultButtons = Jot(
+{
+	/**
+	 * @type {object}
+	 */
+	// @ts-ignore
+	state()
+	{
+		return {
+			// @ts-ignore
+			resolved: this.resolved
+		};
+	},
+
+	/**
+	 * This will render the button.
+	 *
+	 * @returns {object}
+	 */
+	// @ts-ignore
+	render()
+	{
+		const props = {
+			// @ts-ignore
+			id: this.id,
+		};
+
+		return OnState('resolved', (resolved) => (resolved === 1 ? UnresolveButton(props) : ResolveButton(props)));
+	}
+});
 
 /**
  * This will render a row in the table.
@@ -135,7 +172,10 @@ export const Row = (row, onSelect) => (
 		Td({ class: 'p-4' }, row.env),
 		Td({ class: 'p-4' }, row.errorIp),
 		Td({ class: 'p-4' }, [
-			row.resolved === 1 ? UnresolveButton(row) : ResolveButton(row)
+			new ResultButtons({
+				id: row.id,
+				resolved: row.resolved
+			})
 		])
 	])
 );
