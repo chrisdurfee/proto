@@ -89,7 +89,8 @@ class GeneratorController extends Controller
 	 */
 	public function addGateway(object $resource): bool
 	{
-		return $this->generator->createResourceType('gateway', 'Gateways', $resource->gateway);
+		$gateway = $resource->gateway ?? (object)[];
+		return $this->generator->createResourceType('gateway', 'Gateways', $gateway);
 	}
 
 	/**

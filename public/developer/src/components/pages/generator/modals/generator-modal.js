@@ -139,7 +139,11 @@ function getResourceForm(type, fullResource = false)
 			];
 		case "Gateway":
 			return [
-
+				Fieldset({ legend: "Gateway Settings" }, [
+					fullResource === false && new FormField({ name: "Module Name", label: "Module Name", description: "The name for the module." }, [
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "gateway.moduleName" })
+					])
+				])
 			];
 
 		case "Model":
