@@ -1,5 +1,5 @@
 import { Td, Thead, Tr } from "@base-framework/atoms";
-import { Checkbox } from "@base-framework/ui/atoms";
+import { Button, Checkbox } from "@base-framework/ui/atoms";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
 import { ErrorModel } from "./models/error-model.js";
 
@@ -12,13 +12,94 @@ const HeaderRow = () => (
 	Thead([
 		Tr({ class: 'text-muted-foreground border-b' }, [
 			CheckboxCol({ class: 'hidden md:table-cell' }),
-			HeaderCol({ key: 'id', label: 'ID', class: 'hidden md:table-cell' }),
-			HeaderCol({ key: 'error', label: 'Error', class: 'max-w-[150px] md:max-w-none' }),
-			HeaderCol({ key: 'timestamp', label: 'Timestamp', class: 'hidden md:table-cell' }),
-			HeaderCol({ key: 'groupId', label: 'Group ID', align: 'justify-end' })
+			HeaderCol({ key: 'errorFile', label: 'File', class: 'max-w-[150px] md:max-w-none' }),
+			HeaderCol({ key: 'errorLine', label: 'Line Number' }),
+			HeaderCol({ key: 'errorMessage', label: 'Message', class: 'max-w-[150px] md:max-w-none' }),
+			HeaderCol({ key: 'createdAt', label: 'Date', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'env', label: 'Env' }),
+			HeaderCol({ key: 'errorIp', label: 'IP' }),
+			HeaderCol({ key: 'resolved', label: 'Resolved' })
 		])
 	])
 );
+
+/**
+ * This will resolve the error.
+ *
+ * @param {object} props
+ * @returns {void}
+ */
+const resolveError = (props) =>
+{
+	const data = new ErrorModel({
+		id: props.id,
+		resolved: 1
+	});
+
+	data.xhr.updateResolved('', (response) =>
+	{
+		props.callBack();
+	});
+};
+
+/**
+ * This will unresolve the error.
+ *
+ * @param {object} props
+ * @returns {void}
+ */
+const unresolveError = (props) =>
+{
+	const data = new ErrorModel({
+		id: props.id,
+		resolved: 0
+	});
+
+	data.xhr.updateResolved('', (response) =>
+	{
+		props.callBack();
+	});
+};
+
+/**
+ * This will create a button to resolve the error.
+ *
+ * @param {object} props
+ * @returns {object}
+ */
+const ResolveButton = (props) =>
+{
+	const text = 'Resolve';
+
+	return Button({
+		variant: 'outline',
+		text,
+		click(e)
+		{
+			resolveError(props);
+		}
+	});
+};
+
+/**
+ * This will create a button to mark as unresolved.
+ *
+ * @param {object} props
+ * @returns {object}
+ */
+const UnresolveButton = (props) =>
+{
+	let text = 'Unresolve';
+
+	return Button({
+		variant: 'outline',
+		text,
+		click(e)
+		{
+			unresolveError(props);
+		}
+	});
+};
 
 /**
  * This will render a row in the table.
@@ -36,10 +117,15 @@ export const Row = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4 hidden md:table-cell' }, String(row.id)),
-		Td({ class: 'p-4 truncate max-w-[150px] md:max-w-none' }, row.migration),
+		Td({ class: 'p-4 truncate max-w-[150px] md:max-w-none' }, row.errorFile),
+		Td({ class: 'p-4' }, row.errorLine),
+		Td({ class: 'p-4 truncate max-w-[150px] md:max-w-none' }, row.errorMessage),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
-		Td({ class: 'p-4 text-right justify-end' }, String(row.groupId))
+		Td({ class: 'p-4' }, row.env),
+		Td({ class: 'p-4' }, row.errorIp),
+		Td({ class: 'p-4' }, [
+			row.resolved === 1 ? UnresolveButton(row) : ResolveButton(row)
+		])
 	])
 );
 
