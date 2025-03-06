@@ -2,6 +2,7 @@ import { Td, Thead, Tr } from "@base-framework/atoms";
 import { Button, Checkbox } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
+import { ErrorModal } from "./modals/error-modal.js";
 import { ErrorModel } from "./models/error-model.js";
 
 /**
@@ -108,7 +109,12 @@ const UnresolveButton = (props) => (
  * @returns {object}
  */
 export const Row = (row, onSelect) => (
-	Tr({ class: 'items-center px-4 py-2 hover:bg-muted/50' }, [
+	Tr({
+		class: 'items-center px-4 py-2 hover:bg-muted/50',
+		click: () => ErrorModal({
+			error: row
+		}).open()
+	}, [
 		Td({ class: 'p-4 hidden md:table-cell' }, [
 			new Checkbox({
 				checked: row.selected,
