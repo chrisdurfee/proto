@@ -150,11 +150,31 @@ class Guide
 
 		foreach ($migrations as $migration)
 		{
-			$this->loadMigration($migration->migration, $lastMigrations, (int) $migration->id);
+			$fullPath = $this->getFileDirByFileName($migration->migration) . '/' . $migration->migration;
+			$this->loadMigration($fullPath, $lastMigrations, (int) $migration->id);
 		}
 
 		ksort($lastMigrations);
 		return $lastMigrations;
+	}
+
+	/**
+	 * Retrieves the directory of a migration file by its name.
+	 *
+	 * @param string $fileName Migration file name.
+	 * @return string Directory path.
+	 */
+	protected function getFileDirByFileName(string $fileName): string
+	{
+		foreach ($this->migrationDirs as $dir)
+		{
+			$fullPath = $dir . '/' . $fileName;
+			if (file_exists($fullPath))
+			{
+				return $dir;
+			}
+		}
+		return '';
 	}
 
 	/**
