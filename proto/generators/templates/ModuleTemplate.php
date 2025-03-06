@@ -2,6 +2,7 @@
 namespace Proto\Generators\Templates;
 
 use Proto\Generators\Templates\ClassTemplate;
+use Proto\Utils\Strings;
 
 /**
  * ModuleTemplate
@@ -22,6 +23,16 @@ class ModuleTemplate extends ClassTemplate
 		return 'extends Module';
 	}
 
+    /**
+     * Retrieves the module name.
+     *
+     * @return string
+     */
+    protected function getModuleName(): string
+    {
+        return Strings::pascalCase($this->get('name') ?? '');
+    }
+
 	/**
 	 * Retrieves the module class name.
 	 *
@@ -29,7 +40,19 @@ class ModuleTemplate extends ClassTemplate
 	 */
 	protected function getClassName(): string
 	{
-		return $this->get('className') . 'Module';
+        $moduleName = $this->getModuleName();
+		return $moduleName . 'Module';
+	}
+
+    /**
+	 * Retrieves the directory path for the class.
+	 *
+	 * @return string
+	 */
+	protected function getDir(): string
+	{
+        $moduleName = $this->getModuleName();
+		return $this->get('dir') . "\\" . $moduleName;
 	}
 
 	/**
