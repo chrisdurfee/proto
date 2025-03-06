@@ -35,6 +35,7 @@ export const PageHeader = () => (
 					width: 'w-full', // this is the default value
 					maxWidth: 'max-w-[250px]', // this is the default value
 					class: '',
+					selectFirst: true,
 					onSelect: (item, { data, list }) =>
 					{
 						const val = item.value;
