@@ -11,43 +11,43 @@ import { PageHeader } from "./page-header.js";
  */
 export const ErrorPage = () =>
 {
-    const data = new ErrorModel({
-        filter: 'all'
-    });
+	const data = new ErrorModel({
+		filter: 'all'
+	});
 
-    /**
-     * @type {object}
-     */
-    const Props =
-    {
-        data,
+	/**
+	 * @type {object}
+	 */
+	const Props =
+	{
+		data,
 
-        /**
-         * This will update the error table when the url is
-         * updated.
-         *
-         * @returns {void}
-         */
-        update()
-        {
-            if (this.list)
-            {
-                this.list.refresh();
-            }
-        }
-    };
-    return new BlankPage(Props, [
-        Div({ class: 'grid grid-cols-1' }, [
-            Div({ class: 'flex flex-auto flex-col p-6 pt-0 space-y-6 md:space-y-12 md:pt-6 lg:p-8 w-full mx-auto' }, [
-                PageHeader(),
-                Div({ class: 'flex flex-auto flex-col space-y-2 md:space-y-4' }, [
-                    Div({ class: 'flex flex-col overflow-x-auto' }, [
-                        ErrorTable(data)
-                    ])
-                ])
-            ])
-        ])
-    ]);
+		/**
+		 * This will update the error table when the url is
+		 * updated.
+		 *
+		 * @returns {void}
+		 */
+		update()
+		{
+			if (this.list)
+			{
+				this.list.refresh();
+			}
+		}
+	};
+	return new BlankPage(Props, [
+		Div({ class: 'grid grid-cols-1' }, [
+			Div({ class: 'flex flex-auto flex-col p-6 pt-0 space-y-6 md:space-y-12 md:pt-6 lg:p-8 w-full mx-auto' }, [
+				PageHeader(),
+				Div({ class: 'flex flex-auto flex-col space-y-2 md:space-y-4' }, [
+					Div({ class: 'flex flex-col overflow-x-auto' }, [
+						ErrorTable(data)
+					])
+				])
+			])
+		])
+	]);
 };
 
 export default ErrorPage;

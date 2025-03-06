@@ -16,7 +16,7 @@ const HeaderRow = () => (
 		Tr({ class: 'text-muted-foreground border-b' }, [
 			CheckboxCol({ class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'errorFile', label: 'File', class: 'max-w-[150px]' }),
-			HeaderCol({ key: 'errorLine', label: 'Line Number' }),
+			HeaderCol({ key: 'errorLine', label: 'Line' }),
 			HeaderCol({ key: 'errorMessage', label: 'Message', class: 'max-w-[150px]' }),
 			HeaderCol({ key: 'createdAt', label: 'Date', class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'env', label: 'Env' }),

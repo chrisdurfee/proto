@@ -29,9 +29,9 @@ const displayResults = (message) =>
  * @returns {object}
  */
 const FormatedCode = (message) => (
-    Pre({ class: 'whitespace-break-spaces break-all cursor-pointer' }, [
-        Code({ class: 'font-mono flex-auto text-sm text-wrap font-normal text-muted-foreground' }, message)
-    ])
+	Pre({ class: 'whitespace-break-spaces break-all cursor-pointer' }, [
+		Code({ class: 'font-mono flex-auto text-sm text-wrap font-normal text-muted-foreground' }, message)
+	])
 );
 
 /**
@@ -45,12 +45,12 @@ const FormatedCode = (message) => (
 export const ErrorModal = (props) => new Modal(
 {
 	title: '[[title]]',
-    description: 'Error Details',
+	description: 'Error Details',
 	icon: Icons.bug,
 	size: 'lg',
 	type: 'right',
 	hidePrimaryButton: true,
-    error: props.error,
+	error: props.error,
 
 	/**
 	 * Initializes the data store for the modal.
@@ -73,8 +73,8 @@ export const ErrorModal = (props) => new Modal(
 		this.data.set(
 		{
 			...error,
-            //shorten the error message for title
-            title: error.errorMessage.length > 20 ? error.errorMessage.substring(0, 20) + '...' : error.errorMessage,
+			//shorten the error message for title
+			title: error.errorMessage.length > 20 ? error.errorMessage.substring(0, 20) + '...' : error.errorMessage,
 			// Format the createdAt date, replacing space with 'T' and formatting if valid.
 			formattedDate: error.createdAt
 				? (error.createdAt.replace(' ', 'T') !== '0000-00-00T00:00:00'
@@ -105,24 +105,24 @@ export const ErrorModal = (props) => new Modal(
 		DetailSection({ title: 'Error Details' }, [
 			SplitRow('Line Number', '[[errorLine]]'),
 		]),
-        DetailSection({ title: 'File' }, [
+		DetailSection({ title: 'File' }, [
 			FormatedCode('[[errorFile]]')
 		]),
-        DetailSection({ title: 'Message' }, [
+		DetailSection({ title: 'Message' }, [
 			FormatedCode('[[errorMessage]]')
 		]),
-        DetailSection([
+		DetailSection([
 			SplitRow('IP Address', '[[errorIp]]'),
 			SplitRow('Added', '[[formattedDate]]'),
 		]),
-        DetailSection([
+		DetailSection([
 			SplitRow('Url', '[[url]]'),
 			SplitRow('Query', '[[formattedQuery]]'),
 		]),
-        DetailSection({ title: 'Stack Trace' }, [
+		DetailSection({ title: 'Stack Trace' }, [
 			FormatedCode('[[formattedErrorTrace]]'),
 		]),
-        DetailSection({ title: 'Back Trace' }, [
+		DetailSection({ title: 'Back Trace' }, [
 			FormatedCode('[[formattedBackTrace]]')
 		])
 	])
