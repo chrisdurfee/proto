@@ -1,7 +1,7 @@
 import { Td, Thead, Tr } from "@base-framework/atoms";
 import { Checkbox } from "@base-framework/ui/atoms";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
-import { MigrationModel } from "./models/migration-model";
+import { ErrorModel } from "./models/error-model.js";
 
 /**
  * This will render a header row in the table.
@@ -50,7 +50,7 @@ export const Row = (row, onSelect) => (
  */
 export const ErrorTable = () => (
 	ScrollableDataTable({
-		data: new MigrationModel(),
+		data: new ErrorModel(),
 		cache: 'list',
 		customHeader: HeaderRow(),
 		rows: [],

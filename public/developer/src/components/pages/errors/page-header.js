@@ -1,50 +1,20 @@
 import { Div, H1, Header } from "@base-framework/atoms";
 import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
-import { Confirmation } from "@base-framework/ui/molecules";
-import { MigrationModel } from "./models/migration-model";
+import { Combobox } from "@base-framework/ui/molecules";
+import { ErrorModel } from "./models/error-model.js";
 
 /**
- * Thi swill revert the last migration.
+ * This will refresh the list.
  *
  * @param {object} e - The event object.
  * @param {object} parent - The parent object.
  * @returns {void}
  */
-const refresh = (e, parent) =>
+const refresh = (e, { list }) =>
 {
-
-};
-
-/**
- * This will run the migration.
- *
- * @param {object} e - The event object.
- * @param {object} parent - The parent object.
- * @returns {void}
- */
-const run = (e, parent) =>
-{
-	new Confirmation({
-		icon: Icons.circlePlus,
-		title: 'Are you absolutely sure?',
-		description: 'Are you sure you want to run the migration?',
-		confirmTextLabel: 'Confirm',
-		confirmed: () => update('up', parent)
-	}).open();
-};
-
-/**
- * This will update the migration.
- *
- * @param {string} direction - The direction to update.
- * @param {object} parent - The parent object.
- * @returns {void}
- */
-const update = (direction, { list }) =>
-{
-	const data = new MigrationModel();
-	data.xhr.update({direction: direction}, (response) =>
+	const data = new ErrorModel();
+	data.xhr.update('', (response) =>
 	{
 		if (response)
 		{
@@ -54,7 +24,7 @@ const update = (direction, { list }) =>
 };
 
 /**
- * This will create a page header for the clients page.
+ * This will create a page header for the errors page.
  *
  * @returns {object}
  */
@@ -69,6 +39,19 @@ export const PageHeader = () => (
 				Div({ class: 'flex lg:hidden mr-0' }, [
 					Tooltip({ content: 'Refresh', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.refresh, click: refresh }))
 				]),
+				new Combobox({
+					width: 'w-full', // this is the default value
+					maxWidth: 'max-w-[250px]', // this is the default value
+					class: '',
+					onSelect: (item) => console.log(item),
+					items: [
+						{ value: 'dev', label: 'Dev'},
+						{ value: 'testing', label: 'Testing' },
+						{ value: 'staging', label: 'Staging' },
+						{ value: 'prod', label: 'Prod' },
+						{ value: 'all', label: 'All' }
+					],
+				})
 			])
 		])
 	])
