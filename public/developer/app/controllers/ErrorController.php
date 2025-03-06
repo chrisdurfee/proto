@@ -16,10 +16,10 @@ class ErrorController extends Controller
 	 * This will update model item resolved status.
 	 *
 	 * @param int $id
-	 * @param string $resolved
+	 * @param string|int $resolved
 	 * @return object
 	 */
-	public function updateResolved(int $id, string $resolved): object
+	public function updateResolved(int $id, string|int $resolved): object
 	{
 		$model = new ErrorLog((object)[
 			'id' => $id,

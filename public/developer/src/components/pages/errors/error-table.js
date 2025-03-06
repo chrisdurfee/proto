@@ -29,10 +29,10 @@ const HeaderRow = () => (
  * This will resolve the error.
  *
  * @param {object} props
- * @param {object} list
+ * @param {object} parent
  * @returns {void}
  */
-const resolveError = (props, { list }) =>
+const resolveError = (props, parent) =>
 {
 	const data = new ErrorModel({
 		id: props.id,
@@ -41,7 +41,7 @@ const resolveError = (props, { list }) =>
 
 	data.xhr.updateResolved('', (response) =>
 	{
-		list.refresh();
+		parent.refresh();
 	});
 };
 
@@ -49,10 +49,10 @@ const resolveError = (props, { list }) =>
  * This will unresolve the error.
  *
  * @param {object} props
- * @param {object} list
+ * @param {object} parent
  * @returns {void}
  */
-const unresolveError = (props, { list }) =>
+const unresolveError = (props, parent) =>
 {
 	const data = new ErrorModel({
 		id: props.id,
@@ -61,7 +61,7 @@ const unresolveError = (props, { list }) =>
 
 	data.xhr.updateResolved('', (response) =>
 	{
-		list.refresh();
+		parent.refresh();
 	});
 };
 
@@ -78,6 +78,9 @@ const ResolveButton = (props) => (
 		icon: Icons.circleCheck,
 		click(e, parent)
 		{
+			e.preventDefault();
+			e.stopPropagation();
+
 			resolveError(props, parent);
 		}
 	}, 'Resolve')
@@ -96,6 +99,9 @@ const UnresolveButton = (props) => (
 		icon: Icons.circleX,
 		click(e, parent)
 		{
+			e.preventDefault();
+			e.stopPropagation();
+
 			unresolveError(props, parent);
 		}
 	}, 'Unresolve')
