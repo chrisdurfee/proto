@@ -29,7 +29,7 @@ class Token
 	 * @param string $name Name of the cookie.
 	 * @return string Generated token.
 	 */
-	public static function create(int $length = 128, int $expires = -1, string $name = 'token'): string
+	public static function create(int $length = 256, int $expires = -1, string $name = 'token'): string
 	{
 		return self::setCookie($length, $expires, $name);
 	}

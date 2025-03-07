@@ -27,18 +27,23 @@ class User extends Migration
 			$table->varchar('username', 100);
 			$table->varchar('email', 255);
 			$table->varchar('password', 255);
-			$table->varchar('firstName', 100);
-			$table->varchar('lastName', 100);
+			$table->varchar('first_name', 100);
+			$table->varchar('last_name', 100);
 			$table->varchar('role', 50);
 			$table->int('status', 11);
-			$table->timestamp('emailVerifiedAt')->nullable();
+			$table->timestamp('email_verified_at')->nullable();
 			$table->createdAt();
 			$table->updatedAt();
 			$table->deletedAt()->nullable();
 
 			// Indexes for commonly searched columns
-			$table->index('username')->fields('username');
-			$table->index('email')->fields('email');
+			$table->index('username')->fields('username', 'password');
+			$table->index('email')->fields('email', 'password');
+			$table->index('first_name')->fields('first_name', 'last_name');
+			$table->index('last_name')->fields('last_name', 'first_name');
+			$table->index('status')->fields('status');
+			$table->index('created_at')->fields('created_at');
+			$table->index('updated_at')->fields('updated_at');
 		});
 	}
 

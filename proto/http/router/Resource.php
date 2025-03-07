@@ -42,12 +42,12 @@ class Resource
 	 * This will set the caching policy for the controller.
 	 *
 	 * @param Controller $controller
-	 * @param Policy $policy
+	 * @param string $policy
 	 * @return mixed
 	 */
 	protected function setCachingPolicy(
 		Controller $controller,
-		Policy $policy = ModelPolicy::class
+		string $policy = ModelPolicy::class
 	): mixed
 	{
 		if (Cache::isSupported() !== true)

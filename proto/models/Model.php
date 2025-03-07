@@ -655,13 +655,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * Get a record by identifier.
 	 *
 	 * @param int|string $id Identifier.
-	 * @return object|bool
+	 * @return object|null
 	 */
-	public static function get(mixed $id): object|bool
+	public static function get(mixed $id): ?object
 	{
 		$instance = new static();
 		$row = $instance->storage->get($id);
-		return ($row) ? new static($row) : false;
+		return ($row) ? new static($row) : null;
 	}
 
 	/**
