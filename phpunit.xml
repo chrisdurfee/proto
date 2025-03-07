@@ -7,14 +7,18 @@
     <testsuites>
         <testsuite name="Unit">
             <!-- Existing project-wide unit tests -->
-            <directory suffix="Test.php">./tests/unit</directory>
+            <directory suffix="Test.php">./common/tests/unit</directory>
+            <!-- proto unit tests -->
+            <directory suffix="Test.php">./proto/tests/unit</directory>
             <!-- Module-specific unit tests -->
             <directory suffix="Test.php">./modules/*/tests/unit</directory>
         </testsuite>
 
         <testsuite name="Feature">
             <!-- Existing project-wide feature tests -->
-            <directory suffix="Test.php">./tests/feature</directory>
+            <directory suffix="Test.php">./common/tests/feature</directory>
+            <!-- proto feature tests -->
+            <directory suffix="Test.php">./proto/tests/feature</directory>
             <!-- Module-specific feature tests -->
             <directory suffix="Test.php">./modules/*/tests/feature</directory>
         </testsuite>
@@ -22,7 +26,6 @@
 
     <coverage includeUncoveredFiles="true">
         <include>
-            <!-- Include all PHP files in your modules, proto, and common directories for coverage -->
             <directory suffix=".php">./modules</directory>
             <directory suffix=".php">./proto</directory>
             <directory suffix=".php">./common</directory>
