@@ -82,7 +82,7 @@ class Resource
 			return call_user_func_array([$this->controller, $method], $params);
 		}
 
-		$this->notFound();
+		$this->notFound("Method not found in the resource.");
 		die;
 	}
 
@@ -91,12 +91,14 @@ class Resource
 	 *
 	 * @return void
 	 */
-	protected function notFound(): void
+	protected function notFound(
+		string $message = "Resource not found."
+	): void
 	{
 		$statusCode = 404;
 		$response = new Response();
 		$response->sendHeaders($statusCode)->json([
-			"message"=> "Resource not found.",
+			"message"=> $message,
 			"success"=> false
 		]);
 	}
@@ -120,13 +122,13 @@ class Resource
 				}
 				return $this->call('get', [$resourceId]);
 			case "POST":
-				return $this->call('post', [$resourceId]);
+				return $this->call('add', [$resourceId]);
 			case "PUT":
-				return $this->call('put', [$resourceId]);
+				return $this->call('setup', [$resourceId]);
 			case "DELETE":
 				return $this->call('delete', [$resourceId]);
 			case "PATCH":
-				return $this->call('patch', [$resourceId]);
+				return $this->call('update', [$resourceId]);
 			default:
 				$this->notFound();
 				die;
