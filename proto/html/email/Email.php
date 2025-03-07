@@ -26,7 +26,8 @@ abstract class Email extends Template
 	 */
 	protected function getTitle(): string
 	{
-		return $this->get('title') ?? 'DentalQore';
+		$siteName = env('siteName');
+		return $this->get('title') ?? $siteName;
 	}
 
 	/**

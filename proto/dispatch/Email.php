@@ -189,7 +189,8 @@ class Email extends Dispatch
 	 */
 	protected function getFromName(): string
 	{
-		return !empty($this->fromName) ? $this->fromName : 'DentalQore Messaging';
+		$siteName = env('siteName');
+		return !empty($this->fromName) ? $this->fromName : "{$siteName} Messaging";
 	}
 
 	/**

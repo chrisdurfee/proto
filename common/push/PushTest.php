@@ -1,20 +1,27 @@
-<?php
-namespace App\Push;
+<?php declare(strict_types=1);
+namespace Common\Push;
 
+/**
+ * Class PushTest
+ *
+ * This class is used for testing push notifications.
+ *
+ * @package Common\Push
+ */
 class PushTest extends Push
 {
 	/**
-     * This should be overriden to return the message body.
+     * This should be overridden to return the message body.
      *
      * @abstract
      * @return string|array
      */
-    protected function setupBody()
+    protected function setupBody(): string|array
 	{
 		$ticket = $this->get('ticket');
 
 		return [
-			'title' => "Test push message from DentalQore.",
+			'title' => "Test push message.",
 			'message' => $this->getMessage()
 		];
 	}
