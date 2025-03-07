@@ -63,9 +63,15 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	 */
 	protected function getModuleDir(string $module): string
 	{
-		if (strtolower($module) === 'common')
+		$moduleName = strtolower($module);
+		if ($moduleName === 'common')
 		{
 			return realpath(__DIR__ . '/../../common');
+		}
+
+		if ($moduleName === 'proto')
+		{
+			return realpath(__DIR__ . '/../../proto');
 		}
 
 		return (realpath(__DIR__ . '/../../modules') . DIRECTORY_SEPARATOR . $module);

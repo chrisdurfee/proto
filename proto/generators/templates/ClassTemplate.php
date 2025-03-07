@@ -77,11 +77,16 @@ abstract class ClassTemplate extends Template
 	protected function getModuleDir(): string
 	{
 		$module = $this->getModule();
-		if (strtolower($module) === 'common')
+		$moduleName = strtolower($module);
+		if ($moduleName === 'common')
 		{
 			return 'Common';
 		}
 
+		if ($moduleName === 'proto')
+		{
+			return 'Proto';
+		}
 
 		return "Modules\\{$module}";
 	}
