@@ -181,7 +181,7 @@ function getResourceForm(type, fullResource = false)
 							Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "namespace" })
 						]),
 						new FormField({ name: "connection", label: "Connection", description: "Database connection name." }, [
-							Input({ type: "text", placeholder: "e.g. default", bind: "storage.connection" })
+							Input({ type: "text", placeholder: "e.g. default", bind: "storage.connection", value: "default" })
 						]),
 						new FormField({ name: "className", label: "Class Name", description: "The class name for the model." }, [
 							Input({ type: "text", placeholder: "e.g. ModelName", required: true, bind: "model.className" })
