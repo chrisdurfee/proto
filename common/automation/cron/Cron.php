@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
-namespace App\Automation\Cron;
+namespace Common\Automation\Cron;
 
 use Proto\Http\Response;
-use App\Automation\Process;
+use Proto\Automation\Process;
 use Proto\Utils\Strings;
 
 /**
@@ -10,7 +10,7 @@ use Proto\Utils\Strings;
  *
  * This will handle cron jobs.
  *
- * @package App\Automation\Cron
+ * @package Common\Automation\Cron
  */
 class Cron
 {

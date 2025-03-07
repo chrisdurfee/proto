@@ -1,7 +1,5 @@
 <?php declare(strict_types=1);
-namespace App\Actions;
-
-use App\Models\User;
+namespace Common\Actions;
 
 /**
  * ExampleAction
@@ -18,6 +16,6 @@ class ExampleAction
      */
     public function handle(mixed $data): mixed
     {
-        return User::create($data);
+        return false;
     }
 }

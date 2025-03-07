@@ -1,12 +1,14 @@
 <?php declare(strict_types=1);
-namespace App\Automation\Processes;
+namespace Common\Automation\Processes;
+
+use Proto\Automation\Processes\Routine;
 
 /**
  * ExampleRoutine
  *
  * This is an example routine.
  *
- * @package App\Automation\Processes
+ * @package Common\Automation\Processes
  */
 class ExampleRoutine extends Routine
 {
@@ -15,7 +17,7 @@ class ExampleRoutine extends Routine
      *
      * @return void
      */
-    protected function process()
+    protected function process(): void
     {
         // do something here
     }

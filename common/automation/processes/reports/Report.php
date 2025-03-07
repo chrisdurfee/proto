@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace App\Automation\Processes\Reports;
+namespace Common\Automation\Processes\Reports;
 
 use Proto\Utils\Strings;
 use Proto\Utils\Files\File;
@@ -9,7 +9,7 @@ use Proto\Utils\Files\File;
  *
  * This will create a report.
  *
- * @package App\Automation\Processes\Reports
+ * @package Common\Automation\Processes\Reports
  */
 class Report
 {
