@@ -23,7 +23,7 @@ class ModuleGenerator extends AbstractFileGenerator
 	public function generate(object $settings): bool
 	{
 		$moduleName = Strings::pascalCase($settings->name);
-		$dir = $this->getDir($moduleName);
+		$dir = $this->getDir($moduleName, '');
 		$fileName = $this->getFileName($moduleName . 'Module');
 		$template = new Templates\ModuleTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
@@ -35,7 +35,7 @@ class ModuleGenerator extends AbstractFileGenerator
 	 * @param string $dir The relative directory.
 	 * @return string The full directory path.
 	 */
-	protected function getDir(string $dir): string
+	protected function getDir(string $dir, string $module): string
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$folderName = $this->convertSlashes(strtolower(Strings::hyphen($dir)));

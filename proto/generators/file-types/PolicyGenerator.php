@@ -22,21 +22,23 @@ class PolicyGenerator extends AbstractFileGenerator
 	 */
 	public function generate(object $settings): bool
 	{
-		$dir = $this->getDir($settings->dir);
+		$dir = $this->getDir($settings->dir, $settings->moduleName);
 		$fileName = $this->getFileName($settings->className . 'Policy');
 		$template = new Templates\PolicyTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
 	}
 
 	/**
-	 * Returns the full directory path where the policy file should be saved.
+	 * Returns the full directory path where the API resource file should be saved.
 	 *
 	 * @param string $dir The relative directory.
+	 * @param string $module The module name.
 	 * @return string The full directory path.
 	 */
-	protected function getDir(string $dir): string
+	protected function getDir(string $dir, string $module): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		return realpath(__DIR__ . '/../../../common') . $this->convertSlashes('/Auth/Policies/' . strtolower(Strings::hyphen($dir)));
+		$moduleDir = $this->getModuleDir($module);
+		return $moduleDir . $this->convertSlashes('/Auth/Policies/' . strtolower(Strings::hyphen($dir)));
 	}
 }

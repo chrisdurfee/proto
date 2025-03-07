@@ -24,19 +24,22 @@ class MigrationGenerator extends AbstractFileGenerator
 		$dateTime = $this->getFileDate();
 		$fileName = $dateTime . '_' . $this->getFileName($settings->className);
 		$template = new Templates\MigrationTemplate($settings);
-		$dir = $this->getDir('');
+		$dir = $this->getDir('', $settings->moduleName);
 		return $this->saveFile($dir, $fileName, $template);
 	}
 
 	/**
-	 * Returns the full directory path where the migration file should be saved.
+	 * Returns the full directory path where the API resource file should be saved.
 	 *
-	 * @param string $dir The relative directory (not used for migration files).
+	 * @param string $dir The relative directory.
+	 * @param string $module The module name.
 	 * @return string The full directory path.
 	 */
-	protected function getDir(string $dir): string
+	protected function getDir(string $dir, string $module): string
 	{
-		return realpath(__DIR__ . '/../../../common') . $this->convertSlashes('/Migrations');
+		$dir = str_replace('\\', '/', $dir);
+		$moduleDir = $this->getModuleDir($module);
+		return $moduleDir . $this->convertSlashes('/Migrations');
 	}
 
 	/**

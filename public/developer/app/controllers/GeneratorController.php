@@ -154,7 +154,7 @@ class GeneratorController extends Controller
 	 */
 	public function addApi(object $resource): bool
 	{
-		return $this->generator->createResourceType('api', 'Api', $resource->api);
+		return $this->generator->createResourceType('api', 'Api', settings: $resource->api);
 	}
 
 	/**

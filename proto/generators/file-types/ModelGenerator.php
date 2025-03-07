@@ -22,21 +22,23 @@ class ModelGenerator extends AbstractFileGenerator
 	 */
 	public function generate(object $settings): bool
 	{
-		$dir = $this->getDir($settings->dir);
+		$dir = $this->getDir($settings->dir, $settings->moduleName);
 		$fileName = $this->getFileName($settings->className);
 		$template = new Templates\ModelTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
 	}
 
 	/**
-	 * Returns the full directory path where the model file should be saved.
+	 * Returns the full directory path where the API resource file should be saved.
 	 *
 	 * @param string $dir The relative directory.
+	 * @param string $module The module name.
 	 * @return string The full directory path.
 	 */
-	protected function getDir(string $dir): string
+	protected function getDir(string $dir, string $module): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		return realpath(__DIR__ . '/../../../common') . $this->convertSlashes('/Models/' . strtolower(Strings::hyphen($dir)));
+		$moduleDir = $this->getModuleDir($module);
+		return $moduleDir . $this->convertSlashes('/Models/' . strtolower(Strings::hyphen($dir)));
 	}
 }

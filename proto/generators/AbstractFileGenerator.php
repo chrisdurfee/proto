@@ -56,12 +56,29 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	}
 
 	/**
+	 * Gets the full directory path for a module.
+	 *
+	 * @param string $module The module name.
+	 * @return string The full directory path.
+	 */
+	protected function getModuleDir(string $module): string
+	{
+		if (strtolower($module) === 'common')
+		{
+			return realpath(__DIR__ . '/../../../common');
+		}
+
+		return realpath(__DIR__ . '/../../../modules') . '/' . $module;
+	}
+
+	/**
 	 * Returns the full directory path where the file should be saved.
 	 *
 	 * This method must be implemented in the concrete file generator.
 	 *
 	 * @param string $dir A relative directory name.
+	 * @param string $module The module name.
 	 * @return string The full directory path.
 	 */
-	abstract protected function getDir(string $dir): string;
+	abstract protected function getDir(string $dir, string $module): string;
 }
