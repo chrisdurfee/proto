@@ -272,7 +272,7 @@ class Generator
 		// Setup and generate the API file.
 		$api = $this->getObject($settings, 'api');
 		$api->moduleName = $moduleName;
-		$this->setupClassNamespace($api, "API", $namespace);
+		$this->setupClassNamespace($api, "Api", $namespace);
 		$result = $this->generateFileResource('api', $api);
 		if (!$result)
 		{

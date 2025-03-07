@@ -20,9 +20,10 @@ class ApiTemplate extends ClassTemplate
 	protected function getUse(): string
 	{
 		$className = $this->getNamespace() . $this->getControllerName();
+		$dir = $this->getModuleDir();
 
 		$useStatements = [];
-		$useStatements[] = "use Common\\Controllers\\{$className};";
+		$useStatements[] = "use {$dir}\\Controllers\\{$className};";
 
 		return implode("\n", $useStatements);
 	}

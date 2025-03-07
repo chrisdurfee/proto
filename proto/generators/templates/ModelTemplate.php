@@ -163,11 +163,13 @@ EOT;
 		$storage = $this->get('storage');
 		if (empty($storage))
 		{
-			return '';
+			return 'use Proto\Models\Model;';
 		}
 
+		$dir = $this->getModuleDir();
 		$storageName = $this->getNamespace() . $this->getStorageName();
-		return "use Common\\Storage\\{$storageName};";
+		return "use Proto\Models\Model;
+use {$dir}\\Storage\\{$storageName};";
 	}
 
 	/**

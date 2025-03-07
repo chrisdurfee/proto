@@ -32,6 +32,16 @@ class PolicyTemplate extends ClassTemplate
     }
 
     /**
+	 * Retrieves the use statement for the model.
+	 *
+	 * @return string
+	 */
+	protected function getUse(): string
+	{
+		return "use Proto\\Auth\\Policies\\Policy;";
+	}
+
+    /**
      * This will get the class content.
      *
      * @return string

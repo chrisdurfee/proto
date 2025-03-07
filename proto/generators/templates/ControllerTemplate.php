@@ -31,7 +31,7 @@ class ControllerTemplate extends ClassTemplate
 		$className = $this->get('className');
 
 		return <<<EOT
-	/**
+/**
 	 * Initializes the model class.
 	 *
 	 * @param string|null \$modelClass The model class reference using ::class.
@@ -60,8 +60,10 @@ EOT;
 	 */
 	protected function getUse(): string
 	{
+		$dir = $this->getModuleDir();
 		$className = $this->getNamespace() . $this->get('className');
-		return "use Common\\Models\\{$className};";
+		return "use Proto\\Controllers\\ModelController as Controller;
+use {$dir}\\Models\\{$className};";
 	}
 
 	/**

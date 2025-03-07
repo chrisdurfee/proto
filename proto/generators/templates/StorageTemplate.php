@@ -45,6 +45,16 @@ EOT;
 	}
 
 	/**
+	 * Retrieves the use statement for the model.
+	 *
+	 * @return string
+	 */
+	protected function getUse(): string
+	{
+		return "use Proto\\Storage\\Storage;";
+	}
+
+	/**
 	 * Retrieves the storage class name.
 	 *
 	 * @return string

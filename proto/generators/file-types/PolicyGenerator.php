@@ -39,6 +39,6 @@ class PolicyGenerator extends AbstractFileGenerator
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$moduleDir = $this->getModuleDir($module);
-		return $moduleDir . $this->convertSlashes('/Auth/Policies/' . strtolower(Strings::hyphen($dir)));
+		return $moduleDir . $this->convertSlashes('/Auth/' . strtolower(Strings::hyphen($dir)));
 	}
 }

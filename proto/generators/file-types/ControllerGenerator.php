@@ -39,6 +39,6 @@ class ControllerGenerator extends AbstractFileGenerator
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$moduleDir = $this->getModuleDir($module);
-		return $moduleDir . $this->convertSlashes('/Controllers/' . strtolower(Strings::hyphen($dir)));
+		return $moduleDir . DIRECTORY_SEPARATOR . $this->convertSlashes(strtolower(Strings::hyphen($dir)));
 	}
 }
