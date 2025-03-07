@@ -75,6 +75,7 @@ class TestTemplate extends ClassTemplate
 	protected function setUp(): void
 	{
 		// do something on setup
+		parent::setUp();
 	}
 
 	/**
@@ -85,6 +86,7 @@ class TestTemplate extends ClassTemplate
 	protected function tearDown(): void
 	{
 		// do something on tear down
+		parent::tearDown();
 	}
 EOT;
 	}
