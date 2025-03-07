@@ -2,6 +2,11 @@
 namespace Proto\Http\Router;
 
 use Proto\Auth\PolicyProxy;
+use Proto\Cache\Cache;
+use Proto\Cache\Policies\ModelPolicy;
+use Proto\Cache\Policies\Policy;
+use Proto\Cache\Policies\PolicyProxy as CacheProxy;
+use Proto\Controllers\Controller;
 
 /**
  * Resource
@@ -34,6 +39,30 @@ class Resource
 	}
 
 	/**
+	 * This will set the caching policy for the controller.
+	 *
+	 * @param Controller $controller
+	 * @param Policy $policy
+	 * @return mixed
+	 */
+	protected function setCachingPolicy(
+		Controller $controller,
+		Policy $policy = ModelPolicy::class
+	): mixed
+	{
+		if (Cache::isSupported() !== true)
+        {
+            return $controller;
+        }
+
+		/**
+		 * @var object $cachePolicy
+		 */
+		$cachePolicy = new $policy($controller);
+		return new CacheProxy($controller, $cachePolicy);
+	}
+
+	/**
 	 * This will get the controller. If the controller has a policy
 	 * defined, it will create a policy proxy to auth the actions
 	 * before calling the methods.
@@ -44,6 +73,15 @@ class Resource
 	public function getController(string $controller): object
 	{
 		$controller = new $controller();
+
+		/**
+		 * This will set up a caching policy for the controller.
+		 */
+		$controller = $this->setCachingPolicy($controller);
+
+		/**
+		 * This will check if the controller has a policy defined.
+		 */
 		$policy = $controller->getPolicy();
 		if (!isset($policy))
         {
