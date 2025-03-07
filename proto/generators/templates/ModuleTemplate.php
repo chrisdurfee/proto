@@ -75,11 +75,14 @@ class ModuleTemplate extends ClassTemplate
 		return <<<EOT
 
 	/**
-	 * This module handles user-related functionality.
+	 * This will activate the module.
 	 *
-	 * @package Modules\User
+	 * @return void
 	 */
-	// Add module methods and properties here.
+	public function activate(): void
+	{
+		// do something
+	}
 EOT;
 	}
 }
