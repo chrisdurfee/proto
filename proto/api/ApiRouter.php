@@ -10,6 +10,7 @@ namespace
 	 * @var Base $base This will boostrap the application.
 	 */
 	$base = new Base();
+	Session::init();
 
 	/**
 	 * This will return the router instance.
@@ -29,7 +30,7 @@ namespace
 	 */
 	function session(): SessionInterface
 	{
-		return Session::init();
+		return Session::getInstance();
 	}
 
 	/**
