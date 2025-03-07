@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace App\Services\Traits;
+namespace Common\Services\Traits;
 
 use Proto\Controllers\Response;
 
@@ -8,7 +8,7 @@ use Proto\Controllers\Response;
  *
  * This trait can be used for controller response methods.
  *
- * @package App\Services\Traits
+ * @package Common\Services\Traits
  */
 trait ResponseTrait
 {

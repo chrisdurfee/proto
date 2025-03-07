@@ -12,8 +12,8 @@ use Proto\Patterns\Structural\Registry;
  */
 class Data extends Registry
 {
-    /**
-     * @var object $instance
-     */
-    protected static $instance = null;
+	/**
+	 * @var object $instance
+	 */
+	protected static $instance = null;
 }
