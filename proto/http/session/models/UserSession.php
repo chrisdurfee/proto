@@ -13,14 +13,14 @@ use Proto\Models\Model;
 class UserSession extends Model
 {
 	/**
-	 * @var string $tableName
+	 * @var string|null $tableName
 	 */
-	protected static string $tableName = 'user_sessions';
+	protected static ?string $tableName = 'user_sessions';
 
 	/**
-	 * @var string $alias
+	 * @var string|null $alias
 	 */
-	protected static string $alias = 'us';
+	protected static ?string $alias = 'us';
 
 	/**
 	 * @var array $fields

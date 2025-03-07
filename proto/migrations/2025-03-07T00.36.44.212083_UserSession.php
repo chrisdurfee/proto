@@ -24,8 +24,8 @@ class UserSession extends Migration
 			$table->id();
 			$table->varchar('access', 255);
 			$table->text('data')->nullable();
-			$table->createdAt();
-			$table->updatedAt();
+
+			$table->index('access')->fields('access');
 		});
 	}
 
