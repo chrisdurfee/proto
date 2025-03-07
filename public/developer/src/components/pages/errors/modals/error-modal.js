@@ -117,7 +117,9 @@ export const ErrorModal = (props) => new Modal(
 		]),
 		DetailSection([
 			SplitRow('Url', '[[url]]'),
-			SplitRow('Query', '[[formattedQuery]]'),
+		]),
+		DetailSection({ title: 'Query' }, [
+			FormatedCode('[[formattedQuery]]')
 		]),
 		DetailSection({ title: 'Stack Trace' }, [
 			FormatedCode('[[formattedErrorTrace]]'),
