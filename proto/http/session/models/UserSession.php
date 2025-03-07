@@ -8,24 +8,24 @@ use Proto\Models\Model;
  *
  * This will create a user session model.
  *
- * @package Proto\Models
+ * @package Proto\Http\Session\Models
  */
 class UserSession extends Model
 {
 	/**
 	 * @var string $tableName
 	 */
-	protected static $tableName = 'user_sessions';
+	protected static string $tableName = 'user_sessions';
 
 	/**
 	 * @var string $alias
 	 */
-	protected static $alias = 'us';
+	protected static string $alias = 'us';
 
 	/**
 	 * @var array $fields
 	 */
-	protected static $fields = [
+	protected static array $fields = [
 		'id',
 		'access',
 		'data'

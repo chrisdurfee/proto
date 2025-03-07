@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
-namespace App\Jobs;
+namespace Common\Jobs;
 
 /**
  * ExampleJob
  *
  * This is an example job.
  *
- * @package App\Jobs
+ * @package Common\Jobs
  */
 class ExampleJob
 {

@@ -39,6 +39,6 @@ class TestGenerator extends AbstractFileGenerator
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$moduleDir = $this->getModuleDir($module);
-		return $moduleDir . $this->convertSlashes('/Test/' . strtolower(Strings::hyphen($dir)));
+		return $moduleDir . $this->convertSlashes('/tests/' . strtolower(Strings::hyphen($dir)));
 	}
 }

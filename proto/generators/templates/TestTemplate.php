@@ -24,7 +24,8 @@ class TestTemplate extends ClassTemplate
 	 */
 	protected function getDir(): string
 	{
-		return 'Tests\\' . $this->get('dir');
+		$dir = $this->getModuleDir();
+		return "{$dir}\\Tests\\" . $this->get('dir');
 	}
 
 	/**
@@ -55,7 +56,7 @@ class TestTemplate extends ClassTemplate
 	 */
 	protected function getUse(): string
 	{
-		return "use Tests\\Test;";
+		return "use Proto\\Tests\\Test;";
 	}
 
 	/**
