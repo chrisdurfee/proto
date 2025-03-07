@@ -115,8 +115,8 @@ export const ErrorModal = (props) => new Modal(
 			SplitRow('IP Address', '[[errorIp]]'),
 			SplitRow('Added', '[[formattedDate]]'),
 		]),
-		DetailSection([
-			SplitRow('Url', '[[url]]'),
+		DetailSection({ title: 'Url' }, [
+			FormatedCode('[[url]]')
 		]),
 		DetailSection({ title: 'Query' }, [
 			FormatedCode('[[formattedQuery]]')
