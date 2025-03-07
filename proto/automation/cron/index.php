@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 include_once __DIR__ . '/../../../proto/autoload.php';
 
-use App\Automation\Cron\Cron;
+use Proto\Automation\Cron\Cron;
 
 /**
  * This will get the routine name from the command line args
@@ -12,7 +12,7 @@ use App\Automation\Cron\Cron;
  *
  * e.g. /Example
  *
- * This will run the routine: App\Automation\Routines\ExampleRoutine
+ * This will run the routine: Proto\Automation\Routines\ExampleRoutine
  *
  * @var string|null $routine
  */
