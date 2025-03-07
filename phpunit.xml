@@ -5,20 +5,19 @@
          colors="true"
 >
     <testsuites>
+        <testsuite name="ModuleTests">
+            <directory suffix="Test.php" recursive="true">./modules</directory>
+        </testsuite>
         <testsuite name="Unit">
             <!-- Existing project-wide unit tests -->
             <directory suffix="Test.php">./common/tests/unit</directory>
             <!-- proto unit tests -->
             <directory suffix="Test.php">./proto/tests/unit</directory>
-            <!-- Module-specific unit tests -->
-            <directory suffix="Test.php">./modules/*/tests/unit</directory>
         </testsuite>
 
         <testsuite name="Feature">
             <!-- Existing project-wide feature tests -->
             <directory suffix="Test.php">./common/tests/feature</directory>
-            <!-- proto feature tests -->
-            <directory suffix="Test.php">./proto/tests/feature</directory>
             <!-- Module-specific feature tests -->
             <directory suffix="Test.php">./modules/*/tests/feature</directory>
         </testsuite>
