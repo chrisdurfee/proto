@@ -3,7 +3,12 @@ namespace
 {
 	use Proto\Base;
 	use Proto\Http\Router\Router;
+	use Proto\Http\Session;
+	use Proto\Http\Session\SessionInterface;
 
+	/**
+	 * @var Base $base This will boostrap the application.
+	 */
 	$base = new Base();
 
 	/**
@@ -15,6 +20,41 @@ namespace
 	{
 		$basePath = env('router')->basePath ?? '/';
 		return new Router($basePath);
+	}
+
+	/**
+	 * This will return the session instance.
+	 *
+	 * @return Session\SessionInterface
+	 */
+	function session(): SessionInterface
+	{
+		return Session::init();
+	}
+
+	/**
+	 * This will set the value to the session.
+	 *
+	 * @param string $key
+	 * @param mixed $value
+	 * @return void
+	 */
+	function setSession(string $key, mixed $value): void
+	{
+		$session = session();
+		$session->{$key} = $value;
+	}
+
+	/**
+	 * This will get the value from the session.
+	 *
+	 * @param string $key
+	 * @return mixed
+	 */
+	function getSession(string $key): mixed
+	{
+		$session = session();
+		return $session->{$key} ?? null;
 	}
 }
 
