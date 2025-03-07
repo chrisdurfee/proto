@@ -54,7 +54,8 @@ abstract class ClassTemplate extends Template
 	 */
 	protected function getDir(): string
 	{
-		return 'Common\\' . $this->get('dir');
+		$moduleDir = $this->getModuleDir();
+		return "{$moduleDir}\\" . $this->get('dir');
 	}
 
 	/**
