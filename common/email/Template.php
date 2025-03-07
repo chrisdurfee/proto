@@ -12,5 +12,4 @@ use Proto\Dispatch\Email\Template as BaseTemplate;
  */
 class Template extends BaseTemplate
 {
-
 }
