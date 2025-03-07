@@ -245,16 +245,6 @@ class Generator
 		$namespace = $settings->namespace ?? null;
 		$moduleName = $settings->moduleName ?? null;
 
-		// Create database table if specified.
-		if (isset($settings->table))
-		{
-			$result = $this->createTable($settings->table);
-			if (!$result)
-			{
-				return false;
-			}
-		}
-
 		// Setup and generate the model file.
 		if (!isset($settings->model))
 		{
@@ -290,18 +280,18 @@ class Generator
 		}
 
 		// Setup and generate the policy file if policy settings exist.
-		$policySettings = $settings->policy ?? null;
-		$policySettings->moduleName = $moduleName;
-		if (!empty($policySettings))
-		{
-			$policy = $this->getObject($settings, 'policy');
-			$this->setupClassNamespace($policy, "Auth\\Policies", $namespace);
-			$result = $this->generateFileResource('policy', $policy);
-			if (!$result)
-			{
-				return false;
-			}
-		}
+		// $policySettings = $settings->policy ?? null;
+		// if (!empty($policySettings))
+		// {
+		// 	$policySettings->moduleName = $moduleName;
+		// 	$policy = $this->getObject($settings, 'policy');
+		// 	$this->setupClassNamespace($policy, "Auth\\Policies", $namespace);
+		// 	$result = $this->generateFileResource('policy', $policy);
+		// 	if (!$result)
+		// 	{
+		// 		return false;
+		// 	}
+		// }
 
 		// If the model does not require its own storage, return the current result.
 		if (isset($settings->model->storage) && (bool)$settings->model->storage === false)

@@ -58,6 +58,34 @@ abstract class ClassTemplate extends Template
 	}
 
 	/**
+	 * Retrieves the module for the class.
+	 *
+	 * @return string
+	 */
+	protected function getModule(): string
+	{
+		$moduleName = $this->get('moduleName') ?? '';
+		return Strings::pascalCase($moduleName);
+	}
+
+	/**
+	 * Retrieves the module for the class.
+	 *
+	 * @return string
+	 */
+	protected function getModuleDir(): string
+	{
+		$module = $this->getModule();
+		if (strtolower($module) === 'common')
+		{
+			return 'Common';
+		}
+
+
+		return "Modules\\{$module}";
+	}
+
+	/**
 	 * Retrieves the file namespace.
 	 *
 	 * @return string

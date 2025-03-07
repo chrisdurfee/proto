@@ -65,10 +65,10 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	{
 		if (strtolower($module) === 'common')
 		{
-			return realpath(__DIR__ . '/../../../common');
+			return realpath(__DIR__ . '/../../common');
 		}
 
-		return realpath(__DIR__ . '/../../../modules') . '/' . $module;
+		return (realpath(__DIR__ . '/../../modules') . DIRECTORY_SEPARATOR . $module);
 	}
 
 	/**

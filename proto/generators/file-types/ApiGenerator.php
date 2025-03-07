@@ -23,7 +23,7 @@ class ApiGenerator extends AbstractFileGenerator
 	public function generate(object $settings): bool
 	{
 		$dir = $this->getDir($settings->dir, $settings->moduleName);
-		$fileName = $this->getFileName($settings->className . 'API');
+		$fileName = 'api.php';
 		$template = new Templates\ApiTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
 	}
@@ -39,6 +39,6 @@ class ApiGenerator extends AbstractFileGenerator
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$moduleDir = $this->getModuleDir($module);
-		return $moduleDir . $this->convertSlashes('/API/' . strtolower(Strings::hyphen($dir)));
+		return $moduleDir . DIRECTORY_SEPARATOR . $this->convertSlashes(strtolower(Strings::hyphen($dir)));
 	}
 }

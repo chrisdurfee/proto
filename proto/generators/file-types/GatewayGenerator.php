@@ -24,7 +24,7 @@ class GatewayGenerator extends AbstractFileGenerator
 	{
 		$moduleName = Strings::pascalCase($settings->moduleName ?? '');
 		$dir = $this->getDir($moduleName, $moduleName);
-		$fileName = $this->getFileName($settings->className . 'Gateway');
+		$fileName = $this->getFileName('Gateway');
 		$template = new Templates\GatewayTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
 	}
