@@ -107,7 +107,7 @@ function getResourceForm(type, fullResource = false)
 			return [
 				Fieldset({ legend: "API Settings" }, [
 					fullResource === false && new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
 					]),
 					fullResource === false && new FormField({ name: "className", label: "Class Name", description: "The class name for the API." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "api.className" })
@@ -122,7 +122,7 @@ function getResourceForm(type, fullResource = false)
 			return [
 				Fieldset({ legend: "Controller Settings" }, [
 					fullResource === false && new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
 					]),
 					fullResource === false && new FormField({ name: "className", label: "Class Name", description: "The class name for the controller." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "controller.className" })
@@ -175,7 +175,7 @@ function getResourceForm(type, fullResource = false)
 
 					return Fieldset({ legend: "Model Settings" }, [
 						fullResource === false && new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-							Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+							Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
 						]),
 						new FormField({ name: "namespace", label: "Namespace", description: "Optional namespace." }, [
 							Input({ type: "text", placeholder: "e.g. ExampleSub", bind: "namespace" })
@@ -212,7 +212,7 @@ function getResourceForm(type, fullResource = false)
 			return [
 				Fieldset({ legend: "Storage Settings" }, [
 					fullResource === false && new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
 					]),
 					fullResource === false && new FormField({ name: "className", label: "Class Name", description: "The class name for storage." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "storage.className" })
@@ -233,7 +233,7 @@ function getResourceForm(type, fullResource = false)
 			return [
 				Fieldset({ legend: "Policy Settings" }, [
 					fullResource === false && new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
 					]),
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the policy." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "policy.className" })
@@ -281,7 +281,7 @@ $table->foreign('message_id')->references('id')->on('messages');`, required: tru
 			return [
 				Fieldset({ legend: "Migration Settings" }, [
 					fullResource === false && new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
 					]),
 					new FormField({ name: "className", label: "Class Name", description: "The migration class name." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "migration.className" })
@@ -293,7 +293,7 @@ $table->foreign('message_id')->references('id')->on('messages');`, required: tru
 			return [
 				Fieldset({ legend: "Unit Test Settings" }, [
 					fullResource === false && new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
 					]),
 					new FormField({ name: "className", label: "Class Name", description: "The class name for the test." }, [
 						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "test.className" })
@@ -316,8 +316,10 @@ $table->foreign('message_id')->references('id')->on('messages');`, required: tru
 
 		case "Full Resource":
 			return [
-				new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
-					Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName" })
+				Fieldset({ legend: "Module Settings" }, [
+					new FormField({ name: "module", label: "Module Name", description: "The module name to add the resource." }, [
+						Input({ type: "text", placeholder: "e.g. Example", required: true, bind: "moduleName", value: 'Common' })
+					])
 				]),
 				...getResourceForm("Model", true),
 				...getResourceForm("API", true),

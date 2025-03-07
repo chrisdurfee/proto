@@ -22,14 +22,15 @@ class GatewayGenerator extends AbstractFileGenerator
 	 */
 	public function generate(object $settings): bool
 	{
-		$dir = $this->getDir($settings->dir);
+		$moduleName = Strings::pascalCase($settings->moduleName ?? '');
+		$dir = $this->getDir($moduleName);
 		$fileName = $this->getFileName($settings->className . 'Gateway');
 		$template = new Templates\GatewayTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
 	}
 
 	/**
-	 * Returns the full directory path where the gateway file should be saved.
+	 * Returns the full directory path where the module file should be saved.
 	 *
 	 * @param string $dir The relative directory.
 	 * @return string The full directory path.
@@ -37,6 +38,7 @@ class GatewayGenerator extends AbstractFileGenerator
 	protected function getDir(string $dir): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		return realpath(__DIR__ . '/../../../common') . $this->convertSlashes('/Gateway/' . strtolower(Strings::hyphen($dir)));
+		$folderName = $this->convertSlashes(strtolower(Strings::hyphen($dir) . '/Gateway'));
+		return realpath(__DIR__ . '/../../../modules') . '/' . $folderName;
 	}
 }

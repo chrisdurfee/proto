@@ -2,6 +2,7 @@
 namespace Proto\Generators\Templates;
 
 use Proto\Generators\Templates\ClassTemplate;
+use Proto\Utils\Strings;
 
 /**
  * GatewayTemplate
@@ -24,6 +25,16 @@ class GatewayTemplate extends ClassTemplate
 	}
 
 	/**
+     * Retrieves the module name.
+     *
+     * @return string
+     */
+    protected function getModuleName(): string
+    {
+        return Strings::pascalCase($this->get('moduleName') ?? '');
+    }
+
+	/**
 	 * Retrieves the gateway class name.
 	 *
 	 * @return string
@@ -44,6 +55,17 @@ class GatewayTemplate extends ClassTemplate
 	}
 
 	/**
+	 * Retrieves the directory path for the class.
+	 *
+	 * @return string
+	 */
+	protected function getDir(): string
+	{
+        $moduleName = $this->getModuleName();
+		return "Modules\\" . $moduleName . "\\Gateway";
+	}
+
+	/**
 	 * Retrieves the class content.
 	 *
 	 * @return string
@@ -51,12 +73,6 @@ class GatewayTemplate extends ClassTemplate
 	protected function getClassContent(): string
 	{
 		return <<<EOT
-
-	/**
-	 * This will handle the user module gateway.
-	 *
-	 * @package Modules\User\Gateway
-	 */
 	// Add gateway methods and properties here.
 EOT;
 	}
