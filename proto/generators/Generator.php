@@ -243,6 +243,7 @@ class Generator
 		}
 
 		$namespace = $settings->namespace ?? null;
+		$moduleName = $settings->moduleName ?? null;
 
 		// Create database table if specified.
 		if (isset($settings->table))
@@ -260,6 +261,7 @@ class Generator
 			return false;
 		}
 
+		$settings->model->moduleName = $moduleName;
 		$this->setupClassNamespace($settings->model, "Models", $namespace);
 		$result = $this->generateFileResource('model', $settings->model);
 		if (!$result)
@@ -269,6 +271,7 @@ class Generator
 
 		// Setup and generate the controller file.
 		$controller = $this->getObject($settings, 'controller');
+		$controller->moduleName = $moduleName;
 		$this->setupClassNamespace($controller, "Controllers", $namespace);
 		$result = $this->generateFileResource('controller', $controller);
 		if (!$result)
@@ -278,6 +281,7 @@ class Generator
 
 		// Setup and generate the API file.
 		$api = $this->getObject($settings, 'api');
+		$api->moduleName = $moduleName;
 		$this->setupClassNamespace($api, "API", $namespace);
 		$result = $this->generateFileResource('api', $api);
 		if (!$result)
@@ -287,6 +291,7 @@ class Generator
 
 		// Setup and generate the policy file if policy settings exist.
 		$policySettings = $settings->policy ?? null;
+		$policySettings->moduleName = $moduleName;
 		if (!empty($policySettings))
 		{
 			$policy = $this->getObject($settings, 'policy');
@@ -306,6 +311,7 @@ class Generator
 
 		// Setup and generate the storage file.
 		$storage = $this->getObject($settings, 'storage');
+		$storage->moduleName = $moduleName;
 		$this->setupClassNamespace($storage, "Storage", $namespace);
 		return $this->generateFileResource('storage', $storage);
 	}
