@@ -103,6 +103,17 @@ class CreateField extends Template
 	}
 
 	/**
+	 * Sets the field type to INT with specified length.
+	 *
+	 * @param int $length
+	 * @return self
+	 */
+	public function integer(int $length): self
+	{
+		return $this->int($length);
+	}
+
+	/**
 	 * Sets the field type to BIT with a default length of 1.
 	 *
 	 * @return self

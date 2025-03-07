@@ -61,7 +61,7 @@ class MigrationTemplate extends ClassTemplate
 	/**
 	 * @var string \$connection
 	 */
-	protected string \$connection = '';
+	protected string \$connection = 'default';
 
 	/**
 	 * Runs the migration.
