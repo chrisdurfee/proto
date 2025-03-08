@@ -47,9 +47,9 @@ class EmailQueue extends Queue
 	 * its added to the data mapper.
 	 *
 	 * @param mixed $data
-	 * @return object
+	 * @return mixed
 	 */
-	protected static function augment($data = null)
+	protected static function augment($data = null): mixed
 	{
 		if(!$data)
 		{
