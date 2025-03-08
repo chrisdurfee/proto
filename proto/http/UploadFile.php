@@ -16,11 +16,15 @@ class UploadFile
 {
 	/**
 	 * Holds the newly generated unique file name.
+	 *
+	 * @var string
 	 */
 	protected string $newFileName;
 
 	/**
 	 * System temporary directory.
+	 *
+	 * @var string
 	 */
 	protected string $tmpDir;
 
@@ -47,6 +51,16 @@ class UploadFile
 	}
 
 	/**
+	 * Alias for getFilePath to support drivers expecting getPath().
+	 *
+	 * @return string
+	 */
+	public function getPath(): string
+	{
+		return $this->getFilePath();
+	}
+
+	/**
 	 * Renames the uploaded temporary file to ensure a unique name.
 	 *
 	 * @return void
@@ -60,7 +74,7 @@ class UploadFile
 	 * Retrieves a value from the uploaded file array.
 	 *
 	 * @param string $key File attribute key.
-	 * @return string|null Sanitized value or `null` if not found.
+	 * @return string|null Sanitized value or null if not found.
 	 */
 	protected function getValue(string $key): ?string
 	{
