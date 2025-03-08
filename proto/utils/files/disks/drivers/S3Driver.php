@@ -3,125 +3,280 @@ namespace Proto\Utils\Files\Disks\Drivers;
 
 include_once __DIR__ . '/../../../../../vendor/autoload.php';
 
-use Proto\Utils\Files\Disks\Drivers\Helpers\Aws\S3\S3Integration;
-use Proto\Utils\Files\File;
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
+use Proto\Config;
 use Proto\Http\UploadFile;
 
 /**
- * S3Driver
+ * Class S3Driver
  *
- * Handles file operations on Amazon S3.
+ * Handles remote file storage operations using AWS S3.
  *
  * @package Proto\Utils\Files\Disks\Drivers
  */
 class S3Driver extends Driver
 {
 	/**
-	 * @var string $bucket The name of the S3 bucket.
+	 * AWS S3 client instance.
+	 *
+	 * @var S3Client
+	 */
+	protected S3Client $s3Client;
+
+	/**
+	 * S3 bucket name.
+	 *
+	 * @var string
 	 */
 	protected string $bucket;
 
 	/**
-	 * @var string $path The path within the bucket.
-	 */
-	protected string $path;
-
-	/**
-	 * @var S3Integration $s3 The S3 client instance.
-	 */
-	protected S3Integration $s3;
-
-	/**
-	 * Initializes the S3 driver.
+	 * AWS region.
 	 *
-	 * @param string $bucket The S3 bucket name.
-	 * @throws \Exception If the bucket or S3 configuration is invalid.
+	 * @var string
+	 */
+	protected string $region;
+
+	/**
+	 * Optional endpoint.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $endpoint = null;
+
+	/**
+	 * S3Driver constructor.
+	 *
+	 * @param string $bucket The bucket alias defined in your config.
+	 * @throws \Exception If the configuration is invalid.
 	 */
 	public function __construct(string $bucket)
 	{
 		parent::__construct($bucket);
 
-		if (empty($bucket)) {
-			throw new \Exception("No bucket name provided.");
+		$settings = $this->getSettings($bucket);
+		if ($settings === null)
+		{
+			throw new \Exception("Invalid AWS S3 settings for bucket: {$bucket}");
 		}
 
-		$this->initializeS3($bucket);
+		if (empty($settings->key) || empty($settings->secret) || empty($settings->region))
+		{
+			throw new \Exception("Incomplete AWS S3 configuration for bucket: {$bucket}");
+		}
+
+		$this->bucket = $settings->bucketName;
+		$this->region = $settings->region;
+		$this->endpoint = $settings->endpoint ?? null;
+
+		$config = [
+			'version' => $settings->version,
+			'region' => $this->region,
+			'credentials' => [
+				'key' => $settings->key,
+				'secret' => $settings->secret,
+			],
+		];
+
+		if ($this->endpoint)
+		{
+			$config['endpoint'] = $this->endpoint;
+		}
+
+		$this->s3Client = new S3Client($config);
 	}
 
 	/**
-	 * Initializes S3 settings and credentials.
+	 * Retrieves the S3 configuration settings.
 	 *
-	 * @param string $bucketName The S3 bucket name.
-	 * @return void
-	 * @throws \Exception If configuration or credentials are missing.
+	 * @param string $bucket The bucket alias.
+	 * @return object|null
 	 */
-	protected function initializeS3(string $bucketName): void
+	protected function getSettings(string $bucket): ?object
 	{
-		$s3Config = env('files')->amazon->s3 ?? null;
-		if ($s3Config === null)
+		$amazon = Config::access('files')->amazon ?? null;
+		if (!$amazon)
 		{
-			throw new \Exception("No S3 configurations found.");
+			return null;
 		}
 
-		$bucketConfig = $s3Config->bucket->{$bucketName} ?? null;
-		if ($bucketConfig === null)
+		$s3 = $amazon->s3 ?? null;
+		if (!$s3)
 		{
-			throw new \Exception("No S3 configurations found for bucket: {$bucketName}.");
+			return null;
 		}
 
-		$credentials = $s3Config->credentials ?? null;
-		if ($credentials === null)
+		$bucketSettings = $s3->bucket->{$bucket} ?? null;
+		if (!$bucketSettings)
 		{
-			throw new \Exception("No S3 credentials found.");
+			return null;
 		}
 
-		$this->bucket = $bucketConfig->name ?? throw new \Exception("Bucket name not set in configuration.");
-		$this->path = rtrim($bucketConfig->path ?? '', '/') . '/';
-		$this->s3 = new S3Integration($credentials, $bucketConfig);
+		$settings = (object)[
+			'key' => $s3->credentials->accessKey,
+			'secret' => $s3->credentials->secretKey,
+			'region' => $bucketSettings->region,
+			'version' => $bucketSettings->version,
+			'endpoint' => $bucketSettings->endpoint ?? null,
+			'bucketName' => $bucketSettings->name,
+			'path' => $bucketSettings->path,
+		];
+		return $settings;
 	}
 
 	/**
 	 * Stores an uploaded file on S3.
 	 *
-	 * @param UploadFile $uploadFile The uploaded file.
+	 * @param UploadFile $uploadFile The uploaded file object.
 	 * @return bool Success status.
 	 */
 	public function store(UploadFile $uploadFile): bool
 	{
-		return $this->add($uploadFile->getFilePath());
+		try
+		{
+			$result = $this->s3Client->putObject([
+				'Bucket' => $this->bucket,
+				'Key' => $uploadFile->getNewName(),
+				'SourceFile' => $uploadFile->getPath(),
+				'ACL' => 'public-read',
+			]);
+			return $result !== null;
+		}
+		catch (AwsException $e)
+		{
+			error(
+				$e->getMessage(),
+				__FILE__,
+				__LINE__
+			);
+
+			return false;
+		}
 	}
 
 	/**
-	 * Uploads a file to S3.
+	 * Adds a file to S3 from a local path.
 	 *
-	 * @param string $fileName The local file name.
+	 * @param string $fileName The file name or path.
 	 * @return bool Success status.
 	 */
 	public function add(string $fileName): bool
 	{
-		return $this->s3->upload($fileName, $this->path, $this->bucket);
+		try
+		{
+			$result = $this->s3Client->putObject([
+				'Bucket' => $this->bucket,
+				'Key' => basename($fileName),
+				'SourceFile' => $fileName,
+				'ACL' => 'public-read',
+			]);
+			return $result !== null;
+		}
+		catch (AwsException $e)
+		{
+			return false;
+		}
 	}
 
 	/**
-	 * Retrieves a file's public URL from S3.
+	 * Retrieves the contents of a file from S3.
 	 *
 	 * @param string $fileName The file name.
-	 * @return string The file URL.
+	 * @return string File contents.
 	 */
 	public function get(string $fileName): string
 	{
-		return $this->s3->getFileUrl($fileName) ?? '';
+		try
+		{
+			$result = $this->s3Client->getObject([
+				'Bucket' => $this->bucket,
+				'Key' => $fileName,
+			]);
+			return (string)$result['Body'];
+		}
+		catch (AwsException $e)
+		{
+			return '';
+		}
 	}
 
 	/**
-	 * Downloads a file from S3.
+	 * Constructs the public URL of the stored file.
+	 *
+	 * @param string $fileName The file name.
+	 * @return string File URL.
+	 */
+	public function getStoredPath(string $fileName): string
+	{
+		if ($this->endpoint)
+		{
+			return rtrim($this->endpoint, '/') . '/' . $this->bucket . '/' . $fileName;
+		}
+		return "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$fileName}";
+	}
+
+	/**
+	 * Streams a file for download from S3.
 	 *
 	 * @param string $fileName The file name.
 	 * @return void
 	 */
 	public function download(string $fileName): void
 	{
-		File::stream($this->getStoredPath($fileName));
+		try
+		{
+			$result = $this->s3Client->getObject([
+				'Bucket' => $this->bucket,
+				'Key' => $fileName,
+			]);
+			header("Content-Type: " . $result['ContentType']);
+			header("Content-Length: " . $result['ContentLength']);
+			header("Content-Disposition: attachment; filename=\"" . basename($fileName) . "\"");
+			echo $result['Body'];
+		}
+		catch (AwsException $e)
+		{
+			http_response_code(404);
+			echo "File not found.";
+		}
+	}
+
+	/**
+	 * Renames a file in S3 by copying to a new key and deleting the old one.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool Success status.
+	 */
+	public function rename(string $oldFileName, string $newFileName): bool
+	{
+		try
+		{
+			$this->s3Client->copyObject([
+				'Bucket' => $this->bucket,
+				'CopySource' => "{$this->bucket}/{$oldFileName}",
+				'Key' => $newFileName,
+				'ACL' => 'public-read',
+			]);
+			return $this->delete($oldFileName);
+		}
+		catch (AwsException $e)
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Moves a file in S3, equivalent to renaming it.
+	 *
+	 * @param string $oldFileName The current file name.
+	 * @param string $newFileName The new file name.
+	 * @return bool Success status.
+	 */
+	public function move(string $oldFileName, string $newFileName): bool
+	{
+		return $this->rename($oldFileName, $newFileName);
 	}
 
 	/**
@@ -132,76 +287,39 @@ class S3Driver extends Driver
 	 */
 	public function delete(string $fileName): bool
 	{
-		$key = $this->path . $fileName;
-		return $this->s3->delete($this->bucket, $key);
+		try
+		{
+			$this->s3Client->deleteObject([
+				'Bucket' => $this->bucket,
+				'Key' => $fileName,
+			]);
+			return true;
+		}
+		catch (AwsException $e)
+		{
+			return false;
+		}
 	}
 
 	/**
-	 * Retrieves the stored file path in S3.
+	 * Retrieves the file size in bytes from S3.
 	 *
 	 * @param string $fileName The file name.
-	 * @return string The object URL.
-	 */
-	public function getStoredPath(string $fileName): string
-	{
-		$key = $this->path . $fileName;
-		return $this->s3->getObjectUrl($this->bucket, $key);
-	}
-
-	/**
-	 * Renaming files is not supported in S3 natively.
-	 *
-	 * @param string $oldFileName The old file name.
-	 * @param string $newFileName The new file name.
-	 * @return bool Always returns false.
-	 */
-	public function rename(string $oldFileName, string $newFileName): bool
-	{
-		return false;
-	}
-
-	/**
-	 * Moving files is not supported in S3 natively.
-	 *
-	 * @param string $oldFileName The old file name.
-	 * @param string $newFileName The new file name.
-	 * @return bool Always returns false.
-	 */
-	public function move(string $oldFileName, string $newFileName): bool
-	{
-		return false;
-	}
-
-	/**
-	 * Retrieves the size of a file.
-	 *
-	 * @param string $fileName The file name.
-	 * @return int Always returns 0 (not supported by S3 API).
+	 * @return int File size in bytes.
 	 */
 	public function getSize(string $fileName): int
 	{
-		return 0;
-	}
-
-	/**
-	 * Lists objects in the S3 bucket.
-	 *
-	 * @param string|null $continuationToken Continuation token for paginated results.
-	 * @return object The list of objects.
-	 */
-	public function listObjects(?string $continuationToken = null): object
-	{
-		return $this->s3->listObjects($this->bucket, $continuationToken);
-	}
-
-	/**
-	 * Retrieves an object from S3.
-	 *
-	 * @param string $key The object key.
-	 * @return object|null The object details or null if not found.
-	 */
-	public function getObject(string $key): ?object
-	{
-		return $this->s3->getObject($this->bucket, $key);
+		try
+		{
+			$result = $this->s3Client->headObject([
+				'Bucket' => $this->bucket,
+				'Key' => $fileName,
+			]);
+			return (int)$result['ContentLength'];
+		}
+		catch (AwsException $e)
+		{
+			return 0;
+		}
 	}
 }
