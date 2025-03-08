@@ -10,5 +10,4 @@ namespace Proto\Dispatch\Drivers;
  */
 interface DriverInterface
 {
-
 }

@@ -1,8 +1,10 @@
 <?php declare(strict_types=1);
 namespace Proto\Dispatch\Drivers\Sms;
 
+require_once __DIR__ . "../../../../vendor/autoload.php";
+
 use Proto\Dispatch\Response;
-use Proto\Controllers\Sms\TwilioController;
+use Twilio\Rest\Client;
 
 /**
  * Class TwilioDriver
@@ -14,39 +16,75 @@ use Proto\Controllers\Sms\TwilioController;
 class TwilioDriver extends TextDriver
 {
 	/**
-	 * Creates a new TwilioDriver object.
+	 * TwilioDriver constructor.
 	 *
-	 * @param TwilioController|null $controller The Twilio controller instance.
 	 * @return void
 	 */
-	public function __construct(public ?TwilioController $controller = new TwilioController())
+	public function __construct()
 	{
+	}
+
+	/**
+	 * Validates the SMS settings.
+	 *
+	 * @param object $settings The text message settings.
+	 * @return Response|null An error response if invalid, or null if valid.
+	 */
+	protected function validateSettings(object $settings): ?Response
+	{
+		if (empty($settings->to))
+		{
+			return $this->error('No contact number setup.');
+		}
+		if (empty($settings->message))
+		{
+			return $this->error('No message provided.');
+		}
+		return null;
 	}
 
 	/**
 	 * Sends a text message.
 	 *
-	 * @param object $settings The text message settings.
+	 * @param object $settings The text message settings. Requires:
+	 *                         - to: Recipient phone number.
+	 *                         - message: The SMS message body.
 	 * @return Response The response from sending the text message.
 	 */
 	public function send(object $settings): Response
 	{
-		if (empty($settings->session))
+		$validationError = $this->validateSettings($settings);
+		if ($validationError !== null)
 		{
-			return $this->error('No client phone number found.'); // Enum message in messages table.
+			return $validationError;
 		}
 
-		if (empty($settings->to))
+		$config = env('sms')->twilio ?? null;
+		if (!$config)
 		{
-			return $this->error('No contact number setup.');
+			return $this->error('Twilio configuration missing.');
 		}
 
-		$result = $this->controller->send($settings->session, $settings->to, $settings->message);
-		if (!$result)
+		$from = $config->from ?? '';
+		$accountSid = $settings->session ?? $config->accountSid ?? '';
+		$authToken = $config->authToken ?? '';
+		if (empty($accountSid) || empty($authToken) || empty($from))
 		{
-			return $this->error('The text failed to send.'); // Enum message in messages table.
+			return $this->error('Incomplete Twilio configuration.');
 		}
 
-		return $this->response(false, 'Text message sent.', $result);
+		try
+		{
+			$client = new Client($accountSid, $authToken);
+			$message = $client->messages->create($settings->to, [
+				'from' => $from,
+				'body' => $settings->message,
+			]);
+			return $this->response(false, 'Text message sent.', $message);
+		}
+		catch (\Exception $e)
+		{
+			return $this->error('The text failed to send: ' . $e->getMessage());
+		}
 	}
 }
