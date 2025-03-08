@@ -88,12 +88,17 @@ class DatabaseSession extends Adapter
 	 */
 	protected function setupModel(): void
 	{
-		$this->model = UserSession::get(static::$token) ?? new UserSession((object)['id' => static::$token]);
-
-		if (!$this->model->exists())
+		$model = UserSession::get(static::$token);
+		if ($model)
 		{
-			$this->model->add();
+			$this->model = $model;
+			return;
 		}
+
+		$model = new UserSession((object)['id' => static::$token]);
+		$model->setup();
+
+		$this->model = $model;
 	}
 
 	/**
