@@ -20,10 +20,6 @@ export const Links = (path) => ([
 		exact: true
 	},
 	{
-		href: `${path}/icons`,
-		label: 'Icons'
-	},
-	{
 		group: 'Components',
 		options:
 		[

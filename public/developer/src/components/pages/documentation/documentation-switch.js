@@ -22,7 +22,6 @@ export const DocumentationSwitch = (basePath) => ([
 	Page(`${basePath}`, 'Introduction', import('./introduction/intro-page.js')),
 	Page(`${basePath}/get-started`, 'Get Started', () => import('./get-started/get-started-page.js')),
 	Page(`${basePath}/theme`, 'Theme', () => import('./theme/theme-page.js')),
-	Page(`${basePath}/icons`, 'Icons', () => import('./icons/icon-page.js')),
 	Page(`${basePath}/components/buttons*`, 'Buttons', () => import('./components/buttons/button-page.js')),
 	Page(`${basePath}/components/badges*`, 'Badges', () => import('./components/badge-page.js')),
 	Page(`${basePath}/components/tabs*`, 'Tabs', () => import('./components/tab-page.js')),
