@@ -1,8 +1,8 @@
 import { Div } from "@base-framework/atoms";
 import { BlankPage } from "@base-framework/ui/pages";
-import { ErrorTable } from "./error-table.js";
 import { ErrorModel } from "./models/error-model.js";
 import { PageHeader } from "./page-header.js";
+import { ErrorTable } from "./table/error-table.js";
 
 /**
  * This will create the error page.
