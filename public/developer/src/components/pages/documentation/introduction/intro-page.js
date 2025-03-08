@@ -66,7 +66,12 @@ export const IntroPage = () => (
 				P({ class: 'text-muted-foreground' },
 					`Proto includes items for creating complex applications, including:`),
 				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
+					Li('Modules system to encpasulate features'),
 					Li("API Systems (Both Resource and REST Routers)"),
+					Li('Validation'),
+					Li('Server Sent Events (SSE)'),
+					Li('Websockets'),
+					Li('Sockets'),
 					Li("HTTP Resources"),
 					Li("Security Gates and Policies"),
 					Li("Authentication using roles and permissions"),
@@ -77,6 +82,9 @@ export const IntroPage = () => (
 					Li("Storage Layers"),
 					Li("Session"),
 					Li("Services"),
+					Li("Service Providers"),
+					Li('Jobs'),
+					Li("Routines"),
 					Li("Patterns"),
 					Li("HTML Templates"),
 					Li("Email Rendering"),
@@ -86,7 +94,7 @@ export const IntroPage = () => (
 					Li("Database Adapter"),
 					Li("Query Builders"),
 					Li("Migrations"),
-					Li("File Storage"),
+					Li("File Storage (Local, S3)"),
 					Li("Integrations"),
 					Li("Utils")
 				])
@@ -114,7 +122,7 @@ public/         // Front-end assets and public resources.`
 					`All class names should be in PascalCase, and all methods and variables should be in camelCase.
 					Class names should be singular, while namespace paths can be plural.`),
 				P({ class: 'text-muted-foreground' },
-					`File names should use hyphens to concatenate words.
+					`Folder names should be lowercase and use hyphens to concatenate words. Files should use PascalCase.
 					Namespaces should reflect the folder structure to support autoloading.`)
 			]),
 

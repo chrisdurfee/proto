@@ -4,9 +4,7 @@ import { Icons } from "@base-framework/ui/icons";
 import { DocPage } from "../../doc-page.js";
 
 /**
- * CodeBlock
- *
- * This component creates a code block with copy-to-clipboard support.
+ * This will create a code block with copy-to-clipboard functionality.
  *
  * @param {object} props
  * @param {object} children
@@ -26,6 +24,7 @@ const CodeBlock = Atom((props, children) => (
 					class: 'font-mono flex-auto text-sm text-wrap',
 					click: () => {
 						navigator.clipboard.writeText(children[0].textContent);
+
 						// @ts-ignore
 						app.notify({
 							title: "Code copied",
@@ -43,173 +42,197 @@ const CodeBlock = Atom((props, children) => (
 /**
  * GetStartedPage
  *
- * This component creates a "Get Started" page for the Proto framework documentation.
+ * This page details how to install, configure, and begin developing with the Proto framework.
+ * It covers prerequisites, folder structure, auto-bootstrapping, modules, gateways, and
+ * the developer app in public/developer.
  *
  * @returns {DocPage}
  */
 export const GetStartedPage = () =>
 	DocPage(
 		{
-			title: 'Get Started with Proto',
-			description: 'Learn how to install, configure, and begin working with the Proto framework.'
+			title: 'Getting Started with Proto',
+			description: 'Learn how to install, configure, and build applications using the Proto framework.'
 		},
 		[
-			// 1) About the Proto Framework
+			// 1) About Proto
 			Section({ class: 'space-y-4' }, [
-				H4({ class: 'text-lg font-bold' }, 'About the Proto Framework'),
+				H4({ class: 'text-lg font-bold' }, 'About Proto'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`The Proto framework is designed to allow scalable server applications to be created quickly and securely.
-					Leveraging a modular monolith architecture, Proto builds upon the lessons learned from Dashr while promoting a more organized, module-centric codebase.`
+					`Proto is a modular monolith framework inspired by Dashr. It allows scalable server applications to be created quickly and securely.
+					 The framework auto-bootstraps whenever you interact with a module, router, or controller, so minimal setup is required.`
 				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`The core framework is contained in the <code>proto</code> folder, which is accessible for inclusion but should not be modified by users.
-					Shared functionality is placed in the <code>common</code> folder, and all major domains or features reside in individual modules within the <code>modules</code> folder.`
+					`In Proto, core framework code lives in the "proto" folder (read-only), shared code goes in "common", and
+					 each major domain or feature resides in its own module under the "modules" folder. This structure
+					 supports team collaboration and easier testing, while still allowing a module to be spun out into a
+					 separate service if it grows too large.`
 				)
 			]),
 
-			// 2) Framework Features
+			// 2) Prerequisites & Installation
 			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Framework Features'),
+				H4({ class: 'text-lg font-bold' }, 'Prerequisites & Installation'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Proto includes a comprehensive set of features for building complex server applications:
-					API systems (both resource and REST routers), HTTP resources, security gates and policies,
-					authentication with roles and permissions, controllers, caching (e.g., Redis), configs, models,
-					storage layers, session management, services, design patterns, HTML templates, email rendering,
-					dispatching of email, SMS, and web push notifications, events, resource generators, database adapters,
-					query builders, migrations, file storage, integrations, and various utility functions.`
-				)
-			]),
-
-			// 3) File Structure
-			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'File Structure'),
+					`Proto requires PHP 8.2 or higher. It also uses Composer for dependency management.
+					 Make sure you have both installed on your machine.`
+				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`A typical Proto application is structured as follows:`
+					`To install Proto and its dependencies, run the following command in your project's root folder:`
 				),
 				CodeBlock(
-`common/         // The root for your application code and shared components between modules.
-proto/          // The core framework. This folder is accessible but should not be modified.
-modules/        // Contains self-contained modules for each major domain or feature.
-public/         // Front-end assets and public resources.`
-				)
-			]),
-
-			// 4) Naming Conventions & Namespace Structure
-			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Naming Conventions & Namespace Structure'),
+`composer install
+# or
+composer update`
+				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`All class names should use PascalCase, and all methods and variables should use camelCase.
-					File names should use hyphens to concatenate words, and namespaces should reflect the folder structure
-					to support autoloading.`
+					`This will download all packages defined in your composer.json file. Once installed, you can begin customizing your application.`
 				)
 			]),
 
-			// 5) Configuration
+			// 3) Project Structure
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Project Structure'),
+				P(
+					{ class: 'text-muted-foreground' },
+					`A typical Proto application has the following structure:`
+				),
+				CodeBlock(
+`common/          // Shared code (replaces the old "App" directory from Dashr)
+modules/         // Each major feature or domain is a self-contained module
+proto/           // Core framework code (do not modify)
+public/          // Public-facing files (including the developer app in /public/developer)
+`
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`Proto automatically loads modules and other resources on demand, ensuring performance and
+					 maintainability as your application grows.`
+				)
+			]),
+
+			// 4) Configuration
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Configuration'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Before beginning development, configure your environment settings in the <code>common/config</code> directory.
-					All application settings should be registered in the .env file as JSON.`
+					`Before development, configure your application settings in "common/Config" (e.g., .env).
+					 Proto\\Config (a singleton) loads these settings at bootstrap. You can retrieve config values using:`
 				),
 				CodeBlock(
-`/**
- * Proto Config
- *
- * The Proto\\Config class loads your application settings during bootstrap.
- * It is implemented as a singleton, so call getInstance() to access the configuration.
- */
-$config = Proto\\Config::getInstance();
+`use Proto\\Config;
 
-// Get a configuration value
-$value = $config->get('key');
+// Access the config instance
+$config = Config::getInstance();
+$baseUrl = $config->get('baseUrl');
 
-// Set a configuration value
-$config->set('key', $value);
+// Or use static access
+$connections = Config::access('connections');
 
-// Or access values statically
-$value = Proto\\Config::access('key');
-
-// Alternatively, use the global env function
-$value = env('key');
+// The env() helper is also available
+$connections = env('connections');
 `
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`All environment variables should be registered as JSON within your .env file.`
 				)
 			]),
 
-			// 6) Bootstrapping & Global Data
+			// 5) Bootstrapping
 			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Bootstrapping & Global Data'),
+				H4({ class: 'text-lg font-bold' }, 'Bootstrapping'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Proto auto bootstraps when interfacing with APIs, controllers, models, storage layers, or routines.
-					Simply include the <code>/proto/autoload.php</code> file to initialize the framework.
-					Global data is managed using the <code>common/data</code> singleton, providing getter and setter methods for shared data.`
+					`Proto automatically bootstraps when you call a module, router, or controller.
+					 Simply include "/proto/autoload.php" and invoke the namespaced classes you need.`
 				),
 				CodeBlock(
-`/**
- * Bootstrapping the Proto application.
- * Include the autoload file to initialize the framework.
- */
+`<?php declare(strict_types=1);
+
+// Example usage
 require_once __DIR__ . '/proto/autoload.php';
 
-/**
- * Global Data Access
- *
- * Use Common\\Data to retrieve or update global application data.
- */
-$data = Common\\Data::getInstance();
-$currentValue = $data->get('key');
-$data->set('key', 'value');
-`
+// Once included, you can call modules, controllers, etc.
+modules()->user()->v1()->createUser($data);`
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`There is no need for extensive manual setup; Proto handles loading, event registration,
+					 and other behind-the-scenes tasks automatically.`
 				)
 			]),
 
-			// 7) Modules System
+			// 6) Modules & Gateway
 			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Modules System'),
+				H4({ class: 'text-lg font-bold' }, 'Modules & Gateways'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Each major domain or feature is encapsulated in its own module within the <code>modules</code> folder.
-					Modules are self-contained and can declare their own routes, links, and configurations.
-					They can also interact with each other using the module gateway interface.
-					For example, a module can expose public methods on its gateway, allowing other modules to call them as follows:`
+					`Each feature or domain is encapsulated in its own module within "modules/".
+					 Modules can have APIs, controllers, models, and gateways.
+					 If an API request path doesn't match a module, that module API is never loaded, improving performance.`
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`Gateways provide a public interface for modules. Other modules can call them like so:
+					 modules()->example()->add();
+					 or with versioning: modules()->example()->v1()->add();`
 				),
 				CodeBlock(
-`/**
- * Example Module Gateway for a Feature Module.
- */
+`<?php declare(strict_types=1);
 namespace Modules\\Example\\Gateway;
 
 class Gateway
 {
-	/**
-	 * Direct method available to other modules.
-	 * Usage: modules()->example()->add();
-	 */
-	public function add(): void
-	{
-		// Implementation for adding an example.
-	}
+    public function add(): void
+    {
+        // Implementation
+    }
 
-	/**
-	 * Versioned gateways allow for version-specific calls.
-	 */
-	public function v1(): V1\\Gateway
-	{
-		return new \\Modules\\Example\\Gateway\\V1\\Gateway();
-	}
+    public function v1(): V1\\Gateway
+    {
+        return new V1\\Gateway();
+    }
 
-	public function v2(): V2\\Gateway
-	{
-		return new \\Modules\\Example\\Gateway\\V2\\Gateway();
-	}
-}
-`
+    public function v2(): V2\\Gateway
+    {
+        return new V2\\Gateway();
+    }
+}`
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`You can also define API routes in each module. For example,
+					 placing an api.php or subfolders within your module's "Api" directory
+					 registers routes only if a request path matches the module's route prefix.`
+				),
+				CodeBlock(
+`router()
+    ->resource('user', UserController::class)
+    ->middleware([
+        CrossSiteProtectionMiddleware::class
+    ]);`
+				)
+			]),
+
+			// 7) Developer App
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Developer App in public/developer'),
+				P(
+					{ class: 'text-muted-foreground' },
+					`Proto includes a developer application located in "public/developer" that provides
+					 error tracking, migration management, and a generator system. The generator can
+					 create modules, gateways, APIs, controllers, and models to speed up development.`
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`Use this app to quickly scaffold new features or manage existing ones without needing
+					 a fully distributed microservices setup.`
 				)
 			])
 		]
