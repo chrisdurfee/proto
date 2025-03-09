@@ -91,7 +91,7 @@ class ExampleStorage extends Storage
 				),
 				CodeBlock(
 `// In a storage class
-protected $connection = 'default';`
+protected string $connection = 'default';`
 				)
 			]),
 

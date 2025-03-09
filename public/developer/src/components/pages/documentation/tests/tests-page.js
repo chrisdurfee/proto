@@ -83,11 +83,13 @@ class ExampleTest extends Test
     protected function setUp(): void
     {
         // Setup code before each test
+		parent::setUp();
     }
 
     protected function tearDown(): void
     {
         // Cleanup code after each test
+		parent::tearDown();
     }
 }`
 				)
@@ -105,6 +107,7 @@ class ExampleTest extends Test
 `protected function setUp(): void
 {
     // Execute code to set up the test environment
+	parent::setUp();
 }`
 				)
 			]),
@@ -121,6 +124,7 @@ class ExampleTest extends Test
 `protected function tearDown(): void
 {
     // Execute code to clean up after tests
+	parent::tearDown();
 }`
 				)
 			]),
