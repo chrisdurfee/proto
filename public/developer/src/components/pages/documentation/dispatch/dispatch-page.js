@@ -91,7 +91,7 @@ Dispatcher::email($settings);
 Enqueuer::email($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
-					`An API endpoint is available for testing email dispatch: <code>/api/email?op=test&to={email}</code>.`
+					`An API endpoint is available for testing email dispatch: /api/email?op=test&to={email}.`
 				)
 			]),
 
@@ -120,7 +120,7 @@ Dispatcher::sms($settings);
 Enqueuer::sms($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
-					`Test SMS sending via the API endpoint: <code>/api/text?op=test&to={number}</code>.`
+					`Test SMS sending via the API endpoint: /api/text?op=test&to={number}.`
 				)
 			]),
 

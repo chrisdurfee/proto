@@ -104,7 +104,7 @@ class Example extends Model
 }`
 				),
 				P({ class: 'text-muted-foreground' },
-					`Set <code>$tableName</code> to the exact name of the database table and <code>$alias</code> to a short alias for query building.`
+					`Set $tableName to the exact name of the database table and $alias to a short alias for query building.`
 				)
 			]),
 
@@ -117,7 +117,7 @@ class Example extends Model
 					By default, results are wrapped in a model object.`
 				),
 				P({ class: 'text-muted-foreground' },
-					`If you don't want pass-through mapping, set the <code>$passModel</code> property to false.`
+					`If you don't want pass-through mapping, set the $passModel property to false.`
 				),
 				CodeBlock(
 `// Disable pass-through mapping:
@@ -160,8 +160,8 @@ $result = static::$storageType::methodName();`
 				H4({ class: 'text-lg font-bold' }, 'Field Formatting'),
 				P({ class: 'text-muted-foreground' },
 					`Models can augment or format fields before inserting or after retrieving data.
-					The <code>augment</code> method allows you to modify data before it's stored,
-					while the <code>format</code> method converts data before it's returned via the API.`
+					The augment method allows you to modify data before it's stored,
+					while the format method converts data before it's returned via the API.`
 				),
 				CodeBlock(
 `protected static function augment($data = null)
@@ -190,7 +190,7 @@ protected static function format(?object $data): ?object
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Model Joins'),
 				P({ class: 'text-muted-foreground' },
-					`Models can join data from other tables. Override the <code>joins</code> method to define joins.
+					`Models can join data from other tables. Override the joins method to define joins.
 					The joins method receives a JoinBuilder object that can be used to build one-to-one, one-to-many,
 					or many-to-many relationships.`
 				),
@@ -219,14 +219,14 @@ protected static function format(?object $data): ?object
 				H4({ class: 'text-lg font-bold' }, 'Storage Type and Proxy'),
 				P({ class: 'text-muted-foreground' },
 					`Each model uses a default storage layer to perform CRUD operations.
-					If custom actions are needed, create a custom storage class and override the <code>$storageType</code> property.`
+					If custom actions are needed, create a custom storage class and override the $storageType property.`
 				),
 				CodeBlock(
 `// Specify a custom storage class if needed:
 protected static $storageType = ExampleStorage::class;`
 				),
 				P({ class: 'text-muted-foreground' },
-					`When a model is instantiated, it sets up a storage object accessible via the <code>storage</code> property.
+					`When a model is instantiated, it sets up a storage object accessible via the storage property.
 					This proxy automatically passes storage method calls to the events system.`
 				),
 				CodeBlock(

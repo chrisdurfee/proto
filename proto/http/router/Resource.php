@@ -51,9 +51,9 @@ class Resource
 	): mixed
 	{
 		if (Cache::isSupported() !== true)
-        {
-            return $controller;
-        }
+		{
+			return $controller;
+		}
 
 		/**
 		 * @var object $cachePolicy
@@ -84,9 +84,9 @@ class Resource
 		 */
 		$policy = $controller->getPolicy();
 		if (!isset($policy))
-        {
-            return $controller;
-        }
+		{
+			return $controller;
+		}
 
 		/**
 		 * This will create a policy proxy to auth the actions

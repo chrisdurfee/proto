@@ -92,7 +92,7 @@ class ExampleMigration extends Migration
 }`
 				),
 				P({ class: 'text-muted-foreground' },
-					`The <code>$connection</code> property should match the database handle name defined in your common/Config .env file.`
+					`The $connection property should match the database handle name defined in your common/Config .env file.`
 				)
 			]),
 
@@ -144,7 +144,7 @@ class ExampleMigration extends Migration
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Up Method'),
 				P({ class: 'text-muted-foreground' },
-					`The <code>up()</code> method should include all the commands to update the database.
+					`The up() method should include all the commands to update the database.
 					For example:`
 				),
 				CodeBlock(
@@ -188,7 +188,7 @@ class ExampleMigration extends Migration
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Down Method'),
 				P({ class: 'text-muted-foreground' },
-					`The <code>down()</code> method should revert all changes made in the <code>up()</code> method.
+					`The down() method should revert all changes made in the up() method.
 					For example:`
 				),
 				CodeBlock(
