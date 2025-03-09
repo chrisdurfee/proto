@@ -54,31 +54,144 @@ A typical Proto application is structured as follows:
 - **public/**
   Front-end assets and public resources (including the developer app in `public/developer`).
 
-## Naming Conventions & Namespace Structure
+## Bootstrapping
 
-- **Class Names:** Use **PascalCase** and they should be singular.
-- **Methods & Variables:** Use **camelCase**.
-- **Folder Names:** Use lowercase with hyphens to join words.
-- **File Names:** Use **PascalCase**.
-- **Namespaces:** Should reflect the folder structure to support autoloading.
-
-## Configuration
-
-Before you begin, configure your application settings in the **Common/Config** `.env` file. All settings should be registered as JSON.
-
-The `Proto\Config` class loads these settings during bootstrap. It is a singleton; access configurations with:
+Proto auto bootstraps when interfacing with an API, Controller, Model, Storage, or Routine. Simply include `/proto/autoload.php` and call the namespaced classes you need.
 
 ```php
-use Proto\Config;
+<?php declare(strict_types=1);
 
-// Retrieve configuration values
-$config = Config::getInstance();
-$baseUrl = $config->get('baseUrl');
+// Bootstrap the application
+require_once __DIR__ . '/proto/autoload.php';
 
-// Or via the helper function:
-$connections = env('connections');
+// Example: Create a user via the User module gateway
+modules()->user()->v1()->createUser($data);
+```
 
-   ```
+There is no need for extensive manual setup; Proto handles loading, event registration, and other behind-the-scenes tasks automatically.
+
+## Core Concepts
+
+### Modules & Gateways
+
+Each feature or domain is encapsulated in its own module under the `modules/` folder. Modules are self-contained but can communicate with other registered modules.
+
+#### Modules
+
+Each module contains its own APIs, controllers, models, and gateways. Modules help isolate features and enable independent testing and deployment.
+
+#### Gateways
+
+Gateways provide a public interface for module methods. They allow other modules to call functionality without exposing the internal workings of the module. Gateways can support versioning for backward compatibility.
+
+Example gateway implementation:
+
+```php
+<?php declare(strict_types=1);
+namespace Modules\Example\Gateway;
+
+class Gateway
+{
+    public function add(): void
+    {
+        // Implementation for adding an example.
+    }
+
+    public function v1(): V1\Gateway
+    {
+        return new V1\Gateway();
+    }
+
+    public function v2(): V2\Gateway
+    {
+        return new V2\Gateway();
+    }
+}
+```
+
+### API Routing
+
+API routes for a module are defined in an `api.php` file within the module's API folder. Nested folders allow for deep API paths.
+
+Basic API route example:
+
+```php
+<?php declare(strict_types=1);
+namespace Modules\User\User\Api;
+
+use Modules\User\Controllers\UserController;
+use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
+
+/**
+ * User API Routes
+ *
+ * This file contains the API routes for the User module.
+ */
+router()
+    ->middleware([
+        CrossSiteProtectionMiddleware::class
+    ])
+    ->resource('user', UserController::class);
+```
+
+Nested API route example:
+
+```php
+<?php declare(strict_types=1);
+namespace Modules\User\User\Api\Account;
+
+use Modules\User\Controllers\UserController;
+
+/**
+ * User API Routes for Accounts
+ *
+ * This file handles API routes for user accounts.
+ */
+router()
+    ->resource('user/:userId/account', UserController::class);
+```
+
+## Developer Tools
+
+Proto includes a developer application located in `public/developer` that offers:
+- Error tracking
+- Migration management
+- Generator system for scaffolding modules, gateways, APIs, controllers, and models
+
+Use this tool to quickly scaffold new features or manage existing ones without needing a fully distributed microservices setup.
+
+## Getting Started
+
+### Installation
+
+1. Clone the repository:
+```sh
+git clone https://github.com/your-username/proto.git
+```
+
+2. Install dependencies using Composer:
+```sh
+cd proto
+composer install
+```
+or
+```sh
+composer update
+```
+
+### Configuration
+
+Configure your application settings in the `Common/Config` `.env` file. All environment variables should be registered as JSON.
+
+### Running the Application
+
+Start your application using Docker, the built-in PHP server, or your preferred method:
+
+```sh
+docker compose up --build
+```
+
+or start your PHP server.
 
 ## Screenshots
 
@@ -91,16 +204,23 @@ $connections = env('connections');
 
 ## Contributing
 
-We welcome contributions from the community. If you would like to contribute to Proto, please follow these guidelines:
+Contributions are welcome! To contribute:
 
-1. **Fork the Repository**: Fork the Proto repository on GitHub.
-2. **Create a Branch**: Create a new branch for your feature or bugfix.
-3. **Submit a Pull Request**: Submit a pull request with a detailed description of your changes.
+1. Fork the Repository on GitHub
+2. Create a Branch for your feature or bug fix
+3. Commit Your Changes with clear, descriptive messages
+4. Submit a Pull Request with a detailed description of your changes
+
+Please follow our `CONTRIBUTING.md` for coding standards and guidelines.
 
 ## License
 
-Proto is open-source software licensed under the [MIT license](LICENSE).
+Proto is open-source software licensed under the MIT License.
 
 ## Contact
 
-For any questions or inquiries, please contact us at [support@protoframework.com](mailto:support@protoframework.com).
+For questions or support, please reach out via:
+
+- Email: support@protoframework.com
+- GitHub Issues: [Proto Issues](https://github.com/chrisdurfee/proto/issues)
+- Community Chat: (Coming soon)
