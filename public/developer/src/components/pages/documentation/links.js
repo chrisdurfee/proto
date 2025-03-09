@@ -15,98 +15,51 @@ export const Links = (path) => ([
 		label: 'Get Started'
 	},
 	{
-		href: `${path}/theme`,
-		label: 'Theme',
-		exact: true
+		label: 'Http',
+		href: `${path}/http`
 	},
 	{
-		group: 'Components',
-		options:
-		[
-			{
-				label: 'Buttons',
-				href: `${path}/components/buttons`
-			},
-			{
-				label: 'Badges',
-				href: `${path}/components/badges`
-			},
-			{
-				label: 'Tabs',
-				href: `${path}/components/tabs`
-			},
-			{
-				label: 'Modals',
-				href: `${path}/components/modals`
-			},
-			{
-				label: 'Notifications',
-				href: `${path}/components/notifications`
-			},
-			{
-				label: 'Dialogs',
-				href: `${path}/components/dialogs`
-			},
-			{
-				label: 'Cards',
-				href: `${path}/components/cards`
-			},
-			{
-				label: 'Calendars',
-				href: `${path}/components/calendars`
-			},
-			{
-				label: 'Avatars',
-				href: `${path}/components/avatars`
-			},
-			{
-				label: 'Inputs',
-				href: `${path}/components/inputs`
-			},
-			{
-				label: 'Forms',
-				href: `${path}/components/forms`
-			},
-			{
-				label: 'Alerts',
-				href: `${path}/components/alerts`
-			},
-			{
-				label: 'Comboboxes',
-				href: `${path}/components/comboboxes`
-			},
-			{
-				label: 'Lists',
-				href: `${path}/components/lists`
-			},
-			{
-				label: 'Data Tables',
-				href: `${path}/components/data-tables`
-			},
-			{
-				label: 'Breadcrumbs',
-				href: `${path}/components/breadcrumbs`
-			},
-			{
-				label: 'Navigations',
-				href: `${path}/components/navigations`
-			},
-			{
-				label: 'Progress Bars',
-				href: `${path}/components/progress-bars`
-			},
-			{
-				label: 'Skeletons',
-				href: `${path}/components/skeletons`
-			},
-			{
-				label: 'Tooltips',
-				href: `${path}/components/tooltips`
-			},
-			{
-				label: 'Dropdown Menus',
-				href: `${path}/components/dropdown-menus`
-			}
-		]
+		label: 'API',
+		href: `${path}/api`
+	},
+	{
+		label: 'Auth',
+		href: `${path}/auth`
+	},
+	{
+		label: 'Controllers',
+		href: `${path}/controllers`
+	},
+	{
+		label: 'Events',
+		href: `${path}/events`
+	},
+	{
+		label: 'File Storage',
+		href: `${path}/file-storage`
+	},
+	{
+		label: 'Migrations',
+		href: `${path}/migrations`
+	},
+	{
+		label: 'Models',
+		href: `${path}/models`
+	},
+	{
+		label: 'Services',
+		href: `${path}/services`
+	},
+	{
+		label: 'Storage',
+		href: `${path}/storage`
+	},
+	{
+		label: 'Tests',
+		href: `${path}/tests`
+	},
+	{
+		label: 'Dispatch',
+		href: `${path}/dispatch`
 	}
 ]);
