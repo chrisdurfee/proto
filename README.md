@@ -34,6 +34,15 @@ To get started with Proto, follow these steps:
    docker compose up --build
    ```
 
+## Screenshots
+
+![Generator Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/generator-page.png)
+![Generator Modal](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/generator-modal.png)
+![Migration Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/migration-page.png)
+![Error Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/error-page.png)
+![Error Modal](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/error-modal.png)
+![Documentation Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/documentation-page.png)
+
 ## Contributing
 
 We welcome contributions from the community. If you would like to contribute to Proto, please follow these guidelines:
