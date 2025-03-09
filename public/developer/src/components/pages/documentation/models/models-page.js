@@ -117,13 +117,6 @@ class Example extends Model
 					By default, results are wrapped in a model object.`
 				),
 				P({ class: 'text-muted-foreground' },
-					`If you don't want pass-through mapping, set the $passModel property to false.`
-				),
-				CodeBlock(
-`// Disable pass-through mapping:
-protected $passModel = false;`
-				),
-				P({ class: 'text-muted-foreground' },
 					`Alternatively, you can bypass the wrapper by calling the method statically on the storage type:`
 				),
 				CodeBlock(
