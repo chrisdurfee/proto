@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\User\User\Api;
+namespace Modules\User\Api;
 
 use Modules\User\Controllers\UserController;
 use Proto\Http\Middleware\CrossSiteProtectionMiddleware;

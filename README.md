@@ -117,7 +117,7 @@ Basic API route example:
 
 ```php
 <?php declare(strict_types=1);
-namespace Modules\User\User\Api;
+namespace Modules\User\Api;
 
 use Modules\User\Controllers\UserController;
 use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
@@ -138,7 +138,7 @@ Nested API route example:
 
 ```php
 <?php declare(strict_types=1);
-namespace Modules\User\User\Api\Account;
+namespace Modules\User\Api\Account;
 
 use Modules\User\Controllers\UserController;
 

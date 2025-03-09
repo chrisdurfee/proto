@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\User\User\Api\Account;
+namespace Modules\User\Api\Account;
 
 use Modules\User\Controllers\UserController;
 

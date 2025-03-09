@@ -42,7 +42,7 @@ const CodeBlock = Atom((props, children) => (
 /**
  * ApiPage
  *
- * This page documents Proto’s API system. The API system uses a REST router
+ * This page documents Proto's API system. The API system uses a REST router
  * that lets you create routes, redirects, and resources. You can declare middleware
  * on the router or per route. API routes are defined in an api.php file
  * inside the api folder of a module. Nested folders allow deep API paths.
@@ -61,7 +61,7 @@ export const ApiPage = () =>
 				H4({ class: 'text-lg font-bold' }, 'Overview'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Proto’s API system is built on a REST router that enables you to define routes, set up redirects,
+					`Proto's API system is built on a REST router that enables you to define routes, set up redirects,
 					and declare resource controllers with ease. Middleware can be applied globally on the router or
 					individually on routes. API routes are defined in an api.php file located in the module's API folder.`
 				)
@@ -76,8 +76,8 @@ export const ApiPage = () =>
 					You can nest folders in the API folder to create deep API routes. For example:`
 				),
 				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
-					Li("Modules/User/User/Api/api.php"),
-					Li("Modules/User/User/Api/Account/api.php")
+					Li("Modules/User/Api/api.php"),
+					Li("Modules/User/Api/Account/api.php")
 				])
 			]),
 
@@ -90,7 +90,7 @@ export const ApiPage = () =>
 				),
 				CodeBlock(
 `<?php declare(strict_types=1);
-namespace Modules\\User\\User\\Api;
+namespace Modules\\User\\Api;
 
 use Modules\\User\\Controllers\\UserController;
 use Proto\\Http\\Middleware\\CrossSiteProtectionMiddleware;
@@ -111,7 +111,7 @@ router()
 				),
 				CodeBlock(
 `<?php declare(strict_types=1);
-namespace Modules\\User\\User\\Api\\Account;
+namespace Modules\\User\\Api\\Account;
 
 use Modules\\User\\Controllers\\UserController;
 
@@ -129,44 +129,29 @@ router()
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Main API Router Setup'),
 				P({ class: 'text-muted-foreground' },
-					`The application bootstraps using a main route which then redirects to module-specific API routes.
-					For example, the main entry point may include:`
+					`The application bootstraps using a main route which then redirects to module-specific API routes. There are some global functions available for session management and routing.`
 				),
 				CodeBlock(
 `<?php declare(strict_types=1);
-namespace {
-    use Proto\\Base;
-    use Proto\\Http\\Router\\Router;
-    use Proto\\Http\\Session;
 
-    // Bootstrap the application
-    $base = new Base();
-    Session::init();
+/**
+ * Thsi will get the router.
+ *
+ * @return Router
+ */
+function router(): Router
+{
+}
 
-    function router(): Router {
-        $basePath = env('router')->basePath ?? '/';
-        return new Router($basePath);
-    }
-
-    // Global session functions
-    function session(): Session\\SessionInterface {
-        return Session::getInstance();
-    }
-
-    // Example usage in the main API entry point:
-    $router = router();
-    $router->all(':resource.*', function($req, $params) {
-        // Dynamically include the module API if the resource path is valid
-        $resourcePath = ResourceHelper::getResource($params->resource);
-        if (!$resourcePath) {
-            return Proto\\Api\\ApiRouter::error('Resource not found.', 404);
-        }
-        ResourceHelper::includeResource($resourcePath);
-    }, [Proto\\Http\\Middleware\\ApiRateLimiterMiddleware::class]);
-
-    // Initialize the API router
-    Proto\\Api\\ApiRouter::initialize();
-}`
+/**
+ * This will get the session.
+ *
+ * @return SessionInterface
+ */
+function session(): Session\\SessionInterface
+{
+}
+`
 				)
 			]),
 
@@ -175,26 +160,91 @@ namespace {
 				H4({ class: 'text-lg font-bold' }, 'Individual Routes'),
 				P({ class: 'text-muted-foreground' },
 					`Apart from resource routes, you can also define individual API routes.
-					For example, in a developer API file:`
+					For example:`
 				),
 				CodeBlock(
 `<?php declare(strict_types=1);
-include_once __DIR__ . '/../proto/autoload.php';
 
-use Proto\\Http\\Router\\Router;
-use Developer\\App\\Controllers\\GeneratorController;
+$router = router();
 
-$router = new Router('/developer/api/');
+/**
+ * This will get a patient by ID.
+ *
+ * @param string $req - the request class
+ * @param object $params
+ * @return object
+ */
+$router->get('patients/:id/', function($req, $params)
+{
+	$id = $req::input('module');
 
-// Create a new resource via the generator.
-$router->post('generator', function($req, $params) {
-    $resource = $req::json('resource');
-    $type = $req::input('type');
-    $controller = new GeneratorController();
-    return $controller->addByType($type, $resource);
+	return $params;
 });
 
-// Additional individual routes can be defined similarly.
+/**
+ * This will redirect with a 301 code.
+ *
+ * @param string $req - the request class
+ * @param object $params
+ * @return object
+ */
+$router->redirect('patients/:id/', './appointments/', 302);
+
+/**
+ * This will get a resource with a 301 code.
+ *
+ * @param string $req - the request class
+ * @param object $params
+ * @return object
+ */
+$router->get('patients/:id?/', function($req, $params)
+{
+	// this will set a response code
+	$params->code = 301;
+
+	// this will json encode the value
+	return $params;
+});
+
+/**
+ * This will post a resource.
+ *
+ * @param string $req - the request class
+ * @param object $params
+ * @return object
+ */
+$router->post('patients/:id?/', function($req, $params)
+{
+	// this will json encode the value
+	return $params;
+});
+
+/**
+ * This will get an upload file.
+ *
+ * @param string $req - the request class
+ * @param object $params
+ * @return object
+ */
+$router->get('appoinmtents/*', function($req, $params)
+{
+	$file = $req::file('fileName');
+
+	// this will json encode the value
+	return $params;
+});
+
+/**
+ * This will always route.
+ *
+ * @param string $req - the request class
+ * @param object $params
+ * @return object
+ */
+$router->get('*', function($req, $params)
+{
+	var_dump($params);
+});
 `
 				)
 			])
