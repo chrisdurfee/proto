@@ -16,8 +16,8 @@ const CodeBlock = Atom((props, children) => (
 		{
 			...props,
 			class: `flex p-4 max-h-[650px] max-w-[1024px] overflow-x-auto
-			          rounded-lg border bg-muted whitespace-break-spaces
-			          break-all cursor-pointer mt-4 ${props.class}`
+					  rounded-lg border bg-muted whitespace-break-spaces
+					  break-all cursor-pointer mt-4 ${props.class}`
 		},
 		[
 			Code(
@@ -79,28 +79,9 @@ export const ModelsPage = () =>
 					For example, a model for the "example" table should be named \`Example\`.`
 				),
 				CodeBlock(
-`<?php
-namespace Common\\Models;
-use Common\\Storage\\ExampleStorage;
-
-class Example extends Model
+`class Example extends Model
 {
-    protected static $tableName = 'example';
-    protected static $alias = 'e';
 
-    protected static $fields = [
-        'id',
-        'createdAt', // use camelCase for snake_case columns
-        'updatedAt',
-
-        // Raw SQL column with alias:
-        [['(COUNT(*)'], 'total'],
-
-        // Alias column:
-        ['name', 'client'],
-        'label',
-        'description'
-    ];
 }`
 				),
 				P({ class: 'text-muted-foreground' },
@@ -136,15 +117,15 @@ $result = static::$storageType::methodName();`
 					`To prevent sensitive data from being output, you can define a fields blacklist. For example:`
 				),
 				CodeBlock(
-`protected static $fieldsBlacklist = [
-    'password'
+`protected static array $fieldsBlacklist = [
+	'password'
 ];`
 				),
 				P({ class: 'text-muted-foreground' },
 					`The model ID key defaults to "id" unless otherwise specified:`
 				),
 				CodeBlock(
-`protected static $idKeyName = 'id';`
+`protected static string $idKeyName = 'id';`
 				)
 			]),
 
@@ -157,24 +138,24 @@ $result = static::$storageType::methodName();`
 					while the format method converts data before it's returned via the API.`
 				),
 				CodeBlock(
-`protected static function augment($data = null)
+`protected static function augment(mixed $data = null): mixed
 {
-    if (!$data) {
-        return $data;
-    }
-    // Example: Clean up phone numbers.
-    $data->phoneNumber = Strings::cleanPhone($data->phoneNumber);
-    return $data;
+	if (!$data) {
+		return $data;
+	}
+	// Example: Clean up phone numbers.
+	$data->phoneNumber = Strings::cleanPhone($data->phoneNumber);
+	return $data;
 }
 
 protected static function format(?object $data): ?object
 {
-    if (!$data) {
-        return $data;
-    }
-    // Example: Mask sensitive fields.
-    $data->ssn = Strings::mask($data->ssn, 4);
-    return $data;
+	if (!$data) {
+		return $data;
+	}
+	// Example: Mask sensitive fields.
+	$data->ssn = Strings::mask($data->ssn, 4);
+	return $data;
 }`
 				)
 			]),
@@ -188,21 +169,21 @@ protected static function format(?object $data): ?object
 					or many-to-many relationships.`
 				),
 				CodeBlock(
-`protected static function joins($builder)
+`protected static function joins(object $builder): void
 {
-    // Example: Join to the Role table.
-    Role::one($builder)
-        ->on(['id', 'userId'])
-        ->fields('role');
+	// Example: Join to the Role table.
+	Role::one($builder)
+		->on(['id', 'userId'])
+		->fields('role');
 
-    // Another join using an inner join.
-    Role::one($builder, 'inner')
-        ->fields('role');
+	// Another join using an inner join.
+	Role::one($builder, 'inner')
+		->fields('role');
 
-    // Raw SQL join example:
-    $builder->left('role', 'r')
-        ->on(['id', 'userId'])
-        ->fields('role');
+	// Raw SQL join example:
+	$builder->left('role', 'r')
+		->on(['id', 'userId'])
+		->fields('role');
 }`
 				)
 			]),
@@ -216,7 +197,7 @@ protected static function format(?object $data): ?object
 				),
 				CodeBlock(
 `// Specify a custom storage class if needed:
-protected static $storageType = ExampleStorage::class;`
+protected static string $storageType = ExampleStorage::class;`
 				),
 				P({ class: 'text-muted-foreground' },
 					`When a model is instantiated, it sets up a storage object accessible via the storage property.
@@ -246,8 +227,8 @@ $model->key = $value;
 
 // Batch set properties
 $model->set((object)[
-    'key'  => $value,
-    'name' => $name
+	'key'  => $value,
+	'name' => $name
 ]);`
 				),
 				P({ class: 'text-muted-foreground' },
@@ -260,7 +241,7 @@ $model->add();
 
 // Or use static shortcut methods:
 $result = Example::create((object)[
-    'name' => 'save'
+	'name' => 'save'
 ]);`
 				)
 			]),

@@ -141,10 +141,6 @@ class ExampleController extends ModelController
 					`Controllers have a property called \`passResponse\` that, when enabled, automatically wraps
 					the result of any undeclared method call in a Response object. This makes it faster to add new
 					resources without rewriting response logic.`
-				),
-				CodeBlock(
-`// In a controller
-protected $passResponse = false;`
 				)
 			]),
 
