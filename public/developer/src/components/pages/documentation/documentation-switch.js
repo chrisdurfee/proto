@@ -21,6 +21,7 @@ const Page = (url, title, importCallback) => ({
 export const DocumentationSwitch = (basePath) => ([
 	Page(`${basePath}`, 'Introduction', () => import('./introduction/intro-page.js')),
 	Page(`${basePath}/get-started`, 'Get Started', () => import('./get-started/get-started-page.js')),
+	Page(`${basePath}/modules`, 'Modules', () => import('./modules/modules-page.js')),
 	Page(`${basePath}/http`, 'Http', () => import('./http/http-page.js')),
 	Page(`${basePath}/api`, 'API', () => import('./api/api-page.js')),
 	Page(`${basePath}/auth`, 'Auth', () => import('./auth/auth-page.js')),

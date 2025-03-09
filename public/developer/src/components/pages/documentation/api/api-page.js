@@ -179,7 +179,7 @@ namespace {
 				),
 				CodeBlock(
 `<?php declare(strict_types=1);
-include_once __DIR__ . '/../common/autoload.php';
+include_once __DIR__ . '/../proto/autoload.php';
 
 use Proto\\Http\\Router\\Router;
 use Developer\\App\\Controllers\\GeneratorController;

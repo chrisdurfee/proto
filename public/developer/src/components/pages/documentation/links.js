@@ -15,6 +15,10 @@ export const Links = (path) => ([
 		label: 'Get Started'
 	},
 	{
+		href: `${path}/modules`,
+		label: 'Modules'
+	},
+	{
 		label: 'Http',
 		href: `${path}/http`
 	},
