@@ -75,16 +75,14 @@ export const ControllersPage = () =>
 					`The name of a controller should always be singular and followed by "Controller".`
 				),
 				CodeBlock(
-`<?php
+`<?php declare(strict_types=1);
 namespace Common\\Controllers;
+
 use Common\\Models\\Example;
+use Proto\\Controllers\\ModelController;
 
 class ExampleController extends ModelController
 {
-    protected function getModelClass()
-    {
-        return Example::class;
-    }
 }`
 				)
 			]),
