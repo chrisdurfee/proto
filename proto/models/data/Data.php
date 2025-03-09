@@ -22,7 +22,7 @@ class Data
 	/**
 	 * @var array $alias Field aliases.
 	 */
-	protected $alias = [];
+	protected array $alias = [];
 
 	/**
 	 * Join fields.

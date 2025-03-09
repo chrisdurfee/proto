@@ -154,7 +154,7 @@ class Resource
 		switch ($method)
 		{
 			case "GET":
-				if ($resourceId !== null)
+				if ($resourceId === null)
 				{
 					return $this->call('all');
 				}

@@ -228,7 +228,7 @@ class Request
 	 */
 	public static function input(string $name, mixed $default = null)
 	{
-		return static::raw($name, $default);
+		return static::sanitized($name, $default);
 	}
 
 	/**
@@ -274,6 +274,26 @@ class Request
 		$item = preg_replace("/\\\\/", "\\\\\\", $item);
 		$item = preg_replace("/\\n/", "\\\\n", $item);
 		return JsonFormat::decode($item);
+	}
+
+	/**
+	 * This will get an unfiltered input from the request.
+	 *
+	 * @param string $name
+	 * @param mixed $default
+	 * @return mixed
+	 */
+	public static function sanitized(string $name, mixed $default = null): mixed
+	{
+		$input = self::raw($name, $default);
+		if ($input !== null)
+		{
+			$input = strip_tags($input);
+			$input = trim($input);
+			$input = str_replace(['\\\\', '\\\'', '\\"'], ['\\', '\'', ''], $input);
+			$input = Sanitize::string($input);
+		}
+		return $input;
 	}
 
 	/**

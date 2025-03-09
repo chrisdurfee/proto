@@ -75,7 +75,7 @@ namespace Proto
 
 			$this->set('env', match (true)
 			{
-				$host === '' || $host === $this->get('baseUrl') => 'prod',
+				$host === '' || $host === $urls->prod => 'prod',
 				isset($urls->staging) && $host === $urls->staging => 'staging',
 				isset($urls->testing) && $host === $urls->testing => 'testing',
 				default => 'dev',

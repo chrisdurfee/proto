@@ -67,7 +67,7 @@ class ModuleManager
 	 * @param string $className The class name of the module to register
 	 * @return void
 	 */
-	protected static function registerGateway(string $className)
+	protected static function registerGateway(string $className): void
 	{
 		// Generate a key from the class name.
 		$key = self::generateKey($className);
