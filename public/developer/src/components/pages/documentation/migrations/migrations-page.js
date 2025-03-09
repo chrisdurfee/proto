@@ -78,14 +78,14 @@ use Proto\\Database\\Migrations\\Migration;
 
 class ExampleMigration extends Migration
 {
-    protected $connection = 'default';
+    protected string $connection = 'default';
 
-    public function up()
+    public function up(): void
     {
         // Code to update the database.
     }
 
-    public function down()
+    public function down(): void
     {
         // Code to revert the changes.
     }
@@ -148,7 +148,7 @@ class ExampleMigration extends Migration
 					For example:`
 				),
 				CodeBlock(
-`public function up()
+`public function up(): void
 {
     // Create a table.
     $this->create('test_table', function($table) {
@@ -192,7 +192,7 @@ class ExampleMigration extends Migration
 					For example:`
 				),
 				CodeBlock(
-`public function down()
+`public function down(): void
 {
     // Revert changes to the table.
     $this->alter('test_table', function($table) {

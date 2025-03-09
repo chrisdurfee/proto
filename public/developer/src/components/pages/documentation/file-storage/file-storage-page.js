@@ -77,28 +77,25 @@ export const FileStoragePage = () =>
 				),
 				CodeBlock(
 `"files": {
-    "local": {
-        "path": "/common/files/",
-        "attachments": {
-            "path": "/common/files/attachments/"
-        }
-    },
-    "amazon": {
-        "s3": {
-            "bucket": {
-                "tickets": {
-                    "name": "tickets",
-                    "config": "/tickets/.s3cfg.amazon",
-                    "path": "/tickets/"
-                },
-                "attachments": {
-                    "name": "attachments",
-                    "config": "/attachments/.s3cfg.amazon",
-                    "path": "/attachments/"
-                }
-            }
-        }
-    }
+	"local": {
+		"path": "/common/files/",
+		"attachments": {
+			"path": "/common/files/attachments/"
+		}
+	},
+	"amazon": {
+		"s3": {
+			"bucket": {
+				"uploads": {
+					"secure": true,
+					"name": "main",
+					"path": "main/",
+					"region": "",
+					"version": "latest"
+				}
+			}
+		}
+	}
 }`
 				)
 			]),
