@@ -237,15 +237,15 @@ public function updateAccessedAt(string $userId, string $guid, string $ipAddress
 protected function getByOptionInnerQuery()
 {
     return $this->table()
-        ->select(['id', 'bpCallsId'], ["NULL as bpCalendarId"], ['scheduled', 'callStart'], ['id', 'created'])
+        ->select(['id', 'callsId'], ["NULL as calendarId"], ['scheduled', 'callStart'], ['id', 'created'])
         ->join(function($joins) {
-            $joins->left('bp_list_options', 'lo')
+            $joins->left('list_options', 'lo')
                   ->on("{$this->alias}.type_id = lo.option_number");
         })
         ->where("{$this->alias}.client_id = ?", "lo.list_id = ?", "lo.option_number = ?", "{$this->alias}.status IN (?)")
         ->union(
-            $this->builder('bp_calendar', 'cal')
-                 ->select(["NULL as bpCallsId"], ['id', 'bpCalendarId'], ['start', 'callStart'], ['id', 'created'])
+            $this->builder('calendar', 'cal')
+                 ->select(["NULL as callsId"], ['id', 'calendarId'], ['start', 'callStart'], ['id', 'created'])
                  ->where('cal.client_id = ?', 'cal.type = ?', 'cal.deleted = 0')
         );
 }`
