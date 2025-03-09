@@ -166,7 +166,7 @@ Use this tool to quickly scaffold new features or manage existing ones without n
 
 1. Clone the repository:
 ```sh
-git clone https://github.com/your-username/proto.git
+git clone https://github.com/chrisdurfee/proto.git
 ```
 
 2. Install dependencies using Composer:
