@@ -60,7 +60,7 @@ export const DispatchPage = () =>
 				H4({ class: 'text-lg font-bold' }, 'Overview'),
 				P({ class: 'text-muted-foreground' },
 					`Proto supports dispatching several default types of messages:
-					email, SMS, and web push notifications. The Dispatch and Enqueue classes are located in the Common\\Dispatch folder.
+					email, SMS, and web push notifications. The Dispatch and Enqueue classes are located in the Proto\\Dispatch\\Dispatcher folder.
 					Dispatching immediately sends the message during the current request (which may slow down the response),
 					while enqueuing adds the message to a queue that processes messages every minute.`
 				)
@@ -71,7 +71,7 @@ export const DispatchPage = () =>
 				H4({ class: 'text-lg font-bold' }, 'Email'),
 				P({ class: 'text-muted-foreground' },
 					`To dispatch an email, add the email configurations to your Common\\Config .env file under the key "email".
-					Email messages can use HTML templates that reside in the Common\\Email folder.`
+					Email messages can use HTML templates that reside in the Common\\Email or module Email folder.`
 				),
 				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
 					Li("Dispatch email immediately:"),
@@ -85,10 +85,10 @@ export const DispatchPage = () =>
 ];
 
 // Dispatch email immediately:
-Dispatch::email($settings);
+Dispatcher::email($settings);
 
 // Enqueue email to send later:
-Enqueue::email($settings);`
+Enqueuer::email($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
 					`An API endpoint is available for testing email dispatch: <code>/api/email?op=test&to={email}</code>.`
@@ -100,7 +100,7 @@ Enqueue::email($settings);`
 				H4({ class: 'text-lg font-bold' }, 'SMS'),
 				P({ class: 'text-muted-foreground' },
 					`To dispatch a text message, add SMS configurations to your Common\\Config .env file under "sms".
-					The dispatch system uses Twilio settings, and text templates should be placed in the Common\\Text folder.`
+					The dispatch system uses Twilio settings, and text templates should be placed in the Common\\Text or module Text folder.`
 				),
 				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
 					Li("Dispatch SMS immediately:"),
@@ -114,10 +114,10 @@ Enqueue::email($settings);`
 ];
 
 // Dispatch SMS immediately:
-Dispatch::sms($settings);
+Dispatcher::sms($settings);
 
 // Enqueue SMS to send later:
-Enqueue::sms($settings);`
+Enqueuer::sms($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
 					`Test SMS sending via the API endpoint: <code>/api/text?op=test&to={number}</code>.`
@@ -129,7 +129,7 @@ Enqueue::sms($settings);`
 				H4({ class: 'text-lg font-bold' }, 'Web-Push'),
 				P({ class: 'text-muted-foreground' },
 					`For web push notifications, add push configurations to your Common\\Config .env file under "push".
-					The dispatch system uses these settings when sending notifications, and the push templates should be placed in the Common\\Push folder.
+					The dispatch system uses these settings when sending notifications, and the push templates should be placed in the Common\\Push or module Push folder.
 					To simplify web push notifications, use the Common\\Controllers\\Push\\WebPushController which automatically retrieves
 					user push settings.`
 				),
