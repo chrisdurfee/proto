@@ -78,7 +78,7 @@ use Proto\\Database\\Migrations\\Migration;
 
 class ExampleMigration extends Migration
 {
-    protected $connection = 'proto';
+    protected $connection = 'default';
 
     public function up()
     {
@@ -126,7 +126,7 @@ class ExampleMigration extends Migration
     $table->updatedAt();
     $table->int('message_id', 20);
     $table->varchar('subject', 160);
-    $table->text('message')->null();
+    $table->text('message')->nullable();
     $table->dateTime('read_at');
     $table->dateTime('forwarded_at');
 
@@ -157,7 +157,7 @@ class ExampleMigration extends Migration
         $table->updatedAt();
         $table->int('message_id', 20);
         $table->varchar('subject', 160);
-        $table->text('message')->null();
+        $table->text('message')->nullable();
         $table->dateTime('read_at');
         $table->dateTime('forwarded_at');
         $table->index('email_read')->fields('id', 'read_at');
