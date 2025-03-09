@@ -1,37 +1,83 @@
 # Proto Framework
 
-Proto is a PHP framework built to leverage the latest features of PHP 8.2+. It is designed with a focus on security, modularity, and maintainability, making it an ideal choice for building robust and scalable web applications.
+## Introduction to Proto
 
-## Key Features
+Proto is an open-source modular monolith framework for building scalable server applications quickly and securely.
 
-- **PHP 8.2+**: Utilizes the latest features and improvements in PHP 8.2+ to provide a modern development experience.
-- **Security**: Implements best practices for secure coding to mitigate common vulnerabilities such as SQL injection, Cross-Site Scripting (XSS), and Cross-Site Request Forgery (CSRF).
-- **Modular Monolith**: Designed as a modular monolith framework, allowing for better organization and separation of concerns within the codebase.
-- **Open Source**: Released under an open-source license, encouraging community contributions and collaboration.
+## Overview
 
-## Getting Started
+Distributed systems are great, except when they are not. Building large, team-based systems that scale presents many challenges—testing, conflicts, build times, response times, developer environments, etc. Proto was created to allow scalable server applications to be built rapidly and securely. Its modular design enables teams to develop specific features without many of the common pitfalls of distributed systems. Proto auto-bootstraps and loads modules on demand, and configuration is managed in the **Common/Config** `.env` file.
 
-To get started with Proto, follow these steps:
+## Framework Features
 
-1. **Clone the Repository**: Clone the Proto repository from GitHub.
+Proto includes a comprehensive set of features for creating complex applications, including:
 
-   ```sh
-   git clone https://github.com/your-username/proto.git
-   ```
+- **Modules system** to encapsulate features
+- **API Systems** (Both Resource and REST Routers)
+- **Validation**
+- **Server-Sent Events (SSE)**
+- **Websockets & Sockets**
+- **HTTP Resources**
+- **Security Gates and Policies**
+- **Authentication** using roles and permissions
+- **Controllers**
+- **Caching (Redis)**
+- **Configs**
+- **Models**
+- **Storage Layers**
+- **Session Management**
+- **Services & Service Providers**
+- **Jobs & Routines**
+- **Design Patterns**
+- **HTML Templates**
+- **Email Rendering**
+- **Dispatching Email, SMS, and Web Push**
+- **Events**
+- **Resource Generators**
+- **Database Adapter**
+- **Query Builders**
+- **Migrations**
+- **File Storage** (Local, S3)
+- **Integrations**
+- **Utilities**
 
-2. **Install Dependencies**: Use Composer to install the required dependencies.
+## File Structure
 
-   ```sh
-   cd proto
-   composer install
-   ```
+A typical Proto application is structured as follows:
 
-3. **Configuration**: Configure your application settings in the `.env` file.
+- **common/**
+  The root for your application code and shared components between modules.
+- **proto/**
+  The core framework. This folder is accessible but should not be modified.
+- **modules/**
+  Contains self-contained modules for each major domain or feature.
+- **public/**
+  Front-end assets and public resources (including the developer app in `public/developer`).
 
-4. **Run the Application**: Start the built-in PHP server to run the application.
+## Naming Conventions & Namespace Structure
 
-   ```sh
-   docker compose up --build
+- **Class Names:** Use **PascalCase** and they should be singular.
+- **Methods & Variables:** Use **camelCase**.
+- **Folder Names:** Use lowercase with hyphens to join words.
+- **File Names:** Use **PascalCase**.
+- **Namespaces:** Should reflect the folder structure to support autoloading.
+
+## Configuration
+
+Before you begin, configure your application settings in the **Common/Config** `.env` file. All settings should be registered as JSON.
+
+The `Proto\Config` class loads these settings during bootstrap. It is a singleton; access configurations with:
+
+```php
+use Proto\Config;
+
+// Retrieve configuration values
+$config = Config::getInstance();
+$baseUrl = $config->get('baseUrl');
+
+// Or via the helper function:
+$connections = env('connections');
+
    ```
 
 ## Screenshots
