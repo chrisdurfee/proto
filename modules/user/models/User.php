@@ -39,4 +39,13 @@ class User extends Model
 		'updatedAt',
 		'deletedAt'
 	];
+
+	/**
+	 * Fields to exclude when exporting.
+	 *
+	 * @var array
+	 */
+	protected static array $fieldsBlacklist = [
+		'password'
+	];
 }
