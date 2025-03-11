@@ -15,28 +15,28 @@ class CreateForeignKey extends Template
 	 *
 	 * @var string
 	 */
-	protected string $localField = '';
+	protected string $field = '';
 
 	/**
 	 * The name of the foreign key constraint.
 	 *
 	 * @var string
 	 */
-	protected string $constraintName;
+	protected string $name;
 
 	/**
 	 * The referenced field in the foreign table.
 	 *
 	 * @var string
 	 */
-	protected string $referenceField = '';
+	protected string $references = '';
 
 	/**
 	 * The referenced table.
 	 *
 	 * @var string
 	 */
-	protected string $referenceTable = '';
+	protected string $on = '';
 
 	/**
 	 * The action on update.
@@ -60,8 +60,8 @@ class CreateForeignKey extends Template
 	 */
 	public function __construct(string $field)
 	{
-		$this->localField = $field;
-		$this->constraintName = 'fk_' . $field;
+		$this->field = $field;
+		$this->name = 'fk_' . $field;
 	}
 
 	/**
@@ -91,26 +91,26 @@ class CreateForeignKey extends Template
 	/**
 	 * Sets the referenced field.
 	 *
-	 * @param string $referenceField The field in the referenced table.
+	 * @param string $references The field in the referenced table.
 	 * @return self
 	 */
-	public function setReferenceField(string $referenceField): self
+	public function references(string $references): self
 	{
-		$this->referenceField = $referenceField;
+		$this->references = $references;
 		return $this;
 	}
 
 	/**
 	 * Sets the referenced table and updates the constraint name.
 	 *
-	 * @param string $referenceTable The referenced table.
+	 * @param string $on The referenced table.
 	 * @return self
 	 */
-	public function setReferenceTable(string $referenceTable): self
+	public function on(string $on): self
 	{
-		$randomSuffix = $this->referenceField . random_int(0, 1000);
-		$this->referenceTable = $referenceTable;
-		$this->constraintName .= '_' . $referenceTable . '_' . $randomSuffix;
+		$randomSuffix = $this->references . random_int(0, 1000);
+		$this->on = $on;
+		$this->name .= '_' . $on . '_' . $randomSuffix;
 		return $this;
 	}
 
@@ -121,6 +121,6 @@ class CreateForeignKey extends Template
 	 */
 	public function render(): string
 	{
-		return "CONSTRAINT `{$this->constraintName}` FOREIGN KEY (`{$this->localField}`) REFERENCES `{$this->referenceTable}` (`{$this->referenceField}`) ON UPDATE {$this->onUpdate} ON DELETE {$this->onDelete}";
+		return "CONSTRAINT `{$this->name}` FOREIGN KEY (`{$this->field}`) REFERENCES `{$this->on}` (`{$this->references}`) ON UPDATE {$this->onUpdate} ON DELETE {$this->onDelete}";
 	}
 }

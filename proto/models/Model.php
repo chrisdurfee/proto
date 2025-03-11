@@ -9,6 +9,7 @@ use Proto\Tests\Debug;
 use Proto\Support\Collection;
 use Proto\Utils\Strings;
 use Proto\Models\Joins\JoinBuilder;
+use Proto\Models\Joins\ModelJoin;
 
 /**
  * Class Model
@@ -61,6 +62,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * @var array
 	 */
 	protected array $compiledJoins = [];
+
+	/**
+	 * Join builder instance.
+	 *
+	 * @var JoinBuilder|null
+	 */
+	protected ?JoinBuilder $builder = null;
 
 	/**
 	 * Fields to exclude when exporting.
@@ -168,13 +176,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Retrieve model joins.
 	 *
-	 * @return array
+	 * @return array<ModelJoin>
 	 */
 	protected function getModelJoins(): array
 	{
 		$joins = [];
 		$alias = static::$alias ?? null;
-		$builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
+		$builder = $this->builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
 
 		// Set the model class name for joins.
 		$modelClassName = static::getIdClassName();
@@ -200,11 +208,11 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Set up a one-to-many join.
 	 *
-	 * @param mixed $builder
+	 * @param JoinBuilder $builder
 	 * @param string $type Join type.
-	 * @return object
+	 * @return ModelJoin
 	 */
-	public static function oneToMany(mixed $builder, string $type = 'left'): object
+	public static function oneToMany(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
 		$result = static::oneToOne($builder, $type);
 		$result->multiple();
@@ -214,11 +222,11 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Set up a one-to-one join.
 	 *
-	 * @param mixed $builder
+	 * @param JoinBuilder $builder
 	 * @param string $type Join type.
-	 * @return object
+	 * @return ModelJoin
 	 */
-	public static function oneToOne(mixed $builder, string $type = 'left'): object
+	public static function oneToOne(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
 		$child = $builder->{$type}(static::table(), static::alias());
 		$idName = static::getIdClassName();

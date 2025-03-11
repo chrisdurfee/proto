@@ -108,12 +108,12 @@ class Data
 	protected function setupFieldsToData(array $fields): void
 	{
 		if (count($fields) < 1)
-        {
+		{
 			return;
 		}
 
 		foreach ($fields as $field)
-        {
+		{
 			$key = $this->checkAliasField($field);
 			$this->setDataField($key, null);
 		}
@@ -146,14 +146,14 @@ class Data
 	protected function setupJoinsToData(array $joins): void
 	{
 		if (count($joins) < 1)
-        {
+		{
 			return;
 		}
 
 		foreach ($joins as $join)
-        {
+		{
 			if ($join->isMultiple())
-            {
+			{
 				$key = Strings::camelCase($join->getAs());
 				$this->setDataField($key, []);
 				continue;
@@ -161,12 +161,12 @@ class Data
 
 			$joiningFields = $join->getFields() ?? false;
 			if (!$joiningFields)
-            {
+			{
 				continue;
 			}
 
 			foreach ($joiningFields as $field)
-            {
+			{
 				$key = $this->checkAliasField($field);
 				$this->joinFields[] = $key;
 				$this->setDataField($key, null);
@@ -195,15 +195,15 @@ class Data
 	protected function setFields(object $newData): void
 	{
 		foreach ($newData as $key => $val)
-        {
+		{
 			$keyMapped = Strings::camelCase($key);
 			if (!property_exists($this->data, $keyMapped))
-            {
+			{
 				continue;
 			}
 
 			if (is_array($this->data->{$keyMapped}))
-            {
+			{
 				$val = $this->nestedDataHelper->getGroupedData($val);
 			}
 			$this->setDataField($keyMapped, $val);
@@ -219,13 +219,13 @@ class Data
 	{
 		$args = func_get_args();
 		if (count($args) < 1)
-        {
+		{
 			return;
 		}
 
 		$firstArg = $args[0];
 		if (!is_object($firstArg))
-        {
+		{
 			$value    = $args[1] ?? null;
 			$firstArg = (object)[$args[0] => $value];
 		}
@@ -252,9 +252,9 @@ class Data
 	{
 		$out = [];
 		foreach ($this->data as $key => $value)
-        {
+		{
 			if (in_array($key, $this->fieldBlacklist, true))
-            {
+			{
 				continue;
 			}
 			$out[$key] = $value;
@@ -271,9 +271,9 @@ class Data
 	{
 		$out = [];
 		foreach ($this->data as $key => $val)
-        {
+		{
 			if (is_null($val) || in_array($key, $this->joinFields, true) || is_array($val))
-            {
+			{
 				continue;
 			}
 
@@ -303,25 +303,25 @@ class Data
 	public function convertRows(array $rows): array
 	{
 		if (count($rows) < 1)
-        {
+		{
 			return [];
 		}
 
 		$formatted = [];
 		foreach ($rows as $row)
-        {
+		{
 			$obj = new \stdClass();
 			foreach ($this->data as $key => $val)
-            {
+			{
 				if (in_array($key, $this->fieldBlacklist, true))
-                {
+				{
 					continue;
 				}
 
 				$keyName = $this->prepareKeyName($key);
 				$value   = $row->{$keyName} ?? null;
 				if (is_array($val))
-                {
+				{
 					$value = $this->nestedDataHelper->getGroupedData($value);
 				}
 				$obj->{$key} = $value;

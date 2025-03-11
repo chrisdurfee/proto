@@ -67,6 +67,16 @@ class CreateIndex extends Template
 	}
 
 	/**
+	 * Sets the index as UNIQUE.
+	 *
+	 * @return self
+	 */
+	public function unique(): self
+	{
+		return $this->setIndexType('UNIQUE');
+	}
+
+	/**
 	 * Sets the index as SPATIAL.
 	 *
 	 * @return self

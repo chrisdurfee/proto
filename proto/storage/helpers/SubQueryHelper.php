@@ -50,6 +50,11 @@ class SubQueryHelper
 	 */
 	public static function getGroupConcatSql(string $as, array $fields): string
 	{
+		if (empty($fields))
+		{
+			return 'id';
+		}
+
 		$keys = array_map(function ($field)
 		{
 			return "'{$field}-:-', {$field}";

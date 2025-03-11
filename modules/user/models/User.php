@@ -48,4 +48,24 @@ class User extends Model
 	protected static array $fieldsBlacklist = [
 		'password'
 	];
+
+	/**
+	 * Define joins for the User model.
+	 *
+	 * @param object $builder The query builder object
+	 * @return void
+	 */
+	protected static function joins(object $builder): void
+	{
+		$join = UserRole::many($builder);
+
+		// Role::many($join)
+		// 	->fields([
+		// 		['id', 'roleId'],
+		// 		['name', 'roleName'],
+		// 		['slug', 'roleSlug'],
+		// 		['description', 'roleDescription'],
+		// 		'permissions'
+		// 	]);
+	}
 }
