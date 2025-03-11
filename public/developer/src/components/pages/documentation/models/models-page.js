@@ -169,21 +169,42 @@ protected static function format(?object $data): ?object
 					or many-to-many relationships.`
 				),
 				CodeBlock(
-`protected static function joins(object $builder): void
+`protected static function joins($builder): void
 {
-	// Example: Join to the Role table.
-	Role::one($builder)
-		->on(['id', 'userId'])
-		->fields('role');
+	// model joins
 
-	// Another join using an inner join.
-	Role::one($builder, 'inner')
-		->fields('role');
+	// this will join the model to the parent model
+	Role::one($builder) // builder, join type
+		->on(['id', 'userId']) // parent column, child column use camel caps
+		->fields('role'); // fields to pull form the join table use camel caps
 
-	// Raw SQL join example:
-	$builder->left('role', 'r')
-		->on(['id', 'userId'])
-		->fields('role');
+	/**
+	 * Default On
+	 *
+	 * The join will receive a default on of ["id", "{className}Id"]
+	 * that can be overriden.
+	 */
+	Role::one($builder, 'inner') // builder, join type
+		->fields('role'); // fields to pull form the join table use camel caps
+
+	Permission:many($builder) builder, join type
+		->on('c.id = p.permissionId') // raw sql string
+		->fields('name'); // fields to pull form the join table use camel caps
+
+	// table joins
+
+	// this will join the model to the table
+	$builder->left('role', 'r') // table name, alias
+		->on(['id', 'userId']) // parent column, child column use camel caps
+		->fields(
+			'role',
+			['id', 'roleId'] // This will create an alias for the field id
+		); // fields to pull form the join table use camel caps
+
+	// this will join the model to the table
+	$builder->right('permission', 'p') // table name, alias
+		->on(['id', 'permissionId']) // parent column, child column use camel caps
+		->fields('name'); // fields to pull form the join table use camel caps
 }`
 				)
 			]),
