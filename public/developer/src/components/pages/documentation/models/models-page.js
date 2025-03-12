@@ -194,6 +194,8 @@ protected static function format(?object $data): ?object
 	/**
 	 * This will create a bridge table join for the user_roles table
 	 * and the roles table.
+	 *
+	 * The bridge join uses the default on of ["id", "{className}Id"]
 	 */
 	static::bridge(UserRole::class)
 		->many(Role::class)
