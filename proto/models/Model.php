@@ -68,7 +68,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @var JoinBuilder|null
 	 */
-	protected ?JoinBuilder $builder = null;
+	protected static ?JoinBuilder $builder = null;
 
 	/**
 	 * Fields to exclude when exporting.
@@ -182,7 +182,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$joins = [];
 		$alias = static::$alias ?? null;
-		$builder = $this->builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
+		$builder = static::$builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
 
 		// Set the model class name for joins.
 		$modelClassName = static::getIdClassName();
@@ -208,13 +208,44 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Set up a one-to-many join.
 	 *
+	 * @param string $modelClass Model class.
+	 * @param string $type Join type.
+	 * @return JoinBuilder
+	 */
+	public static function bridge(string $modelClass, string $type = 'left'): JoinBuilder
+	{
+		/**
+		 * This will set up a many-to-one join and add the
+		 * default on clause for the join.
+		 */
+		$builder = static::$builder;
+		$result = $modelClass::many($builder, $type);
+
+		/**
+		 * This will create a child join builder and
+		 * set it to multiple.
+		 */
+		$childJoin = $result->join();
+
+		/**
+		 * This will set the model class name for the join.
+		 */
+		$modelClassName = $modelClass::getIdClassName();
+		$childJoin->setModelClassName($modelClassName);
+
+		return $childJoin;
+	}
+
+	/**
+	 * Set up a one-to-many join.
+	 *
 	 * @param JoinBuilder $builder
 	 * @param string $type Join type.
 	 * @return ModelJoin
 	 */
-	public static function oneToMany(JoinBuilder $builder, string $type = 'left'): ModelJoin
+	public static function many(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
-		$result = static::oneToOne($builder, $type);
+		$result = static::one($builder, $type);
 		$result->multiple();
 		return $result;
 	}
@@ -226,11 +257,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * @param string $type Join type.
 	 * @return ModelJoin
 	 */
-	public static function oneToOne(JoinBuilder $builder, string $type = 'left'): ModelJoin
+	public static function one(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
 		$child = $builder->{$type}(static::table(), static::alias());
-		$idName = static::getIdClassName();
-		$child->on(['id', $idName . 'Id']);
+
+		/**
+		 * This will add the default on clause for the join.
+		 */
+		$modelRefName = $builder->getModelRefName();
+		$child->on(['id', $modelRefName . 'Id']);
+
 		return $child;
 	}
 
@@ -246,6 +282,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		{
 			return;
 		}
+
 		$this->compiledJoins = $joins;
 	}
 
@@ -416,16 +453,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function __callStatic(string $method, array $arguments): mixed
 	{
-		if ($method === 'many')
-		{
-			return static::oneToMany(...$arguments);
-		}
-
-		if ($method === 'one')
-		{
-			return static::oneToOne(...$arguments);
-		}
-
 		$model = new static();
 		$callable = [$model->storage, $method];
 		$result = $model->callMethod($callable, $arguments);

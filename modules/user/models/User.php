@@ -57,15 +57,19 @@ class User extends Model
 	 */
 	protected static function joins(object $builder): void
 	{
-		$join = UserRole::many($builder);
-
-		// Role::many($join)
-		// 	->fields([
-		// 		['id', 'roleId'],
-		// 		['name', 'roleName'],
-		// 		['slug', 'roleSlug'],
-		// 		['description', 'roleDescription'],
-		// 		'permissions'
-		// 	]);
+		/**
+		 * This will create a bridge table join for the user_roles table
+		 * and the roles table.
+		 */
+		static::bridge(UserRole::class)
+			->many(Role::class)
+			->on(['roleId', 'id'])
+			->fields(
+				'id',
+				'name',
+				'slug',
+				'description',
+				'permissions'
+			);
 	}
 }

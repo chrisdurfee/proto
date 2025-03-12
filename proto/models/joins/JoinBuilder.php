@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Models\Joins;
 
+use Proto\Utils\Strings;
+
 /**
  * Class JoinBuilder
  *
@@ -60,6 +62,27 @@ class JoinBuilder
 	}
 
 	/**
+	 * Gets the model class name for the join.
+	 *
+	 * @return string
+	 */
+	public function getModelClassName(): string
+	{
+		return $this->modelClassName;
+	}
+
+	/**
+	 * Gets the model class name for the join.
+	 *
+	 * @return string
+	 */
+	public function getModelRefName(): string
+	{
+		$modelName = $this->getModelClassName();
+		return Strings::snakeCase($modelName);
+	}
+
+	/**
 	 * Gets the model identifier name (appending "Id" to the model class name).
 	 *
 	 * @return string
@@ -93,6 +116,75 @@ class JoinBuilder
 	public function join(string|array $tableName, ?string $alias = null): ModelJoin
 	{
 		return $this->addJoin($tableName, $alias);
+	}
+
+	/**
+	 * This will create a many join.
+	 *
+	 * @param string $modelName Model class name.
+	 * @param string $type Join type (default is 'left').
+	 * @return ModelJoin
+	 */
+	public function many(string $modelName, string $type = 'left'): ModelJoin
+	{
+		$tableName = $modelName::table();
+		$alias = $modelName::alias();
+
+		$join = $this->getJoinByType($type, $tableName, $alias);
+		$join->multiple();
+		return $join;
+	}
+
+	/**
+	 * This will create a one to one join.
+	 *
+	 * @param string $modelName
+	 * @param string $type
+	 * @return ModelJoin
+	 */
+	public function one(string $modelName, string $type = 'left'): ModelJoin
+	{
+		$tableName = $modelName::table();
+		$alias = $modelName::alias();
+
+		return $this->getJoinByType($type, $tableName, $alias);
+	}
+
+	/**
+	 * This will create a one join.
+	 *
+	 * @param string $type Join type.
+	 * @param string $tableName Base table name.
+	 * @param string|null $alias Table alias.
+	 * @return ModelJoin
+	 */
+	protected function getJoinByType(string $type, string $tableName, string $alias = null): ModelJoin
+	{
+		$join = null;
+		if ($type === 'right')
+		{
+			$join = $this->right($tableName, $alias);
+		}
+		else if ($type === 'outer')
+		{
+			$join = $this->outer($tableName, $alias);
+		}
+		else if ($type === 'cross')
+		{
+			$join = $this->cross($tableName, $alias);
+		}
+		else
+		{
+			$join = $this->left($tableName, $alias);
+		}
+
+		/**
+		 * This will set the default on condition for the join.
+		 */
+		$modelRefName = $this->getModelRefName();
+		$join->on(['id', $modelRefName . 'Id']);
+
+		return $join;
 	}
 
 	/**

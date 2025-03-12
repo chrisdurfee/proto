@@ -281,10 +281,10 @@ class ModelJoin
 	/**
 	 * Add fields to the join.
 	 *
-	 * @param string ...$fields Field names.
+	 * @param string|array ...$fields Field names.
 	 * @return self
 	 */
-	public function fields(string ...$fields): self
+	public function fields(string|array ...$fields): self
 	{
 		if (count($fields) < 1)
 		{

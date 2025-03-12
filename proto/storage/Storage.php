@@ -688,8 +688,9 @@ class Storage implements StorageInterface
 			->limit($offset, $count);
 
 		$this->setOrderBy($sql, $modifiers);
-		$rows = $this->fetch($sql, $params);
-		return (object)[ 'rows' => $rows ?? [] ];
+		//$sql->debug();
+		$rows = $sql->fetch($params);
+		return (object)[ 'rows' => $rows];
 	}
 
 	/**

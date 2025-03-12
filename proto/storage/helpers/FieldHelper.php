@@ -51,11 +51,13 @@ class FieldHelper
 			return self::prepareFieldName($field, $isSnakeCase);
 		}
 
+		// raw sql
 		if (count($field) < 2)
 		{
 			return $field;
 		}
 
+		// sql with alias
 		if (!is_array($field[0]))
 		{
 			return [
@@ -64,6 +66,7 @@ class FieldHelper
 			];
 		}
 
+		// raw sql with alias
 		return [$field[0], self::prepareFieldName($field[1], $isSnakeCase)];
 	}
 
