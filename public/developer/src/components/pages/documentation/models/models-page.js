@@ -191,6 +191,21 @@ protected static function format(?object $data): ?object
 		->on('c.id = p.permissionId') // raw sql string
 		->fields('name'); // fields to pull form the join table use camel caps
 
+	/**
+	 * This will create a bridge table join for the user_roles table
+	 * and the roles table.
+	 */
+	static::bridge(UserRole::class)
+		->many(Role::class)
+		->on(['roleId', 'id'])
+		->fields(
+			'id',
+			'name',
+			'slug',
+			'description',
+			'permissions'
+		);
+
 	// table joins
 
 	// this will join the model to the table
