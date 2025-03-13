@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Database\Migrations;
 
+use Proto\Database\Adapters\Adapter;
 use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Database\QueryBuilder\Drop;
 
@@ -33,6 +34,11 @@ abstract class Migration
 	 * @var array $queries List of migration queries.
 	 */
 	protected array $queries = [];
+
+	/**
+	 * @var array $insert List of insert queries.
+	 */
+	protected array $insert = [];
 
 	/**
 	 * Gets the database connection name.
@@ -94,6 +100,16 @@ abstract class Migration
 	public function getQueries(): array
 	{
 		return $this->queries;
+	}
+
+	/**
+	 * Gets the stored insert queries.
+	 *
+	 * @return array List of insert queries.
+	 */
+	public function getInserts(): array
+	{
+		return $this->insert;
 	}
 
 	/**
@@ -174,6 +190,29 @@ abstract class Migration
 			$query->type($type);
 		}
 		$this->queries[] = $query;
+	}
+
+	/**
+	 * Inserts data into a table.
+	 *
+	 * @param string $tableName The table name.
+	 * @param array|object $data The data to insert.
+	 * @return void
+	 */
+	public function insert(string $tableName, array|object $data): void
+	{
+		$table = $this->createQueryHandler($tableName);
+		$this->insert[] = $table->insert($data);
+	}
+
+	/**
+	 * THis will allow you to seed the database with data.
+	 *
+	 * @return void
+	 */
+	public function seed(): void
+	{
+
 	}
 
 	/**

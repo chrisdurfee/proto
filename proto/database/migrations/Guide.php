@@ -294,10 +294,31 @@ class Guide
 				continue;
 			}
 
+			$this->seedMigration($migration);
 			$this->recordMigration($migration, $groupId);
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Seeds a migration.
+	 *
+	 * @param Migration $migration Migration instance.
+	 * @return bool Seed success.
+	 */
+	public function seedMigration(Migration $migration) : bool
+	{
+		$migration->seed();
+
+		$queries = $migration->getInserts();
+		if (empty($queries))
+		{
+			return true;
+		}
+
+		$connection = $migration->getConnection();
+		return $this->executeBatch($connection, $queries);
 	}
 
 	/**
@@ -368,9 +389,16 @@ class Guide
 	 */
 	public function applyMigration(object $migration) : bool
 	{
-		$connection = $migration->getConnection();
 		$migration->up();
-		return $this->executeBatch($connection, $migration->getQueries());
+
+		$queries = $migration->getQueries();
+		if (empty($queries))
+		{
+			return true;
+		}
+
+		$connection = $migration->getConnection();
+		return $this->executeBatch($connection, $queries);
 	}
 
 	/**
@@ -381,8 +409,15 @@ class Guide
 	 */
 	public function revertMigration(object $migration) : bool
 	{
-		$connection = $migration->getConnection();
 		$migration->down();
-		return $this->executeBatch($connection, $migration->getQueries());
+
+		$queries = $migration->getQueries();
+		if (empty($queries))
+		{
+			return true;
+		}
+
+		$connection = $migration->getConnection();
+		return $this->executeBatch($connection, $queries);
 	}
 }
