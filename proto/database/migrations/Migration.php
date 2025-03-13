@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Database\Migrations;
 
+use Proto\Database\Database;
 use Proto\Database\Adapters\Adapter;
 use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Database\QueryBuilder\Drop;
@@ -34,11 +35,6 @@ abstract class Migration
 	 * @var array $queries List of migration queries.
 	 */
 	protected array $queries = [];
-
-	/**
-	 * @var array $insert List of insert queries.
-	 */
-	protected array $insert = [];
 
 	/**
 	 * Gets the database connection name.
@@ -103,13 +99,40 @@ abstract class Migration
 	}
 
 	/**
-	 * Gets the stored insert queries.
+	 * Gets a database connection.
 	 *
-	 * @return array List of insert queries.
+	 * @return Adapter|null Database instance or null on failure.
 	 */
-	public function getInserts(): array
+	protected function db(): ?Adapter
 	{
-		return $this->insert;
+		$db = new Database();
+		return $db->connect($this->connection);
+	}
+
+	/**
+	 * This will fetch data from the database.
+	 *
+	 * @param string|object $query
+	 * @param array $params
+	 * @return array|null
+	 */
+	protected function fetch(string|object $query, array $params = []): ?array
+	{
+		$db = $this->db();
+		return $db->fetch($query, $params);
+	}
+
+	/**
+	 * This will get the first row from the database.
+	 *
+	 * @param string|object $query
+	 * @param array $params
+	 * @return object|null
+	 */
+	protected function first(string|object $query, array $params = []): ?object
+	{
+		$db = $this->db();
+		return $db->first($query, $params);
 	}
 
 	/**
@@ -197,16 +220,16 @@ abstract class Migration
 	 *
 	 * @param string $tableName The table name.
 	 * @param array|object $data The data to insert.
-	 * @return void
+	 * @return bool
 	 */
-	public function insert(string $tableName, array|object $data): void
+	public function insert(string $tableName, array|object $data): bool
 	{
-		$table = $this->createQueryHandler($tableName);
-		$this->insert[] = $table->insert($data);
+		$db = $this->db();
+		return $db->insert($tableName, $data);
 	}
 
 	/**
-	 * THis will allow you to seed the database with data.
+	 * This will allow you to seed the database with data.
 	 *
 	 * @return void
 	 */

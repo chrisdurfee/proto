@@ -4,23 +4,23 @@ namespace Modules\User\Models;
 use Proto\Models\Model;
 
 /**
- * Role
+ * Permission
  *
- * This is the model class for table "roles".
+ * This is the model class for table "permissions".
  *
  * @package Modules\User\Models
  */
-class Role extends Model
+class Permission extends Model
 {
     /**
      * @var string|null $tableName
      */
-    protected static ?string $tableName = 'roles';
+    protected static ?string $tableName = 'permissions';
 
     /**
      * @var string|null $alias
      */
-    protected static ?string $alias = 'r';
+    protected static ?string $alias = 'p';
 
     /**
      * @var array $fields
@@ -30,13 +30,13 @@ class Role extends Model
         'name',
         'slug',
         'description',
-        'permissions',
+        'module',
         'createdAt',
         'updatedAt'
     ];
 
     /**
-     * Define joins for the Role model.
+     * Define joins for the Permission model.
      *
      * @param object $builder The query builder object
      * @return void
@@ -45,17 +45,16 @@ class Role extends Model
     {
         /**
          * This will create a bridge table join for the role_permissions table
-         * and the permissions table.
+         * and the roles table.
          */
         static::bridge(RolePermission::class)
-            ->many(Permission::class)
-            ->on(['permissionId', 'id'])
+            ->many(Role::class)
+            ->on(['roleId', 'id'])
             ->fields(
                 'id',
                 'name',
                 'slug',
-                'description',
-                'module'
+                'description'
             );
     }
 }

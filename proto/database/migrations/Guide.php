@@ -310,15 +310,7 @@ class Guide
 	public function seedMigration(Migration $migration) : bool
 	{
 		$migration->seed();
-
-		$queries = $migration->getInserts();
-		if (empty($queries))
-		{
-			return true;
-		}
-
-		$connection = $migration->getConnection();
-		return $this->executeBatch($connection, $queries);
+		return true;
 	}
 
 	/**
