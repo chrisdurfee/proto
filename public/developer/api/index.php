@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 include_once __DIR__ . '/../app/autoload.php';
 
+use Modules\User\Controllers\UserController;
 use Proto\Http\Router\Router;
 use Developer\App\Auth\Auth;
 use Developer\App\Controllers\GeneratorController;
@@ -139,4 +140,23 @@ $router->get('table/columns*', function($req, $params)
 
 	$controller = new TableController($connection, $tableName);
 	return $controller->getColumns();
+});
+
+/**
+ * This will get the users.
+ */
+$router->get('user*', function($req, $params)
+{
+	$filter = setFilter($req::input('filter'));
+	$offset = $req::getInt('start');
+	$start = !empty($offset)? $offset : 0;
+	$count = $req::getInt('stop');
+	$search = $req::input('search');
+	$custom = $req::input('custom');
+
+	$controller = new UserController();
+	return $controller->all($filter, $start, $count, [
+		'search' => $search,
+		'custom' => $custom
+	]);
 });

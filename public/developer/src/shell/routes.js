@@ -41,6 +41,11 @@ export const Routes = () => [
 	DynamicRoute('/errors*', () => import('../components/pages/errors/error-page.js'), 'Errors'),
 
 	/**
+	 * Users routes
+	 */
+	DynamicRoute('/users*', () => import('../components/pages/users/user-page.js'), 'Users'),
+
+	/**
 	 * Docs routes
 	 */
 	DynamicRoute('/docs*', () => import('../components/pages/documentation/documentation-page.js'), 'Docs', true),
