@@ -8,7 +8,7 @@ use Proto\Http\Session;
  *
  * Base class for authentication gates.
  *
- * @package Proto\Auth
+ * @package Proto\Auth\Gates
  * @abstract
  */
 abstract class Gate
