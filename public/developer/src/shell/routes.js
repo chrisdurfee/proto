@@ -46,6 +46,11 @@ export const Routes = () => [
 	DynamicRoute('/users*', () => import('../components/pages/users/user-page.js'), 'Users'),
 
 	/**
+	 * IAM routes
+	 */
+	DynamicRoute('/iam*', () => import('../components/pages/iam/iam-page.js'), 'IAM'),
+
+	/**
 	 * Docs routes
 	 */
 	DynamicRoute('/docs*', () => import('../components/pages/documentation/documentation-page.js'), 'Docs', true),

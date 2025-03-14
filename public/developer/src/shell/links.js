@@ -11,5 +11,6 @@ export const Links = () => [
 	{ label: 'Migrations', href: '/developer/migrations', icon: Icons.stack, mobileOrder: 3 },
 	{ label: 'Errors', href: '/developer/errors', icon: Icons.bug, mobileOrder: 4 },
 	{ label: 'Users', href: '/developer/users', icon: Icons.user.group, mobileOrder: 5 },
-	{ label: 'Docs', href: '/developer/docs', icon: Icons.document.text, mobileOrder: 6 }
+	{ label: 'IAM', href: '/developer/iam', icon: Icons.locked, mobileOrder: 6 },
+	{ label: 'Docs', href: '/developer/docs', icon: Icons.document.text, mobileOrder: 7 },
 ];
