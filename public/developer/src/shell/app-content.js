@@ -22,7 +22,5 @@ export const AppContent = (props) => (
 			const WAIT_TIME = 1000;
 			window.setTimeout(() => openInstallPrompt(), WAIT_TIME);
 		}
-	}, [
-		MainContent(props)
-	])
+	}, MainContent(props))
 );
