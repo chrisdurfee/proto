@@ -78,7 +78,8 @@ class JoinBuilder
 	 */
 	public function getModelRefName(): string
 	{
-		$modelName = $this->getModelClassName();
+		$modelClass = $this->getModelClassName();
+		$modelName = $modelClass::getIdClassName();
 		return Strings::snakeCase($modelName);
 	}
 
@@ -89,7 +90,9 @@ class JoinBuilder
 	 */
 	public function getModelIdName(): string
 	{
-		return "{$this->modelClassName}Id";
+		$modelClass = $this->getModelClassName();
+		$modelName = $modelClass::getIdClassName();
+		return "{$modelName}Id";
 	}
 
 	/**
@@ -127,6 +130,8 @@ class JoinBuilder
 	 */
 	public function many(string $modelName, string $type = 'left'): ModelJoin
 	{
+		$this->setModelClassName($modelName);
+
 		$tableName = $modelName::table();
 		$alias = $modelName::alias();
 

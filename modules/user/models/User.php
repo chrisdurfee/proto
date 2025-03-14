@@ -8,7 +8,7 @@ use Proto\Models\Model;
  *
  * This is the model class for table "users".
  *
- * @package Proto\Models
+ * @package Modules\User\Models
  */
 class User extends Model
 {
@@ -32,7 +32,7 @@ class User extends Model
 		'password',
 		'firstName',
 		'lastName',
-		'role',
+		'image',
 		'status',
 		'emailVerifiedAt',
 		'createdAt',
@@ -62,14 +62,28 @@ class User extends Model
 		 * and the roles table.
 		 */
 		static::bridge(UserRole::class)
-			->many(Role::class)
+			->many(modelName: Role::class)
 			->on(['roleId', 'id'])
 			->fields(
 				'id',
 				'name',
 				'slug',
-				'description',
-				'permissions'
-			);
+				'description'
+			)
+
+			/**
+			 * This will create a bridge table join from the role to role_permissions table
+			 * and the role_permissions to the permissions table.
+			 */
+			->bridge(RolePermission::class)
+				->many(Permission::class)
+				->on(['permissionId', 'id'])
+				->fields(
+					'id',
+					'name',
+					'slug',
+					'description',
+					'module'
+				);
 	}
 }

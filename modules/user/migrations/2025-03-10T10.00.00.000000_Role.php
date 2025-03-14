@@ -27,7 +27,6 @@ class Role extends Migration
 			$table->varchar('name', 100);
 			$table->varchar('slug', 100);
 			$table->text('description')->nullable();
-			$table->text('permissions')->nullable(); // JSON encoded permissions
 			$table->createdAt();
 			$table->updatedAt();
 

@@ -279,6 +279,32 @@ class ModelJoin
 	}
 
 	/**
+	 * This will create a bridge table join for the
+	 * model class and the bridge table.
+	 *
+	 * @param string $modelClass Model class
+	 * @param string $type Join type
+	 * @return JoinBuilder
+	 */
+	public function bridge(string $modelClass, string $type = 'left'): JoinBuilder
+	{
+		/**
+		 * This will get the model join class id from the
+		 * builder model class name.
+		 */
+		$bridgeClassName = $this->builder->getModelClassName();
+
+		/**
+		 * This will create a linked builder and set
+		 * the bridge class name.
+		 */
+		$builder = $this->join($bridgeClassName);
+		$modelJoin = $modelClass::many($builder, $type);
+
+		return $modelJoin->join($bridgeClassName);
+	}
+
+	/**
 	 * Add fields to the join.
 	 *
 	 * @param string|array ...$fields Field names.

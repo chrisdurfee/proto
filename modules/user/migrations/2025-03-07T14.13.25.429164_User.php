@@ -29,7 +29,7 @@ class User extends Migration
 			$table->varchar('password', 255);
 			$table->varchar('first_name', 100);
 			$table->varchar('last_name', 100);
-			$table->varchar('role', 50);
+			$table->varchar('image', 255);
 			$table->int('status', 11);
 			$table->timestamp('email_verified_at')->nullable();
 			$table->createdAt();
