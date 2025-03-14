@@ -62,7 +62,7 @@ class User extends Model
 		 * and the roles table.
 		 */
 		static::bridge(UserRole::class)
-			->many(modelName: Role::class)
+			->many(Role::class)
 			->on(['roleId', 'id'])
 			->fields(
 				'id',

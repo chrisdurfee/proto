@@ -1,7 +1,7 @@
 import { A, Div, P, Span, Td, Thead, Tr } from "@base-framework/atoms";
 import { Badge, Checkbox } from "@base-framework/ui/atoms";
 import { Avatar, StaticStatusIndicator } from "@base-framework/ui/molecules";
-import { CheckboxCol, DataTable, HeaderCol } from "@base-framework/ui/organisms";
+import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
 
 /**
  * This will create a user row.
@@ -55,7 +55,7 @@ export const UserRow = (row, onSelect) => (
  *
 * @return {object}
 */
-const UserHeaderRow = () => (
+const HeaderRow = () => (
 	Thead([
 		Tr({ class: 'text-muted-foreground border-b' }, [
 			CheckboxCol({ class: 'hidden md:table-cell' }),
@@ -72,15 +72,17 @@ const UserHeaderRow = () => (
 /**
  * This will create a user table.
  *
-* @param {object} users
+* @param {object} data
 * @return {object}
 */
-export const UserTable = ({ users }) => (
-	new DataTable({
+export const UserTable = (data) => (
+	ScrollableDataTable({
+		data,
 		cache: 'list',
-		customHeader: UserHeaderRow(),
-		rows: users,
+		customHeader: HeaderRow(),
+		rows: [],
+		limit: 50,
 		rowItem: UserRow,
-		key: 'id'
+		key: 'id',
 	})
 );
