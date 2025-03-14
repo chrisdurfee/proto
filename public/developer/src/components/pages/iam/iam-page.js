@@ -1,3 +1,4 @@
+import { Div } from "@base-framework/atoms";
 import { SidebarMenuPage } from "@base-framework/ui/pages";
 import { IamSwitch } from "./iam-switch.js";
 import { Links } from "./links.js";
@@ -8,7 +9,7 @@ import { Links } from "./links.js";
  * @constant
  * @type {string}
  */
-const basePath = 'docs';
+const basePath = 'iam';
 
 /**
  * IamPage
@@ -28,6 +29,19 @@ export const IamPage = () => (
 		 * @member {string}	basePath
 		 */
 		basePath,
+
+		/**
+		 * This will add the body of the page.
+		 *
+		 * @returns {object}
+		 */
+		addBody()
+		{
+			return Div({
+				class: 'flex flex-auto flex-col',
+				switch: this.addSwitch()
+			});
+		},
 
 		/**
 		 * @member {Array<object>} switch
