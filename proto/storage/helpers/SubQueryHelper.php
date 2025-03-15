@@ -46,13 +46,13 @@ class SubQueryHelper
 	 * @param string $as The alias for the group concat.
 	 * @param array $fields The fields to concat.
 	 *
-	 * @return string
+	 * @return string|null
 	 */
-	public static function getGroupConcatSql(string $as, array $fields): string
+	public static function getGroupConcatSql(string $as, array $fields): ?string
 	{
 		if (empty($fields))
 		{
-			return 'id';
+			return null;
 		}
 
 		$keys = array_map(function ($field)
@@ -71,9 +71,9 @@ class SubQueryHelper
 	 * @param callable $builderCallback A callback receiving table and alias to return a builder.
 	 * @param bool $isSnakeCase Indicates whether to use snake_case.
 	 *
-	 * @return string
+	 * @return string|null
 	 */
-	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): string
+	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): ?string
 	{
 		$tableName = $join->getTableName();
 		$alias = $join->getAlias();
@@ -85,6 +85,11 @@ class SubQueryHelper
 
 		$as = $join->getAs();
 		$groupConcat = self::getGroupConcatSql($as, $fields);
+		if ($groupConcat === null)
+		{
+			return null;
+		}
+
 		$sql = $builder->select([$groupConcat])->joins($joins);
 		return '(' . $sql->where(...$join->getOn()) . ') AS ' . $as;
 	}

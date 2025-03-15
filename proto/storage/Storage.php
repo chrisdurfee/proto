@@ -518,10 +518,16 @@ class Storage implements StorageInterface
 				continue;
 			}
 
-			$subQuery = SubQueryHelper::setupSubQuery($join, function($table, $alias)
+			$subQuery = SubQueryHelper::setupSubQuery($join, function($table, $alias): QueryHandler
 			{
 				return $this->builder($table, $alias);
 			}, $isSnakeCase);
+
+			if ($subQuery === null)
+			{
+				continue;
+			}
+
 			$cols[] = [$subQuery];
 		}
 	}
@@ -688,7 +694,6 @@ class Storage implements StorageInterface
 			->limit($offset, $count);
 
 		$this->setOrderBy($sql, $modifiers);
-		//$sql->debug();
 		$rows = $sql->fetch($params);
 		return (object)[ 'rows' => $rows];
 	}

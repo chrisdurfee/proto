@@ -102,7 +102,7 @@ const update = (data) =>
  * @param {object} props - The properties for the modal.
  * @returns {Modal} - A new instance of the Modal component.
  */
-export const RoleModal = (props) =>
+export const RoleModal = (props = {}) =>
 {
 	const item = props.item || {};
 	const mode = item.id ? 'edit' : 'add';
