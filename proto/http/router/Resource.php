@@ -149,7 +149,9 @@ class Resource
 	 */
 	public function activate(string $request): mixed
 	{
+		$item = $request::json('item');
 		$resourceId = $this->params->id ?? null;
+
 		$method = $request::method();
 		switch ($method)
 		{
@@ -160,13 +162,13 @@ class Resource
 				}
 				return $this->call('get', [$resourceId]);
 			case "POST":
-				return $this->call('add', [$resourceId]);
+				return $this->call('add', [$item]);
 			case "PUT":
-				return $this->call('setup', [$resourceId]);
+				return $this->call('setup', [$item]);
 			case "DELETE":
 				return $this->call('delete', [$resourceId]);
 			case "PATCH":
-				return $this->call('update', [$resourceId]);
+				return $this->call('update', [$item]);
 			default:
 				$this->notFound();
 				die;

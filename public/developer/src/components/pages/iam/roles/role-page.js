@@ -1,6 +1,6 @@
 import { Div } from "@base-framework/atoms";
 import { BlankPage } from "@base-framework/ui/pages";
-import { UserModel } from "./models/user-model.js";
+import { RoleModel } from "./models/role-model.js";
 import { PageHeader } from "./page-header.js";
 import { RoleTable } from "./table/role-table.js";
 
@@ -11,7 +11,7 @@ import { RoleTable } from "./table/role-table.js";
  */
 export const RolePage = () =>
 {
-	const data = new UserModel({
+	const data = new RoleModel({
 		filter: 'all'
 	});
 

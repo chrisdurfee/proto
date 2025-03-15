@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 include_once __DIR__ . '/../app/autoload.php';
 
+use Modules\User\Controllers\RoleController;
 use Modules\User\Controllers\UserController;
 use Proto\Http\Router\Router;
 use Developer\App\Auth\Auth;
@@ -143,20 +144,11 @@ $router->get('table/columns*', function($req, $params)
 });
 
 /**
- * This will get the users.
+ * This will handle the user routes.
  */
-$router->get('user*', function($req, $params)
-{
-	$filter = setFilter($req::input('filter'));
-	$offset = $req::getInt('start');
-	$start = !empty($offset)? $offset : 0;
-	$count = $req::getInt('stop');
-	$search = $req::input('search');
-	$custom = $req::input('custom');
+$router->resource('user*', UserController::class);
 
-	$controller = new UserController();
-	return $controller->all($filter, $start, $count, [
-		'search' => $search,
-		'custom' => $custom
-	]);
-});
+/**
+ * This will handle the role routes.
+ */
+$router->resource('role*', RoleController::class);

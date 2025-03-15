@@ -1,7 +1,7 @@
 import { Div, H1, Header } from "@base-framework/atoms";
 import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
-import { Combobox } from "@base-framework/ui/molecules";
+import { RoleModal } from "./modals/role-modal";
 
 /**
  * This will refresh the list.
@@ -16,41 +16,6 @@ const refresh = (e, { list }) =>
 };
 
 /**
- * This will create a dropdown for the page.
- *
- * @returns {object}
- */
-const Dropdown = () => (
-	new Combobox({
-		width: 'w-full', // this is the default value
-		maxWidth: 'max-w-[250px]', // this is the default value
-		class: '',
-		selectFirst: true,
-		onSelect: (item, { data, list }) =>
-		{
-			const val = item.value;
-			if (val === 'all')
-			{
-				data.filter = '';
-				list.refresh();
-				return;
-			}
-
-			const lowerVal = val.toLowerCase();
-			data.filter = lowerVal;
-			list.refresh();
-		},
-		items: [
-			{ value: 'all', label: 'All' },
-			{ value: 'dev', label: 'Dev'},
-			{ value: 'testing', label: 'Testing' },
-			{ value: 'staging', label: 'Staging' },
-			{ value: 'prod', label: 'Prod' },
-		]
-	})
-);
-
-/**
  * This will create a page header for the errors page.
  *
  * @returns {object}
@@ -58,15 +23,17 @@ const Dropdown = () => (
 export const PageHeader = () => (
 	Header({ class: 'flex flex-auto flex-col' }, [
 		Div({ class: 'flex flex-auto items-center justify-between w-full' }, [
-			H1({ class: 'text-3xl font-bold' }, 'Users'),
+			H1({ class: 'text-3xl font-bold' }, 'Roles'),
 			Div({ class: 'flex items-center gap-2' }, [
 				Div({ class: 'hidden lg:flex' }, [
-					Button({ variant: 'withIcon', class: 'text-muted-foreground primary', icon: Icons.refresh, click: refresh }, 'Refresh')
+					Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.refresh, click: refresh }, 'Refresh')
+				]),
+				Div({ class: 'hidden lg:flex' }, [
+					Button({ variant: 'withIcon', class: 'text-muted-foreground primary', icon: Icons.circlePlus, click: () => RoleModal() }, 'Add Role')
 				]),
 				Div({ class: 'flex lg:hidden mr-0' }, [
-					Tooltip({ content: 'Refresh', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.refresh, click: refresh }))
-				]),
-				Dropdown()
+					Tooltip({ content: 'Add Role', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.circlePlus, click: refresh }))
+				])
 			])
 		])
 	])
