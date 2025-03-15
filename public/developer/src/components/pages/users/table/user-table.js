@@ -19,7 +19,7 @@ export const UserRow = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.id),
+		Td({ class: 'p-4 hidden md:table-cell' }, String(row.id)),
 		Td({ class: 'p-4' }, [
 			A({
 				href: `users/${row.id}`,

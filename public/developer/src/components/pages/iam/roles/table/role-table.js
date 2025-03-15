@@ -18,7 +18,7 @@ export const RoleRow = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4' }, row.id),
+		Td({ class: 'p-4' }, String(row.id)),
 		Td({ class: 'p-4 truncate max-w-[150px]' }, row.name),
 		Td({ class: 'p-4 truncate max-w-[150px]' }, row.slug),
 		Td({ class: 'p-4 truncate max-w-[200px]' }, row.description),
