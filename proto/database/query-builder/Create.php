@@ -127,7 +127,7 @@ class Create extends Blueprint
 	 */
 	public function createdAt(): CreateField
 	{
-		return $this->addDateTime('created_at');
+		return $this->addDateTime('created_at')->currentTimestamp();
 	}
 
 	/**

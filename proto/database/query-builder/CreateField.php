@@ -419,7 +419,7 @@ class CreateField extends Template
 	 * @param mixed $value
 	 * @return self
 	 */
-	public function setDefault($value): self
+	public function default($value): self
 	{
 		$this->defaultValue = "DEFAULT {$value}";
 		return $this;
@@ -432,7 +432,7 @@ class CreateField extends Template
 	 */
 	public function utcTimestamp(): self
 	{
-		$this->setDefault("UTC_TIMESTAMP");
+		$this->default("UTC_TIMESTAMP");
 		return $this;
 	}
 
@@ -443,7 +443,7 @@ class CreateField extends Template
 	 */
 	public function currentTimestamp(): self
 	{
-		$this->setDefault("CURRENT_TIMESTAMP");
+		$this->default("CURRENT_TIMESTAMP");
 		return $this;
 	}
 

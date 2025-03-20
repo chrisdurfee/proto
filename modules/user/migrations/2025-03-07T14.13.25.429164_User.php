@@ -30,7 +30,7 @@ class User extends Migration
 			$table->varchar('first_name', 100);
 			$table->varchar('last_name', 100);
 			$table->varchar('image', 255);
-			$table->enum('status', 'online', 'offline', 'busy', 'away')->default('offline');
+			$table->enum('status', 'online', 'offline', 'busy', 'away')->default("'offline'");
 			$table->timestamp('email_verified_at')->nullable();
 			$table->createdAt();
 			$table->updatedAt();

@@ -36,26 +36,22 @@ class SeedRolesAndPermissions extends Migration
             [
                 'name' => 'Administrator',
                 'slug' => 'admin',
-                'description' => 'Full system access',
-                'permissions' => json_encode(['*']), // Wildcard for all permissions
+                'description' => 'Full system access'
             ],
             [
                 'name' => 'Manager',
                 'slug' => 'manager',
-                'description' => 'Manage content and users',
-                'permissions' => null,
+                'description' => 'Manage content and users'
             ],
             [
                 'name' => 'Editor',
                 'slug' => 'editor',
-                'description' => 'Edit content',
-                'permissions' => null,
+                'description' => 'Edit content'
             ],
             [
                 'name' => 'User',
                 'slug' => 'user',
-                'description' => 'Regular user access',
-                'permissions' => null,
+                'description' => 'Regular user access'
             ],
         ];
 

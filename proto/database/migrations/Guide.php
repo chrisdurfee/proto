@@ -409,6 +409,11 @@ class Guide
 			return true;
 		}
 
+		/**
+		 * The queries need to be ran in reverse order.
+		 */
+		$queries = array_reverse($queries);
+
 		$connection = $migration->getConnection();
 		return $this->executeBatch($connection, $queries);
 	}
