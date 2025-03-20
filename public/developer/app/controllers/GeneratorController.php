@@ -228,8 +228,19 @@ class GeneratorController extends Controller
 	 */
 	private function replaceNewLines(string $content): string
 	{
-		return str_replace("\n", "
-		", $content);
+		// remove comments
+		$content = preg_replace('/\s*\/\/.*\n/', '', $content);
+
+		// remove tabs
+		$content = preg_replace("/\t/", "", $content);
+
+		// remove spaces
+		$content = preg_replace("/\s{2,}/", " ", $content);
+
+		// remove new lines
+		$content = preg_replace("/[\r\n]+/", "", $content);
+		$content = preg_replace("/\\\\n/", "", $content);
+		return trim($content);
 	}
 
 	/**
