@@ -53,7 +53,7 @@ class Mysqli extends Adapter
 
 		if ($connection->connect_error)
 		{
-			$this->setLastError(new \Exception($connection->connect_error));
+			$this->setLastError($connection->connect_error);
 			return false;
 		}
 
@@ -101,7 +101,7 @@ class Mysqli extends Adapter
 		}
 		catch (\Exception $e)
 		{
-			$this->error($sql, $e);
+			$this->error($sql, $e->getMessage());
 			return false;
 		}
 
@@ -134,7 +134,7 @@ class Mysqli extends Adapter
 		}
 		catch (\Exception $e)
 		{
-			$this->error($sql, $e);
+			$this->error($sql, $e->getMessage());
 			return false;
 		}
 

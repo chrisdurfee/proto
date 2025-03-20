@@ -31,9 +31,9 @@ abstract class Adapter
 	protected bool $connected = false;
 
 	/**
-	 * @var object|null $lastError Stores the last database error.
+	 * @var string|null $lastError Stores the last database error.
 	 */
-	protected ?object $lastError = null;
+	protected ?string $lastError = null;
 
 	/**
 	 * @var int|null $lastId Last inserted ID.
@@ -162,50 +162,50 @@ abstract class Adapter
 	 * Logs an error and sets the last error state.
 	 *
 	 * @param object|string $sql SQL query that caused the error.
-	 * @param object|null $error Error object.
+	 * @param string|null $errorMessage Error message.
 	 * @return void
 	 */
-	protected function error(object|string $sql, ?object $error = null): void
+	protected function error(object|string $sql, ?string $errorMessage = null): void
 	{
 		$this->displayError($sql);
-		$this->setLastError($error);
+		$this->setLastError($errorMessage);
 	}
 
 	/**
 	 * Sets the last database error.
 	 *
-	 * @param object|null $error Error object.
+	 * @param string|null $errorMessage Error object.
 	 * @return void
 	 */
-	protected function setLastError(?object $error): void
+	protected function setLastError(?string $errorMessage): void
 	{
-		if ($error !== null)
+		if ($errorMessage !== null)
 		{
-			$this->displayError($error);
-			$this->lastError = $error;
+			$this->displayError($errorMessage);
+			$this->lastError = $errorMessage;
 		}
 	}
 
 	/**
 	 * Displays the error if error reporting is enabled.
 	 *
-	 * @param mixed $error Error data.
+	 * @param mixed $errorMessage Error data.
 	 * @return void
 	 */
-	protected function displayError(mixed $error): void
+	protected function displayError(string $errorMessage): void
 	{
 		if (Config::errors())
 		{
-			Debug::render($error);
+			Debug::render($errorMessage);
 		}
 	}
 
 	/**
 	 * Retrieves the last database error.
 	 *
-	 * @return object|null Last error object or null.
+	 * @return string|null Last error message or null.
 	 */
-	public function getLastError(): ?object
+	public function getLastError(): ?string
 	{
 		return $this->lastError;
 	}
