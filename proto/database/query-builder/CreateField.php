@@ -120,7 +120,7 @@ class CreateField extends Template
 	 */
 	public function bit(): self
 	{
-		$this->setFieldType('BIT',1);
+		$this->setFieldType('BIT', 1);
 		return $this;
 	}
 
@@ -154,7 +154,7 @@ class CreateField extends Template
 	 */
 	public function smallInteger(int $length): self
 	{
-		$this->setFieldType('SMALLINT',$length);
+		$this->setFieldType('SMALLINT', $length);
 		return $this;
 	}
 
@@ -166,7 +166,7 @@ class CreateField extends Template
 	 */
 	public function mediumInteger(int $length): self
 	{
-		$this->setFieldType('MEDIUMINT',$length);
+		$this->setFieldType('MEDIUMINT', $length);
 		return $this;
 	}
 
@@ -178,7 +178,7 @@ class CreateField extends Template
 	 */
 	public function bigInteger(int $length): self
 	{
-		$this->setFieldType('BIGINT',$length);
+		$this->setFieldType('BIGINT', $length);
 		return $this;
 	}
 
@@ -190,7 +190,7 @@ class CreateField extends Template
 	 */
 	public function decimal(int $length): self
 	{
-		$this->setFieldType('DECIMAL',$length);
+		$this->setFieldType('DECIMAL', $length);
 		return $this;
 	}
 
@@ -202,7 +202,7 @@ class CreateField extends Template
 	 */
 	public function floatType(int $length): self
 	{
-		$this->setFieldType('FLOAT',$length);
+		$this->setFieldType('FLOAT', $length);
 		return $this;
 	}
 
@@ -214,7 +214,7 @@ class CreateField extends Template
 	 */
 	public function doubleType(int $length): self
 	{
-		$this->setFieldType('DOUBLE',$length);
+		$this->setFieldType('DOUBLE', $length);
 		return $this;
 	}
 
@@ -226,7 +226,7 @@ class CreateField extends Template
 	 */
 	public function char(int $length): self
 	{
-		$this->setFieldType('CHAR',$length);
+		$this->setFieldType('CHAR', $length);
 		return $this;
 	}
 
@@ -238,7 +238,7 @@ class CreateField extends Template
 	 */
 	public function varchar(int $length): self
 	{
-		$this->setFieldType('VARCHAR',$length);
+		$this->setFieldType('VARCHAR', $length);
 		return $this;
 	}
 
@@ -250,7 +250,7 @@ class CreateField extends Template
 	 */
 	public function binary(int $length): self
 	{
-		$this->setFieldType('BINARY',$length);
+		$this->setFieldType('BINARY', $length);
 		return $this;
 	}
 
@@ -273,7 +273,7 @@ class CreateField extends Template
 	 */
 	public function blob(int $length): self
 	{
-		$this->setFieldType('BLOB',$length);
+		$this->setFieldType('BLOB', $length);
 		return $this;
 	}
 
@@ -285,7 +285,7 @@ class CreateField extends Template
 	 */
 	public function mediumBlob(int $length): self
 	{
-		$this->setFieldType('MEDIUMBLOB',$length);
+		$this->setFieldType('MEDIUMBLOB', $length);
 		return $this;
 	}
 
@@ -297,7 +297,7 @@ class CreateField extends Template
 	 */
 	public function longBlob(int $length): self
 	{
-		$this->setFieldType('LONGBLOB',$length);
+		$this->setFieldType('LONGBLOB', $length);
 		return $this;
 	}
 
@@ -375,8 +375,8 @@ class CreateField extends Template
 	 */
 	public function enum(string ...$values): self
 	{
-		$sql = "'".implode("','",$values)."'";
-		$this->setFieldType('ENUM',$sql);
+		$sql = "'" . implode("','", $values) . "'";
+		$this->setFieldType('ENUM', $sql);
 		return $this;
 	}
 
@@ -525,6 +525,9 @@ class CreateField extends Template
 			$this->afterClause,
 		];
 
-		return implode(' ',array_filter($parts,function($part){return $part !== '';}));
+		return implode(' ', array_filter($parts, function($part): bool
+		{
+			return $part !== '';
+		}));
 	}
 }
