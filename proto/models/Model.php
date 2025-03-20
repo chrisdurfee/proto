@@ -575,9 +575,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function create(?object $data = null): bool
 	{
-		echo '<pre>';
-		var_dump($data);
-		die;
 		$model = new static($data);
 		return $model->storage->add();
 	}

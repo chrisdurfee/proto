@@ -37,7 +37,7 @@ class CrossSiteProtectionMiddleware
         $method = $request::method();
 		if ($this->isSafeMethod($method) === true)
 		{
-			return true;
+			return $next($request);
 		}
 
 		$gate = new CSRF();
