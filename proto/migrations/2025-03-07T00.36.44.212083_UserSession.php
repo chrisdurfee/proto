@@ -22,7 +22,7 @@ class UserSession extends Migration
 		$this->create('user_sessions', function($table)
 		{
 			$table->varchar('id', 256);
-			$table->varchar('access', 256);
+			$table->varchar('access', 256)->nullable();
 			$table->text('data')->nullable();
 
 			$table->index('id')->fields('id');

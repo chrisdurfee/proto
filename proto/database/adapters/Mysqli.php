@@ -26,7 +26,11 @@ class Mysqli extends Adapter
 	 * @param bool $caching Enable or disable caching.
 	 * @param MysqliQueryHelper|null $queryHelper Optional query helper instance.
 	 */
-	public function __construct(array|object $settings, bool $caching = false, private ?MysqliQueryHelper $queryHelper = new MysqliQueryHelper())
+	public function __construct(
+		array|object $settings,
+		bool $caching = false,
+		private ?MysqliQueryHelper $queryHelper = new MysqliQueryHelper()
+	)
 	{
 		parent::__construct($settings, $caching);
 	}
@@ -86,10 +90,18 @@ class Mysqli extends Adapter
 			return false;
 		}
 
-		$stmt = $this->connection->prepare($sql);
-		if (!$stmt)
+		try
 		{
-			$this->error($sql, $this->connection->error);
+			$stmt = $this->connection->prepare($sql);
+			if (!$stmt)
+			{
+				$this->error($sql, $this->connection->error);
+				return false;
+			}
+		}
+		catch (\Exception $e)
+		{
+			$this->error($sql, $e);
 			return false;
 		}
 
@@ -112,9 +124,17 @@ class Mysqli extends Adapter
 			return false;
 		}
 
-		if (!$stmt->execute())
+		try
 		{
-			$this->error($sql, $this->connection->error);
+			if (!$stmt->execute())
+			{
+				$this->error($sql, $this->connection->error);
+				return false;
+			}
+		}
+		catch (\Exception $e)
+		{
+			$this->error($sql, $e);
 			return false;
 		}
 
