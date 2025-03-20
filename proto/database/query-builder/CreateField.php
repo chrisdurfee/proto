@@ -86,7 +86,7 @@ class CreateField extends Template
 	public function setFieldType(string $type, $value = null): self
 	{
 		$type = strtoupper($type);
-		$this->fieldType = isset($value)?"{$type}({$value})":$type;
+		$this->fieldType = isset($value) ? "{$type}({$value})" : $type;
 		return $this;
 	}
 
@@ -98,7 +98,7 @@ class CreateField extends Template
 	 */
 	public function int(int $length): self
 	{
-		$this->setFieldType('INT',$length);
+		$this->setFieldType('INT', $length);
 		return $this;
 	}
 

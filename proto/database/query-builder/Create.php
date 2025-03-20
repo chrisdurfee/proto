@@ -137,7 +137,7 @@ class Create extends Blueprint
 	 */
 	public function updatedAt(): CreateField
 	{
-		return $this->addDateTime('updated_at');
+		return $this->addDateTime('updated_at')->nullable();
 	}
 
 	/**
@@ -147,7 +147,7 @@ class Create extends Blueprint
 	 */
 	public function deletedAt(): CreateField
 	{
-		return $this->addDateTime('deleted_at');
+		return $this->addDateTime('deleted_at')->nullable();
 	}
 
 	/**
