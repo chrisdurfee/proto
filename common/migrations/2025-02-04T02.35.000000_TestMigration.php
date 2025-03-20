@@ -71,6 +71,13 @@ class TestMigration extends Migration
 	 */
 	public function down(): void
 	{
+		$this->alter('test_table', function($table)
+		{
+			$table->drop('status');
+			$table->alter('subject')->varchar(160);
+			$table->add('read_at')->datetime();
+		});
+
 		/**
 		 * This will drop a view.
 		 */
@@ -82,12 +89,5 @@ class TestMigration extends Migration
 		$this->dropView('vw_test_query');
 
 		$this->drop('test_table');
-
-		$this->alter('test_table', function($table)
-		{
-			$table->drop('status');
-			$table->alter('subject')->varchar(160);
-			$table->add('read_at')->datetime();
-		});
 	}
 }

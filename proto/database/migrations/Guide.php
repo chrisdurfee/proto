@@ -326,6 +326,13 @@ class Guide
 			return false;
 		}
 
+		/**
+		 * The migrations should be run in reverse order.
+		 * This is because newer tables may have foreign key constraints
+		 * that reference older tables.
+		 */
+		$migrations = array_reverse($migrations);
+
 		$result = true;
 		foreach ($migrations as $migration)
 		{
@@ -408,11 +415,6 @@ class Guide
 		{
 			return true;
 		}
-
-		/**
-		 * The queries need to be ran in reverse order.
-		 */
-		$queries = array_reverse($queries);
 
 		$connection = $migration->getConnection();
 		return $this->executeBatch($connection, $queries);
