@@ -29,8 +29,8 @@ class TestMigration extends Migration
 			$table->int('message_id', 20);
 			$table->varchar('subject', 160);
 			$table->text('message')->nullable();
-			$table->dateTime('read_at');
-			$table->dateTime('forwarded_at');
+			$table->datetime('read_at');
+			$table->datetime('forwarded_at');
 
 			// indices
 			$table->index('email_read')->fields('id', 'read_at');
@@ -75,7 +75,7 @@ class TestMigration extends Migration
 		{
 			$table->drop('status');
 			$table->alter('subject')->varchar(160);
-			$table->add('read_at')->dateTime();
+			$table->add('read_at')->datetime();
 		});
 
 		/**

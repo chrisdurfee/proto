@@ -116,7 +116,7 @@ class Create extends Blueprint
 	protected function addDateTime(string $name): CreateField
 	{
 		$field = $this->createField($name);
-		$field->dateTime();
+		$field->datetime();
 		return $field;
 	}
 
@@ -148,6 +148,17 @@ class Create extends Blueprint
 	public function deletedAt(): CreateField
 	{
 		return $this->addDateTime('deleted_at')->nullable();
+	}
+
+	/**
+	 * Adds the timestamp fields.
+	 *
+	 * @return void
+	 */
+	public function timestamps(): void
+	{
+		$this->createdAt();
+		$this->updatedAt();
 	}
 
 	/**

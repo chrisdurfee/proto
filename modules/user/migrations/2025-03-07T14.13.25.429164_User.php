@@ -34,7 +34,7 @@ class User extends Migration
 			$table->timestamp('email_verified_at')->nullable();
 			$table->createdAt();
 			$table->updatedAt();
-			$table->deletedAt()->nullable();
+			$table->deletedAt();
 
 			// Indexes for commonly searched columns
 			$table->index('username')->fields('username', 'password');

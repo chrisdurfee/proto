@@ -264,8 +264,8 @@ $table->updatedAt();
 $table->int('message_id', 20);
 $table->varchar('subject', 160);
 $table->text('message')->nullable();
-$table->dateTime('read_at');
-$table->dateTime('forwarded_at');
+$table->datetime('read_at');
+$table->datetime('forwarded_at');
 
 // indices
 $table->index('email_read')->fields('id', 'read_at');
