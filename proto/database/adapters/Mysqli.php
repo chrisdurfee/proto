@@ -8,7 +8,7 @@ use Proto\Utils\Sanitize;
 /**
  * Initialize SQL functions in the global scope.
  */
-SQL::init();
+Sql::init();
 
 /**
  * Mysqli adapter class.

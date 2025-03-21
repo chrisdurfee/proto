@@ -18,7 +18,7 @@ class Debug
 	 */
 	public static function render(mixed $content): void
 	{
-		echo '<pre>', htmlspecialchars(self::format($content), ENT_QUOTES, 'UTF-8'), '</pre>';
+		echo '<pre>', self::format($content), '</pre>';
 	}
 
 	/**

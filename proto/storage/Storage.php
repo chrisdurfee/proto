@@ -560,6 +560,11 @@ class Storage implements StorageInterface
 		$mapped = [];
 		foreach ($joins as $join)
 		{
+			if ($join->isMultiple())
+			{
+				continue;
+			}
+
 			$mapped[] = [
 				'table' => $join->getTableName(),
 				'alias' => $join->getAlias(),
@@ -607,6 +612,7 @@ class Storage implements StorageInterface
 		{
 			$colNames = $this->getColNames($joins);
 		}
+
 		$joins = $this->getMappedJoins($joins, $allowFields);
 		return $this->table()->select(...$colNames)->joins($joins);
 	}
@@ -694,6 +700,7 @@ class Storage implements StorageInterface
 			->limit($offset, $count);
 
 		$this->setOrderBy($sql, $modifiers);
+		$sql->debug();
 		$rows = $sql->fetch($params);
 		return (object)[ 'rows' => $rows];
 	}

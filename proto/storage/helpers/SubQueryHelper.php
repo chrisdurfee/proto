@@ -55,8 +55,28 @@ class SubQueryHelper
 			return null;
 		}
 
-		// Use the global Json() function to generate the JSON aggregation
 		return Json($as, array_combine($fields, $fields));
+	}
+
+	/**
+	 * Gets the ON clause for a join.
+	 *
+	 * @param object $join The join object.
+	 *
+	 * @return string
+	 */
+	protected static function getJoinWhere(object $join): string
+	{
+		$where = $join->getOn();
+		if (!is_array($where))
+		{
+			return $where;
+		}
+
+		$values = $where[0];
+		$column = $values[0];
+		$value = $values[1];
+		return "{$column} = {$value}";
 	}
 
 	/**
@@ -66,9 +86,9 @@ class SubQueryHelper
 	 * @param callable $builderCallback A callback receiving table and alias to return a builder.
 	 * @param bool $isSnakeCase Indicates whether to use snake_case.
 	 *
-	 * @return array|null
+	 * @return string|null
 	 */
-	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): ?array
+	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): ?string
 	{
 		$tableName = $join->getTableName();
 		$alias = $join->getAlias();
@@ -85,7 +105,7 @@ class SubQueryHelper
 			return null;
 		}
 
-		// Generate the subquery for JSON aggregation using the global Json() function
-		return $builder->select([$jsonAggSql])->joins($joins);
+		$where = self::getJoinWhere($join);
+		return '(' . $builder->select($jsonAggSql)->joins($joins)->where($where) . " AS " . $as;
 	}
 }
