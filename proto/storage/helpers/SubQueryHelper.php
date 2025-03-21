@@ -106,6 +106,6 @@ class SubQueryHelper
 		}
 
 		$where = self::getJoinWhere($join);
-		return '(' . $builder->select($jsonAggSql)->joins($joins)->where($where) . " AS " . $as;
+		return '(' . $builder->select($jsonAggSql)->joins($joins)->where($where) . ") AS " . $as;
 	}
 }
