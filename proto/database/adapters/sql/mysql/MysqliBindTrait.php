@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Database\Adapters\SQL\Mysql;
+namespace Proto\Database\Adapters\Sql\Mysql;
 
 use Proto\Utils\Arrays;
 use Proto\Utils\Sanitize;
@@ -10,7 +10,7 @@ use Proto\Utils\Sanitize;
  * This trait provides methods for setting up and binding parameters
  * for the MySQLi adapter.
  *
- * @package Proto\Database\Adapters\SQL\Mysql
+ * @package Proto\Database\Adapters\Sql\Mysql
  */
 trait MysqliBindTrait
 {

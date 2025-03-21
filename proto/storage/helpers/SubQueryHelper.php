@@ -41,39 +41,34 @@ class SubQueryHelper
 	}
 
 	/**
-	 * Builds the GROUP_CONCAT SQL snippet.
+	 * Uses the global Json function to generate a JSON array aggregation SQL snippet.
 	 *
-	 * @param string $as The alias for the group concat.
-	 * @param array $fields The fields to concat.
+	 * @param string $as The alias for the JSON array aggregation.
+	 * @param array $fields The fields to include in the JSON.
 	 *
-	 * @return string|null
+	 * @return array|null
 	 */
-	public static function getGroupConcatSql(string $as, array $fields): ?string
+	public static function getJsonAggSql(string $as, array $fields): ?array
 	{
 		if (empty($fields))
 		{
 			return null;
 		}
 
-		$keys = array_map(function ($field)
-		{
-			return "'{$field}-:-', {$field}";
-		}, $fields);
-
-		$concat = implode(", '-::-', ", $keys);
-		return "GROUP_CONCAT({$concat} SEPARATOR '-:::-') AS {$as}";
+		// Use the global Json() function to generate the JSON aggregation
+		return Json($as, array_combine($fields, $fields));
 	}
 
 	/**
-	 * Sets up a subquery for a join using the provided builder callback.
+	 * Sets up a subquery for a join using JSON aggregation.
 	 *
 	 * @param object $join The join object.
 	 * @param callable $builderCallback A callback receiving table and alias to return a builder.
 	 * @param bool $isSnakeCase Indicates whether to use snake_case.
 	 *
-	 * @return string|null
+	 * @return array|null
 	 */
-	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): ?string
+	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): ?array
 	{
 		$tableName = $join->getTableName();
 		$alias = $join->getAlias();
@@ -84,13 +79,13 @@ class SubQueryHelper
 		self::addChildJoin($joins, $join, $fields, $isSnakeCase);
 
 		$as = $join->getAs();
-		$groupConcat = self::getGroupConcatSql($as, $fields);
-		if ($groupConcat === null)
+		$jsonAggSql = self::getJsonAggSql($as, $fields);
+		if ($jsonAggSql === null)
 		{
 			return null;
 		}
 
-		$sql = $builder->select([$groupConcat])->joins($joins);
-		return '(' . $sql->where(...$join->getOn()) . ') AS ' . $as;
+		// Generate the subquery for JSON aggregation using the global Json() function
+		return $builder->select([$jsonAggSql])->joins($joins);
 	}
 }

@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Database\Adapters\SQL\Mysql;
+namespace Proto\Database\Adapters\Sql\Mysql;
 
 use Proto\Utils\Arrays;
 use Proto\Utils\Sanitize;
@@ -9,7 +9,7 @@ use Proto\Utils\Sanitize;
  *
  * Provides helper methods for building SQL queries and processing query parameters.
  *
- * @package Proto\Database\Adapters\SQL\Mysql
+ * @package Proto\Database\Adapters\Sql\Mysql
  */
 class MysqliQueryHelper
 {

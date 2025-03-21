@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Database\Adapters\SQL
+namespace Proto\Database\Adapters\Sql
 {
 	/**
 	 * SQL class
@@ -8,7 +8,7 @@ namespace Proto\Database\Adapters\SQL
 	 *
 	 * @package Proto\Database\Adapters\SQL
 	 */
-	class SQL
+	class Sql
 	{
 		/**
 		 * Initialize the class to autoload in the adapter to declare the global functions.
@@ -84,7 +84,7 @@ namespace Proto\Database\Adapters\SQL
 				JSON_OBJECT(
 					{$json}
 				)
-			)");
+			) AS {$alias}");
 		}
 	}
 }
@@ -92,7 +92,7 @@ namespace Proto\Database\Adapters\SQL
 // Global functions
 namespace
 {
-	use Proto\Database\Adapters\SQL\SQL;
+	use Proto\Database\Adapters\Sql\Sql;
 
 	/**
 	 * Create a raw SQL array.
@@ -102,7 +102,7 @@ namespace
 	 */
 	function Raw(string $sql): array
 	{
-		return SQL::raw($sql);
+		return Sql::raw($sql);
 	}
 
 	/**
@@ -114,7 +114,7 @@ namespace
 	 */
 	function Json(string $alias, mixed $data): array
 	{
-		return SQL::json($alias, $data);
+		return Sql::json($alias, $data);
 	}
 
 	/**
@@ -126,7 +126,7 @@ namespace
 	 */
 	function Alias(mixed $column, string $alias): array
 	{
-		return SQL::alias($column, $alias);
+		return Sql::alias($column, $alias);
 	}
 
 	/**
@@ -138,6 +138,6 @@ namespace
 	 */
 	function RawAlias(string $column, string $alias): array
 	{
-		return SQL::alias([$column], $alias);
+		return Sql::alias([$column], $alias);
 	}
 }

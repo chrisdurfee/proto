@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Database\Adapters;
 
-use Proto\Database\Adapters\SQL\Mysql\MysqliQueryHelper;
-use Proto\Database\Adapters\SQL\SQL;
+use Proto\Database\Adapters\Sql\Mysql\MysqliQueryHelper;
+use Proto\Database\Adapters\Sql\Sql;
 use Proto\Utils\Sanitize;
 
 /**
