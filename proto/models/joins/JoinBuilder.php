@@ -136,7 +136,7 @@ class JoinBuilder
 		$alias = $modelName::alias();
 
 		$join = $this->getJoinByType($type, $tableName, $alias);
-		$join->multiple();
+		$join->multiple($tableName, $alias);
 		return $join;
 	}
 

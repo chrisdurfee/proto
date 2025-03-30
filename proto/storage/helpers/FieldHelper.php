@@ -17,10 +17,11 @@ class FieldHelper
 	 *
 	 * @param array|null $fields The list of fields.
 	 * @param bool $isSnakeCase Indicates whether to convert to snake_case.
+	 * @param string|null $alias The alias for the fields.
 	 *
 	 * @return array|null
 	 */
-	public static function formatFields(?array $fields, bool $isSnakeCase = false): ?array
+	public static function formatFields(?array $fields, bool $isSnakeCase = false, ?string $alias = null): ?array
 	{
 		if (!$fields || count($fields) < 1)
 		{
@@ -30,6 +31,11 @@ class FieldHelper
 		$cols = [];
 		foreach ($fields as $field)
 		{
+			if ($alias)
+			{
+				$field = "{$alias}.{$field}";
+			}
+
 			$cols[] = self::formatField($field, $isSnakeCase);
 		}
 

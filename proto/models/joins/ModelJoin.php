@@ -94,6 +94,16 @@ class ModelJoin
 	}
 
 	/**
+	 * Get the join builder.
+	 *
+	 * @return JoinBuilder
+	 */
+	public function builder(): JoinBuilder
+	{
+		return $this->builder;
+	}
+
+	/**
 	 * Setup join settings from the builder.
 	 *
 	 * @return void
@@ -103,6 +113,26 @@ class ModelJoin
 		$joinSettings = $this->builder->getTableSettings();
 		$this->joinTableName = $joinSettings->tableName;
 		$this->joinAlias = $joinSettings->alias;
+	}
+
+	/**
+	 * Get the join table name.
+	 *
+	 * @return string|array
+	 */
+	public function getJoinTableName(): string|array
+	{
+		return $this->joinTableName;
+	}
+
+	/**
+	 * Get the join table alias.
+	 *
+	 * @return string|null
+	 */
+	public function getJoinAlias(): ?string
+	{
+		return $this->joinAlias;
 	}
 
 	/**
@@ -367,17 +397,6 @@ class ModelJoin
 	}
 
 	/**
-	 * Convert a camelCase string to snake_case.
-	 *
-	 * @param string $field Field name.
-	 * @return string
-	 */
-	protected static function decamelize(string $field): string
-	{
-		return Strings::snakeCase($field);
-	}
-
-	/**
 	 * Prepare a column name for ON clause.
 	 *
 	 * @param string $column Column name.
@@ -385,7 +404,7 @@ class ModelJoin
 	 */
 	protected function prepareOnColumn(string $column): string
 	{
-		return $this->isSnakeCase ? self::decamelize($column) : $column;
+		return $this->isSnakeCase ? Strings::snakeCase($column) : $column;
 	}
 
 	/**

@@ -7,7 +7,10 @@ use Proto\Storage\Helpers\FieldHelper;
  * Class SubQueryHelper
  *
  * Provides helper methods for building subqueries that utilize
- * a "bridge table → final table" join with JSON aggregation.
+ * a bridge table with a child join and JSON aggregation.
+ *
+ * The generated subquery uses the parent's join table (via getJoinTableName and getJoinAlias)
+ * for the FROM clause and the join's ON clause for the WHERE condition.
  *
  * @package Proto\Storage\Helpers
  */
@@ -28,12 +31,14 @@ class SubQueryHelper
 		$childJoin = $join->getMultipleJoin();
 		if ($childJoin)
 		{
-			$childFields = FieldHelper::formatFields($childJoin->getFields(), $isSnakeCase);
+			$alias = $childJoin->getAlias();
+			$childFields = FieldHelper::formatFields($childJoin->getFields(), $isSnakeCase, $alias);
 			$fields = array_merge($fields, $childFields);
+
 			$joins[] = [
 				'table' => $childJoin->getTableName(),
 				'type' => $childJoin->getType(),
-				'alias' => $childJoin->getAlias(),
+				'alias' => $alias,
 				'on' => $childJoin->getOn(),
 				'using' => $childJoin->getUsing()
 			];
@@ -59,7 +64,7 @@ class SubQueryHelper
 	}
 
 	/**
-	 * Retrieves the first ON condition from the join object and converts it
+	 * Retrieves the first ON condition from a join object and converts it
 	 * into a simple "column = value" string for the WHERE clause.
 	 *
 	 * @param object $join The join object
@@ -73,7 +78,6 @@ class SubQueryHelper
 		{
 			return $where;
 		}
-
 		$values = $where[0];
 		$column = $values[0];
 		$value = $values[1];
@@ -81,38 +85,42 @@ class SubQueryHelper
 	}
 
 	/**
-	 * Sets up a subquery for a join using JSON aggregation.
-	 *
-	 * Example output:
-	 *   (
-	 *     SELECT JSON_ARRAYAGG(
-	 *       JSON_OBJECT('id', p.id, 'name', p.name, ...)
-	 *     )
-	 *     FROM role_permissions rp
-	 *     LEFT JOIN permissions p ON rp.permission_id = p.id
-	 *     WHERE rp.role_id = r.id
-	 *   ) AS permissions
+	 * Checks if the join is a bridge join.
 	 *
 	 * @param object $join The join object
-	 * @param callable $builderCallback A callback receiving (tableName, alias) → returns a builder
+	 * @return bool
+	 */
+	protected static function isBridge(object $join): bool
+	{
+		return count($join->getFields()) < 1;
+	}
+
+	/**
+	 * Sets up a subquery for a join using JSON aggregation.
+	 *
+	 * When the join is a child join (e.g. for permissions), it uses the parent's
+	 * join table name and alias (via getJoinTableName and getJoinAlias) for the FROM clause
+	 * and the join's ON clause for the WHERE condition.
+	 *
+	 * @param object $join The join object (typically the child join)
+	 * @param callable $builderCallback A callback that receives (tableName, alias) and returns a query builder
 	 * @param bool $isSnakeCase Indicates whether to use snake_case
 	 *
 	 * @return string|null
 	 */
 	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): ?string
 	{
-		echo '<pre>';
-		var_dump($join);
-
-		$tableName = $join->getTableName();
-		$alias = $join->getAlias();
-		$as = $join->getAs();
+		$tableName = $join->getJoinTableName();
+		$alias = $join->getJoinAlias();
+		$as = $join->getAs() ?: $join->getAlias();
 		$builder = $builderCallback($tableName, $alias);
 
 		$fields = FieldHelper::formatFields($join->getFields(), $isSnakeCase);
+		$childJoins = [];
+		self::addChildJoin($childJoins, $join, $fields, $isSnakeCase);
 
-		$joins = [];
-		self::addChildJoin($joins, $join, $fields, $isSnakeCase);
+		echo '<pre>';
+		var_dump($tableName, $alias, $as, $fields, $childJoins);
 
 		$jsonAggSql = self::getJsonAggSql($as, $fields);
 		if ($jsonAggSql === null)
@@ -121,7 +129,7 @@ class SubQueryHelper
 		}
 
 		$where = self::getJoinWhere($join);
-		$subQuery = $builder->select($jsonAggSql)->joins($joins)->where($where);
+		$subQuery = $builder->select($jsonAggSql)->joins($childJoins)->where($where);
 		return '(' . $subQuery . ') AS ' . $as;
 	}
 }
