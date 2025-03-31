@@ -23,7 +23,7 @@ const refresh = (e, { list }) =>
 export const PageHeader = () => (
 	Header({ class: 'flex flex-auto flex-col' }, [
 		Div({ class: 'flex flex-auto items-center justify-between w-full' }, [
-			H1({ class: 'text-3xl font-bold' }, 'Roles'),
+			H1({ class: 'text-3xl font-bold' }, 'Permissions'),
 			Div({ class: 'flex items-center gap-2' }, [
 				Div({ class: 'hidden lg:flex' }, [
 					Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.refresh, click: refresh }, 'Refresh')
