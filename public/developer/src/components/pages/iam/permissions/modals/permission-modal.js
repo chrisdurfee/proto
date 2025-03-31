@@ -34,7 +34,7 @@ const getPermissionForm = () => ([
 		new FormField(
 			{ name: "module", label: "Module", description: "The module that registered the permission." },
 			[
-				Textarea({ placeholder: "module", rows: 3, bind: "module" })
+				Input({ type: "text", placeholder: "module", required: true, bind: "module" })
 			]
 		)
 	])

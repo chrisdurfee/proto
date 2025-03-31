@@ -208,35 +208,6 @@ protected static function format(?object $data): ?object
 			'permissions'
 		);
 
-	/**
-	 * This is an example of a nested bridge.
-	 */
-	/*
-	static::bridge(UserRole::class)
-		->many(Role::class)
-		->on(['roleId', 'id'])
-		->fields(
-			'id',
-			'name',
-			'slug',
-			'description'
-		)
-
-		/**
-		 * This will create a bridge table join from the role to role_permissions table
-		 * and the role_permissions to the permissions table.
-		 */
-		->bridge(RolePermission::class)
-			->many(Permission::class)
-			->on(['permissionId', 'id'])
-			->fields(
-				'id',
-				'name',
-				'slug',
-				'description',
-				'module'
-			);
-
 	// table joins
 
 	// this will join the model to the table
