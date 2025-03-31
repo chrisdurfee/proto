@@ -1,7 +1,7 @@
 import { Td, Thead, Tr } from "@base-framework/atoms";
 import { Checkbox } from "@base-framework/ui/atoms";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
-import { PermissionModal } from "../modals/permission-modal";
+import { PermissionModal } from "../modals/permission-modal.js";
 
 /**
  * This will create a role row.
