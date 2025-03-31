@@ -6,87 +6,58 @@ use Proto\Utils\Strings;
 /**
  * Class Data
  *
- * Base data class that uses a property mapper strategy and nested data helper.
+ * Manages model data using a property mapper strategy and nested data helper.
+ * Data is stored internally in camelCase. When mapping data for storage,
+ * keys are converted using the selected mapper strategy.
  *
- * @package Proto\Models
+ * @package Proto\Models\Data
  */
 class Data
 {
-	/**
-	 * Data storage.
-	 *
-	 * @var object
-	 */
+	/** @var object Internal data storage. */
 	protected object $data;
 
-	/**
-	 * @var array $alias Field aliases.
-	 */
+	/** @var array Field alias mappings. */
 	protected array $alias = [];
 
-	/**
-	 * Join fields.
-	 *
-	 * @var array
-	 */
+	/** @var array List of join field keys. */
 	protected array $joinFields = [];
 
-	/**
-	 * Field blacklist.
-	 *
-	 * @var array
-	 */
+	/** @var array Field blacklist. */
 	protected array $fieldBlacklist = [];
 
-	/**
-	 * Property mapper.
-	 *
-	 * @var AbstractMapper
-	 */
+	/** @var AbstractMapper Mapper instance. */
 	protected AbstractMapper $mapper;
 
-	/**
-	 * Nested data helper.
-	 *
-	 * @var NestedDataHelper
-	 */
+	/** @var NestedDataHelper Helper for nested data grouping. */
 	protected NestedDataHelper $nestedDataHelper;
 
 	/**
 	 * Data constructor.
 	 *
-	 * @param array $fields Fields to map.
+	 * @param array $fields Fields to initialize.
 	 * @param array $joins Join definitions.
-	 * @param array $fieldBlacklist Fields to blacklist.
-	 * @param boolean $snakeCase Use snake case.
+	 * @param array $fieldBlacklist Fields to exclude.
+	 * @param bool $snakeCase If true, mapping will convert keys to snake_case.
 	 */
 	public function __construct(
 		array $fields,
 		array $joins = [],
 		array $fieldBlacklist = [],
 		bool $snakeCase = false
-	) {
+	)
+	{
 		$this->fieldBlacklist = $fieldBlacklist;
 
-		/**
-		 * This will determine the mapper type to use.
-		 */
 		$mapperType = ($snakeCase) ? 'snake' : 'default';
 		$this->mapper = Mapper::factory($mapperType);
 
-		/**
-		 * Initialize the nested data helper.
-		 */
 		$this->nestedDataHelper = new NestedDataHelper();
-
-		/**
-		 * Set up the data.
-		 */
 		$this->setup($fields, $joins);
 	}
 
 	/**
-	 * Set up data by initializing fields and join definitions.
+	 * Initializes the data object with fields and joins.
 	 *
 	 * @param array $fields Fields to map.
 	 * @param array $joins Join definitions.
@@ -100,14 +71,14 @@ class Data
 	}
 
 	/**
-	 * Initializes fields into the data object.
+	 * Initializes fields into the internal data object.
 	 *
 	 * @param array $fields Fields to add.
 	 * @return void
 	 */
 	protected function setupFieldsToData(array $fields): void
 	{
-		if (count($fields) < 1)
+		if (empty($fields))
 		{
 			return;
 		}
@@ -120,32 +91,34 @@ class Data
 	}
 
 	/**
-	 * Checks if a field has an alias and returns the proper field name.
+	 * Checks for an alias; if none, returns the camelCase version of the field.
 	 *
-	 * @param mixed $field Field name or field alias.
+	 * @param mixed $field Field name or [original, alias] pair.
 	 * @return mixed
 	 */
 	protected function checkAliasField(mixed $field): mixed
 	{
-		if (is_array($field) === false)
+		if (!is_array($field))
 		{
 			return Strings::camelCase($field);
 		}
 
-		// Tracks the alias
-		$this->alias[$field[1]] = (is_array($field[0]) === false) ? Strings::camelCase($field[0]) : $field[0];
+		$this->alias[$field[1]] = (is_array($field[0]) === false)
+			? Strings::camelCase($field[0])
+			: $field[0];
+
 		return $field[1];
 	}
 
 	/**
-	 * Initializes join fields into the data object.
+	 * Initializes join fields into the internal data object.
 	 *
 	 * @param array $joins Join definitions.
 	 * @return void
 	 */
 	protected function setupJoinsToData(array $joins): void
 	{
-		if (count($joins) < 1)
+		if (empty($joins))
 		{
 			return;
 		}
@@ -187,9 +160,9 @@ class Data
 	}
 
 	/**
-	 * Sets data values from an object.
+	 * Sets multiple data fields from an object.
 	 *
-	 * @param object $newData New data object.
+	 * @param object $newData New data.
 	 * @return void
 	 */
 	protected function setFields(object $newData): void
@@ -206,19 +179,20 @@ class Data
 			{
 				$val = $this->nestedDataHelper->getGroupedData($val);
 			}
+
 			$this->setDataField($keyMapped, $val);
 		}
 	}
 
 	/**
-	 * Sets data. Accepts either a key/value pair or an object.
+	 * Sets data values. Accepts either a key/value pair or an object.
 	 *
 	 * @return void
 	 */
 	public function set(): void
 	{
 		$args = func_get_args();
-		if (count($args) < 1)
+		if (empty($args))
 		{
 			return;
 		}
@@ -226,9 +200,10 @@ class Data
 		$firstArg = $args[0];
 		if (!is_object($firstArg))
 		{
-			$value    = $args[1] ?? null;
+			$value = $args[1] ?? null;
 			$firstArg = (object)[$args[0] => $value];
 		}
+
 		$this->setFields($firstArg);
 	}
 
@@ -244,7 +219,7 @@ class Data
 	}
 
 	/**
-	 * Returns the mapped data as an object.
+	 * Returns the internal data as an object with camelCase keys.
 	 *
 	 * @return object
 	 */
@@ -257,13 +232,16 @@ class Data
 			{
 				continue;
 			}
+
 			$out[$key] = $value;
 		}
+
 		return (object)$out;
 	}
 
 	/**
-	 * Maps data keys using the mapper strategy.
+	 * Maps data keys for storage using the mapper strategy.
+	 * If snake_case mapping is enabled, keys will be converted accordingly.
 	 *
 	 * @return object
 	 */
@@ -280,11 +258,12 @@ class Data
 			$keyMapped = $this->mapper->getMappedField($key);
 			$out[$this->prepareKeyName($keyMapped)] = $val;
 		}
+
 		return (object)$out;
 	}
 
 	/**
-	 * Prepares the key name according to the mapper strategy.
+	 * Prepares a key name using the mapper.
 	 *
 	 * @param string $key Key name.
 	 * @return string
@@ -295,14 +274,14 @@ class Data
 	}
 
 	/**
-	 * Converts rows of data to mapped objects.
+	 * Converts rows of raw data to mapped objects.
 	 *
 	 * @param array $rows Array of rows.
 	 * @return array
 	 */
 	public function convertRows(array $rows): array
 	{
-		if (count($rows) < 1)
+		if (empty($rows))
 		{
 			return [];
 		}
@@ -319,15 +298,18 @@ class Data
 				}
 
 				$keyName = $this->prepareKeyName($key);
-				$value   = $row->{$keyName} ?? null;
+				$value = $row->{$keyName} ?? null;
 				if (is_array($val))
 				{
 					$value = $this->nestedDataHelper->getGroupedData($value);
 				}
+
 				$obj->{$key} = $value;
 			}
+
 			$formatted[] = $obj;
 		}
+
 		return $formatted;
 	}
 }

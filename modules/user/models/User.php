@@ -70,20 +70,5 @@ class User extends Model
 				'slug',
 				'description'
 			);
-
-			/**
-			 * This will create a bridge table join from the role to role_permissions table
-			 * and the role_permissions to the permissions table.
-			 */
-			// ->bridge(RolePermission::class)
-			// 	->many(Permission::class)
-			// 	->on(['permissionId', 'id'])
-			// 	->fields(
-			// 		'id',
-			// 		'name',
-			// 		'slug',
-			// 		'description',
-			// 		'module'
-			// 	);
 	}
 }

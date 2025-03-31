@@ -4,36 +4,32 @@ namespace Proto\Models\Data;
 /**
  * Abstract Class AbstractMapper
  *
- * Provides the base functionality for mapping property keys.
+ * Provides base functionality for mapping property keys.
  *
- * @package Proto\Models
+ * @package Proto\Models\Data
  */
 abstract class AbstractMapper
 {
-	/**
-	 * Array of alias mappings.
-	 *
-	 * @var array
-	 */
+	/** @var array Alias mappings. */
 	protected array $alias = [];
 
 	/**
 	 * Checks if a field has an alias and returns the mapped key.
 	 *
-	 * @param mixed $field Field name or an array with original and alias.
+	 * @param mixed $field Field name or [original, alias] pair.
 	 * @return string
 	 */
 	public function checkAliasField(mixed $field): string
 	{
 		if (!is_array($field))
-        {
+		{
 			return $this->convert($field);
 		}
 
-		// If field is provided as [original, alias]
 		$this->alias[$field[1]] = is_array($field[0])
 			? $field[0]
 			: $this->convert($field[0]);
+
 		return $field[1];
 	}
 

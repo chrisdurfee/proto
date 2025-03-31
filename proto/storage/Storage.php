@@ -700,7 +700,7 @@ class Storage implements StorageInterface
 			->limit($offset, $count);
 
 		$this->setOrderBy($sql, $modifiers);
-		$sql->debug();
+
 		$rows = $sql->fetch($params);
 		return (object)[ 'rows' => $rows];
 	}

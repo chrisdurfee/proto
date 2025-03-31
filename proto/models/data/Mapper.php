@@ -8,7 +8,7 @@ use Proto\Utils\Strings;
  *
  * Default property mapper using camelCase conversion.
  *
- * @package Proto\Models
+ * @package Proto\Models\Data
  */
 class Mapper extends AbstractMapper
 {
@@ -23,20 +23,24 @@ class Mapper extends AbstractMapper
 		return Strings::camelCase($str);
 	}
 
-    /**
-     * Factory method to create a new mapper.
-     *
-     * @param string $type Mapper type.
-     * @return AbstractMapper
-     */
-    static function factory(string $type): AbstractMapper
-    {
-        switch ($type)
-        {
-            case 'snake':
-                return new SnakeCaseMapper();
-            default:
-                return new Mapper();
-        }
-    }
+	/**
+	 * Factory method to create a mapper.
+	 *
+	 * @param string $type Mapper type.
+	 * @return AbstractMapper
+	 */
+	public static function factory(string $type): AbstractMapper
+	{
+		switch ($type)
+		{
+			case 'snake':
+			{
+				return new SnakeCaseMapper();
+			}
+			default:
+			{
+				return new Mapper();
+			}
+		}
+	}
 }

@@ -8,7 +8,7 @@ use Proto\Utils\Strings;
  *
  * Mapper that converts keys to snake_case.
  *
- * @package Proto\Models
+ * @package Proto\Models\Data
  */
 class SnakeCaseMapper extends AbstractMapper
 {

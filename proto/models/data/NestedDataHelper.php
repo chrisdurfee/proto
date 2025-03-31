@@ -6,90 +6,68 @@ use Proto\Utils\Strings;
 /**
  * Class NestedDataHelper
  *
- * Provides methods to parse and group nested data.
+ * Provides methods to parse and group nested data. This version expects JSON
+ * for nested structures. If the data is an array, it is returned as-is. If it
+ * is a valid JSON string, it is decoded and keys are optionally converted to
+ * camelCase. Otherwise, an empty array is returned.
  *
- * @package Proto\Utils
+ * @package Proto\Models\Data
  */
 class NestedDataHelper
 {
 	/**
-	 * Parses grouped data from a string or array.
+	 * Parses grouped data from a string or array. Expects JSON for nested data.
 	 *
-	 * @param mixed $group Group data.
+	 * @param mixed $group Group data (array or JSON string).
 	 * @return array
 	 */
 	public function getGroupedData(mixed $group): array
 	{
 		if (is_array($group))
-        {
+		{
 			return $group;
 		}
 
 		if (!$group)
-        {
+		{
 			return [];
 		}
 
-		$rows = explode('-:::-', (string)$group);
-		if (count($rows) < 1)
-        {
-			return [];
+		$decoded = json_decode($group, true);
+		if (json_last_error() === JSON_ERROR_NONE && is_array($decoded))
+		{
+			return $this->convertKeysToCamelCase($decoded);
 		}
 
-		$list = [];
-		foreach ($rows as $row)
-        {
-			$cols = explode('-::-', $row);
-			if (empty($cols[0]))
-            {
-				continue;
-			}
-
-			$item = $this->setRowItem($cols);
-			if ($item !== null)
-            {
-				$list[] = $item;
-			}
-		}
-		return $list;
+		// Not valid JSON, return empty array
+		return [];
 	}
 
 	/**
-	 * Converts a row of column data into an associative object.
+	 * Recursively converts array keys to camelCase.
 	 *
-	 * @param array $cols Column data.
-	 * @return array|object|null
+	 * @param array $data Input array.
+	 * @return array
 	 */
-	protected function setRowItem(array $cols): array|object|null
+	protected function convertKeysToCamelCase(array $data): array
 	{
-		$item = [];
-		foreach ($cols as $col)
-        {
-			$parts = explode('-:-', $col);
-			if (count($parts) < 2)
-            {
-				$item[] = $parts[0];
-				continue;
+		foreach ($data as $key => $value)
+		{
+			if (is_array($value))
+			{
+				$data[$key] = $this->convertKeysToCamelCase($value);
 			}
-			$key = $this->camelCase($parts[0]);
-			$item[$key] = $parts[1];
+			elseif (is_string($key))
+			{
+				$newKey = $this->camelCase($key);
+				if ($newKey !== $key)
+				{
+					$data[$newKey] = $value;
+					unset($data[$key]);
+				}
+			}
 		}
-		return $this->isAssoc($item) ? (object)$item : (object)null;
-	}
-
-	/**
-	 * Determines if an array is associative.
-	 *
-	 * @param array $array
-	 * @return bool
-	 */
-	protected function isAssoc(array $array): bool
-	{
-		if ([] === $array)
-        {
-			return false;
-		}
-		return array_keys($array) !== range(0, count($array) - 1);
+		return $data;
 	}
 
 	/**

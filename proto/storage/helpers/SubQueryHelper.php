@@ -60,7 +60,16 @@ class SubQueryHelper
 		{
 			return null;
 		}
-		return Json($as, array_combine($fields, $fields));
+
+		/**
+		 * This will remove the table name from the field names.
+		 */
+		$keys = array_map(function ($field)
+		{
+			return preg_replace('/^.*\./', '', $field);
+		}, $fields);
+
+		return Json($as, array_combine($keys, $fields));
 	}
 
 	/**
@@ -136,19 +145,6 @@ class SubQueryHelper
 		 */
 		$childJoins = [];
 		self::addChildJoin($childJoins, $join, $fields, $isSnakeCase);
-
-		/**
-		 * This will override the as to use the child table if the join is a bridge join.
-		 * This is necessary because bridge joins do not have their own fields and
-		 * thus cannot be used directly for JSON aggregation.
-		 */
-		if ($isBridge)
-		{
-			$as = $childJoins[0]['table'] ?? $tableName;
-		}
-
-		echo '<pre>';
-		var_dump($tableName, $alias, $as, $fields, $childJoins);
 
 		/**
 		 * This will generate the JSON aggregation SQL snippet using the fields collected
