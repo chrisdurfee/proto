@@ -94,16 +94,6 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the join builder.
-	 *
-	 * @return JoinBuilder
-	 */
-	public function builder(): JoinBuilder
-	{
-		return $this->builder;
-	}
-
-	/**
 	 * Setup join settings from the builder.
 	 *
 	 * @return void
@@ -183,9 +173,20 @@ class ModelJoin
 			return $this;
 		}
 		$join = new ModelJoin($this->builder, $tableName, $alias);
-		$join->references($this->tableName, $this->alias);
-		$this->multipleJoin = $join;
+		$this->setMultipleJoin($join);
 		return $this;
+	}
+
+	/**
+	 * Set the multiple join instance.
+	 *
+	 * @param ModelJoin $join The join instance to set.
+	 * @return void
+	 */
+	public function setMultipleJoin(ModelJoin $join): void
+	{
+		$this->multipleJoin = $join;
+		$join->references($this->tableName, $this->alias);
 	}
 
 	/**
@@ -309,6 +310,23 @@ class ModelJoin
 	}
 
 	/**
+	 * This will create a child join builder for the
+	 * model class and the join table.
+	 *
+	 * @param string|null $modelClassName Optional model class name.
+	 * @return JoinBuilder
+	 */
+	public function childJoin(?string $modelClassName = null): JoinBuilder
+	{
+		$builder = $this->builder->create($this->tableName, $this->alias);
+		if ($modelClassName !== null)
+		{
+			$builder->setModelClassName($modelClassName);
+		}
+		return $builder;
+	}
+
+	/**
 	 * This will create a bridge table join for the
 	 * model class and the bridge table.
 	 *
@@ -332,6 +350,32 @@ class ModelJoin
 		$modelJoin = $modelClass::many($builder, $type);
 
 		return $modelJoin->join($bridgeClassName);
+	}
+
+	/**
+	 * This will create a many table join for the
+	 * model class and the bridge table.
+	 *
+	 * @param string $modelClass Model class
+	 * @param string $type Join type
+	 * @return ModelJoin
+	 */
+	public function many(string $modelClass, string $type = 'left'): ModelJoin
+	{
+		/**
+		 * This will get the model join class id from the
+		 * builder model class name.
+		 */
+		$bridgeClassName = $this->builder->getModelClassName();
+
+		/**
+		 * This will create a linked builder and set
+		 * the bridge class name.
+		 */
+		$builder = $this->childJoin($bridgeClassName);
+		$modelJoin = $modelClass::many($builder, $type);
+		$this->setMultipleJoin($modelJoin);
+		return $modelJoin;
 	}
 
 	/**

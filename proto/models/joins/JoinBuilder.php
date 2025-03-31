@@ -136,7 +136,7 @@ class JoinBuilder
 		$alias = $modelName::alias();
 
 		$join = $this->getJoinByType($type, $tableName, $alias);
-		$join->multiple($tableName, $alias);
+		$join->multiple();
 		return $join;
 	}
 
@@ -254,5 +254,21 @@ class JoinBuilder
 	public function link(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
 		return new JoinBuilder($this->joins, $tableName, $alias, $this->isSnakeCase);
+	}
+
+	/**
+	 * Creates a new join builder for the specified table name and alias.
+	 *
+	 * @param string|array $tableName Base table name.
+	 * @param string|null $alias Table alias.
+	 * @return JoinBuilder
+	 */
+	public function create(string|array $tableName, ?string $alias = null): JoinBuilder
+	{
+		/**
+		 * This will create a new join builder instance without any existing joins.
+		 */
+		$joins = [];
+		return new JoinBuilder($joins, $tableName, $alias, $this->isSnakeCase);
 	}
 }

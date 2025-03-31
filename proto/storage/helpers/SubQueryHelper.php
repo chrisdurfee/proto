@@ -113,19 +113,51 @@ class SubQueryHelper
 		$tableName = $join->getJoinTableName();
 		$alias = $join->getJoinAlias();
 		$as = $join->getAs() ?: $join->getAlias();
+
+		/**
+		 * Check if the join is a bridge join. If it is, we will need to use the parent table name and alias.
+		 */
+		$isBridge = self::isBridge($join);
+		if ($isBridge)
+		{
+			$tableName = $join->getTableName();
+			$alias = $join->getAlias();
+		}
+
 		$builder = $builderCallback($tableName, $alias);
 
+		/**
+		 * This will get the fields from the join and format them for use in the JSON aggregation.
+		 */
 		$fields = FieldHelper::formatFields($join->getFields(), $isSnakeCase);
+
+		/**
+		 * This will set up the child joins for the join object.
+		 */
 		$childJoins = [];
 		self::addChildJoin($childJoins, $join, $fields, $isSnakeCase);
 
 		echo '<pre>';
 		var_dump($tableName, $alias, $as, $fields, $childJoins);
 
+		/**
+		 * This will generate the JSON aggregation SQL snippet using the fields collected
+		 * from the join and any child joins. If there are no fields, it returns null.
+		 */
 		$jsonAggSql = self::getJsonAggSql($as, $fields);
 		if ($jsonAggSql === null)
 		{
 			return null;
+		}
+
+		/**
+		 * This will override the as to use the child table if the join is a bridge join.
+		 * This is necessary because bridge joins do not have their own fields and
+		 * thus cannot be used directly for JSON aggregation.
+		 */
+		if ($isBridge)
+		{
+			$as = $childJoins[0]['table'] ?? $tableName;
 		}
 
 		$where = self::getJoinWhere($join);

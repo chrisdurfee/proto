@@ -210,22 +210,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @param string $modelClass Model class.
 	 * @param string $type Join type.
-	 * @return JoinBuilder
+	 * @return ModelJoin
 	 */
-	public static function bridge(string $modelClass, string $type = 'left'): JoinBuilder
+	public static function bridge(string $modelClass, string $type = 'left'): ModelJoin
 	{
 		/**
 		 * This will set up a many-to-one join and add the
 		 * default on clause for the join.
 		 */
 		$builder = static::$builder;
-		$result = $modelClass::many($builder, $type);
-
-		/**
-		 * This will create a child join builder and
-		 * set it to multiple.
-		 */
-		return $result->join($modelClass);
+		return $modelClass::many($builder, $type);
 	}
 
 	/**
