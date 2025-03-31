@@ -376,6 +376,15 @@ class ModelJoin
 		return $modelJoin;
 	}
 
+	/**
+	 * This will create a child model join for the
+	 * model class and the join table.
+	 *
+	 * @param object $builder
+	 * @param string $modelClassName
+	 * @param string $type
+	 * @return ModelJoin
+	 */
 	protected function createChildModelJoin(object $builder, string $modelClassName, string $type = 'left'): ModelJoin
 	{
 		$join = $builder->createJoin($modelClassName::table(), $modelClassName::alias());
