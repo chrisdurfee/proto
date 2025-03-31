@@ -23,6 +23,11 @@ export const PermissionPage = () =>
 		data,
 
 		/**
+		 * This will remove the padding.
+		 */
+		class: 'pt-0',
+
+		/**
 		 * This will update the permission page when the url is
 		 * updated.
 		 *
