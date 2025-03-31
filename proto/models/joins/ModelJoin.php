@@ -332,9 +332,9 @@ class ModelJoin
 	 *
 	 * @param string $modelClass Model class
 	 * @param string $type Join type
-	 * @return JoinBuilder
+	 * @return ModelJoin
 	 */
-	public function bridge(string $modelClass, string $type = 'left'): JoinBuilder
+	public function bridge(string $modelClass, string $type = 'left'): ModelJoin
 	{
 		/**
 		 * This will get the model join class id from the
@@ -346,10 +346,8 @@ class ModelJoin
 		 * This will create a linked builder and set
 		 * the bridge class name.
 		 */
-		$builder = $this->join($bridgeClassName);
-		$modelJoin = $modelClass::many($builder, $type);
-
-		return $modelJoin->join($bridgeClassName);
+		$builder = $this->childJoin($bridgeClassName);
+		return $modelClass::many($builder, $type);
 	}
 
 	/**
