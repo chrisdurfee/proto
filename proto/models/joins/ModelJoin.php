@@ -346,7 +346,7 @@ class ModelJoin
 		 * This will create a linked builder and set
 		 * the bridge class name.
 		 */
-		$builder = $this->childJoin($bridgeClassName);
+		$builder = $this->join($bridgeClassName);
 		return $modelClass::many($builder, $type);
 	}
 

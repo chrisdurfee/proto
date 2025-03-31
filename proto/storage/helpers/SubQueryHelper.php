@@ -137,6 +137,16 @@ class SubQueryHelper
 		$childJoins = [];
 		self::addChildJoin($childJoins, $join, $fields, $isSnakeCase);
 
+		/**
+		 * This will override the as to use the child table if the join is a bridge join.
+		 * This is necessary because bridge joins do not have their own fields and
+		 * thus cannot be used directly for JSON aggregation.
+		 */
+		if ($isBridge)
+		{
+			$as = $childJoins[0]['table'] ?? $tableName;
+		}
+
 		echo '<pre>';
 		var_dump($tableName, $alias, $as, $fields, $childJoins);
 
@@ -148,16 +158,6 @@ class SubQueryHelper
 		if ($jsonAggSql === null)
 		{
 			return null;
-		}
-
-		/**
-		 * This will override the as to use the child table if the join is a bridge join.
-		 * This is necessary because bridge joins do not have their own fields and
-		 * thus cannot be used directly for JSON aggregation.
-		 */
-		if ($isBridge)
-		{
-			$as = $childJoins[0]['table'] ?? $tableName;
 		}
 
 		$where = self::getJoinWhere($join);
