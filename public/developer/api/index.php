@@ -3,6 +3,7 @@ include_once __DIR__ . '/../app/autoload.php';
 
 use Modules\User\Controllers\RoleController;
 use Modules\User\Controllers\UserController;
+use Modules\User\Controllers\PermissionController;
 use Proto\Http\Router\Router;
 use Developer\App\Auth\Auth;
 use Developer\App\Controllers\GeneratorController;
@@ -152,3 +153,8 @@ $router->resource('user*', UserController::class);
  * This will handle the role routes.
  */
 $router->resource('role*', RoleController::class);
+
+/**
+ * This will handle the permission routes.
+ */
+$router->resource('permission*', PermissionController::class);
