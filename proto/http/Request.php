@@ -141,7 +141,7 @@ class Request
 		}
 
 		parse_str($inputs, $params);
-		if (count($params) > 1)
+		if (count($params) > 0)
 		{
 			$_REQUEST = array_merge($_REQUEST, $params);
 		}
