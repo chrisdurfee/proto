@@ -12,49 +12,49 @@ use Proto\Models\Model;
  */
 class Permission extends Model
 {
-    /**
-     * @var string|null $tableName
-     */
-    protected static ?string $tableName = 'permissions';
+	/**
+	 * @var string|null $tableName
+	 */
+	protected static ?string $tableName = 'permissions';
 
-    /**
-     * @var string|null $alias
-     */
-    protected static ?string $alias = 'p';
+	/**
+	 * @var string|null $alias
+	 */
+	protected static ?string $alias = 'p';
 
-    /**
-     * @var array $fields
-     */
-    protected static array $fields = [
-        'id',
-        'name',
-        'slug',
-        'description',
-        'module',
-        'createdAt',
-        'updatedAt'
-    ];
+	/**
+	 * @var array $fields
+	 */
+	protected static array $fields = [
+		'id',
+		'name',
+		'slug',
+		'description',
+		'module',
+		'createdAt',
+		'updatedAt'
+	];
 
-    /**
-     * Define joins for the Permission model.
-     *
-     * @param object $builder The query builder object
-     * @return void
-     */
-    protected static function joins(object $builder): void
-    {
-        /**
-         * This will create a bridge table join for the role_permissions table
-         * and the roles table.
-         */
-        static::bridge(RolePermission::class)
-            ->many(Role::class)
-            ->on(['roleId', 'id'])
-            ->fields(
-                'id',
-                'name',
-                'slug',
-                'description'
-            );
-    }
+	/**
+	 * Define joins for the Permission model.
+	 *
+	 * @param object $builder The query builder object
+	 * @return void
+	 */
+	protected static function joins(object $builder): void
+	{
+		/**
+		 * This will create a bridge table join for the role_permissions table
+		 * and the roles table.
+		 */
+		static::bridge(RolePermission::class)
+			->many(Role::class)
+			->on(['roleId', 'id'])
+			->fields(
+				'id',
+				'name',
+				'slug',
+				'description'
+			);
+	}
 }

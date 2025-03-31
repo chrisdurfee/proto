@@ -32,11 +32,11 @@ class PermissionService
             })
             ->where('user_id', $userId)
             ->get();
-        
+
         if (empty($roles)) {
             return false;
         }
-        
+
         // Check if any of the roles has the required permission
         foreach ($roles as $role) {
             // First check if we have permissions stored in the permissions JSON column
@@ -46,7 +46,7 @@ class PermissionService
                     return true;
                 }
             }
-            
+
             // If not found in the JSON column, check the role_permissions table
             $hasPermission = RolePermission::select()
                 ->join('permissions', 'p', function($join) {
@@ -55,15 +55,15 @@ class PermissionService
                 ->where('role_id', $role->id)
                 ->where('p.slug', $permissionSlug)
                 ->exists();
-                
+
             if ($hasPermission) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * Assign a role to a user.
      *
@@ -78,19 +78,19 @@ class PermissionService
             ->where('user_id', $userId)
             ->where('role_id', $roleId)
             ->exists();
-            
+
         if ($exists) {
             return true; // Already assigned
         }
-        
+
         // Create the new relationship
         $userRole = new UserRole();
         $userRole->userId = $userId;
         $userRole->roleId = $roleId;
-        
+
         return $userRole->save();
     }
-    
+
     /**
      * Remove a role from a user.
      *
@@ -105,7 +105,7 @@ class PermissionService
             ->where('role_id', $roleId)
             ->execute();
     }
-    
+
     /**
      * Assign a permission to a role.
      *
@@ -120,19 +120,19 @@ class PermissionService
             ->where('role_id', $roleId)
             ->where('permission_id', $permissionId)
             ->exists();
-            
+
         if ($exists) {
             return true; // Already assigned
         }
-        
+
         // Create the new relationship
         $rolePermission = new RolePermission();
         $rolePermission->roleId = $roleId;
         $rolePermission->permissionId = $permissionId;
-        
+
         return $rolePermission->save();
     }
-    
+
     /**
      * Remove a permission from a role.
      *
@@ -147,7 +147,7 @@ class PermissionService
             ->where('permission_id', $permissionId)
             ->execute();
     }
-    
+
     /**
      * Get all permissions for a role.
      *
@@ -163,7 +163,7 @@ class PermissionService
             ->where('rp.role_id', $roleId)
             ->get();
     }
-    
+
     /**
      * Get all roles for a user.
      *
@@ -179,7 +179,7 @@ class PermissionService
             ->where('ur.user_id', $userId)
             ->get();
     }
-    
+
     /**
      * Get all permissions for a user through their roles.
      *
@@ -190,15 +190,15 @@ class PermissionService
     {
         // Get all roles for the user
         $roles = self::getUserRoles($userId);
-        
+
         if (empty($roles)) {
             return [];
         }
-        
+
         $roleIds = array_map(function($role) {
             return $role->id;
         }, $roles);
-        
+
         // Get all permissions for these roles
         return Permission::select()
             ->join('role_permissions', 'rp', function($join) {
