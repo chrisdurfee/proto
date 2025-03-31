@@ -370,10 +370,40 @@ class ModelJoin
 		 * This will create a linked builder and set
 		 * the bridge class name.
 		 */
-		$builder = $this->childJoin($bridgeClassName);
-		$modelJoin = $modelClass::many($builder, $type);
+		$builder = $this->join($bridgeClassName);
+		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 		$this->setMultipleJoin($modelJoin);
 		return $modelJoin;
+	}
+
+	protected function createChildModelJoin(object $builder, string $modelClassName, string $type = 'left'): ModelJoin
+	{
+		$join = $builder->createJoin($modelClassName::table(), $modelClassName::alias());
+
+		if ($type === 'left')
+		{
+			$join->left();
+		}
+		elseif ($type === 'right')
+		{
+			$join->right();
+		}
+		elseif ($type === 'outer')
+		{
+			$join->outer();
+		}
+		elseif ($type === 'cross')
+		{
+			$join->cross();
+		}
+
+		/**
+		 * This will add the default on clause for the join.
+		 */
+		$modelRefName = $builder->getModelRefName();
+		$join->on(['id', $modelRefName . 'Id']);
+
+		return $join;
 	}
 
 	/**

@@ -96,6 +96,18 @@ class JoinBuilder
 	}
 
 	/**
+	 * Creates a new join.
+	 *
+	 * @param string|array $tableName Base table name.
+	 * @param string|null $alias Table alias.
+	 * @return ModelJoin
+	 */
+	public function createJoin(string|array $tableName, ?string $alias = null): ModelJoin
+	{
+		return new ModelJoin($this, $tableName, $alias, $this->isSnakeCase);
+	}
+
+	/**
 	 * Creates and adds a new join.
 	 *
 	 * @param string|array $tableName Base table name.
@@ -104,7 +116,7 @@ class JoinBuilder
 	 */
 	protected function addJoin(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = new ModelJoin($this, $tableName, $alias, $this->isSnakeCase);
+		$join = $this->createJoin($tableName, $alias);
 		$this->joins[] = $join;
 		return $join;
 	}
@@ -156,6 +168,18 @@ class JoinBuilder
 	}
 
 	/**
+	 * This will set the default on condition for the join.
+	 *
+	 * @param object $join
+	 * @return void
+	 */
+	protected function setDefaultOn(object $join): void
+	{
+		$modelRefName = $this->getModelRefName();
+		$join->on(['id', $modelRefName . 'Id']);
+	}
+
+	/**
 	 * This will create a one join.
 	 *
 	 * @param string $type Join type.
@@ -186,8 +210,7 @@ class JoinBuilder
 		/**
 		 * This will set the default on condition for the join.
 		 */
-		$modelRefName = $this->getModelRefName();
-		$join->on(['id', $modelRefName . 'Id']);
+		$this->setDefaultOn($join);
 
 		return $join;
 	}
