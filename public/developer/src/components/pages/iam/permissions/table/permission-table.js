@@ -4,6 +4,20 @@ import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/
 import { PermissionModal } from "../modals/permission-modal.js";
 
 /**
+ * This will create a permission modal.
+ *
+ * @param {object} item
+ * @param {object} parent
+ * @returns {object}
+ */
+const Modal = (item, { parent }) => (
+	PermissionModal({
+		item,
+		onClose: (data) => parent.list.mingle([ data.get() ])
+	})
+);
+
+/**
  * This will create a role row.
  *
  * @param {object} row
@@ -11,7 +25,7 @@ import { PermissionModal } from "../modals/permission-modal.js";
  * @return {object}
  */
 export const PermissionRow = (row, onSelect) => (
-	Tr({ class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer', click: () => PermissionModal({ item: row }) }, [
+	Tr({ class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer', click: (e, parent) => Modal(row, parent) }, [
 		Td({ class: 'p-4 hidden md:table-cell' }, [
 			new Checkbox({
 				checked: row.selected,
