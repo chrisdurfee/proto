@@ -22,8 +22,7 @@ export const RoleRow = (row, onSelect) => (
 		Td({ class: 'p-4 truncate max-w-[150px]' }, row.name),
 		Td({ class: 'p-4 truncate max-w-[150px]' }, row.slug),
 		Td({ class: 'p-4 truncate max-w-[200px]' }, row.description),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.updatedAt)
+		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt)
 	])
 );
 
@@ -40,8 +39,7 @@ const HeaderRow = () => (
 			HeaderCol({ key: 'name', label: 'Name' }),
 			HeaderCol({ key: 'slug', label: 'Slug' }),
 			HeaderCol({ key: 'description', label: 'Description' }),
-			HeaderCol({ key: 'createdAt', label: 'Created At', class: 'hidden md:table-cell' }),
-			HeaderCol({ key: 'updatedAt', label: 'Updated At', class: 'hidden md:table-cell' })
+			HeaderCol({ key: 'createdAt', label: 'Created At', class: 'hidden md:table-cell' })
 		])
 	])
 );
