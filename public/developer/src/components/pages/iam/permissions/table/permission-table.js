@@ -38,8 +38,7 @@ export const PermissionRow = (row, onSelect) => (
 		Td({ class: 'p-4 truncate max-w-[150px]' }, row.slug),
 		Td({ class: 'p-4 truncate max-w-[200px]' }, row.description),
 		Td({ class: 'p-4 truncate max-w-[200px]' }, row.module),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.updatedAt)
+		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt)
 	])
 );
 
