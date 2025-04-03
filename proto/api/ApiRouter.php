@@ -9,7 +9,7 @@ namespace
 	/**
 	 * @var Base $base This will boostrap the application.
 	 */
-	$base = new Base();
+	new Base();
 	Session::init();
 
 	/**
