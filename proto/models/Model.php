@@ -182,7 +182,12 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$joins = [];
 		$alias = static::$alias ?? null;
-		$builder = static::$builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
+		$builder = static::$builder = new JoinBuilder(
+			$joins,
+			static::$tableName,
+			$alias,
+			$this->isSnakeCase
+		);
 
 		// Set the model class name for joins.
 		$modelClassName = static::class;

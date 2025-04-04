@@ -42,6 +42,7 @@ class SubQueryHelper
 				'on' => $childJoin->getOn(),
 				'using' => $childJoin->getUsing()
 			];
+
 			self::addChildJoin($joins, $childJoin, $fields, $isSnakeCase);
 		}
 	}
