@@ -47,10 +47,10 @@ class Storage implements StorageInterface
 	protected string $connection = 'default';
 
 	/**
-	 * Last error.
-	 * @var object|null
+	 * Last error encountered.
+	 * @var \Throwable|null // Store Throwable for better error info
 	 */
-	protected ?object $lastError = null;
+	protected ?\Throwable $lastError = null;
 
 	/**
 	 * Compiled select SQL.
@@ -113,24 +113,24 @@ class Storage implements StorageInterface
 	}
 
 	/**
-	 * Set the last error.
+	 * Set the last error encountered.
 	 *
-	 * @param object $error
+	 * @param \Throwable $error The exception/error object.
 	 * @return void
 	 */
-	protected function setLastError(object $error): void
+	protected function setLastError(\Throwable $error): void
 	{
 		$this->lastError = $error;
 	}
 
 	/**
-	 * Retrieve the last error.
+	 * Retrieve the last error encountered by this storage or the underlying adapter.
 	 *
-	 * @return object|null
+	 * @return \Throwable|null
 	 */
-	public function getLastError(): ?object
+	public function getLastError(): ?\Throwable
 	{
-		return $this->lastError ?? $this->db->getLastError();
+		return $this->lastError ?? new \Exception($this->db->getLastError());
 	}
 
 	/**
