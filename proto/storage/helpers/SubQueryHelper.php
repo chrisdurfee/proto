@@ -119,9 +119,9 @@ class SubQueryHelper
 	 */
 	public static function setupSubQuery(object $join, callable $builderCallback, bool $isSnakeCase = false): ?string
 	{
-		$tableName = $join->getJoinTableName();
-		$alias = $join->getJoinAlias();
-		$as = $join->getAs() ?: $join->getAlias();
+		$tableName = $join->getContextTableName();
+		$alias = $join->getContextAlias();
+		$as = $join->getAs();
 
 		/**
 		 * Check if the join is a bridge join. If it is, we will need to use the parent table name and alias.

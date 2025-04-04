@@ -1,43 +1,76 @@
 <?php declare(strict_types=1);
 namespace Proto\Models\Joins;
 
-use Proto\Utils\Strings;
+// use Proto\Models\Joins\ModelJoin; // Only if JoinBuilder needs direct access
+use Proto\Models\Joins\JoinFactory;
+use Proto\Models\Joins\ModelNamingConvention;
 
 /**
  * Class JoinBuilder
  *
- * Builds join configurations for models.
+ * Provides context for building joins and access to join creation methods.
+ * Manages a collection of joins defined for a query.
  *
  * @package Proto\Models
  */
 class JoinBuilder
 {
 	/**
-	 * Model class name for join.
-	 *
-	 * @var string|null
+	 * @var string|array The base table name or [db, table] for the current context.
 	 */
-	protected ?string $modelClassName = null;
+	protected string|array $tableName;
+
+	/**
+	 * @var string|null The alias for the base table in the current context.
+	 */
+	protected ?string $alias;
+
+	/**
+	 * @var bool Indicates if snake_case should be used for derived names.
+	 */
+	protected bool $isSnakeCase;
+
+	/**
+	 * @var ModelNamingHelper Utility for deriving model-based names.
+	 */
+	protected ModelNamingHelper $namingConvention;
+
+	/**
+	 * @var JoinFactory Factory responsible for creating ModelJoin instances.
+	 */
+	protected JoinFactory $joinFactory;
 
 	/**
 	 * JoinBuilder constructor.
 	 *
-	 * @param array $joins Reference to joins array.
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
+	 * @param array &$joins Reference to joins array.
+	 * @param string|array $tableName Base table name for this builder context.
+	 * @param string|null $alias Table alias for this builder context.
 	 * @param bool $isSnakeCase Indicates snake_case usage.
 	 */
 	public function __construct(
 		protected array &$joins,
-		protected string|array $tableName,
-		protected ?string $alias = null,
-		protected bool $isSnakeCase = true
+		string|array $tableName,
+		?string $alias = null,
+		bool $isSnakeCase = true
 	)
 	{
+		$this->joins =& $joins; // Keep the reference
+		$this->tableName = $tableName;
+		$this->alias = $alias;
+		$this->isSnakeCase = $isSnakeCase;
+
+		$this->namingConvention = new ModelNamingHelper($this->isSnakeCase);
+		$this->joinFactory = new JoinFactory(
+			$this->joins,
+			$this,
+			$this->namingConvention,
+			$this->isSnakeCase
+		);
 	}
 
 	/**
-	 * Returns the table settings as an object.
+	 * Returns the table settings (name and alias) for the current context.
 	 *
 	 * @return object
 	 */
@@ -50,248 +83,124 @@ class JoinBuilder
 	}
 
 	/**
-	 * Sets the model class name for the join.
+	 * Access the factory to create a generic join.
 	 *
-	 * @param string $modelClassName
-	 * @return self
-	 */
-	public function setModelClassName(string $modelClassName): self
-	{
-		$this->modelClassName = $modelClassName;
-		return $this;
-	}
-
-	/**
-	 * Gets the model class name for the join.
-	 *
-	 * @return string
-	 */
-	public function getModelClassName(): string
-	{
-		return $this->modelClassName;
-	}
-
-	/**
-	 * Gets the model class name for the join.
-	 *
-	 * @return string
-	 */
-	public function getModelRefName(): string
-	{
-		$modelClass = $this->getModelClassName();
-		$modelName = $modelClass::getIdClassName();
-		return Strings::snakeCase($modelName);
-	}
-
-	/**
-	 * Gets the model identifier name (appending "Id" to the model class name).
-	 *
-	 * @return string
-	 */
-	public function getModelIdName(): string
-	{
-		$modelClass = $this->getModelClassName();
-		$modelName = $modelClass::getIdClassName();
-		return "{$modelName}Id";
-	}
-
-	/**
-	 * Creates a new join.
-	 *
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
-	 * @return ModelJoin
-	 */
-	public function createJoin(string|array $tableName, ?string $alias = null): ModelJoin
-	{
-		return new ModelJoin($this, $tableName, $alias, $this->isSnakeCase);
-	}
-
-	/**
-	 * Creates and adds a new join.
-	 *
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
-	 * @return ModelJoin
-	 */
-	protected function addJoin(string|array $tableName, ?string $alias = null): ModelJoin
-	{
-		$join = $this->createJoin($tableName, $alias);
-		$this->joins[] = $join;
-		return $join;
-	}
-
-	/**
-	 * Creates a generic join.
-	 *
-	 * @param string|array $tableName Base table name.
+	 * @param string|array $tableName Table name or [db, table].
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
 	public function join(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		return $this->addJoin($tableName, $alias);
+		return $this->joinFactory->join($tableName, $alias);
 	}
 
 	/**
-	 * This will create a many join.
+	 * Access the factory to create a left join.
 	 *
-	 * @param string $modelName Model class name.
-	 * @param string $type Join type (default is 'left').
-	 * @return ModelJoin
-	 */
-	public function many(string $modelName, string $type = 'left'): ModelJoin
-	{
-		$this->setModelClassName($modelName);
-
-		$tableName = $modelName::table();
-		$alias = $modelName::alias();
-
-		$join = $this->getJoinByType($type, $tableName, $alias);
-		$join->multiple();
-		return $join;
-	}
-
-	/**
-	 * This will create a one to one join.
-	 *
-	 * @param string $modelName
-	 * @param string $type
-	 * @return ModelJoin
-	 */
-	public function one(string $modelName, string $type = 'left'): ModelJoin
-	{
-		$tableName = $modelName::table();
-		$alias = $modelName::alias();
-
-		return $this->getJoinByType($type, $tableName, $alias);
-	}
-
-	/**
-	 * This will set the default on condition for the join.
-	 *
-	 * @param object $join
-	 * @return void
-	 */
-	protected function setDefaultOn(object $join): void
-	{
-		$modelRefName = $this->getModelRefName();
-		$join->on(['id', $modelRefName . 'Id']);
-	}
-
-	/**
-	 * This will create a one join.
-	 *
-	 * @param string $type Join type.
-	 * @param string $tableName Base table name.
-	 * @param string|null $alias Table alias.
-	 * @return ModelJoin
-	 */
-	protected function getJoinByType(string $type, string $tableName, string $alias = null): ModelJoin
-	{
-		$join = null;
-		if ($type === 'right')
-		{
-			$join = $this->right($tableName, $alias);
-		}
-		else if ($type === 'outer')
-		{
-			$join = $this->outer($tableName, $alias);
-		}
-		else if ($type === 'cross')
-		{
-			$join = $this->cross($tableName, $alias);
-		}
-		else
-		{
-			$join = $this->left($tableName, $alias);
-		}
-
-		/**
-		 * This will set the default on condition for the join.
-		 */
-		$this->setDefaultOn($join);
-
-		return $join;
-	}
-
-	/**
-	 * Creates a left join.
-	 *
-	 * @param string|array $tableName Base table name.
+	 * @param string|array $tableName Table name or [db, table].
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
 	public function left(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->left();
+		return $this->joinFactory->left($tableName, $alias);
 	}
 
 	/**
-	 * Creates a right join.
+	 * Access the factory to create a right join.
 	 *
-	 * @param string|array $tableName Base table name.
+	 * @param string|array $tableName Table name or [db, table].
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
 	public function right(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->right();
+		return $this->joinFactory->right($tableName, $alias);
 	}
 
 	/**
-	 * Creates an outer join.
+	 * Access the factory to create an outer join.
 	 *
-	 * @param string|array $tableName Base table name.
+	 * @param string|array $tableName Table name or [db, table].
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
 	public function outer(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->outer();
+		return $this->joinFactory->outer($tableName, $alias);
 	}
 
 	/**
-	 * Creates a cross join.
+	 * Access the factory to create a cross join.
 	 *
-	 * @param string|array $tableName Base table name.
+	 * @param string|array $tableName Table name or [db, table].
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
 	public function cross(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->cross();
+		return $this->joinFactory->cross($tableName, $alias);
 	}
 
 	/**
-	 * Creates a linked join builder for further chaining.
+	 * Access the factory to create a one-to-one/many-to-one relationship join.
 	 *
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
+	 * @param string $modelName Related model class name.
+	 * @param string $type Join type (default 'left').
+	 * @return ModelJoin
+	 */
+	public function one(string $modelName, string $type = 'left'): ModelJoin
+	{
+		return $this->joinFactory->one($modelName, $type);
+	}
+
+	/**
+	 * Access the factory to create a one-to-many relationship join.
+	 *
+	 * @param string $modelName Related model class name.
+	 * @param string $type Join type (default 'left').
+	 * @return ModelJoin
+	 */
+	public function many(string $modelName, string $type = 'left'): ModelJoin
+	{
+		return $this->joinFactory->many($modelName, $type);
+	}
+
+	/**
+	 * Creates a linked join builder for further chaining, using a new table context
+	 * but sharing the same underlying joins collection.
+	 *
+	 * @param string|array $tableName New base table name for the linked builder.
+	 * @param string|null $alias New table alias for the linked builder.
 	 * @return JoinBuilder
 	 */
 	public function link(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
-		return new JoinBuilder($this->joins, $tableName, $alias, $this->isSnakeCase);
+		return new self($this->joins, $tableName, $alias, $this->isSnakeCase);
 	}
 
 	/**
-	 * Creates a new join builder for the specified table name and alias.
+	 * Creates a completely new, independent join builder instance
+	 * starting with an empty joins collection.
 	 *
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
+	 * @param string|array $tableName Base table name for the new builder.
+	 * @param string|null $alias Table alias for the new builder.
 	 * @return JoinBuilder
 	 */
 	public function create(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
-		/**
-		 * This will create a new join builder instance without any existing joins.
-		 */
-		$joins = [];
-		return new JoinBuilder($joins, $tableName, $alias, $this->isSnakeCase);
+		$newJoins = [];
+		return new self($newJoins, $tableName, $alias, $this->isSnakeCase);
+	}
+
+	/**
+	 * Gets the collection of joins built so far.
+	 * Useful if the calling code needs the final array.
+	 *
+	 * @return array
+	 */
+	public function getJoins(): array
+	{
+		return $this->joins;
 	}
 }

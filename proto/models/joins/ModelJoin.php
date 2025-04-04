@@ -6,63 +6,48 @@ use Proto\Utils\Strings;
 /**
  * Class ModelJoin
  *
- * Represents a join definition for model relationships.
+ * Represents a single join definition within a query.
+ * Configured via JoinFactory and holds details like type, table, alias, and conditions.
+ * Uses OnHelper to process ON conditions.
  *
  * @package Proto\Models
  */
 class ModelJoin
 {
 	/**
-	 * Type of join.
-	 *
 	 * @var string
 	 */
 	protected string $type = 'JOIN';
 
 	/**
-	 * USING clause for join.
-	 *
 	 * @var string|null
 	 */
-	protected ?string $using = null;
+	protected ?string $usingColumn = null;
 
 	/**
-	 * ON conditions for join.
+	 * ON conditions for join. Array of condition sets processed by OnHelper.
+	 * Example: [['left' => 'table.col', 'op' => '=', 'right' => 'othertable.col'], 'raw SQL condition']
 	 *
 	 * @var array
 	 */
 	protected array $on = [];
 
 	/**
-	 * Fields included in join.
+	 * Fields to be selected from this joined table.
 	 *
 	 * @var array
 	 */
 	protected array $fields = [];
 
 	/**
-	 * Alias designation.
+	 * Alias for mapping results (optional, used during hydration/result processing).
 	 *
 	 * @var string|null
 	 */
 	protected ?string $as = null;
 
 	/**
-	 * Join table name.
-	 *
-	 * @var string|array
-	 */
-	protected string|array $joinTableName;
-
-	/**
-	 * Alias for the join table.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $joinAlias;
-
-	/**
-	 * Indicates if the join is multiple.
+	 * Indicates if this join represents a one-to-many relationship.
 	 *
 	 * @var bool
 	 */
@@ -76,86 +61,168 @@ class ModelJoin
 	protected ?ModelJoin $multipleJoin = null;
 
 	/**
-	 * ModelJoin constructor.
+	 * The table name of the context/base (the "left" side of the join).
+	 * Populated from the context JoinBuilder.
 	 *
-	 * @param JoinBuilder $builder Reference to join builder.
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
-	 * @param bool $isSnakeCase Indicates snake_case usage.
+	 * @var string|array
+	 */
+	protected string|array $contextTableName;
+
+	/**
+	 * The alias of the context/base table (the "left" side of the join).
+	 * Populated from the context JoinBuilder.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $contextAlias;
+
+	/**
+	 * ModelJoin constructor.
+	 * Instantiated by JoinFactory.
+	 *
+	 * @param JoinBuilder $contextBuilder Reference to the builder providing the join context ("left" side).
+	 * @param string|array $tableName Table name for *this* join (the "right" side).
+	 * @param string|null $alias Alias for *this* join's table.
+	 * @param bool $isSnakeCase Indicates snake_case usage for ON conditions processed by OnHelper.
 	 */
 	public function __construct(
-		protected JoinBuilder $builder,
+		protected JoinBuilder $contextBuilder,
 		protected string|array $tableName,
 		protected ?string $alias = null,
 		protected bool $isSnakeCase = true
 	)
 	{
-		$this->setupJoinSettings();
+		$this->setupContextSettings();
 	}
 
 	/**
-	 * Setup join settings from the builder.
+	 * Set context table details from the context builder.
 	 *
 	 * @return void
 	 */
-	protected function setupJoinSettings(): void
+	protected function setupContextSettings(): void
 	{
-		$joinSettings = $this->builder->getTableSettings();
-		$this->joinTableName = $joinSettings->tableName;
-		$this->joinAlias = $joinSettings->alias;
+		$contextSettings = $this->contextBuilder->getTableSettings();
+		$this->contextTableName = $contextSettings->tableName;
+		$this->contextAlias = $contextSettings->alias;
 	}
 
 	/**
-	 * Get the join table name.
+	 * Get ON conditions. Returns array of structured arrays or raw strings.
 	 *
-	 * @return string|array
+	 * @return array
 	 */
-	public function getJoinTableName(): string|array
+	public function getOn(): array
 	{
-		return $this->joinTableName;
+		return $this->on;
 	}
 
 	/**
-	 * Get the join table alias.
+	 * Clears all previously set ON conditions.
+	 * Also clears any USING clause as they are mutually exclusive.
 	 *
-	 * @return string|null
+	 * @return self
 	 */
-	public function getJoinAlias(): ?string
+	public function clearOn(): self
 	{
-		return $this->joinAlias;
+		$this->on = [];
+		$this->usingColumn = null;
+		return $this;
 	}
 
 	/**
-	 * Override join table reference.
+	 * Adds ON conditions for the join (additive).
+	 * Replaces any USING clause. Delegates processing to OnHelper.
 	 *
-	 * @param string|array $tableName New table name.
-	 * @param string|null $alias New alias.
-	 * @return void
+	 * @param mixed ...$conditions Conditions to add.
+	 * @return self
 	 */
-	protected function references(string|array $tableName, ?string $alias = null): void
+	public function on(mixed ...$conditions): self
 	{
-		$this->joinTableName = $tableName;
-		$this->joinAlias = $alias;
+		if (count($conditions) < 1)
+		{
+			return $this;
+		}
+		$this->usingColumn = null;
+
+		$thisAlias = $this->alias ?? $this->tableName;
+		$contextAlias = $this->contextAlias ?? $this->contextTableName;
+
+		// Instantiate the helper with the current join's context
+		$helper = new OnHelper($thisAlias, $contextAlias, $this->isSnakeCase);
+
+		foreach ($conditions as $condition)
+		{
+			$processed = $helper->process($condition);
+			if ($processed !== null)
+			{
+				$this->on[] = $processed;
+			}
+		}
+
+		return $this;
 	}
 
 	/**
-	 * Get the base table name.
+	 * Sets the join type internally.
 	 *
-	 * @return string|array
+	 * @param string $type SQL join type (e.g., 'LEFT JOIN').
+	 * @return self
 	 */
-	public function getTableName(): string|array
+	protected function setType(string $type = 'JOIN'): self
 	{
-		return $this->tableName;
+		$this->type = strtoupper($type);
+		return $this;
 	}
 
 	/**
-	 * Get the table alias.
+	 * Configure as a LEFT JOIN.
 	 *
-	 * @return string|null
+	 * @return self
 	 */
-	public function getAlias(): ?string
+	public function left(): self
 	{
-		return $this->alias;
+		return $this->setType('LEFT JOIN');
+	}
+
+	/**
+	 * Configure as a RIGHT JOIN.
+	 *
+	 * @return self
+	 */
+	public function right(): self
+	{
+		return $this->setType('RIGHT JOIN');
+	}
+
+	/**
+	 * Configure as an OUTER JOIN (typically FULL OUTER).
+	 *
+	 * @return self
+	 */
+	public function outer(): self
+	{
+		return $this->setType('OUTER JOIN');
+	}
+
+	/**
+	 * Configure as a CROSS JOIN.
+	 *
+	 * @return self
+	 */
+	public function cross(): self
+	{
+		return $this->setType('CROSS JOIN');
+	}
+
+	/**
+	 * Configure as an INNER JOIN.
+	 *
+	 * @return self
+	 */
+	public function inner(): self
+	{
+		return $this->setType('INNER JOIN');
 	}
 
 	/**
@@ -172,7 +239,8 @@ class ModelJoin
 		{
 			return $this;
 		}
-		$join = new ModelJoin($this->builder, $tableName, $alias);
+
+		$join = new ModelJoin($this->contextBuilder, $tableName, $alias);
 		$this->setMultipleJoin($join);
 		return $this;
 	}
@@ -200,79 +268,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Check if the join is multiple.
-	 *
-	 * @return bool
-	 */
-	public function isMultiple(): bool
-	{
-		return $this->multiple;
-	}
-
-	/**
-	 * Set the join type.
-	 *
-	 * @param string $type Join type.
-	 * @return self
-	 */
-	public function addType(string $type = 'JOIN'): self
-	{
-		$this->type = strtoupper($type);
-		return $this;
-	}
-
-	/**
-	 * Get the join type.
-	 *
-	 * @return string
-	 */
-	public function getType(): string
-	{
-		return $this->type;
-	}
-
-	/**
-	 * Configure a left join.
-	 *
-	 * @return self
-	 */
-	public function left(): self
-	{
-		return $this->addType('LEFT JOIN');
-	}
-
-	/**
-	 * Configure a right join.
-	 *
-	 * @return self
-	 */
-	public function right(): self
-	{
-		return $this->addType('RIGHT JOIN');
-	}
-
-	/**
-	 * Configure an outer join.
-	 *
-	 * @return self
-	 */
-	public function outer(): self
-	{
-		return $this->addType('OUTER JOIN');
-	}
-
-	/**
-	 * Configure a cross join.
-	 *
-	 * @return self
-	 */
-	public function cross(): self
-	{
-		return $this->addType('CROSS JOIN');
-	}
-
-	/**
-	 * Set the alias designation.
+	 * Set the alias designation for result mapping.
 	 *
 	 * @param string $as Alias designation.
 	 * @return self
@@ -284,46 +280,84 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the alias designation.
+	 * Add fields to be selected from this join. Appends unique fields.
+	 *
+	 * @param string|array ...$fields Field names. Can be simple strings or ['alias' => 'column'].
+	 * @return self
+	 */
+	public function fields(string|array ...$fields): self
+	{
+		if (count($fields) < 1)
+		{
+			return $this;
+		}
+
+		$flatFields = [];
+		foreach ($fields as $field)
+		{
+			if (!is_array($field))
+			{
+				$flatFields[] = (string)$field; // Ensure string
+				continue;
+			}
+
+			if (array_is_list($field))
+			{
+				array_push($flatFields, ...$field);
+			}
+			else
+			{
+				array_push($flatFields, ...array_values($field));
+			}
+		}
+
+		$this->fields = array_unique(array_merge($this->fields, $flatFields));
+		return $this;
+	}
+
+	/**
+	 * Set the USING clause (replaces any ON conditions).
+	 *
+	 * @param string $column Column name for the USING clause.
+	 * @return self
+	 */
+	public function using(string $column): self
+	{
+		$this->usingColumn = 'USING(' . $column . ')';
+		$this->on = [];
+		return $this;
+	}
+
+	/**
+	 * Get the alias designation for result mapping.
+	 * Defaults to the join table alias or name if not set.
 	 *
 	 * @return string|array
 	 */
 	public function getAs(): string|array
 	{
-		return $this->as ?? $this->tableName;
+		return $this->as ?? $this->alias ?? $this->tableName;
 	}
 
 	/**
 	 * Create a new join builder for this join.
 	 *
-	 * @param string|null $modelClassName Optional model class name.
 	 * @return JoinBuilder
 	 */
-	public function join(?string $modelClassName = null): JoinBuilder
+	public function join(): JoinBuilder
 	{
-		$builder = $this->builder->link($this->tableName, $this->alias);
-		if ($modelClassName !== null)
-		{
-			$builder->setModelClassName($modelClassName);
-		}
-		return $builder;
+		return $this->contextBuilder->link($this->tableName, $this->alias);
 	}
 
 	/**
 	 * This will create a child join builder for the
 	 * model class and the join table.
 	 *
-	 * @param string|null $modelClassName Optional model class name.
 	 * @return JoinBuilder
 	 */
-	public function childJoin(?string $modelClassName = null): JoinBuilder
+	public function childJoin(): JoinBuilder
 	{
-		$builder = $this->builder->create($this->tableName, $this->alias);
-		if ($modelClassName !== null)
-		{
-			$builder->setModelClassName($modelClassName);
-		}
-		return $builder;
+		return $this->contextBuilder->create($this->tableName, $this->alias);
 	}
 
 	/**
@@ -336,18 +370,10 @@ class ModelJoin
 	 */
 	public function bridge(string $modelClass, string $type = 'left'): ModelJoin
 	{
-		/**
-		 * This will get the model join class id from the
-		 * builder model class name.
-		 */
-		$bridgeClassName = $this->builder->getModelClassName();
-
-		/**
-		 * This will create a linked builder and set
-		 * the bridge class name.
-		 */
-		$builder = $this->join($bridgeClassName);
-		return $modelClass::many($builder, $type);
+		$builder = $this->childJoin();
+		$modelJoin = $modelClass::bridge($builder, $type);
+		$this->setMultipleJoin($modelJoin);
+		return $modelJoin;
 	}
 
 	/**
@@ -360,83 +386,14 @@ class ModelJoin
 	 */
 	public function many(string $modelClass, string $type = 'left'): ModelJoin
 	{
-		/**
-		 * This will get the model join class id from the
-		 * builder model class name.
-		 */
-		$bridgeClassName = $this->builder->getModelClassName();
-
-		/**
-		 * This will create a linked builder and set
-		 * the bridge class name.
-		 */
-		$builder = $this->join($bridgeClassName);
-		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
+		$builder = $this->childJoin();
+		$modelJoin = $modelClass::many($builder, $type);
 		$this->setMultipleJoin($modelJoin);
 		return $modelJoin;
 	}
 
 	/**
-	 * This will create a child model join for the
-	 * model class and the join table.
-	 *
-	 * @param object $builder
-	 * @param string $modelClassName
-	 * @param string $type
-	 * @return ModelJoin
-	 */
-	protected function createChildModelJoin(object $builder, string $modelClassName, string $type = 'left'): ModelJoin
-	{
-		$join = $builder->createJoin($modelClassName::table(), $modelClassName::alias());
-
-		if ($type === 'left')
-		{
-			$join->left();
-		}
-		elseif ($type === 'right')
-		{
-			$join->right();
-		}
-		elseif ($type === 'outer')
-		{
-			$join->outer();
-		}
-		elseif ($type === 'cross')
-		{
-			$join->cross();
-		}
-
-		/**
-		 * This will add the default on clause for the join.
-		 */
-		$modelRefName = $builder->getModelRefName();
-		$join->on(['id', $modelRefName . 'Id']);
-
-		return $join;
-	}
-
-	/**
-	 * Add fields to the join.
-	 *
-	 * @param string|array ...$fields Field names.
-	 * @return self
-	 */
-	public function fields(string|array ...$fields): self
-	{
-		if (count($fields) < 1)
-		{
-			return $this;
-		}
-
-		foreach ($fields as $field)
-		{
-			$this->fields[] = $field;
-		}
-		return $this;
-	}
-
-	/**
-	 * Get the join fields.
+	 * Get the fields specified for selection from this join.
 	 *
 	 * @return array
 	 */
@@ -446,90 +403,85 @@ class ModelJoin
 	}
 
 	/**
-	 * Set the USING clause.
-	 *
-	 * @param string $field Field name.
-	 * @return self
-	 */
-	public function using(string $field): self
-	{
-		$this->using = 'USING(' . $field . ')';
-		return $this;
-	}
-
-	/**
-	 * Get the USING clause.
+	 * Get the USING clause column name, if set.
 	 *
 	 * @return string|null
 	 */
 	public function getUsing(): ?string
 	{
-		return $this->using;
+		return $this->usingColumn;
 	}
 
 	/**
-	 * Get ON conditions.
+	 * Get the table name being joined ("right" side).
 	 *
-	 * @return array
+	 * @return string|array
 	 */
-	public function getOn(): array
+	public function getTableName(): string|array
 	{
-		return $this->on;
+		return $this->tableName;
 	}
 
 	/**
-	 * Prepare a column name for ON clause.
+	 * Get the alias for the table being joined ("right" side).
 	 *
-	 * @param string $column Column name.
+	 * @return string|null
+	 */
+	public function getAlias(): ?string
+	{
+		return $this->alias;
+	}
+
+	/**
+	 * Get the context table name ("left" side).
+	 *
+	 * @return string|array
+	 */
+	public function getContextTableName(): string|array
+	{
+		return $this->contextTableName;
+	}
+
+	/**
+	 * Override join table reference.
+	 *
+	 * @param string|array $tableName New table name.
+	 * @param string|null $alias New alias.
+	 * @return void
+	 */
+	protected function references(string|array $tableName, ?string $alias = null): void
+	{
+		$this->contextTableName = $tableName;
+		$this->contextAlias = $alias;
+	}
+
+	/**
+	 * Get the context table alias ("left" side).
+	 *
+	 * @return string|null
+	 */
+	public function getContextAlias(): ?string
+	{
+		return $this->contextAlias;
+	}
+
+	/**
+	 * Get the join type (e.g., 'LEFT JOIN').
+	 *
 	 * @return string
 	 */
-	protected function prepareOnColumn(string $column): string
+	public function getType(): string
 	{
-		return $this->isSnakeCase ? Strings::snakeCase($column) : $column;
+		return $this->type;
 	}
 
 	/**
-	 * Add ON conditions.
+	 * Check if the join represents a one-to-many relationship.
 	 *
-	 * @param mixed ...$on ON conditions.
-	 * @return self
+	 * @return bool
 	 */
-	public function on(mixed ...$on): self
+	public function isMultiple(): bool
 	{
-		if (count($on) < 1)
-		{
-			return $this;
-		}
-
-		$baseAlias = $this->alias ?? $this->tableName;
-		$joinAlias = $this->joinAlias ?? $this->joinTableName;
-		$this->on = [];
-		foreach ($on as $condition)
-		{
-			if (is_array($condition))
-			{
-				$count = count($condition);
-				if ($count > 1)
-				{
-					if ($count === 2)
-					{
-						$condition = [
-							$joinAlias . '.' . $this->prepareOnColumn($condition[0]),
-							$baseAlias . '.' . $this->prepareOnColumn($condition[1])
-						];
-					}
-					else
-					{
-						$condition = [
-							$joinAlias . '.' . $this->prepareOnColumn($condition[0]),
-							$condition[1],
-							$baseAlias . '.' . $this->prepareOnColumn($condition[2])
-						];
-					}
-				}
-			}
-			$this->on[] = $condition;
-		}
-		return $this;
+		return $this->multiple;
 	}
 }

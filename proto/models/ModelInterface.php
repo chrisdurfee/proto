@@ -10,4 +10,24 @@ namespace Proto\Models;
  */
 interface ModelInterface
 {
+	/**
+	 * Get the table name for the model.
+	 *
+	 * @return string|null
+	 */
+	public function getTableName(): ?string;
+
+	/**
+	 * Get the alias for the model.
+	 *
+	 * @return string|null
+	 */
+	public function getAlias(): ?string;
+
+	/**
+	 * Get the fields of the model.
+	 *
+	 * @return array
+	 */
+	public function getFields(): array;
 }

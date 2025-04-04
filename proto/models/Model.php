@@ -64,13 +64,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected array $compiledJoins = [];
 
 	/**
-	 * Join builder instance.
-	 *
-	 * @var JoinBuilder|null
-	 */
-	protected static ?JoinBuilder $builder = null;
-
-	/**
 	 * Fields to exclude when exporting.
 	 *
 	 * @var array
@@ -115,9 +108,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Model constructor.
 	 *
-	 * @param object|null $data Data object to initialize the model.
+	 * @param object|array|null $data Data object/array to initialize the model.
 	 */
-	public function __construct(?object $data = null)
+	public function __construct(object|array|null $data = null)
 	{
 		parent::__construct();
 		$this->init($data);
@@ -136,6 +129,11 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$this->setupStorage();
 
 		$data = static::augment($data);
+		if ($data === null || !is_object($data) && !is_array($data))
+		{
+			return;
+		}
+
 		$this->data->set($data);
 	}
 
@@ -181,16 +179,20 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected function getModelJoins(): array
 	{
 		$joins = [];
-		$alias = static::$alias ?? null;
-		$builder = static::$builder = new JoinBuilder($joins, static::$tableName, $alias, $this->isSnakeCase);
+		$tableName = static::table();
+		$alias = static::alias();
 
-		// Set the model class name for joins.
-		$modelClassName = static::class;
-		$builder->setModelClassName($modelClassName);
+		$builder = new JoinBuilder(
+			$joins,
+			$tableName,
+			$alias,
+			$this->isSnakeCase
+		);
 
 		// Call the joins method.
 		$callback = static::class . '::joins';
 		\call_user_func($callback, $builder);
+
 		return $joins;
 	}
 
@@ -208,18 +210,14 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Set up a one-to-many join.
 	 *
-	 * @param string $modelClass Model class.
+	 * @param JoinBuilder $builder
 	 * @param string $type Join type.
-	 * @return ModelJoin
+	 * @return JoinBuilder
 	 */
-	public static function bridge(string $modelClass, string $type = 'left'): ModelJoin
+	public static function bridge(JoinBuilder $builder, string $type = 'left'): JoinBuilder
 	{
-		/**
-		 * This will set up a many-to-one join and add the
-		 * default on clause for the join.
-		 */
-		$builder = static::$builder;
-		return $modelClass::many($builder, $type);
+		$modelJoin = $builder->many(static::class, $type);
+		return $modelJoin->join();
 	}
 
 	/**
@@ -231,9 +229,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function many(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
-		$result = static::one($builder, $type);
-		$result->multiple();
-		return $result;
+		return $builder->many(static::class, $type);
 	}
 
 	/**
@@ -245,15 +241,18 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function one(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
-		$child = $builder->{$type}(static::table(), static::alias());
+		return $builder->one(static::class, $type);
+	}
 
-		/**
-		 * This will add the default on clause for the join.
-		 */
-		$modelRefName = $builder->getModelRefName();
-		$child->on(['id', $modelRefName . 'Id']);
+	/**
+     * Define joins for the model.
+     *
+     * @param object $builder The query builder object
+     * @return void
+     */
+    protected static function joins(object $builder): void
+	{
 
-		return $child;
 	}
 
 	/**
@@ -263,13 +262,12 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	protected function setupJoins(): void
 	{
-		$joins = $this->getModelJoins();
-		if (count($joins) < 1)
+		if (!empty($this->compiledJoins))
 		{
 			return;
 		}
 
-		$this->compiledJoins = $joins;
+		$this->compiledJoins = $this->getModelJoins();
 	}
 
 	/**

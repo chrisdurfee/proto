@@ -61,7 +61,7 @@ class User extends Model
 		 * This will create a bridge table join for the user_roles table
 		 * and the roles table.
 		 */
-		static::bridge(UserRole::class)
+		UserRole::bridge( $builder)
 			->many(Role::class)
 			->on(['roleId', 'id'])
 			->fields(
@@ -69,21 +69,21 @@ class User extends Model
 				'name',
 				'slug',
 				'description'
-			)
+			);
 
 			/**
 			 * This will create a bridge table join from the role to role_permissions table
 			 * and the role_permissions to the permissions table.
 			 */
-			->bridge(RolePermission::class)
-				->many(Permission::class)
-				->on(['permissionId', 'id'])
-				->fields(
-					'id',
-					'name',
-					'slug',
-					'description',
-					'module'
-				);
+			// ->bridge(RolePermission::class)
+			// 	->many(Permission::class)
+			// 	->on(['permissionId', 'id'])
+			// 	->fields(
+			// 		'id',
+			// 		'name',
+			// 		'slug',
+			// 		'description',
+			// 		'module'
+			// 	);
 	}
 }
