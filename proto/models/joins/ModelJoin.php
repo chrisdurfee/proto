@@ -458,19 +458,9 @@ class ModelJoin
 			return $this;
 		}
 
-		if (count($on) < 1)
-		{
-			return $this;
-		}
-
-		// Determine aliases to use for qualification
 		$alias = $this->alias ?? $this->tableName;
 		$joinAlias = $this->joinAlias ?? $this->joinTableName;
-
-		// Clear existing conditions and USING clause
 		$this->on = [];
-		$this->using = null;
-
 		foreach ($on as $condition)
 		{
 			if (is_array($condition))
@@ -480,12 +470,10 @@ class ModelJoin
 				{
 					if ($count === 2)
 					{
-						// Format: [join_col, base_col] assumes '=' operator
-						$condition = [$joinAlias.'.'.$this->prepareOnColumn($condition[0]), '=', $alias.'.'.$this->prepareOnColumn($condition[1])];
+						$condition = [$joinAlias.'.'.$this->prepareOnColumn($condition[0]), $alias.'.'.$this->prepareOnColumn($condition[1])];
 					}
-					elseif ($count === 3)
+					else
 					{
-						// Format: [join_col, operator, base_col]
 						$condition = [$joinAlias.'.'.$this->prepareOnColumn($condition[0]), $condition[1], $alias.'.'.$this->prepareOnColumn($condition[2])];
 					}
 				}
