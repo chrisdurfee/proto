@@ -191,7 +191,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 
 		// Set the model class name for joins.
 		$modelClassName = static::class;
-		$builder->setModelClassName($modelClassName);
+		$builder->setForeignKeyByModel($modelClassName);
 
 		// Call the joins method.
 		$callback = static::class . '::joins';
@@ -236,9 +236,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function many(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
-		$result = static::one($builder, $type);
-		$result->multiple();
-		return $result;
+		return $builder->many(static::class, $type);
 	}
 
 	/**
@@ -250,15 +248,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function one(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
-		$child = $builder->{$type}(static::table(), static::alias());
-
-		/**
-		 * This will add the default on clause for the join.
-		 */
-		$modelRefName = $builder->getModelRefName();
-		$child->on(['id', $modelRefName . 'Id']);
-
-		return $child;
+		return $builder->one(static::class, $type);
 	}
 
 	/**

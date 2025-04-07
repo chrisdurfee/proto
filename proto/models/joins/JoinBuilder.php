@@ -12,12 +12,9 @@ use Proto\Utils\Strings;
  */
 class JoinBuilder
 {
-	/**
-	 * Model class name for join.
-	 *
-	 * @var string|null
+	/**	 * @var string|null
 	 */
-	protected ?string $modelClassName = null;
+	protected ?string $foreignKey = null;
 
 	/**
 	 * JoinBuilder constructor.
@@ -46,53 +43,69 @@ class JoinBuilder
 		return (object)[
 			'tableName' => $this->tableName,
 			'alias' => $this->alias,
+			'foreignKey' => $this->foreignKey
 		];
 	}
 
 	/**
-	 * Sets the model class name for the join.
-	 *
-	 * @param string $modelClassName
-	 * @return self
-	 */
-	public function setModelClassName(string $modelClassName): self
-	{
-		$this->modelClassName = $modelClassName;
-		return $this;
-	}
-
-	/**
 	 * Gets the model class name for the join.
 	 *
+	 * @param string $modelClass
 	 * @return string
 	 */
-	public function getModelClassName(): string
+	private function getModelForeignKey(string $modelClass): string
 	{
-		return $this->modelClassName;
+		return $modelClass::getIdClassName();
 	}
 
 	/**
-	 * Gets the model class name for the join.
+	 * This will create a foreign key name for the join.
 	 *
+	 * @param string $foreignKey
 	 * @return string
 	 */
-	public function getModelRefName(): string
+	protected function createForeignKeyId(string $foreignKey): string
 	{
-		$modelClass = $this->getModelClassName();
-		$modelName = $modelClass::getIdClassName();
-		return Strings::snakeCase($modelName);
+		if (empty($foreignKey))
+		{
+			return $foreignKey;
+		}
+
+		return $this->isSnakeCase ? Strings::snakeCase($foreignKey) . '_id' : $foreignKey . 'Id';
 	}
 
 	/**
-	 * Gets the model identifier name (appending "Id" to the model class name).
+	 * This will set the foreign key name for the join.
 	 *
-	 * @return string
+	 * @param string $foreignKey
+	 * @return void
 	 */
-	public function getModelIdName(): string
+	public function setForeignKey(string $foreignKey): void
 	{
-		$modelClass = $this->getModelClassName();
-		$modelName = $modelClass::getIdClassName();
-		return "{$modelName}Id";
+		$this->foreignKey = $this->createForeignKeyId($foreignKey);
+	}
+
+	/**
+	 * This will set the forgeign key name for the join.
+	 *
+	 * @param string $foreignKey
+	 * @return void
+	 */
+	public function setForeignKeyByModel(string $modelClass): void
+	{
+
+		$foreignKey = $this->getModelForeignKey($modelClass);
+		$this->setForeignKey($foreignKey);
+	}
+
+	/**
+	 * Gets the join foreign key id.
+	 *
+	 * @return string|null
+	 */
+	public function getForeignKeyId(): ?string
+	{
+		return $this->foreignKey;
 	}
 
 	/**
@@ -142,8 +155,6 @@ class JoinBuilder
 	 */
 	public function many(string $modelName, string $type = 'left'): ModelJoin
 	{
-		$this->setModelClassName($modelName);
-
 		$tableName = $modelName::table();
 		$alias = $modelName::alias();
 
@@ -175,8 +186,8 @@ class JoinBuilder
 	 */
 	protected function setDefaultOn(object $join): void
 	{
-		$modelRefName = $this->getModelRefName();
-		$join->on(['id', $modelRefName . 'Id']);
+		$foreignKey = $this->getForeignKeyId();
+		$join->on(['id', $foreignKey]);
 	}
 
 	/**

@@ -304,7 +304,7 @@ class ModelJoin
 		$builder = $this->builder->link($this->tableName, $this->alias);
 		if ($modelClassName !== null)
 		{
-			$builder->setModelClassName($modelClassName);
+			$builder->setForeignKeyByModel($modelClassName);
 		}
 		return $builder;
 	}
@@ -321,7 +321,7 @@ class ModelJoin
 		$builder = $this->builder->create($this->tableName, $this->alias);
 		if ($modelClassName !== null)
 		{
-			$builder->setModelClassName($modelClassName);
+			$builder->setForeignKeyByModel($modelClassName);
 		}
 		return $builder;
 	}
@@ -337,16 +337,10 @@ class ModelJoin
 	public function bridge(string $modelClass, string $type = 'left'): ModelJoin
 	{
 		/**
-		 * This will get the model join class id from the
-		 * builder model class name.
-		 */
-		$bridgeClassName = $this->builder->getModelClassName();
-
-		/**
 		 * This will create a linked builder and set
 		 * the bridge class name.
 		 */
-		$builder = $this->join($bridgeClassName);
+		$builder = $this->join($modelClass);
 		return $modelClass::many($builder, $type);
 	}
 
@@ -361,16 +355,10 @@ class ModelJoin
 	public function many(string $modelClass, string $type = 'left'): ModelJoin
 	{
 		/**
-		 * This will get the model join class id from the
-		 * builder model class name.
-		 */
-		$bridgeClassName = $this->builder->getModelClassName();
-
-		/**
 		 * This will create a linked builder and set
 		 * the bridge class name.
 		 */
-		$builder = $this->join($bridgeClassName);
+		$builder = $this->join($modelClass);
 		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 		$this->setMultipleJoin($modelJoin);
 		return $modelJoin;
@@ -409,8 +397,8 @@ class ModelJoin
 		/**
 		 * This will add the default on clause for the join.
 		 */
-		$modelRefName = $builder->getModelRefName();
-		$join->on(['id', $modelRefName . 'Id']);
+		$foreignKey = $builder->getForeignKeyId();
+		$join->on(['id', $foreignKey]);
 
 		return $join;
 	}
