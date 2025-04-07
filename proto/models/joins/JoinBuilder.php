@@ -12,7 +12,8 @@ use Proto\Utils\Strings;
  */
 class JoinBuilder
 {
-	/**	 * @var string|null
+	/**
+	 * @var string|null
 	 */
 	protected ?string $foreignKey = null;
 
@@ -59,7 +60,7 @@ class JoinBuilder
 	}
 
 	/**
-	 * This will create a foreign key name for the join.
+	 * Creates a foreign key name for the join based on convention.
 	 *
 	 * @param string $foreignKey
 	 * @return string
@@ -75,7 +76,7 @@ class JoinBuilder
 	}
 
 	/**
-	 * This will set the foreign key name for the join.
+	 * Sets the foreign key name for the join.
 	 *
 	 * @param string $foreignKey
 	 * @return void
@@ -86,14 +87,13 @@ class JoinBuilder
 	}
 
 	/**
-	 * This will set the forgeign key name for the join.
+	 * Sets the foreign key name for the join based on a model class.
 	 *
-	 * @param string $foreignKey
+	 * @param string $modelClass
 	 * @return void
 	 */
 	public function setForeignKeyByModel(string $modelClass): void
 	{
-
 		$foreignKey = $this->getModelForeignKey($modelClass);
 		$this->setForeignKey($foreignKey);
 	}
@@ -109,7 +109,7 @@ class JoinBuilder
 	}
 
 	/**
-	 * Creates a new join.
+	 * Creates a new join object.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
@@ -126,7 +126,7 @@ class JoinBuilder
 	}
 
 	/**
-	 * Creates and adds a new join.
+	 * Creates and adds a new join to the internal collection.
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
@@ -140,7 +140,7 @@ class JoinBuilder
 	}
 
 	/**
-	 * Creates a generic join.
+	 * Creates a generic join (defaults typically to INNER or LEFT depending on ModelJoin).
 	 *
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
@@ -152,78 +152,30 @@ class JoinBuilder
 	}
 
 	/**
-	 * This will create a many join.
+	 * Sets the default ON condition for the join if a foreign key is set.
 	 *
-	 * @param string $modelName Model class name.
-	 * @param string $type Join type (default is 'left').
-	 * @return ModelJoin
-	 */
-	public function many(string $modelName, string $type = 'left'): ModelJoin
-	{
-		$tableName = $modelName::table();
-		$alias = $modelName::alias();
-
-		$join = $this->getJoinByType($type, $tableName, $alias);
-		$join->multiple();
-		return $join;
-	}
-
-	/**
-	 * This will create a one to one join.
-	 *
-	 * @param string $modelName
-	 * @param string $type
-	 * @return ModelJoin
-	 */
-	public function one(string $modelName, string $type = 'left'): ModelJoin
-	{
-		$tableName = $modelName::table();
-		$alias = $modelName::alias();
-
-		return $this->getJoinByType($type, $tableName, $alias);
-	}
-
-	/**
-	 * This will set the default on condition for the join.
-	 *
-	 * @param object $join
+	 * @param ModelJoin $join The join object to modify.
 	 * @return void
 	 */
-	protected function setDefaultOn(object $join): void
+	protected function setDefaultOn(ModelJoin $join): void
 	{
 		$foreignKey = $this->getForeignKeyId();
+		// Assumes the base table's primary key is 'id'
 		$join->on(['id', $foreignKey]);
 	}
 
 	/**
-	 * This will create a one join.
+	 * Creates and adds a join of a specific type.
 	 *
-	 * @param string $type Join type.
-	 * @param string $tableName Base table name.
+	 * @param string $type The join type ('left', 'right', 'outer', 'cross').
+	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	protected function getJoinByType(string $type, string $tableName, string $alias = null): ModelJoin
+	private function addTypedJoin(string $type, string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = null;
-		if ($type === 'right')
-		{
-			$join = $this->right($tableName, $alias);
-		}
-		else if ($type === 'outer')
-		{
-			$join = $this->outer($tableName, $alias);
-		}
-		else if ($type === 'cross')
-		{
-			$join = $this->cross($tableName, $alias);
-		}
-		else
-		{
-			$join = $this->left($tableName, $alias);
-		}
-
-		return $join;
+		$join = $this->addJoin($tableName, $alias);
+		return $join->$type();
 	}
 
 	/**
@@ -235,8 +187,7 @@ class JoinBuilder
 	 */
 	public function left(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->left();
+		return $this->addTypedJoin('left', $tableName, $alias);
 	}
 
 	/**
@@ -248,8 +199,7 @@ class JoinBuilder
 	 */
 	public function right(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->right();
+		return $this->addTypedJoin('right', $tableName, $alias);
 	}
 
 	/**
@@ -261,8 +211,7 @@ class JoinBuilder
 	 */
 	public function outer(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->outer();
+		return $this->addTypedJoin('outer', $tableName, $alias);
 	}
 
 	/**
@@ -274,15 +223,81 @@ class JoinBuilder
 	 */
 	public function cross(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		$join = $this->addJoin($tableName, $alias);
-		return $join->cross();
+		return $this->addTypedJoin('cross', $tableName, $alias);
 	}
 
 	/**
-	 * Creates a linked join builder for further chaining.
+	 * Gets a join object configured for a specific type.
 	 *
-	 * @param string|array $tableName Base table name.
+	 * @param string $type Join type.
+	 * @param string $tableName Base table name.
 	 * @param string|null $alias Table alias.
+	 * @return ModelJoin
+	 */
+	protected function getJoinByType(string $type, string $tableName, string $alias = null): ModelJoin
+	{
+		return match (strtolower($type))
+		{
+			'right' => $this->right($tableName, $alias),
+			'outer' => $this->outer($tableName, $alias),
+			'cross' => $this->cross($tableName, $alias),
+			default => $this->left($tableName, $alias), // Default to left
+		};
+	}
+
+	/**
+	 * Creates a join based on a model class, specifying relationship cardinality.
+	 *
+	 * @param string $modelName Model class name.
+	 * @param string $type Join type (default is 'left').
+	 * @param bool $isMultiple True for a 'many' relationship, false for 'one'.
+	 * @return ModelJoin
+	 */
+	private function createModelJoin(string $modelName, string $type = 'left', bool $isMultiple = false): ModelJoin
+	{
+		$tableName = $modelName::table();
+		$alias = $modelName::alias();
+
+		$join = $this->getJoinByType($type, $tableName, $alias);
+
+		if ($isMultiple)
+		{
+			$join->multiple();
+		}
+
+		return $join;
+	}
+
+	/**
+	 * Creates a one-to-one or one-to-many (where this model is the 'one') join based on a model definition.
+	 *
+	 * @param string $modelName The related model class name.
+	 * @param string $type Join type (default is 'left').
+	 * @return ModelJoin
+	 */
+	public function one(string $modelName, string $type = 'left'): ModelJoin
+	{
+		return $this->createModelJoin($modelName, $type, false);
+	}
+
+	/**
+	 * Creates a one-to-many (where this model is the 'many') or many-to-many join based on a model definition.
+	 *
+	 * @param string $modelName The related model class name.
+	 * @param string $type Join type (default is 'left').
+	 * @return ModelJoin
+	 */
+	public function many(string $modelName, string $type = 'left'): ModelJoin
+	{
+		return $this->createModelJoin($modelName, $type, true);
+	}
+
+	/**
+	 * Creates a linked join builder for further chaining relative to a new table context.
+	 * Shares the same underlying joins collection.
+	 *
+	 * @param string|array $tableName Base table name for the linked context.
+	 * @param string|null $alias Table alias for the linked context.
 	 * @return JoinBuilder
 	 */
 	public function link(string|array $tableName, ?string $alias = null): JoinBuilder
@@ -291,17 +306,15 @@ class JoinBuilder
 	}
 
 	/**
-	 * Creates a new join builder for the specified table name and alias.
+	 * Creates a completely new, independent join builder instance.
+	 * Does not share the joins collection with the current instance.
 	 *
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
+	 * @param string|array $tableName Base table name for the new builder.
+	 * @param string|null $alias Table alias for the new builder.
 	 * @return JoinBuilder
 	 */
 	public function create(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
-		/**
-		 * This will create a new join builder instance without any existing joins.
-		 */
 		$joins = [];
 		return new JoinBuilder($joins, $tableName, $alias, $this->isSnakeCase);
 	}
