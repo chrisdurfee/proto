@@ -122,7 +122,7 @@ class SubQueryHelper
 	{
 		$tableName = $join->getJoinTableName();
 		$alias = $join->getJoinAlias();
-		$as = $join->getAs() ?: $join->getAlias();
+		$as = $join->getAs();
 
 		/**
 		 * Check if the join is a bridge join. If it is, we will need to use the parent table name and alias.
