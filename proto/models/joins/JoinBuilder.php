@@ -117,7 +117,12 @@ class JoinBuilder
 	 */
 	public function createJoin(string|array $tableName, ?string $alias = null): ModelJoin
 	{
-		return new ModelJoin($this, $tableName, $alias, $this->isSnakeCase);
+		$modelJoin = new ModelJoin($this, $tableName, $alias, $this->isSnakeCase);
+		if ($this->foreignKey !== null)
+		{
+			$this->setDefaultOn($modelJoin);
+		}
+		return $modelJoin;
 	}
 
 	/**
@@ -217,11 +222,6 @@ class JoinBuilder
 		{
 			$join = $this->left($tableName, $alias);
 		}
-
-		/**
-		 * This will set the default on condition for the join.
-		 */
-		$this->setDefaultOn($join);
 
 		return $join;
 	}
