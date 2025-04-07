@@ -157,7 +157,7 @@ class JoinBuilder
 	 * @param ModelJoin $join The join object to modify.
 	 * @return void
 	 */
-	protected function setDefaultOn(ModelJoin $join): void
+	public function setDefaultOn(ModelJoin $join): void
 	{
 		$foreignKey = $this->getForeignKeyId();
 		// Assumes the base table's primary key is 'id'

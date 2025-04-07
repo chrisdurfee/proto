@@ -14,63 +14,54 @@ class ModelJoin
 {
 	/**
 	 * Type of join.
-	 *
 	 * @var string
 	 */
 	protected string $type = 'JOIN';
 
 	/**
 	 * USING clause for join.
-	 *
 	 * @var string|null
 	 */
 	protected ?string $using = null;
 
 	/**
 	 * ON conditions for join.
-	 *
 	 * @var array
 	 */
 	protected array $on = [];
 
 	/**
 	 * Fields included in join.
-	 *
 	 * @var array
 	 */
 	protected array $fields = [];
 
 	/**
-	 * Alias designation.
-	 *
+	 * Alias designation for the results of this join.
 	 * @var string|null
 	 */
 	protected ?string $as = null;
 
 	/**
-	 * Join table name.
-	 *
+	 * The table name this join connects *to*.
 	 * @var string|array
 	 */
 	protected string|array $joinTableName;
 
 	/**
-	 * Alias for the join table.
-	 *
+	 * Alias for the table this join connects *to*.
 	 * @var string|null
 	 */
 	protected ?string $joinAlias;
 
 	/**
-	 * Indicates if the join is multiple.
-	 *
+	 * Indicates if the join represents a one-to-many relationship target.
 	 * @var bool
 	 */
 	protected bool $multiple = false;
 
 	/**
-	 * Holds the multiple join instance if applicable.
-	 *
+	 * Holds the subsequent join instance when 'multiple' is used for chaining.
 	 * @var ModelJoin|null
 	 */
 	protected ?ModelJoin $multipleJoin = null;
@@ -79,8 +70,8 @@ class ModelJoin
 	 * ModelJoin constructor.
 	 *
 	 * @param JoinBuilder $builder Reference to join builder.
-	 * @param string|array $tableName Base table name.
-	 * @param string|null $alias Table alias.
+	 * @param string|array $tableName The base table name *for this specific join operation*.
+	 * @param string|null $alias The alias *for this specific join operation's base table*.
 	 * @param bool $isSnakeCase Indicates snake_case usage.
 	 */
 	public function __construct(
@@ -94,7 +85,8 @@ class ModelJoin
 	}
 
 	/**
-	 * Setup join settings from the builder.
+	 * Setup join settings based on the builder's context at creation time.
+	 * This defines the table the join connects *to*.
 	 *
 	 * @return void
 	 */
@@ -106,7 +98,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the join table name.
+	 * Get the table name this join connects *to*.
 	 *
 	 * @return string|array
 	 */
@@ -116,7 +108,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the join table alias.
+	 * Get the alias for the table this join connects *to*.
 	 *
 	 * @return string|null
 	 */
@@ -126,10 +118,10 @@ class ModelJoin
 	}
 
 	/**
-	 * Override join table reference.
+	 * Internal method to redirect the reference table for a 'multiple' join.
 	 *
-	 * @param string|array $tableName New table name.
-	 * @param string|null $alias New alias.
+	 * @param string|array $tableName New table name to reference.
+	 * @param string|null $alias New alias to reference.
 	 * @return void
 	 */
 	protected function references(string|array $tableName, ?string $alias = null): void
@@ -139,7 +131,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the base table name.
+	 * Get the base table name for this join operation.
 	 *
 	 * @return string|array
 	 */
@@ -149,7 +141,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the table alias.
+	 * Get the alias for the base table of this join operation.
 	 *
 	 * @return string|null
 	 */
@@ -159,10 +151,11 @@ class ModelJoin
 	}
 
 	/**
-	 * Set join as multiple.
+	 * Mark the join as representing a multiple relationship target,
+	 * optionally setting up a subsequent join definition.
 	 *
-	 * @param string|array|null $tableName Optional table name.
-	 * @param string|null $alias Optional alias.
+	 * @param string|array|null $tableName Optional table name for a subsequent join.
+	 * @param string|null $alias Optional alias for a subsequent join.
 	 * @return self
 	 */
 	public function multiple(string|array $tableName = null, ?string $alias = null): self
@@ -172,15 +165,17 @@ class ModelJoin
 		{
 			return $this;
 		}
+
 		$join = new ModelJoin($this->builder, $tableName, $alias);
 		$this->setMultipleJoin($join);
 		return $this;
 	}
 
 	/**
-	 * Set the multiple join instance.
+	 * Set the subsequent join instance for a 'multiple' relationship chain.
+	 * Adjusts the subsequent join to reference the base table of the current join.
 	 *
-	 * @param ModelJoin $join The join instance to set.
+	 * @param ModelJoin $join The join instance to set as the next step.
 	 * @return void
 	 */
 	public function setMultipleJoin(ModelJoin $join): void
@@ -190,7 +185,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Retrieve the multiple join instance.
+	 * Retrieve the subsequent join instance in a 'multiple' chain.
 	 *
 	 * @return ModelJoin|null
 	 */
@@ -200,7 +195,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Check if the join is multiple.
+	 * Check if the join is marked as multiple.
 	 *
 	 * @return bool
 	 */
@@ -210,9 +205,9 @@ class ModelJoin
 	}
 
 	/**
-	 * Set the join type.
+	 * Set the join type (e.g., JOIN, LEFT JOIN).
 	 *
-	 * @param string $type Join type.
+	 * @param string $type Join type string.
 	 * @return self
 	 */
 	public function addType(string $type = 'JOIN'): self
@@ -222,7 +217,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the join type.
+	 * Get the join type string.
 	 *
 	 * @return string
 	 */
@@ -232,7 +227,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Configure a left join.
+	 * Configure as a LEFT JOIN.
 	 *
 	 * @return self
 	 */
@@ -242,7 +237,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Configure a right join.
+	 * Configure as a RIGHT JOIN.
 	 *
 	 * @return self
 	 */
@@ -252,7 +247,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Configure an outer join.
+	 * Configure as an OUTER JOIN.
 	 *
 	 * @return self
 	 */
@@ -262,7 +257,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Configure a cross join.
+	 * Configure as a CROSS JOIN.
 	 *
 	 * @return self
 	 */
@@ -272,7 +267,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Set the alias designation.
+	 * Set the alias designation for the results of this join relationship.
 	 *
 	 * @param string $as Alias designation.
 	 * @return self
@@ -284,7 +279,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Get the alias designation.
+	 * Get the alias designation for the results, defaulting to the base table name.
 	 *
 	 * @return string|array
 	 */
@@ -294,9 +289,9 @@ class ModelJoin
 	}
 
 	/**
-	 * Create a new join builder for this join.
+	 * Create a new linked join builder, continuing from this join's context.
 	 *
-	 * @param string|null $modelClassName Optional model class name.
+	 * @param string|null $modelClassName Optional model class name to set the foreign key context.
 	 * @return JoinBuilder
 	 */
 	public function join(?string $modelClassName = null): JoinBuilder
@@ -310,10 +305,9 @@ class ModelJoin
 	}
 
 	/**
-	 * This will create a child join builder for the
-	 * model class and the join table.
+	 * Create a new independent join builder related to this join's context.
 	 *
-	 * @param string|null $modelClassName Optional model class name.
+	 * @param string|null $modelClassName Optional model class name to set the foreign key context.
 	 * @return JoinBuilder
 	 */
 	public function childJoin(?string $modelClassName = null): JoinBuilder
@@ -327,37 +321,29 @@ class ModelJoin
 	}
 
 	/**
-	 * This will create a bridge table join for the
-	 * model class and the bridge table.
+	 * Define a bridge table join (typically for many-to-many through).
+	 * Note: Calls static method on the provided model class.
 	 *
-	 * @param string $modelClass Model class
-	 * @param string $type Join type
-	 * @return ModelJoin
+	 * @param string $modelClass The final target model class.
+	 * @param string $type Join type for the bridge connection.
+	 * @return ModelJoin Returns the result of the static call, likely a ModelJoin.
 	 */
 	public function bridge(string $modelClass, string $type = 'left'): ModelJoin
 	{
-		/**
-		 * This will create a linked builder and set
-		 * the bridge class name.
-		 */
 		$builder = $this->join($modelClass);
 		return $modelClass::many($builder, $type);
 	}
 
 	/**
-	 * This will create a many table join for the
-	 * model class and the bridge table.
+	 * Define a 'many' relationship join originating from this join's context.
+	 * Used for setting up the second part of a many-to-many or a one-to-many.
 	 *
-	 * @param string $modelClass Model class
-	 * @param string $type Join type
-	 * @return ModelJoin
+	 * @param string $modelClass The target model class for the 'many' side.
+	 * @param string $type Join type.
+	 * @return ModelJoin Returns the newly created ModelJoin representing the 'many' side.
 	 */
 	public function many(string $modelClass, string $type = 'left'): ModelJoin
 	{
-		/**
-		 * This will create a linked builder and set
-		 * the bridge class name.
-		 */
 		$builder = $this->join($modelClass);
 		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 		$this->setMultipleJoin($modelJoin);
@@ -365,48 +351,32 @@ class ModelJoin
 	}
 
 	/**
-	 * This will create a child model join for the
-	 * model class and the join table.
+	 * Creates a ModelJoin instance representing a child relationship join.
 	 *
-	 * @param object $builder
-	 * @param string $modelClassName
-	 * @param string $type
+	 * @param JoinBuilder $builder The builder context (usually linked or created).
+	 * @param string $modelClassName The target model class name.
+	 * @param string $type The desired join type ('left', 'right', etc.).
 	 * @return ModelJoin
 	 */
-	protected function createChildModelJoin(object $builder, string $modelClassName, string $type = 'left'): ModelJoin
+	protected function createChildModelJoin(JoinBuilder $builder, string $modelClassName, string $type = 'left'): ModelJoin
 	{
 		$join = $builder->createJoin($modelClassName::table(), $modelClassName::alias());
 
-		if ($type === 'left')
-		{
-			$join->left();
-		}
-		elseif ($type === 'right')
-		{
-			$join->right();
-		}
-		elseif ($type === 'outer')
-		{
-			$join->outer();
-		}
-		elseif ($type === 'cross')
-		{
-			$join->cross();
-		}
+		// Set join type using fluent methods
+		$methodName = strtolower($type);
+		$join->$methodName();
 
-		/**
-		 * This will add the default on clause for the join.
-		 */
-		$foreignKey = $builder->getForeignKeyId();
-		$join->on(['id', $foreignKey]);
+		// Add the default ON clause based on the builder's foreign key context
+		$builder->setDefaultOn($join);
 
 		return $join;
 	}
 
+
 	/**
-	 * Add fields to the join.
+	 * Add fields to be selected from this join.
 	 *
-	 * @param string|array ...$fields Field names.
+	 * @param string|array ...$fields Field names or arrays for aliasing.
 	 * @return self
 	 */
 	public function fields(string|array ...$fields): self
@@ -416,15 +386,12 @@ class ModelJoin
 			return $this;
 		}
 
-		foreach ($fields as $field)
-		{
-			$this->fields[] = $field;
-		}
+		$this->fields = array_merge($this->fields, $fields);
 		return $this;
 	}
 
 	/**
-	 * Get the join fields.
+	 * Get the fields configured for this join.
 	 *
 	 * @return array
 	 */
@@ -434,19 +401,21 @@ class ModelJoin
 	}
 
 	/**
-	 * Set the USING clause.
+	 * Set the USING clause (alternative to ON for matching column names).
 	 *
-	 * @param string $field Field name.
+	 * @param string $field Field name for USING clause.
 	 * @return self
 	 */
 	public function using(string $field): self
 	{
 		$this->using = 'USING(' . $field . ')';
+		// Clear ON conditions if USING is set, as they are mutually exclusive
+		$this->on = [];
 		return $this;
 	}
 
 	/**
-	 * Get the USING clause.
+	 * Get the USING clause string.
 	 *
 	 * @return string|null
 	 */
@@ -456,7 +425,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Get ON conditions.
+	 * Get ON conditions configured for this join.
 	 *
 	 * @return array
 	 */
@@ -482,16 +451,26 @@ class ModelJoin
 	 * @param mixed ...$on ON conditions.
 	 * @return self
 	 */
-	public function on(mixed ...$on): self
+	public function on(...$on): self
 	{
 		if (count($on) < 1)
 		{
 			return $this;
 		}
 
-		$baseAlias = $this->alias ?? $this->tableName;
+		if (count($on) < 1)
+		{
+			return $this;
+		}
+
+		// Determine aliases to use for qualification
+		$alias = $this->alias ?? $this->tableName;
 		$joinAlias = $this->joinAlias ?? $this->joinTableName;
+
+		// Clear existing conditions and USING clause
 		$this->on = [];
+		$this->using = null;
+
 		foreach ($on as $condition)
 		{
 			if (is_array($condition))
@@ -501,18 +480,13 @@ class ModelJoin
 				{
 					if ($count === 2)
 					{
-						$condition = [
-							$joinAlias . '.' . $this->prepareOnColumn($condition[0]),
-							$baseAlias . '.' . $this->prepareOnColumn($condition[1])
-						];
+						// Format: [join_col, base_col] assumes '=' operator
+						$condition = [$joinAlias.'.'.$this->prepareOnColumn($condition[0]), '=', $alias.'.'.$this->prepareOnColumn($condition[1])];
 					}
-					else
+					elseif ($count === 3)
 					{
-						$condition = [
-							$joinAlias . '.' . $this->prepareOnColumn($condition[0]),
-							$condition[1],
-							$baseAlias . '.' . $this->prepareOnColumn($condition[2])
-						];
+						// Format: [join_col, operator, base_col]
+						$condition = [$joinAlias.'.'.$this->prepareOnColumn($condition[0]), $condition[1], $alias.'.'.$this->prepareOnColumn($condition[2])];
 					}
 				}
 			}
