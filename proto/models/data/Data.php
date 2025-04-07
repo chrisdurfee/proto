@@ -148,6 +148,33 @@ class Data
 	}
 
 	/**
+	 * Checks if a field exists in the data object.
+	 *
+	 * @param string $key Field name.
+	 * @return bool
+	 */
+	public function has(string $key): bool
+	{
+		$key = Strings::camelCase($key);
+		return property_exists($this->data, $key) && !in_array($key, $this->fieldBlacklist, true);
+	}
+
+	/**
+	 * Unsets a field in the data object.
+	 *
+	 * @param string $key Field name.
+	 * @return void
+	 */
+	public function unset(string $key): void
+	{
+		$key = Strings::camelCase($key);
+		if (property_exists($this->data, $key))
+		{
+			unset($this->data->{$key});
+		}
+	}
+
+	/**
 	 * Sets a field in the data object.
 	 *
 	 * @param string $key Field name.
