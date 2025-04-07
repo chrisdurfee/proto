@@ -331,7 +331,9 @@ class ModelJoin
 	public function bridge(string $modelClass, string $type = 'left'): ModelJoin
 	{
 		$builder = $this->join($modelClass);
-		return $modelClass::many($builder, $type);
+		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
+		$this->setMultipleJoin($modelJoin);
+		return $modelJoin;
 	}
 
 	/**
