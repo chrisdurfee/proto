@@ -2,6 +2,7 @@
 namespace Proto\Storage;
 
 use Proto\Models\ModelInterface;
+use Proto\Models\Joins\ModelJoin;
 use Proto\Database\Database;
 use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Utils\Strings;
@@ -501,79 +502,150 @@ class Storage implements StorageInterface
 	}
 
 	/**
-	 * Append join columns to model fields.
+	 * Append join columns (potentially as subqueries) to model fields.
 	 *
-	 * @param array &$joins Join definitions.
-	 * @param array &$cols Column list.
+	 * @param array $joins Join definitions from the model.
+	 * @param array &$cols Column list to append to.
 	 * @param bool $isSnakeCase Snake case flag.
 	 * @return void
 	 */
-	protected function getJoinCols(array &$joins, array &$cols, bool $isSnakeCase): void
+	protected function getJoinCols(array $joins, array &$cols, bool $isSnakeCase): void
 	{
 		foreach ($joins as $join)
 		{
-			$table = $join->getTableName();
-			if (!$table || !$join->isMultiple())
+			/** @var ModelJoin $join */
+			if (!$join->isMultiple())
 			{
 				continue;
 			}
 
-			$subQuery = SubQueryHelper::setupSubQuery($join, function($table, $alias): QueryHandler
+			$aggregationTarget = $join->getMultipleJoin();
+			if ($aggregationTarget && (count($aggregationTarget->getFields()) > 0 || $aggregationTarget->getMultipleJoin() !== null))
 			{
-				return $this->builder($table, $alias);
-			}, $isSnakeCase);
+				$builderCallback = function($table, $alias): QueryHandler
+				{
+					return $this->builder($table, $alias); // Use the Storage's builder factory
+				};
 
-			if ($subQuery === null)
-			{
-				continue;
+				// Call the main entry point of the refactored SubQueryHelper
+				$subQuerySql = SubQueryHelper::setupSubQuery($join, $builderCallback, $isSnakeCase);
+				if ($subQuerySql !== null)
+				{
+					$cols[] = [$subQuerySql]; // Wrap in array if QueryBuilder expects this for raw SQL
+				}
 			}
-
-			$cols[] = [$subQuery];
 		}
 	}
 
 	/**
-	 * Retrieve column names based on joins.
-	 *
-	 * @param array $joins Join definitions.
-	 * @return array
-	 */
-	protected function getColNames(array $joins): array
+	  * Retrieve model fields AND generate subquery columns.
+	  *
+	  * @param array $joins Join definitions.
+	  * @return array
+	  */
+	protected function getColNames(array $joins): array // Renamed from getModelFields
 	{
-		return $this->getModelFields($joins);
+		$cols = [];
+		$isSnakeCase = $this->model->isSnakeCase();
+		$fields = $this->model->getFields();
+
+		foreach ($fields as $field)
+		{
+			// Format field ensures alias.field_name or just field_name if no alias
+			$cols[] = FieldHelper::formatField($field, $isSnakeCase);
+		}
+
+		// Append subquery columns generated from 'multiple' joins
+		$this->getJoinCols($joins, $cols, $isSnakeCase);
+
+		return $cols;
 	}
 
 	/**
-	 * Map join definitions to an array.
+	 * Map join definitions to an array suitable for the main QueryBuilder's ->joins() method.
+	 * Excludes joins that were handled by generating a subquery via getJoinCols.
 	 *
-	 * @param array|null $joins Join definitions.
-	 * @param bool $allowFields Whether to include field lists.
-	 * @return array|null
+	 * @param array|null $joins Join definitions from the model.
+	 * @param bool $allowFields Whether to include field lists (usually false now for main query).
+	 * @return array
 	 */
-	protected function getMappedJoins(?array &$joins = null, bool $allowFields = true): ?array
+	protected function getMappedJoins(?array $joins = null, bool $allowFields = true): array // Return type changed to array
 	{
-		if (count($joins) < 1)
+		if (empty($joins))
 		{
-			return $joins;
+			return [];
 		}
 
 		$mapped = [];
 		foreach ($joins as $join)
 		{
-			if ($join->isMultiple())
+			/** @var ModelJoin $join */
+			if ($this->isJoinHandledBySubquery($join, $joins))
 			{
 				continue;
 			}
 
+			// Add regular, non-aggregated joins to the main query
 			$mapped[] = [
 				'table' => $join->getTableName(),
 				'alias' => $join->getAlias(),
 				'type' => $join->getType(),
 				'on' => $join->getOn(),
-				'fields' => ($allowFields) ? FieldHelper::formatFields($join->getFields()) : null
+				'using' => $join->getUsing(),
+				'fields' => ($allowFields && !$join->isMultiple()) ? FieldHelper::formatFields($join->getFields()) : null
 			];
 		}
+
 		return $mapped;
+	}
+
+	/**
+	 * Helper function to determine if a join is part of an aggregation chain
+	 * that was (or should be) handled by SubQueryHelper::setupSubQuery.
+	 *
+	 * @param ModelJoin $join The join to check.
+	 * @param array $allJoins All joins defined for the model.
+	 * @return bool True if the join is part of a 'multiple' chain handled by subquery.
+	 */
+	private function isJoinHandledBySubquery(ModelJoin $join, array $allJoins): bool
+	{
+		// Check if this join itself is marked multiple and starts an aggregation
+		if ($join->isMultiple())
+		{
+			$target = $join->getMultipleJoin();
+			if ($target && (count($target->getFields()) > 0 || $target->getMultipleJoin() !== null))
+			{
+				return true;
+			}
+		}
+
+		// Check if this join is *part of* a chain started by an earlier join
+		foreach ($allJoins as $potentialStartJoin)
+		{
+			/** @var ModelJoin $potentialStartJoin */
+			if ($potentialStartJoin === $join)
+			{
+				// Don't check against self
+				continue;
+			}
+
+			if ($potentialStartJoin->isMultiple())
+			{
+				$current = $potentialStartJoin->getMultipleJoin();
+				while ($current)
+				{
+					if ($current === $join)
+					{
+						// This join is found within a multiple chain started earlier
+						return true;
+					}
+					$current = $current->getMultipleJoin();
+				}
+			}
+		}
+
+		// It's a regular, flat join
+		return false;
 	}
 
 	/**
