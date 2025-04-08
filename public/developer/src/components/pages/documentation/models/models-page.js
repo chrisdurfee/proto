@@ -197,7 +197,7 @@ protected static function format(?object $data): ?object
 	 *
 	 * The bridge join uses the default on of ["id", "{className}Id"]
 	 */
-	static::bridge(UserRole::class)
+	UserRole::bridge($builder)
 		->many(Role::class)
 		->on(['roleId', 'id'])
 		->fields(
@@ -207,6 +207,36 @@ protected static function format(?object $data): ?object
 			'description',
 			'permissions'
 		);
+
+	/**
+	 * This will create a bridge table join for the user_roles table
+	 * and the roles table.
+	 */
+	UserRole::bridge($builder)
+		->many(Role::class)
+		->on(['roleId', 'id'])
+		->fields(
+			'id',
+			'name',
+			'slug',
+			'description'
+		)
+
+		/**
+		 * This will create a bridge table join from the role to role_permissions table
+		 * and the role_permissions to the permissions table.
+		 */
+		->bridge(RolePermission::class)
+			->on(['id', 'roleId'])
+			->many(Permission::class)
+			->on(['permissionId', 'id'])
+			->fields(
+				'id',
+				'name',
+				'slug',
+				'description',
+				'module'
+			);
 
 	// table joins
 

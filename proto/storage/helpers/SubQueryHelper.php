@@ -214,7 +214,6 @@ class SubQueryHelper
 		if (empty($fieldValueMap))
 		{
 			// Return a valid JSON empty array representation for the specific database
-			// MySQL/MariaDB (check version compatibility for CAST AS JSON):
 			return [[ 'COALESCE(JSON_ARRAY(), CAST("[]" AS JSON))' ], $as];
 		}
 
@@ -247,7 +246,7 @@ class SubQueryHelper
 	 * Assumes the first ON condition is the relevant one linking parent -> bridge.
 	 *
 	 * @param ModelJoin $join The *bridge* join object.
-	 * @return string The WHERE clause condition (e.g., "u.id = ur.user_id").
+	 * @return string
 	 */
 	protected static function getJoinWhere(ModelJoin $join): string
 	{

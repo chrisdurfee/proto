@@ -61,7 +61,7 @@ class User extends Model
 		 * This will create a bridge table join for the user_roles table
 		 * and the roles table.
 		 */
-		static::bridge(UserRole::class)
+		UserRole::bridge($builder)
 			->many(Role::class)
 			->on(['roleId', 'id'])
 			->fields(
