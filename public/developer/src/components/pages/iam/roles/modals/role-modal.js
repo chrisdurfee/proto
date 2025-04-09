@@ -124,6 +124,11 @@ export const RoleModal = (props = {}) =>
 			{
 				add(data);
 			}
+
+			if (props.onClose)
+			{
+				props.onClose(data);
+			}
 		}
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [

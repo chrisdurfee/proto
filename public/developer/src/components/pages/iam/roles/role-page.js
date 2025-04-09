@@ -23,6 +23,11 @@ export const RolePage = () =>
 		data,
 
 		/**
+		 * This will remove the padding.
+		 */
+		class: 'pt-0',
+
+		/**
 		 * This will update the role page when the url is
 		 * updated.
 		 *

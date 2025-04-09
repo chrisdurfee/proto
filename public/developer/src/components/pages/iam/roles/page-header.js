@@ -16,6 +16,20 @@ const refresh = (e, { list }) =>
 };
 
 /**
+ * This will create a permission modal.
+ *
+ * @param {object} item
+ * @param {object} parent
+ * @returns {object}
+ */
+const Modal = (item, parent) => (
+	RoleModal({
+		item,
+		onClose: (data) => parent.list.refresh()
+	})
+);
+
+/**
  * This will create a page header for the errors page.
  *
  * @returns {object}
@@ -29,10 +43,10 @@ export const PageHeader = () => (
 					Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.refresh, click: refresh }, 'Refresh')
 				]),
 				Div({ class: 'hidden lg:flex' }, [
-					Button({ variant: 'withIcon', class: 'text-muted-foreground primary', icon: Icons.circlePlus, click: () => RoleModal() }, 'Add Role')
+					Button({ variant: 'withIcon', class: 'text-muted-foreground primary', icon: Icons.circlePlus, click: (e, parent) => Modal(null, parent) }, 'Add Role')
 				]),
 				Div({ class: 'flex lg:hidden mr-0' }, [
-					Tooltip({ content: 'Add Role', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.circlePlus, click: refresh }))
+					Tooltip({ content: 'Add Role', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.circlePlus, click: (e, parent) => Modal(null, parent) }))
 				])
 			])
 		])

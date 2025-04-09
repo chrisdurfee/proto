@@ -1,6 +1,21 @@
 import { Td, Thead, Tr } from "@base-framework/atoms";
 import { Checkbox } from "@base-framework/ui/atoms";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
+import { RoleModal } from "../modals/role-modal";
+
+/**
+ * This will create a permission modal.
+ *
+ * @param {object} item
+ * @param {object} parent
+ * @returns {object}
+ */
+const Modal = (item, { parent }) => (
+	RoleModal({
+		item,
+		onClose: (data) => parent.list.mingle([ data.get() ])
+	})
+);
 
 /**
  * This will create a role row.
@@ -10,7 +25,7 @@ import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/
  * @return {object}
  */
 export const RoleRow = (row, onSelect) => (
-	Tr({ class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer' }, [
+	Tr({ class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer', click: (e, parent) => Modal(row, parent) }, [
 		Td({ class: 'p-4 hidden md:table-cell' }, [
 			new Checkbox({
 				checked: row.selected,
