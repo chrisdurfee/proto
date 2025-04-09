@@ -10,10 +10,11 @@ import { PasswordValidator } from "./utils/password-validator.js";
  *
  * Returns an array of form fields for creating or editing a User.
  *
+ * @param {object} props - The properties for the form.
  * @returns {Array} - Array of form field components.
  */
-const getUserForm = () => ([
-	Fieldset({ legend: "Authentication" }, [
+const getUserForm = ({ isEditing }) => ([
+	(!isEditing) && Fieldset({ legend: "Authentication" }, [
 
 		new FormField(
 			{ name: "username", label: "Username", description: "Enter the user's username." },
@@ -215,7 +216,7 @@ export const UserModal = (props = {}) =>
 	return new Modal({
 		data: new UserModel(item),
 		title: mode === 'edit' ? 'Edit User' : 'Add User',
-		icon: Icons.document.add,
+		icon: mode === 'edit' ? Icons.pencil.square : Icons.user.plus,
 		description: mode === 'edit' ? 'Update user details.' : 'Create a new user.',
 		size: 'md',
 		type: 'right',
@@ -241,7 +242,9 @@ export const UserModal = (props = {}) =>
 		}
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
-			Div({ class: "flex flex-auto flex-col w-full gap-4" }, getUserForm())
+			Div({ class: "flex flex-auto flex-col w-full gap-4" }, getUserForm({
+				isEditing: mode === 'edit'
+			}))
 		])
 	]).open();
 };

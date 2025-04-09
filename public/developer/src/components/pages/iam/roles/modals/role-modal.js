@@ -116,8 +116,8 @@ export const RoleModal = (props = {}) =>
 	return new Modal({
 		data: new RoleModel(item),
 		title: mode === 'edit' ? 'Edit Role' : 'Add Role',
-		icon: Icons.document.add,
-		description: `Let's add a new role.`,
+		icon: mode === 'edit' ? Icons.pencil.square : Icons.document.add,
+		description: mode === 'edit' ? `Editing the '${item.name}' role` : 'Let\'s add a new role.',
 		size: 'md',
 		type: 'right',
 		onSubmit: ({ data }) =>

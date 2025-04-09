@@ -122,8 +122,8 @@ export const PermissionModal = (props = {}) =>
 	return new Modal({
 		data: new PermissionModel(item),
 		title: mode === 'edit' ? 'Edit Permission' : 'Add Permission',
-		icon: Icons.document.add,
-		description: `Let's add a new permission.`,
+		icon: mode === 'edit' ? Icons.pencil.square : Icons.document.add,
+		description: mode === 'edit' ? `Editing the '${item.name}' Permission` : 'Let\'s add a new Permission.',
 		size: 'md',
 		type: 'right',
 		onSubmit: ({ data }) =>
