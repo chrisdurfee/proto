@@ -52,7 +52,8 @@ const getUserForm = () => ([
 					bind: 'confirmPassword',
 					pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*\\W).{12,}$',
 					title: 'Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.',
-					'aria-required': true
+					'aria-required': true,
+					blur: (e, { parent }) => validate(parent.data.password, parent.data.confirmPassword)
 				})
 			]
 		)
