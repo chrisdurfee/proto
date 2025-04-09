@@ -182,6 +182,7 @@ class ModelJoin
 	{
 		$this->multipleJoin = $join;
 		$join->references($this->tableName, $this->alias);
+		$join->multiple();
 	}
 
 	/**

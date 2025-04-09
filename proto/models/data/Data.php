@@ -126,7 +126,24 @@ class Data
 
 		foreach ($joins as $join)
 		{
-			$this->setJoinField($join);
+			$this->checkJoinFields($join);
+		}
+	}
+
+	/**
+	 * This will check the join fields.
+	 *
+	 * @param ModelJoin $join
+	 * @return void
+	 */
+	private function checkJoinFields(ModelJoin $join): void
+	{
+		$this->setJoinField($join);
+
+		$childJoin = $join->getMultipleJoin();
+		if ($childJoin)
+		{
+			$this->checkJoinFields($childJoin);
 		}
 	}
 
@@ -138,15 +155,13 @@ class Data
 	 */
 	private function setJoinField(ModelJoin $join): void
 	{
-		$childJoin = $join->getMultipleJoin();
-		if ($childJoin)
+		/**
+		 * This will exclude bridge joins.
+		 */
+		if ($join->isMultiple() && $join->getFields())
 		{
-			$this->setJoinField($childJoin);
-		}
-
-		if ($join->isMultiple())
-		{
-			$key = Strings::camelCase($join->getAs());
+			$name = $join->getAs() ?? $join->getTableName();
+			$key = Strings::camelCase($name);
 			$this->nestedDataHelper->addKey($key);
 			$this->setDataField($key, []);
 			return;
