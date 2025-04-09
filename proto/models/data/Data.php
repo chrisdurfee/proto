@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Models\Data;
 
+use Proto\Models\Joins\ModelJoin;
 use Proto\Utils\Strings;
 
 /**
@@ -113,7 +114,7 @@ class Data
 	/**
 	 * Initializes join fields into the internal data object.
 	 *
-	 * @param array $joins Join definitions.
+	 * @param array<ModelJoin> $joins Join definitions.
 	 * @return void
 	 */
 	protected function setupJoinsToData(array $joins): void
@@ -125,25 +126,43 @@ class Data
 
 		foreach ($joins as $join)
 		{
-			if ($join->isMultiple())
-			{
-				$key = Strings::camelCase($join->getAs());
-				$this->setDataField($key, []);
-				continue;
-			}
+			$this->setJoinField($join);
+		}
+	}
 
-			$joiningFields = $join->getFields() ?? false;
-			if (!$joiningFields)
-			{
-				continue;
-			}
+	/**
+	 * This will set the join fields into the data object.
+	 *
+	 * @param ModelJoin $join
+	 * @return void
+	 */
+	private function setJoinField(ModelJoin $join): void
+	{
+		$childJoin = $join->getMultipleJoin();
+		if ($childJoin)
+		{
+			$this->setJoinField($childJoin);
+		}
 
-			foreach ($joiningFields as $field)
-			{
-				$key = $this->checkAliasField($field);
-				$this->joinFields[] = $key;
-				$this->setDataField($key, null);
-			}
+		if ($join->isMultiple())
+		{
+			$key = Strings::camelCase($join->getAs());
+			$this->nestedDataHelper->addKey($key);
+			$this->setDataField($key, []);
+			return;
+		}
+
+		$joiningFields = $join->getFields() ?? false;
+		if (!$joiningFields)
+		{
+			return;
+		}
+
+		foreach ($joiningFields as $field)
+		{
+			$key = $this->checkAliasField($field);
+			$this->joinFields[] = $key;
+			$this->setDataField($key, null);
 		}
 	}
 
@@ -202,7 +221,7 @@ class Data
 				continue;
 			}
 
-			if (is_array($this->data->{$keyMapped}))
+			if ($this->nestedDataHelper->isNestedKey(($keyMapped)))
 			{
 				$val = $this->nestedDataHelper->getGroupedData($val);
 			}
@@ -326,7 +345,7 @@ class Data
 
 				$keyName = $this->prepareKeyName($key);
 				$value = $row->{$keyName} ?? null;
-				if (is_array($val))
+				if ($this->nestedDataHelper->isNestedKey(($keyName)))
 				{
 					$value = $this->nestedDataHelper->getGroupedData($value);
 				}

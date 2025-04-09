@@ -15,6 +15,31 @@ use Proto\Utils\Strings;
  */
 class NestedDataHelper
 {
+	/** @var array Nested keys for data. */
+	protected array $nestedKeys = [];
+
+	/**
+	 * This will add a key to the nested keys array.
+	 *
+	 * @param string $key
+	 * @return void
+	 */
+	public function addKey(string $key): void
+	{
+		$this->nestedKeys[$key] = $key;
+	}
+
+	/**
+	 * This will check if a key is in the nested keys array.
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public function isNestedKey(string $key): bool
+	{
+		return isset($this->nestedKeys[$key]);
+	}
+
 	/**
 	 * Parses grouped data from a string or array. Expects JSON for nested data.
 	 *
@@ -64,6 +89,11 @@ class NestedDataHelper
 				{
 					$data[$newKey] = $value;
 					unset($data[$key]);
+				}
+
+				if ($this->isNestedKey($newKey))
+				{
+					$data[$newKey] = $this->getGroupedData($value);
 				}
 			}
 		}
