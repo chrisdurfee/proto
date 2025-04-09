@@ -32,6 +32,7 @@ class User extends Migration
 			$table->varchar('image', 255);
 			$table->enum('status', 'online', 'offline', 'busy', 'away')->default("'offline'");
 			$table->timestamp('email_verified_at')->nullable();
+			$table->tinyInteger('enabled')->default(0);
 			$table->createdAt();
 			$table->updatedAt();
 			$table->deletedAt();

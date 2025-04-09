@@ -59,4 +59,64 @@ class UserStorage extends Storage
 
 		return $this->db->update($this->tableName, $data);
 	}
+
+    /**
+	 * This will authenticate the username and password.
+	 *
+	 * @param string $username
+	 * @param string $password
+	 * @return int The user id or -1 if not found.
+	 */
+	public function authenticate(string $username, string $password): int
+	{
+		$userId = -1;
+		$params = ['username' => $username];
+
+        $row = $this->select('id', 'password')
+            ->where(
+                'username = ?',
+                'enabled = 1'
+            )
+            ->first($params);
+
+		if ($row)
+		{
+			if (password_verify($password, $row->password))
+			{
+				$userId = $row->id;
+			}
+		}
+
+		return $userId;
+	}
+
+    /**
+	 * This will confirm the password for the user.
+	 *
+	 * @param mixed $userId
+	 * @param string $password
+	 * @return int The user id or -1 if not found.
+	 */
+	public function confirmPassword(mixed $userId, string $password): int
+	{
+		$userId = -1;
+		$params = ['id' => $userId];
+
+        $row = $this->select('id', 'password')
+            ->where(
+                'id = ?',
+                'enabled = 1'
+            )
+            ->first($params);
+
+		if ($row)
+		{
+			if (password_verify($password, $row->password))
+			{
+				$userId = $row->id;
+			}
+		}
+
+		return $userId;
+	}
 }
