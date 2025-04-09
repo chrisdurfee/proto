@@ -2,6 +2,21 @@ import { A, Div, P, Span, Td, Thead, Tr } from "@base-framework/atoms";
 import { Badge, Checkbox } from "@base-framework/ui/atoms";
 import { Avatar, StaticStatusIndicator } from "@base-framework/ui/molecules";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
+import { UserModal } from "../modals/user-modal.js";
+
+/**
+ * This will create a permission modal.
+ *
+ * @param {object} item
+ * @param {object} parent
+ * @returns {object}
+ */
+const Modal = (item, { parent }) => (
+	UserModal({
+		item,
+		onClose: (data) => parent.list.mingle([ data.get() ])
+	})
+);
 
 /**
  * This will create a user row.
