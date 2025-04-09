@@ -3,6 +3,7 @@ import { Fieldset, Input } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField, Modal } from "@base-framework/ui/molecules";
 import { UserModel } from "../models/user-model.js";
+import { UserRoleFieldset } from "./user-role-fieldset.js";
 import { PasswordValidator } from "./utils/password-validator.js";
 
 /**
@@ -13,7 +14,7 @@ import { PasswordValidator } from "./utils/password-validator.js";
  * @param {object} props - The properties for the form.
  * @returns {Array} - Array of form field components.
  */
-const getUserForm = ({ isEditing }) => ([
+const getUserForm = ({ isEditing, user }) => ([
 	(!isEditing) && Fieldset({ legend: "Authentication" }, [
 
 		new FormField(
@@ -94,7 +95,10 @@ const getUserForm = ({ isEditing }) => ([
 				})
 			]
 		)
-	])
+	]),
+	(isEditing) && new UserRoleFieldset({
+		user
+	})
 ]);
 
 /**
@@ -243,7 +247,8 @@ export const UserModal = (props = {}) =>
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
 			Div({ class: "flex flex-auto flex-col w-full gap-4" }, getUserForm({
-				isEditing: mode === 'edit'
+				isEditing: mode === 'edit',
+				user: item
 			}))
 		])
 	]).open();
