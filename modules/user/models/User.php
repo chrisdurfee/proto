@@ -36,6 +36,7 @@ class User extends Model
 		'image',
 		'status',
 		'emailVerifiedAt',
+		'enabled',
 		'createdAt',
 		'updatedAt',
 		'deletedAt'

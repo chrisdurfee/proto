@@ -25,11 +25,11 @@ class User extends Migration
 		{
 			$table->id();
 			$table->varchar('username', 100);
-			$table->varchar('email', 255);
+			$table->varchar('email', 255)->nullable();
 			$table->varchar('password', 255);
-			$table->varchar('first_name', 100);
-			$table->varchar('last_name', 100);
-			$table->varchar('image', 255);
+			$table->varchar('first_name', 100)->nullable();
+			$table->varchar('last_name', 100)->nullable();
+			$table->varchar('image', 255)->nullable();
 			$table->enum('status', 'online', 'offline', 'busy', 'away')->default("'offline'");
 			$table->timestamp('email_verified_at')->nullable();
 			$table->tinyInteger('enabled')->default(1);
@@ -38,8 +38,8 @@ class User extends Migration
 			$table->deletedAt();
 
 			// Indexes for commonly searched columns
-			$table->index('username')->fields('username', 'password');
-			$table->index('email')->fields('email', 'password');
+			$table->index('username')->fields('username', 'password', 'id');
+			$table->index('email')->fields('email', 'password', 'id');
 			$table->index('first_name')->fields('first_name', 'last_name');
 			$table->index('last_name')->fields('last_name', 'first_name');
 			$table->index('status')->fields('status');

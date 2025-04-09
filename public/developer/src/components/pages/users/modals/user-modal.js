@@ -110,7 +110,8 @@ const validate = (password, confirmPassword) =>
 		app.notify({
 			title: 'Error',
 			description: 'Passwords do not match.',
-			type: 'destructive'
+			type: 'destructive',
+			icon: Icons.shield
 		});
 		return false;
 	}

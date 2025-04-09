@@ -19,6 +19,44 @@ const Modal = (item, { parent }) => (
 );
 
 /**
+ * This will create a user avatar.
+ *
+ * @param {object} row
+ * @return {object}
+ */
+const UserAvatar = (row) => (
+	A({
+		href: `users/${row.id}`,
+		class: 'flex items-center gap-x-4 no-underline text-inherit hover:text-primary'
+	}, [
+		Avatar({
+			src: row.image,
+			alt: row.username,
+			fallbackText: `${row.firstName?.charAt(0) || ''}${row.lastName?.charAt(0) || ''}`
+		}),
+		Div({ class: 'min-w-0 flex-auto' }, [
+			Div({ class: 'flex items-center gap-2' }, [
+				Span({ class: 'text-base font-semibold leading-6' }, `${row.firstName} ${row.lastName}`),
+				StaticStatusIndicator(row.status)
+			]),
+			P({ class: 'truncate text-sm leading-5 text-muted-foreground m-0' }, row.username)
+		])
+	])
+);
+
+/**
+ * This will create a user roles.
+ *
+ * @param {object} row
+ * @returns {Array}
+ */
+const UserRoles = (row) => (
+	row.roles?.map(role =>
+		Badge({ type: 'gray' }, role.name)
+	)
+);
+
+/**
  * This will create a user row.
  *
 * @param {object} row
@@ -36,32 +74,12 @@ export const UserRow = (row, onSelect) => (
 		]),
 		Td({ class: 'p-4 hidden md:table-cell' }, String(row.id)),
 		Td({ class: 'p-4' }, [
-			A({
-				href: `users/${row.id}`,
-				class: 'flex items-center gap-x-4 no-underline text-inherit hover:text-primary'
-			}, [
-				Avatar({
-					src: row.image,
-					alt: row.username,
-					fallbackText: `${row.firstName?.charAt(0) || ''}${row.lastName?.charAt(0) || ''}`
-				}),
-				Div({ class: 'min-w-0 flex-auto' }, [
-					Div({ class: 'flex items-center gap-2' }, [
-						Span({ class: 'text-base font-semibold leading-6' }, `${row.firstName} ${row.lastName}`),
-						StaticStatusIndicator(row.status)
-					]),
-					P({ class: 'truncate text-sm leading-5 text-muted-foreground m-0' }, row.username)
-				])
-			])
+			UserAvatar(row)
 		]),
 		Td({ class: 'p-4 max-w-[200px] truncate' }, row.email),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.emailVerifiedAt),
-		Td({ class: 'p-4 flex flex-wrap gap-2' }, [
-			row.roles?.map(role =>
-				Badge({ type: 'gray' }, role.name)
-			)
-		])
+		Td({ class: 'p-4 hidden md:table-cell' }, row.emailVerifiedAt || '-'),
+		Td({ class: 'p-4 flex flex-wrap gap-2' }, UserRoles(row))
 	])
 );
 
@@ -78,7 +96,7 @@ const HeaderRow = () => (
 			HeaderCol({ key: 'name', label: 'Name' }),
 			HeaderCol({ key: 'email', label: 'Email' }),
 			HeaderCol({ key: 'createdAt', label: 'Created At' }),
-			HeaderCol({ key: 'emailVerifiedAt', label: 'Email Verified At' }),
+			HeaderCol({ key: 'emailVerifiedAt', label: 'Email Verified' }),
 			HeaderCol({ key: 'roles', label: 'Roles' })
 		])
 	])

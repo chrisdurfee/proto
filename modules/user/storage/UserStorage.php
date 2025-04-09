@@ -65,7 +65,7 @@ class UserStorage extends Storage
 	 *
 	 * @return bool
 	 */
-	protected function updatePassword(int $id, string $password): bool
+	public function updatePassword(int $id, string $password): bool
 	{
 		$password = self::saltPassword($password);
 

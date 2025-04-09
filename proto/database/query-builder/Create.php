@@ -100,7 +100,7 @@ class Create extends Blueprint
 	 * @param int $length The length of the ID field.
 	 * @return CreateField
 	 */
-	public function id(int $length = 11): CreateField
+	public function id(int $length = 30): CreateField
 	{
 		$field = $this->createField('id');
 		$field->int($length)->primary()->autoIncrement();
