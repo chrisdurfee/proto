@@ -14,21 +14,6 @@ use Proto\Models\Model;
 class UserStorage extends Storage
 {
 	/**
-	 * This will salt a password.
-	 *
-	 * @param string $password
-	 * @return string
-	 */
-	protected static function saltPassword(string $password): string
-	{
-		$options = [
-			'cost' => 10
-		];
-
-		return password_hash($password, PASSWORD_BCRYPT, $options);
-	}
-
-	/**
 	 * This will add the user with the salted password.
 	 *
 	 * @return bool
@@ -39,7 +24,7 @@ class UserStorage extends Storage
 		 * @var Model $model
 		 */
 		$model = $this->model;
-		$model->password = self::saltPassword($model->password);
+		$model->password = PasswordHelper::saltPassword($model->password);
 
 		return parent::add();
 	}
@@ -54,7 +39,7 @@ class UserStorage extends Storage
 		$data = $this->getUpdateData();
 		if (isset($data->password))
 		{
-			$data->password = self::saltPassword($data->password);
+			$data->password = PasswordHelper::saltPassword($data->password);
 		}
 
 		return $this->db->update($this->tableName, $data);
@@ -67,7 +52,7 @@ class UserStorage extends Storage
 	 */
 	public function updatePassword(int $id, string $password): bool
 	{
-		$password = self::saltPassword($password);
+		$password = PasswordHelper::saltPassword($password);
 
 		return $this->db->update($this->tableName, (object)[
 			'id' => $id,
@@ -141,25 +126,13 @@ class UserStorage extends Storage
 
 		if ($row)
 		{
-			if ($this->verifyPassword($password, $row->password))
+			if (PasswordHelper::verifyPassword($password, $row->password))
 			{
 				$userId = $row->id;
 			}
 		}
 
 		return $userId;
-	}
-
-	/**
-	 * This will verify the password.
-	 *
-	 * @param string $password
-	 * @param string $hash
-	 * @return bool
-	 */
-	private function verifyPassword(string $password, string $hash): bool
-	{
-		return password_verify($password, $hash);
 	}
 
 	/**
@@ -183,7 +156,7 @@ class UserStorage extends Storage
 
 		if ($row)
 		{
-			if ($this->verifyPassword($password, $row->password))
+			if (PasswordHelper::verifyPassword($password, $row->password))
 			{
 				$userId = $row->id;
 			}
