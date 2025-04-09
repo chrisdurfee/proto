@@ -13,7 +13,7 @@ use Proto\Models\Model;
  */
 class UserStorage extends Storage
 {
-    /**
+	/**
 	 * This will salt a password.
 	 *
 	 * @param string $password
@@ -28,7 +28,7 @@ class UserStorage extends Storage
 		return password_hash($password, PASSWORD_BCRYPT, $options);
 	}
 
-    /**
+	/**
 	 * This will add the user with the salted password.
 	 *
 	 * @return bool
@@ -60,7 +60,22 @@ class UserStorage extends Storage
 		return $this->db->update($this->tableName, $data);
 	}
 
-    /**
+	/**
+	 * This will update the user password to the table.
+	 *
+	 * @return bool
+	 */
+	protected function updatePassword(int $id, string $password): bool
+	{
+		$password = self::saltPassword($password);
+
+		return $this->db->update($this->tableName, (object)[
+			'id' => $id,
+			'password' => $password
+		]);
+	}
+
+	/**
 	 * This will authenticate the username and password.
 	 *
 	 * @param string $username
@@ -72,16 +87,16 @@ class UserStorage extends Storage
 		$userId = -1;
 		$params = ['username' => $username];
 
-        $row = $this->select('id', 'password')
-            ->where(
-                'username = ?',
-                'enabled = 1'
-            )
-            ->first($params);
+		$row = $this->select('id', 'password')
+			->where(
+				'username = ?',
+				'enabled = 1'
+			)
+			->first($params);
 
 		if ($row)
 		{
-			if (password_verify($password, $row->password))
+			if ($this->verifyPassword($password, $row->password))
 			{
 				$userId = $row->id;
 			}
@@ -90,7 +105,19 @@ class UserStorage extends Storage
 		return $userId;
 	}
 
-    /**
+	/**
+	 * This will verify the password.
+	 *
+	 * @param string $password
+	 * @param string $hash
+	 * @return bool
+	 */
+	private function verifyPassword(string $password, string $hash): bool
+	{
+		return password_verify($password, $hash);
+	}
+
+	/**
 	 * This will confirm the password for the user.
 	 *
 	 * @param mixed $userId
@@ -102,16 +129,16 @@ class UserStorage extends Storage
 		$userId = -1;
 		$params = ['id' => $userId];
 
-        $row = $this->select('id', 'password')
-            ->where(
-                'id = ?',
-                'enabled = 1'
-            )
-            ->first($params);
+		$row = $this->select('id', 'password')
+			->where(
+				'id = ?',
+				'enabled = 1'
+			)
+			->first($params);
 
 		if ($row)
 		{
-			if (password_verify($password, $row->password))
+			if ($this->verifyPassword($password, $row->password))
 			{
 				$userId = $row->id;
 			}
