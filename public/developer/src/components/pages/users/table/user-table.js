@@ -29,15 +29,17 @@ const UserAvatar = (row) => (
 		href: `users/${row.id}`,
 		class: 'flex items-center gap-x-4 no-underline text-inherit hover:text-primary'
 	}, [
-		Avatar({
-			src: row.image,
-			alt: row.username,
-			fallbackText: `${row.firstName} ${row.lastName}`
-		}),
+		Div({ class: 'relative' }, [
+			Avatar({
+				src: row.image,
+				alt: row.username,
+				fallbackText: `${row.firstName} ${row.lastName}`
+			}),
+			StaticStatusIndicator(row.status)
+		]),
 		Div({ class: 'min-w-0 flex-auto' }, [
 			Div({ class: 'flex items-center gap-2' }, [
 				Span({ class: 'text-base font-semibold leading-6' }, `${row.firstName} ${row.lastName}`),
-				StaticStatusIndicator(row.status)
 			]),
 			P({ class: 'truncate text-sm leading-5 text-muted-foreground m-0' }, row.username)
 		])
