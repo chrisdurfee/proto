@@ -137,9 +137,10 @@ const validate = (password, confirmPassword) =>
  * Add a new user.
  *
  * @param {object} data
+ * @param {function} onClose
  * @returns {void}
  */
-const add = (data) =>
+const add = (data, onClose) =>
 {
 	data.xhr.add('', (response) =>
 	{
@@ -160,6 +161,8 @@ const add = (data) =>
 			description: "The user has been added.",
 			icon: Icons.check
 		});
+
+		onClose();
 	});
 };
 
@@ -167,9 +170,10 @@ const add = (data) =>
  * Update an existing user.
  *
  * @param {object} data
+ * @param {function} onClose
  * @returns {void}
  */
-const update = (data) =>
+const update = (data, onClose) =>
 {
 	data.xhr.update('', (response) =>
 	{
@@ -190,6 +194,8 @@ const update = (data) =>
 			description: "The user has been updated.",
 			icon: Icons.check
 		});
+
+		onClose();
 	});
 };
 
@@ -215,9 +221,11 @@ export const UserModal = (props = {}) =>
 		type: 'right',
 		onSubmit: ({ data }) =>
 		{
+			const onClose = () => props.onClose && props.onClose(data);
+
 			if (mode === 'edit')
 			{
-				update(data);
+				update(data, onClose);
 			}
 			else
 			{
@@ -228,12 +236,7 @@ export const UserModal = (props = {}) =>
 					return;
 				}
 
-				add(data);
-			}
-
-			if (props.onClose)
-			{
-				props.onClose(data);
+				add(data, onClose);
 			}
 		}
 	}, [

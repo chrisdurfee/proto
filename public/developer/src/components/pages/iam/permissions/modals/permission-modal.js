@@ -44,9 +44,10 @@ const getPermissionForm = () => ([
  * Add a new role.
  *
  * @param {object} data
+ * @param {function} onClose
  * @returns {void}
  */
-const add = (data) =>
+const add = (data, onClose) =>
 {
 	data.xhr.add('', (response) =>
 	{
@@ -67,6 +68,8 @@ const add = (data) =>
 			description: "The permission has been added.",
 			icon: Icons.check
 		});
+
+		onClose();
 	});
 };
 
@@ -74,9 +77,10 @@ const add = (data) =>
  * Update an existing role.
  *
  * @param {object} data
+ * @param {function} onClose
  * @returns {void}
  */
-const update = (data) =>
+const update = (data, onClose) =>
 {
 	data.xhr.update('', (response) =>
 	{
@@ -97,6 +101,8 @@ const update = (data) =>
 			description: "The permission has been updated.",
 			icon: Icons.check
 		});
+
+		onClose();
 	});
 };
 
@@ -122,18 +128,15 @@ export const PermissionModal = (props = {}) =>
 		type: 'right',
 		onSubmit: ({ data }) =>
 		{
+			const onClose = () => props.onClose && props.onClose(data);
+
 			if (mode === 'edit')
 			{
-				update(data);
+				update(data, onClose);
 			}
 			else
 			{
-				add(data);
-			}
-
-			if (props.onClose)
-			{
-				props.onClose(data);
+				add(data, onClose);
 			}
 		}
 	}, [
