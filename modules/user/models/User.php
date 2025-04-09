@@ -2,6 +2,7 @@
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
+use Modules\User\Storage\UserStorage;
 
 /**
  * User
@@ -87,4 +88,9 @@ class User extends Model
 					'module'
 				);
 	}
+
+	/**
+	 * @var string $storageType
+	 */
+	protected static string $storageType = UserStorage::class;
 }
