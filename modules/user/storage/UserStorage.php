@@ -61,7 +61,7 @@ class UserStorage extends Storage
 	}
 
 	/**
-	 * This will update the user password to the table.
+	 * This will update the password for the user.
 	 *
 	 * @return bool
 	 */
@@ -72,6 +72,51 @@ class UserStorage extends Storage
 		return $this->db->update($this->tableName, (object)[
 			'id' => $id,
 			'password' => $password
+		]);
+	}
+
+	/**
+	 * This will check if a username is taken.
+	 *
+	 * @param string $username
+	 * @return bool
+	 */
+	public function isUsernameTaken(string $username): bool
+	{
+		if (!$username)
+		{
+			return true;
+		}
+
+		$params = ['username' => $username];
+
+		$rows = $this->select('id', 'password')
+			->where(
+				'username = ?'
+			)
+			->fetch($params);
+
+		return (count($rows) > 0);
+	}
+
+	/**
+	 * This will update the username for the user.
+	 *
+	 * @param int $id
+	 * @param string $username
+	 * @return int|bool True is successful false on error. -1 if username is taken.
+	 */
+	protected function updateUsername(int $id, string $username)
+	{
+		$taken = $this->isUsernameTaken($username);
+		if ($taken === true)
+		{
+			return -1;
+		}
+
+		return $this->db->update($this->tableName, (object)[
+			'id' => $id,
+			'username' => $username
 		]);
 	}
 
