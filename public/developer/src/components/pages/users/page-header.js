@@ -37,8 +37,8 @@ const Modal = (item, parent) => (
  */
 const Dropdown = () => (
 	new Combobox({
-		width: 'w-full', // this is the default value
-		maxWidth: 'max-w-[250px]', // this is the default value
+		width: 'w-full',
+		maxWidth: 'max-w-[250px]',
 		class: '',
 		selectFirst: true,
 		onSelect: (item, { data, list }) =>

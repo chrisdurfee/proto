@@ -151,14 +151,19 @@ export const UserModal = (props = {}) =>
 		description: mode === 'edit' ? 'Update user details.' : 'Create a new user.',
 		size: 'md',
 		type: 'right',
-		onSubmit: ({ data }) => {
-			if (mode === 'edit') {
+		onSubmit: ({ data }) =>
+        {
+			if (mode === 'edit')
+            {
 				update(data);
-			} else {
+			}
+            else
+            {
 				add(data);
 			}
 
-			if (props.onClose) {
+			if (props.onClose)
+            {
 				props.onClose(data);
 			}
 		}
