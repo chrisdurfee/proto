@@ -26,7 +26,11 @@ const refresh = (e, { list }) =>
 const Modal = (item, parent) => (
 	UserModal({
 		item,
-		onClose: (data) => parent.list.refresh()
+		onClose: (data) =>
+		{
+			console.log(parent)
+			parent.list.refresh();
+		}
 	})
 );
 
@@ -57,10 +61,10 @@ const Dropdown = () => (
 		},
 		items: [
 			{ value: 'all', label: 'All' },
-			{ value: 'dev', label: 'Dev'},
-			{ value: 'testing', label: 'Testing' },
-			{ value: 'staging', label: 'Staging' },
-			{ value: 'prod', label: 'Prod' },
+			{ value: 'online', label: 'Online'},
+			{ value: 'offline', label: 'Offline' },
+			{ value: 'busy', label: 'Busy' },
+			{ value: 'away', label: 'Away' },
 		]
 	})
 );

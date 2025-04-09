@@ -32,7 +32,7 @@ const UserAvatar = (row) => (
 		Avatar({
 			src: row.image,
 			alt: row.username,
-			fallbackText: `${row.firstName?.charAt(0) || ''}${row.lastName?.charAt(0) || ''}`
+			fallbackText: `${row.firstName} ${row.lastName}`
 		}),
 		Div({ class: 'min-w-0 flex-auto' }, [
 			Div({ class: 'flex items-center gap-2' }, [
