@@ -24,4 +24,21 @@ class UserController extends ModelController
 	{
 		parent::__construct($modelClass);
 	}
+
+	/**
+	 * Adds a model entry.
+	 *
+	 * @param object $data The model data.
+	 * @return object The response.
+	 */
+	public function add(object $data): object
+	{
+		$isTaken = User::isUsernameTaken($data->username);
+		if ($isTaken)
+		{
+			return $this->error('Username is already taken.');
+		}
+
+		return parent::add($data);
+	}
 }
