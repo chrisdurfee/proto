@@ -27,7 +27,7 @@ const getUserForm = () => ([
 			]
 		),
 		new FormField(
-			{ name: "password", label: "Password", description: "Enter a password." },
+			{ name: "password", label: "Password", description: "Password must be at least 12 characters long and include uppercase, lowercase, number, and special character." },
 			[
 				// New Password
 				Input({
