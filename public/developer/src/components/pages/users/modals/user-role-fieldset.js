@@ -1,8 +1,10 @@
 import { Div, OnState } from "@base-framework/atoms";
 import { Component, Jot } from "@base-framework/base";
 import { Checkbox, Fieldset, Skeleton } from "@base-framework/ui/atoms";
+import { Icons } from "@base-framework/ui/icons";
 import { FormField } from "@base-framework/ui/molecules";
 import { RoleModel } from "../../iam/roles/models/role-model.js";
+import { UserRoleModel } from "../models/user-role-model.js";
 
 /**
  * UserRoleFieldset
@@ -52,6 +54,58 @@ export const UserRoleFieldset = Jot(
 
 			// @ts-ignore
 			this.data.rows = response.rows;
+		});
+	},
+
+	/**
+	 * This will check if the user has the role.
+	 *
+	 * @param {string} role - The role to check.
+	 * @returns {boolean}
+	 */
+	hasRole(role)
+	{
+		// @ts-ignore
+		const roles = this?.user?.roles || [];
+		return roles.includes(role);
+	},
+
+	/**
+	 * This will toggle the role for the user.
+	 *
+	 * @param {object} role - The role to toggle.
+	 * @param {boolean} checked - The checked state of the checkbox.
+	 */
+	toggleRole(role, checked)
+	{
+		// @ts-ignore
+		this.user.roles = this.user.roles.filter((r) => r !== role.name);
+
+		if (checked)
+		{
+			// @ts-ignore
+			this.user.roles.push(role);
+		}
+
+		const model = new UserRoleModel({
+			// @ts-ignore
+			userId: this.user.id,
+			roleId: role.id
+		});
+
+		const method = checked ? 'add' : 'delete';
+		model.xhr[method]('', (response) =>
+		{
+			if (!response || response.success === false)
+			{
+				app.notify({
+					type: "destructive",
+					title: "Error",
+					description: `An error occurred while ${method === 'add' ? 'adding' : 'removing'} the role.`,
+					icon: Icons.shield
+				});
+				return;
+			}
 		});
 	},
 
@@ -106,9 +160,12 @@ export const UserRoleFieldset = Jot(
 							new Checkbox({
 								label: role.name,
 								required: false,
+								// @ts-ignore
+								checked: this.hasRole(role.name),
 								onChange: (checked, e) =>
 								{
-									// handle checked change if needed
+									// @ts-ignore
+									this.toggleRole(role, checked);
 								}
 							})
 						])
