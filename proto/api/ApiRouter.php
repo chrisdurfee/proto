@@ -13,14 +13,19 @@ namespace
 	Session::init();
 
 	/**
+	 * This will create the global router instance.
+	 */
+	$basePath = env('router')->basePath ?? '/';
+	$GLOBALS['router'] = new Router($basePath);
+
+	/**
 	 * This will return the router instance.
 	 *
 	 * @return Router
 	 */
 	function router(): Router
 	{
-		$basePath = env('router')->basePath ?? '/';
-		return new Router($basePath);
+		return $GLOBALS['router'];
 	}
 
 	/**
@@ -134,7 +139,7 @@ namespace Proto\Api
 				ApiRateLimiterMiddleware::class,
 			];
 
-			$this->router->all(':resource.*', function ($req, $params) use ($middleware)
+			$this->router->all(':resource.*', function ($req, $params) use ($middleware): void
 			{
 				$resource = $params->resource ?? null;
 				if (empty($resource))
