@@ -22,4 +22,17 @@ class UserRoleController extends Controller
 	{
 		parent::__construct($modelClass);
 	}
+
+	/**
+	 * Deletes model data.
+	 *
+	 * @param int|object $data The model ID or object.
+	 * @return object The response.
+	 */
+	public function delete(int|object $data): object
+	{
+		return $this->response(
+			$this->model()->deleteUserRole($data->userId, $data->roleId)
+		);
+	}
 }

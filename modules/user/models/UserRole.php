@@ -54,4 +54,20 @@ class UserRole extends Model
 				'description'
 			);
 	}
+
+	/**
+	 * This will delete a user role by the userId and roleId.
+	 *
+	 * @param mixed $userId
+	 * @param mixed $roleId
+	 * @return bool
+	 */
+	public function deleteUserRole(mixed $userId, mixed $roleId): bool
+	{
+		return $this->storage
+			->table()
+			->delete()
+			->where('user_id = ?', 'role_id = ?')
+			->execute([$userId, $roleId]);
+	}
 }

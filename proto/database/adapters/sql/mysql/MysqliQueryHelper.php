@@ -37,8 +37,8 @@ class MysqliQueryHelper
 	public function createParamsFromData(array|object $data, string $idColumn = 'id', bool $guard = false): object
 	{
 		$returnId = null;
-		$values  = [];
-		$cols    = [];
+		$values = [];
+		$cols = [];
 
 		foreach ($data as $key => $val)
 		{
@@ -48,14 +48,14 @@ class MysqliQueryHelper
 			}
 
 			$cleanKey = Sanitize::cleanColumn($key);
-			$cols[]   = $guard ? "`{$cleanKey}`" : $cleanKey;
+			$cols[] = $guard ? "`{$cleanKey}`" : $cleanKey;
 			$values[] = $val;
 		}
 
 		return (object) [
-			'cols'   => $cols,
+			'cols' => $cols,
 			'values' => $values,
-			'id'     => $returnId,
+			'id' => $returnId,
 		];
 	}
 

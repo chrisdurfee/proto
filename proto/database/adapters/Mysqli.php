@@ -355,7 +355,6 @@ class Mysqli extends Adapter
 	{
 		$params = $this->queryHelper->createParamsFromData($data, $idColumn, true);
 		$updatePairs = $this->queryHelper->setUpdatePairs($params);
-
 		if (empty($updatePairs))
 		{
 			return false;

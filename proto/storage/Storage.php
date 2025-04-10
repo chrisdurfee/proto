@@ -524,7 +524,7 @@ class Storage implements StorageInterface
 			{
 				$builderCallback = function($table, $alias): QueryHandler
 				{
-					return $this->builder($table, $alias); // Use the Storage's builder factory
+					return $this->builder($table, $alias);
 				};
 
 				// Call the main entry point of the refactored SubQueryHelper
