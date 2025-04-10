@@ -7,6 +7,95 @@ import { RoleModel } from "../../iam/roles/models/role-model.js";
 import { UserRoleModel } from "../models/user-role-model.js";
 
 /**
+ * This will add or remove the role for the user.
+ *
+ * @param {boolean} checked
+ * @param {number} userId
+ * @param {number} roleId
+ */
+const request = (checked, userId, roleId) =>
+{
+	const model = new UserRoleModel({
+		userId,
+		roleId
+	});
+
+	const method = checked ? 'add' : 'delete';
+	model.xhr[method]('', (response) =>
+	{
+		if (!response || response.success === false)
+		{
+			app.notify({
+				type: "destructive",
+				title: "Error",
+				description: `An error occurred while ${method === 'add' ? 'adding' : 'removing'} the role.`,
+				icon: Icons.shield
+			});
+		}
+	});
+};
+
+/**
+ * This will create the role skeleton.
+ *
+ * @returns {object}
+ */
+const RoleSkeleton = () => (
+	Div({ class: "flex flex-col space-y-8" }, [
+		...[1, 2, 3, 4].map(() =>
+			Div({ class: "flex flex-col space-y-2" }, [
+				Div({ class: "flex items-center space-x-2" }, [
+					Skeleton({
+						shape: "circle",
+						width: "w-5",
+						height: "h-5"
+					}),
+					Skeleton({
+						width: "w-32",
+						height: "h-4"
+					})
+				]),
+				Skeleton({
+					width: "w-40",
+					height: "h-3"
+				})
+			])
+		)
+	])
+);
+
+/**
+ * This will create the role fields.
+ *
+ * @param {object} props
+ * @returns {object}
+ */
+const RoleFields = ({ hasRole, toggleRole }) => (
+	Div({
+		class: 'flex flex-col space-y-2',
+		for: ['rows', (role) => new FormField(
+			{
+				name: role.name,
+				description: role.description
+			},
+			[
+				new Checkbox({
+					label: role.name,
+					required: false,
+					// @ts-ignore
+					checked: hasRole(role.name),
+					onChange: (checked, e) =>
+					{
+						// @ts-ignore
+						toggleRole(role, checked);
+					}
+				})
+			])
+		]
+	})
+);
+
+/**
  * UserRoleFieldset
  *
  * Displays the skeleton placeholder while the roles loads.
@@ -75,39 +164,27 @@ export const UserRoleFieldset = Jot(
 	 *
 	 * @param {object} role - The role to toggle.
 	 * @param {boolean} checked - The checked state of the checkbox.
-	 * @param {number} index - The index of the role.
+	 * @returns {void}
 	 */
-	toggleRole(role, checked, index)
+	toggleRole(role, checked)
 	{
+		const ROLE_KEY = 'roles';
 		// @ts-ignore
-		this.user.splice('roles', index)
+		const index = this.user.getIndex(ROLE_KEY, 'id', role.id);
 
-		if (checked)
+		if (checked && index === -1)
 		{
 			// @ts-ignore
-			this.user.push('roles', role);
+			this.user.push(ROLE_KEY, role);
+		}
+		else if (!checked && index !== -1)
+		{
+			// @ts-ignore
+			this.user.splice(ROLE_KEY, index);
 		}
 
-		const model = new UserRoleModel({
-			// @ts-ignore
-			userId: this.user.id,
-			roleId: role.id
-		});
-
-		const method = checked ? 'add' : 'delete';
-		model.xhr[method]('', (response) =>
-		{
-			if (!response || response.success === false)
-			{
-				app.notify({
-					type: "destructive",
-					title: "Error",
-					description: `An error occurred while ${method === 'add' ? 'adding' : 'removing'} the role.`,
-					icon: Icons.shield
-				});
-				return;
-			}
-		});
+		// @ts-ignore
+		request(checked, this.user.id, role.id);
 	},
 
 	/**
@@ -125,52 +202,14 @@ export const UserRoleFieldset = Jot(
 			{
 				if (!loaded)
 				{
-					return Div({ class: "flex flex-col space-y-8" }, [
-						...[1, 2, 3, 4].map(() =>
-							Div({ class: "flex flex-col space-y-2" }, [
-								Div({ class: "flex items-center space-x-2" }, [
-									Skeleton({
-										shape: "circle",
-										width: "w-5",
-										height: "h-5"
-									}),
-									Skeleton({
-										width: "w-32",
-										height: "h-4"
-									})
-								]),
-								Skeleton({
-									width: "w-40",
-									height: "h-3"
-								})
-							])
-						)
-					]);
+					return RoleSkeleton();
 				}
 
-				return Div({
-					class: 'flex flex-col space-y-2',
-					for: [
-						'rows',
-						(role, index) => new FormField(
-						{
-							name: role.name,
-							description: role.description
-						},
-						[
-							new Checkbox({
-								label: role.name,
-								required: false,
-								// @ts-ignore
-								checked: this.hasRole(role.name),
-								onChange: (checked, e) =>
-								{
-									// @ts-ignore
-									this.toggleRole(role, checked, index);
-								}
-							})
-						])
-					]
+				return RoleFields({
+					// @ts-ignore
+					hasRole: this.hasRole.bind(this),
+					// @ts-ignore
+					toggleRole: this.toggleRole.bind(this)
 				});
 			})
 		]);
