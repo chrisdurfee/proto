@@ -1,9 +1,9 @@
 import { Model } from "@base-framework/base";
 
 /**
- * UserModel
+ * UserRoleModel
  *
- * This model is used to handle the user model.
+ * This model is used to handle the user role model.
  *
  * @type {typeof Model}
  */

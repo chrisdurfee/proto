@@ -3,8 +3,8 @@ import { Component, Jot } from "@base-framework/base";
 import { Checkbox, Fieldset, Skeleton } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField } from "@base-framework/ui/molecules";
-import { RoleModel } from "../../iam/roles/models/role-model.js";
-import { UserRoleModel } from "../models/user-role-model.js";
+import { PermissionModel } from "../../permissions/models/permission-model.js";
+import { RolePermissionModel } from "../models/role-permission-model.js";
 
 /**
  * This will add or remove the role for the user.
@@ -15,7 +15,7 @@ import { UserRoleModel } from "../models/user-role-model.js";
  */
 const request = (checked, userId, roleId) =>
 {
-	const model = new UserRoleModel({
+	const model = new RolePermissionModel({
 		userId,
 		roleId
 	});
@@ -28,7 +28,7 @@ const request = (checked, userId, roleId) =>
 			app.notify({
 				type: "destructive",
 				title: "Error",
-				description: `An error occurred while ${method === 'add' ? 'adding' : 'removing'} the role.`,
+				description: `An error occurred while ${method === 'add' ? 'adding' : 'removing'} the permission.`,
 				icon: Icons.shield
 			});
 		}
@@ -36,11 +36,11 @@ const request = (checked, userId, roleId) =>
 };
 
 /**
- * This will create the role skeleton.
+ * This will create the permission skeleton.
  *
  * @returns {object}
  */
-export const RoleSkeleton = () => (
+export const PermissionSkeleton = () => (
 	Div({ class: "flex flex-col space-y-8" }, [
 		...[1, 2, 3, 4].map(() =>
 			Div({ class: "flex flex-col space-y-2" }, [
@@ -65,29 +65,29 @@ export const RoleSkeleton = () => (
 );
 
 /**
- * This will create the role fields.
+ * This will create the permission fields.
  *
  * @param {object} props
  * @returns {object}
  */
-const RoleFields = ({ hasRole, toggleRole }) => (
+const PermissionFields = ({ hasPermission, togglePermission }) => (
 	Div({
 		class: 'flex flex-col space-y-2',
-		for: ['rows', (role) => new FormField(
+		for: ['rows', (permission) => new FormField(
 			{
-				name: role.name,
-				description: role.description
+				name: permission.name,
+				description: permission.description
 			},
 			[
 				new Checkbox({
-					label: role.name,
+					label: permission.name,
 					required: false,
 					// @ts-ignore
-					checked: hasRole(role.name),
+					checked: hasPermission(permission.name),
 					onChange: (checked, e) =>
 					{
 						// @ts-ignore
-						toggleRole(role, checked);
+						togglePermission(permission, checked);
 					}
 				})
 			])
@@ -96,13 +96,13 @@ const RoleFields = ({ hasRole, toggleRole }) => (
 );
 
 /**
- * UserRoleFieldset
+ * RolePermissionFieldset
  *
- * Displays the skeleton placeholder while the roles loads.
+ * Displays the skeleton placeholder while the permissions load.
  *
  * @type {typeof Component}
  */
-export const UserRoleFieldset = Jot(
+export const RolePermissionFieldset = Jot(
 {
 	/**
 	 * This will set the default data for the component.
@@ -111,7 +111,7 @@ export const UserRoleFieldset = Jot(
 	 */
 	setData()
 	{
-		return new RoleModel({
+		return new PermissionModel({
 			rows: []
 		});
 	},
@@ -147,44 +147,44 @@ export const UserRoleFieldset = Jot(
 	},
 
 	/**
-	 * This will check if the user has the role.
+	 * This will check if the role has the permission.
 	 *
-	 * @param {string} roleName - The role name to check.
+	 * @param {string} permissionName - The permission name to check.
 	 * @returns {boolean}
 	 */
-	hasRole(roleName)
+	hasPermission(permissionName)
 	{
 		// @ts-ignore
-		const roles = this?.user?.roles || [];
-		return roles.find(role => role.name === roleName) !== undefined;
+		const permissions = this?.role?.permissions || [];
+		return permissions.find(permission => permission.name === permissionName) !== undefined;
 	},
 
 	/**
-	 * This will toggle the role for the user.
+	 * This will toggle the permission for the role.
 	 *
-	 * @param {object} role - The role to toggle.
+	 * @param {object} permission - The permission to toggle.
 	 * @param {boolean} checked - The checked state of the checkbox.
 	 * @returns {void}
 	 */
-	toggleRole(role, checked)
+	togglePermission(permission, checked)
 	{
-		const ROLE_KEY = 'roles';
+		const PERMISSION_KEY = 'permissions';
 		// @ts-ignore
-		const index = this.user.getIndex(ROLE_KEY, 'id', role.id);
+		const index = this.role.getIndex(PERMISSION_KEY, 'id', permission.id);
 
 		if (checked && index === -1)
 		{
 			// @ts-ignore
-			this.user.push(ROLE_KEY, role);
+			this.role.push(PERMISSION_KEY, permission);
 		}
 		else if (!checked && index !== -1)
 		{
 			// @ts-ignore
-			this.user.splice(ROLE_KEY, index);
+			this.role.splice(PERMISSION_KEY, index);
 		}
 
 		// @ts-ignore
-		request(checked, this.user.id, role.id);
+		request(checked, this.user.id, permission.id);
 	},
 
 	/**
@@ -197,19 +197,19 @@ export const UserRoleFieldset = Jot(
 		// @ts-ignore
 		this.fetch();
 
-		return Fieldset({ legend: "User Roles" }, [
+		return Fieldset({ legend: "Role Permissions" }, [
 			OnState('loaded', (loaded) =>
 			{
 				if (!loaded)
 				{
-					return RoleSkeleton();
+					return PermissionSkeleton();
 				}
 
-				return RoleFields({
+				return PermissionFields({
 					// @ts-ignore
-					hasRole: this.hasRole.bind(this),
+					hasPermission: this.hasPermission.bind(this),
 					// @ts-ignore
-					toggleRole: this.toggleRole.bind(this)
+					togglePermission: this.togglePermission.bind(this)
 				});
 			})
 		]);

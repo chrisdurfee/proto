@@ -1,47 +1,16 @@
 import { Div } from "@base-framework/atoms";
-import { Fieldset, Input, Textarea } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
-import { FormField, Modal } from "@base-framework/ui/molecules";
+import { Modal } from "@base-framework/ui/molecules";
 import { RoleModel } from "../models/role-model.js";
-
-/**
- * getRoleForm
- *
- * Returns an array of form fields for creating a new role.
- *
- * @returns {Array} - Array of form field components.
- */
-const getRoleForm = () => ([
-	Fieldset({ legend: "Role Settings" }, [
-		new FormField(
-			{ name: "name", label: "Role Name", description: "Enter the name of the role." },
-			[
-				Input({ type: "text", placeholder: "e.g. Admin", required: true, bind: "name" })
-			]
-		),
-		new FormField(
-			{ name: "slug", label: "Slug", description: "URL-friendly version of the role name." },
-			[
-				Input({ type: "text", placeholder: "e.g. admin", required: true, bind: "slug" })
-			]
-		),
-		new FormField(
-			{ name: "description", label: "Description", description: "A brief description of the role." },
-			[
-				Textarea({ placeholder: "A short description...", rows: 3, bind: "description" })
-			]
-		)
-	])
-]);
+import { RoleForm } from "./role-form.js";
 
 /**
  * Add a new role.
  *
  * @param {object} data
- * @param {function} onClose
  * @returns {void}
  */
-const add = (data, onClose) =>
+const add = (data) =>
 {
 	data.xhr.add('', (response) =>
 	{
@@ -62,8 +31,6 @@ const add = (data, onClose) =>
 			description: "The role has been added.",
 			icon: Icons.check
 		});
-
-		onClose();
 	});
 };
 
@@ -71,10 +38,9 @@ const add = (data, onClose) =>
  * Update an existing role.
  *
  * @param {object} data
- * @param {function} onClose - Callback function to execute on close.
  * @returns {void}
  */
-const update = (data, onClose) =>
+const update = (data) =>
 {
 	data.xhr.update('', (response) =>
 	{
@@ -95,8 +61,6 @@ const update = (data, onClose) =>
 			description: "The role has been updated.",
 			icon: Icons.check
 		});
-
-		onClose();
 	});
 };
 
@@ -112,30 +76,33 @@ export const RoleModal = (props = {}) =>
 {
 	const item = props.item || {};
 	const mode = item.id ? 'edit' : 'add';
+	const data = new RoleModel(item);
 
 	return new Modal({
-		data: new RoleModel(item),
+		data,
 		title: mode === 'edit' ? 'Edit Role' : 'Add Role',
 		icon: mode === 'edit' ? Icons.pencil.square : Icons.document.add,
 		description: mode === 'edit' ? `Editing the '${item.name}' role` : 'Let\'s add a new role.',
 		size: 'md',
 		type: 'right',
+		onClose: () => props.onClose && props.onClose(data),
 		onSubmit: ({ data }) =>
 		{
-			const onClose = () => props.onClose && props.onClose(data);
-
 			if (mode === 'edit')
 			{
-				update(data, onClose);
+				update(data);
 			}
 			else
 			{
-				add(data, onClose);
+				add(data);
 			}
 		}
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
-			Div({ class: "flex flex-auto flex-col w-full gap-4" }, getRoleForm())
+			Div({ class: "flex flex-auto flex-col w-full gap-4" }, RoleForm({
+				isEditing: mode === 'edit',
+				role: data
+			}))
 		])
 	]).open();
 };

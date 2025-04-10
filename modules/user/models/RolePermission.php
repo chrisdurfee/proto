@@ -54,4 +54,20 @@ class RolePermission extends Model
 				'description'
 			);
 	}
+
+	/**
+	 * This will delete a role permission by the roleId and permissionId.
+	 *
+	 * @param mixed $roleId
+	 * @param mixed $permissionId
+	 * @return bool
+	 */
+	public function deleteRolePermission(mixed $roleId, mixed $permissionId): bool
+	{
+		return $this->storage
+			->table()
+			->delete()
+			->where('role_id = ?', 'permission_id = ?')
+			->execute([$roleId, $permissionId]);
+	}
 }

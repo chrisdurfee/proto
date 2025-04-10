@@ -163,6 +163,13 @@ $router->resource('user/:userId/role', UserRoleController::class);
 $router->resource('role', RoleController::class);
 
 /**
+ * User Role API Routes
+ *
+ * This will handle the API routes for the User Roles.
+ */
+$router->resource('role/:roleId/permission', UserRoleController::class);
+
+/**
  * This will handle the permission routes.
  */
 $router->resource('permission', PermissionController::class);

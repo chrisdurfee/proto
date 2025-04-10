@@ -4,15 +4,12 @@ import { UserRoleFieldset } from "./user-role-fieldset.js";
 import { validate } from "./validate.js";
 
 /**
- * UserForm
+ * This will create the authentication fieldset.
  *
- * Returns an array of form fields for creating or editing a User.
- *
- * @param {object} props - The properties for the form.
- * @returns {Array} - Array of form field components.
+ * @returns {object}
  */
-export const UserForm = ({ isEditing, user }) => ([
-	(!isEditing) && Fieldset({ legend: "Authentication" }, [
+const AuthFieldset = () => (
+    Fieldset({ legend: "Authentication" }, [
 
 		new FormField(
 			{ name: "username", label: "Username", description: "Enter the user's username." },
@@ -56,8 +53,17 @@ export const UserForm = ({ isEditing, user }) => ([
 				})
 			]
 		)
-	]),
-	Fieldset({ legend: "User Information" }, [
+	])
+);
+
+/**
+ * This will create the user fieldset.
+ *
+ * @param {boolean} isEditing - Whether the user is being edited or not.
+ * @returns {object}
+ */
+const UserFieldset = (isEditing) => (
+    Fieldset({ legend: "User Information" }, [
 
 		new FormField(
 			{ name: "firstName", label: "First Name", description: "Enter the user's first name." },
@@ -92,7 +98,20 @@ export const UserForm = ({ isEditing, user }) => ([
 				})
 			]
 		)
-	]),
+	])
+);
+
+/**
+ * UserForm
+ *
+ * Returns an array of form fields for creating or editing a User.
+ *
+ * @param {object} props - The properties for the form.
+ * @returns {Array} - Array of form field components.
+ */
+export const UserForm = ({ isEditing, user }) => ([
+	(!isEditing) && AuthFieldset(),
+	UserFieldset(isEditing),
 	(isEditing) && new UserRoleFieldset({
 		user
 	})
