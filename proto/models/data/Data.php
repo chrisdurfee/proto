@@ -134,16 +134,17 @@ class Data
 	 * This will check the join fields.
 	 *
 	 * @param ModelJoin $join
+	 * @param int $depth
 	 * @return void
 	 */
-	private function checkJoinFields(ModelJoin $join): void
+	private function checkJoinFields(ModelJoin $join, int $depth = 0): void
 	{
-		$this->setJoinField($join);
+		$this->setJoinField($join, $depth);
 
 		$childJoin = $join->getMultipleJoin();
 		if ($childJoin)
 		{
-			$this->checkJoinFields($childJoin);
+			$this->checkJoinFields($childJoin, ++$depth);
 		}
 	}
 
@@ -151,9 +152,10 @@ class Data
 	 * This will set the join fields into the data object.
 	 *
 	 * @param ModelJoin $join
+	 * @param int $depth
 	 * @return void
 	 */
-	private function setJoinField(ModelJoin $join): void
+	private function setJoinField(ModelJoin $join, int $depth = 0): void
 	{
 		/**
 		 * This will exclude bridge joins.
@@ -163,7 +165,14 @@ class Data
 			$name = $join->getAs() ?? $join->getTableName();
 			$key = Strings::camelCase($name);
 			$this->nestedDataHelper->addKey($key);
-			$this->setDataField($key, []);
+
+			/**
+			 * We only root joins to the root level.
+			 */
+			if ($depth < 2)
+			{
+				$this->setDataField($key, []);
+			}
 			return;
 		}
 
