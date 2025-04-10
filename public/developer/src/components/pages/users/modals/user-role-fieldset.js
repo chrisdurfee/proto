@@ -60,14 +60,14 @@ export const UserRoleFieldset = Jot(
 	/**
 	 * This will check if the user has the role.
 	 *
-	 * @param {string} role - The role to check.
+	 * @param {string} roleName - The role name to check.
 	 * @returns {boolean}
 	 */
-	hasRole(role)
+	hasRole(roleName)
 	{
 		// @ts-ignore
 		const roles = this?.user?.roles || [];
-		return roles.includes(role);
+		return roles.find(role => role.name === roleName) !== undefined;
 	},
 
 	/**
