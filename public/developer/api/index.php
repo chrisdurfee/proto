@@ -5,6 +5,7 @@ use Modules\User\Controllers\RoleController;
 use Modules\User\Controllers\UserController;
 use Modules\User\Controllers\UserRoleController;
 use Modules\User\Controllers\PermissionController;
+use Modules\User\Controllers\RolePermissionController;
 use Proto\Http\Router\Router;
 use Developer\App\Auth\Auth;
 use Developer\App\Controllers\GeneratorController;
@@ -167,7 +168,7 @@ $router->resource('role', RoleController::class);
  *
  * This will handle the API routes for the User Roles.
  */
-$router->resource('role/:roleId/permission', UserRoleController::class);
+$router->resource('role/:roleId/permission', RolePermissionController::class);
 
 /**
  * This will handle the permission routes.

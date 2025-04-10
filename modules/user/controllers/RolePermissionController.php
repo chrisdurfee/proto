@@ -32,7 +32,7 @@ class RolePermissionController extends Controller
 	public function delete(int|object $data): object
 	{
 		return $this->response(
-			$this->model()->deleteRolePermission($data->userId, $data->roleId)
+			$this->model()->deleteRolePermission($data->roleId, $data->permissionId)
 		);
 	}
 }

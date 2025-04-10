@@ -10,14 +10,14 @@ import { RolePermissionModel } from "../models/role-permission-model.js";
  * This will add or remove the role for the user.
  *
  * @param {boolean} checked
- * @param {number} userId
  * @param {number} roleId
+ * @param {number} permissionId
  */
-const request = (checked, userId, roleId) =>
+const request = (checked, roleId, permissionId) =>
 {
 	const model = new RolePermissionModel({
-		userId,
-		roleId
+		roleId,
+		permissionId
 	});
 
 	const method = checked ? 'add' : 'delete';
@@ -184,7 +184,7 @@ export const RolePermissionFieldset = Jot(
 		}
 
 		// @ts-ignore
-		request(checked, this.user.id, permission.id);
+		request(checked, this.role.id, permission.id);
 	},
 
 	/**
