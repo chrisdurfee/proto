@@ -166,7 +166,8 @@ class Resource
 			case "PUT":
 				return $this->call('setup', [$item]);
 			case "DELETE":
-				return $this->call('delete', [$resourceId]);
+				$data = $item ?? $resourceId;
+				return $this->call('delete', [$data]);
 			case "PATCH":
 				return $this->call('update', [$item]);
 			default:
