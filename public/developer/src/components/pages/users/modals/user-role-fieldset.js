@@ -75,16 +75,17 @@ export const UserRoleFieldset = Jot(
 	 *
 	 * @param {object} role - The role to toggle.
 	 * @param {boolean} checked - The checked state of the checkbox.
+	 * @param {number} index - The index of the role.
 	 */
-	toggleRole(role, checked)
+	toggleRole(role, checked, index)
 	{
 		// @ts-ignore
-		this.user.roles = this.user.roles.filter((r) => r !== role.name);
+		this.user.splice('roles', index)
 
 		if (checked)
 		{
 			// @ts-ignore
-			this.user.roles.push(role);
+			this.user.push('roles', role);
 		}
 
 		const model = new UserRoleModel({
@@ -151,7 +152,7 @@ export const UserRoleFieldset = Jot(
 					class: 'flex flex-col space-y-2',
 					for: [
 						'rows',
-						(role) => new FormField(
+						(role, index) => new FormField(
 						{
 							name: role.name,
 							description: role.description
@@ -165,7 +166,7 @@ export const UserRoleFieldset = Jot(
 								onChange: (checked, e) =>
 								{
 									// @ts-ignore
-									this.toggleRole(role, checked);
+									this.toggleRole(role, checked, index);
 								}
 							})
 						])
