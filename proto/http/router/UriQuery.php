@@ -29,7 +29,7 @@ abstract class UriQuery
 		$uriQuery .= preg_replace('/\//', '\/', $uri);
 
 		// add slash before optional param
-		$uriQuery = preg_replace('/(?:(\\\*\/):[^\/(]*?\?)/', '(?:$|\/)', $uriQuery);
+		$uriQuery = preg_replace('/(\\\*\/)(:[^\/(]*?\?)/', '(?:$|\/)$2', $uriQuery);
 
 		// add slash after optional param
 		$uriQuery = preg_replace('/(\?\\\\\/+\*?)/', '?\/*', $uriQuery);
