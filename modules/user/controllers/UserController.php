@@ -33,7 +33,7 @@ class UserController extends ModelController
 	 */
 	public function add(object $data): object
 	{
-		$isTaken = User::isUsernameTaken($data->username);
+		$isTaken = User::isUsernameTaken($data->username ?? '');
 		if ($isTaken)
 		{
 			return $this->error('Username is already taken.');
