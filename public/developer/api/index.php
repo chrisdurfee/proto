@@ -160,7 +160,7 @@ $router->resource('user/:userId/role', UserRoleController::class);
 /**
  * This will handle the role routes.
  */
-$router->resource('user/role', RoleController::class);
+$router->resource('role', RoleController::class);
 
 /**
  * This will handle the permission routes.
