@@ -3,6 +3,7 @@ include_once __DIR__ . '/../app/autoload.php';
 
 use Modules\User\Controllers\RoleController;
 use Modules\User\Controllers\UserController;
+use Modules\User\Controllers\UserRoleController;
 use Modules\User\Controllers\PermissionController;
 use Proto\Http\Router\Router;
 use Developer\App\Auth\Auth;
@@ -147,14 +148,21 @@ $router->get('table/columns*', function($req, $params)
 /**
  * This will handle the user routes.
  */
-$router->resource('user*', UserController::class);
+$router->resource('user', UserController::class);
+
+/**
+ * User Role API Routes
+ *
+ * This will handle the API routes for the User Roles.
+ */
+$router->resource('user/:userId/role', UserRoleController::class);
 
 /**
  * This will handle the role routes.
  */
-$router->resource('role*', RoleController::class);
+$router->resource('user/role', RoleController::class);
 
 /**
  * This will handle the permission routes.
  */
-$router->resource('permission*', PermissionController::class);
+$router->resource('permission', PermissionController::class);
