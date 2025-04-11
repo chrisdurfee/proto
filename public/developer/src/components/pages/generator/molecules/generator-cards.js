@@ -18,6 +18,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Full Resource'
 			}),
+			description: 'Create a full resource with all the necessary files.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -25,6 +26,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Module'
 			}),
+			description: 'Create a new module directory.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -32,6 +34,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Gateway'
 			}),
+			description: 'Create a module gateway.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -39,6 +42,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'API'
 			}),
+			description: 'Create an API.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -46,6 +50,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Controller'
 			}),
+			description: 'Create a controller.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -53,6 +58,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Model'
 			}),
+			description: 'Create a model.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -60,6 +66,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Storage'
 			}),
+			description: 'Create a storage.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -67,6 +74,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Policy'
 			}),
+			description: 'Create a policy.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -74,6 +82,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Table'
 			}),
+			description: 'Create a database table.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -81,6 +90,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Migration'
 			}),
+			description: 'Create a new migration.',
 			icon: Icons.document.duplicate
 		}),
 		ResourceCard({
@@ -88,6 +98,7 @@ export const GeneratorCards = () =>
 			click: () => GeneratorModal({
 				resourceType: 'Unit Test'
 			}),
+			description: 'Create a test.',
 			icon: Icons.document.duplicate
 		})
 	])
