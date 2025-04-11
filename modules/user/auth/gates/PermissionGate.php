@@ -20,7 +20,24 @@ class PermissionGate extends Gate
 	 */
 	public function hasPermission(string $permission): bool
 	{
-		$userPermissions = $this->get('user')->roles->permissions ?? [];
-		return in_array($permission, $userPermissions, true);
+		$user = $this->get('user');
+		if ($user === null)
+		{
+			return false;
+		}
+
+		$roles = $user->roles ?? [];
+		foreach ($roles as $role)
+		{
+			$permissions = $role->permissions ?? [];
+			foreach ($permissions as $perm)
+			{
+				if ($perm->slug === $permission)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
