@@ -85,6 +85,11 @@ class ExampleMigration extends Migration
         // Code to update the database.
     }
 
+	public function seed(): void
+    {
+        // Code to ssed the database.
+    }
+
     public function down(): void
     {
         // Code to revert the changes.
@@ -206,6 +211,79 @@ class ExampleMigration extends Migration
 
     // Drop the table.
     $this->drop('test_table');
+}`
+				)
+			]),
+
+			// Seeding Data
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Seeding Data'),
+				P({ class: 'text-muted-foreground' },
+					`You can also seed data in the up() method. For example:`
+				),
+				CodeBlock(
+`/**
+ * Seed the database with roles and permissions.
+ *
+ * @return void
+ */
+public function seed(): void
+{
+	// Define basic roles
+	$roles = [
+		[
+			'name' => 'Administrator',
+			'slug' => 'admin',
+			'description' => 'Full system access'
+		]
+	];
+
+	// Insert roles
+	foreach ($roles as $role)
+	{
+		$this->insert('roles', $role);
+	}
+
+	// Define basic permissions
+	$permissions = [
+		// User management permissions
+		[
+			'name' => 'View Users',
+			'slug' => 'users.view',
+			'description' => 'Can view users',
+			'module' => 'user',
+		]
+	];
+
+	// Insert permissions
+	foreach ($permissions as $permission)
+	{
+		$this->insert('permissions', $permission);
+	}
+
+	// Get the role IDs
+	$managerRoleId = $this->first('SELECT id FROM roles WHERE slug = ?', ['manager'])->id;
+	$editorRoleId = $this->first('SELECT id FROM roles WHERE slug = ?', ['editor'])->id;
+
+	// Assign all permissions to the manager role
+	$allPermissions = $this->fetch('SELECT id FROM permissions');
+	foreach ($allPermissions as $permission)
+	{
+		$this->insert('role_permissions', [
+			'role_id' => $managerRoleId,
+			'permission_id' => $permission->id,
+		]);
+	}
+
+	// Assign only view and edit permissions to the editor role
+	$editorPermissions = $this->fetch('SELECT id FROM permissions WHERE slug LIKE "%.view" OR slug LIKE "%.edit"');
+	foreach ($editorPermissions as $permission)
+	{
+		$this->insert('role_permissions', [
+			'role_id' => $editorRoleId,
+			'permission_id' => $permission->id,
+		]);
+	}
 }`
 				)
 			]),
