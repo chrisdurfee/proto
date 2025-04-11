@@ -69,8 +69,7 @@ class User extends Model
 			->fields(
 				'id',
 				'name',
-				'slug',
-				'description'
+				'slug'
 			)
 
 			/**
@@ -84,9 +83,7 @@ class User extends Model
 				->fields(
 					'id',
 					'name',
-					'slug',
-					'description',
-					'module'
+					'slug'
 				);
 	}
 

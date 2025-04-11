@@ -20,7 +20,7 @@ class PermissionGate extends Gate
 	 */
 	public function hasPermission(string $permission): bool
 	{
-		$userPermissions = $this->get('user')->permissions ?? [];
+		$userPermissions = $this->get('user')->roles->permissions ?? [];
 		return in_array($permission, $userPermissions, true);
 	}
 }
