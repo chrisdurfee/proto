@@ -36,7 +36,7 @@ class ResourceGate extends Gate
 	 * @param mixed $ownerId The resource or owner value.
 	 * @return bool True if the current user owns the resource, otherwise false.
 	 */
-	public static function isOwner(mixed $ownerId): bool
+	public static function owns(mixed $ownerId): bool
 	{
 		$instance = new self();
 		return $instance->ownsResource($ownerId);
