@@ -20,7 +20,45 @@ class RoleGate extends Gate
 	 */
 	public function hasRole(string $role): bool
 	{
-		$userRoles = $this->get('user')->roles ?? [];
-		return in_array($role, $userRoles, true);
+		$user = $this->get('user');
+		if (!$user)
+		{
+			return false;
+		}
+
+		$roles = $user->roles ?? [];
+		foreach ($roles as $r)
+		{
+			if ($r->slug === $role)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if the user has the specified role.
+	 *
+	 * @param string $role The role name to check.
+	 * @return bool True if the user has the role, otherwise false.
+	 */
+	public function hasRoleName(string $role): bool
+	{
+		$user = $this->get('user');
+		if (!$user)
+		{
+			return false;
+		}
+
+		$roles = $user->roles ?? [];
+		foreach ($roles as $r)
+		{
+			if ($r->name === $role)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }
