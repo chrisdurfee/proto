@@ -4,6 +4,7 @@ namespace Modules\User\Auth\Policies;
 use Proto\Auth\Policies\Policy as BasePolicy;
 use Modules\User\Auth\Gates\RoleGate;
 use Modules\User\Auth\Gates\PermissionGate;
+use Modules\User\Auth\Gates\ResourceGate;
 use Proto\Controllers\Controller;
 
 /**
@@ -28,11 +29,13 @@ class Policy extends BasePolicy
 	 * @param ?Controller $controller The controller instance associated with this policy.
 	 * @param ?RoleGate $roleGate The role gate instance for role-based access control.
 	 * @param ?PermissionGate $permissionGate The permission gate instance for permission-based access control.
+	 * @param ?ResourceGate $resourceGate The resource gate instance for resource-based access control.
 	 */
 	public function __construct(
 		?Controller $controller = null,
 		protected ?RoleGate $roleGate = new RoleGate(),
-		protected ?PermissionGate $permissionGate = new PermissionGate()
+		protected ?PermissionGate $permissionGate = new PermissionGate(),
+		protected ?ResourceGate $resourceGate = new ResourceGate()
 	)
 	{
 		parent::__construct($controller);
@@ -67,5 +70,21 @@ class Policy extends BasePolicy
 			return true;
 		}
 		return $this->permissionGate->hasPermission($permissionSlug);
+	}
+
+	/**
+	 * Helper method to check if the user owns a resource.
+	 *
+	 * @param mixed $ownerId The resource or owner value.
+	 * @return bool True if the user owns the resource, otherwise false.
+	 */
+	protected function ownsResource(mixed $ownerId): bool
+	{
+		if ($this->isAdmin())
+		{
+			return true;
+		}
+
+		return $this->resourceGate->ownsResource($ownerId);
 	}
 }

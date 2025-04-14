@@ -61,6 +61,28 @@ class UserPolicy extends Policy
 	}
 
 	/**
+	 * Determines if the user can edit an existing user.
+	 *
+	 * @param mixed $data User data or ID.
+	 * @return bool True if the user can edit users, otherwise false.
+	 */
+	protected function canEdit(mixed $data): bool
+	{
+		if ($this->canAccess('users.edit'))
+		{
+			return true;
+		}
+
+		$userId = $data->id ?? null;
+		if ($userId === null)
+		{
+			return false;
+		}
+
+		return $this->ownsResource($userId);
+	}
+
+	/**
 	 * Determines if the user can update an existing user.
 	 *
 	 * @param object $data The updated user data.
@@ -68,7 +90,7 @@ class UserPolicy extends Policy
 	 */
 	public function update(object $data): bool
 	{
-		return $this->canAccess('users.edit');
+		return $this->canEdit($data);
 	}
 
 	/**
