@@ -40,4 +40,16 @@ class PermissionGate extends Gate
 		}
 		return false;
 	}
+
+	/**
+	 * Checks if the user has the specified permission.
+	 *
+	 * @param string $permission The permission name to check.
+	 * @return bool True if the user has the permission, otherwise false.
+	 */
+	public static function has(string $permission): bool
+	{
+		$instance = new self();
+		return $instance->hasPermission($permission);
+	}
 }

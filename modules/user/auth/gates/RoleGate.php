@@ -61,4 +61,16 @@ class RoleGate extends Gate
 		}
 		return false;
 	}
+
+	/**
+	 * Checks if the user has the specified role.
+	 *
+	 * @param string $role The role name to check.
+	 * @return bool True if the user has the role, otherwise false.
+	 */
+	public static function has(string $role): bool
+	{
+		$instance = new self();
+		return $instance->hasRole($role);
+	}
 }

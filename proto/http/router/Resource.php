@@ -7,6 +7,7 @@ use Proto\Cache\Policies\ModelPolicy;
 use Proto\Cache\Policies\Policy;
 use Proto\Cache\Policies\PolicyProxy as CacheProxy;
 use Proto\Controllers\Controller;
+use Proto\Controllers\ControllerInterface;
 
 /**
  * Resource
@@ -19,9 +20,14 @@ use Proto\Controllers\Controller;
 class Resource
 {
 	/**
-	 * @var object $controller The controller instance associated with the resource.
+	 * @var ControllerInterface $controller The controller instance associated with the resource.
 	 */
-	protected object $controller;
+	protected ControllerInterface $controller;
+
+	/**
+	 * @var ?Policy $policy The policy instance associated with the resource.
+	 */
+	protected ?Policy $policy = null;
 
 	/**
 	 * Initializes the route.
@@ -36,6 +42,23 @@ class Resource
 	)
 	{
 		$this->controller = $this->getController($controller);
+	}
+
+	/**
+	 * This will set the policy for the controller.
+	 *
+	 * @param string $policy
+	 * @return self
+	 */
+	public function policy(
+		string $policy
+	): mixed
+	{
+		if (class_exists($policy))
+		{
+			$this->policy = new $policy($this->controller);
+		}
+		return $this;
 	}
 
 	/**
@@ -68,9 +91,9 @@ class Resource
 	 * before calling the methods.
 	 *
 	 * @param string $controller
-	 * @return object
+	 * @return ControllerInterface
 	 */
-	public function getController(string $controller): object
+	public function getController(string $controller): ControllerInterface
 	{
 		$controller = new $controller();
 

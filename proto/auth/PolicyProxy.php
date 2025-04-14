@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Auth;
 
+use Proto\Controllers\ControllerInterface;
 use Proto\Controllers\Response;
 use Proto\Http\Response as HttpResponse;
 
@@ -11,7 +12,7 @@ use Proto\Http\Response as HttpResponse;
  *
  * @package Proto\Auth
  */
-class PolicyProxy
+class PolicyProxy implements ControllerInterface
 {
 	/**
 	 * Initializes the proxy with a controller and its corresponding policy.
