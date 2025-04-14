@@ -14,7 +14,7 @@ use Proto\Base;
  * @package Proto\Controllers
  * @abstract
  */
-abstract class Controller extends Base
+abstract class Controller extends Base implements ControllerInterface
 {
 	/**
 	 * @var string|null $policy

@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Auth\Policies;
 
+use Proto\Controllers\ControllerInterface;
+
 /**
  * Class Policy
  *
@@ -12,7 +14,10 @@ namespace Proto\Auth\Policies;
 abstract class Policy
 {
 	/**
-	 * @param object|null $controller The controller instance associated with this policy.
+	 * This will create a new instance of the policy.
+	 *
+	 * @param ?ControllerInterface $controller The controller instance associated with this policy.
+	 * @return void
 	 */
-	public function __construct(protected ?object $controller = null) {}
+	public function __construct(protected ?ControllerInterface $controller = null) {}
 }
