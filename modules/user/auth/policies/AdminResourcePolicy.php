@@ -1,46 +1,15 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Auth\Policies;
 
-use Proto\Auth\Policies\Policy;
-use Modules\User\Auth\Gates\RoleGate;
-use Proto\Controllers\Controller;
-
 /**
  * AdminResourcePolicy
  *
- * This class is used to handle the admin resource policy.
+ * This will create a policy for the admin resource.
  *
  * @package Modules\User\Auth\Policies
  */
 class AdminResourcePolicy extends Policy
 {
-	/**
-	 * This will create a new instance of the admin resource policy.
-	 *
-	 * @param ?Controller $controller
-	 * @param mixed $roleGate
-	 */
-	public function __construct(
-		?object $controller = null,
-		?RoleGate $roleGate = null
-	)
-    {
-        parent::__construct($controller);
-        $this->roleGate = $roleGate ?? new RoleGate();
-    }
-
-	/**
-	 * This will check if the user is an admin.
-	 *
-	 * @return bool
-	 */
-	public function isAdmin(): bool
-	{
-		$ROLE_SLUG = 'admin';
-		$gate = new RoleGate();
-		return $gate->hasRole($ROLE_SLUG);
-	}
-
 	/**
 	 * This will secure all non standard methods.
 	 *
