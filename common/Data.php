@@ -13,7 +13,9 @@ use Proto\Patterns\Structural\Registry;
 class Data extends Registry
 {
 	/**
-	 * @var object $instance
+	 * The singleton instance.
+	 *
+	 * @var self|null
 	 */
-	protected static $instance = null;
+	protected static ?self $instance = null;
 }

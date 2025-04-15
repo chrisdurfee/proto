@@ -1,24 +1,37 @@
 <?php declare(strict_types=1);
-namespace Common;
-
-use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
-
-/**
- * Auth
- *
- * This will allow authentication to be handled.
- *
- * @package Common
- */
-class Auth
+namespace Common
 {
+	use Proto\Patterns\Structural\Registry;
+
 	/**
-	 * This will get a CSRF gate instance.
+	 * Auth
 	 *
-	 * @return CrossSiteRequestForgeryGate
+	 * This will allow authentication to be handled.
+	 *
+	 * @package Common
 	 */
-	public static function csrf(): CrossSiteRequestForgeryGate
+	class Auth extends Registry
 	{
-		return new CrossSiteRequestForgeryGate();
+		/**
+		 * The singleton instance.
+		 *
+		 * @var self|null
+		 */
+		protected static ?self $instance = null;
+	}
+}
+
+namespace
+{
+	use Common\Auth;
+
+	/**
+	 * This will get the instance of Auth.
+	 *
+	 * @return Auth
+	 */
+	function auth(): Auth
+	{
+		return Auth::getInstance();
 	}
 }
