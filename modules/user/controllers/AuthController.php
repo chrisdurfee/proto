@@ -3,7 +3,7 @@ namespace Modules\User\Controllers;
 
 use Modules\User\Models\User;
 use Modules\User\Models\LoginLog;
-use Modules\User\Models\LoginAttempt;
+use Modules\User\Controllers\LoginAttemptController;
 use Proto\Controllers\Controller;
 use Proto\Http\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
@@ -29,7 +29,7 @@ class AuthController extends Controller
 	}
 
 	/**
-	 * User login.
+	 * This will handle user login.
 	 *
 	 * @param Request $req
 	 * @return object
@@ -49,19 +49,35 @@ class AuthController extends Controller
 			return $this->error('Invalid email or password');
 		}
 
-		$user = $this->modelClass::get($userId);
+		$user = $this->getUserId($userId);
 		if (! $user)
 		{
 			return $this->error('User not found');
 		}
-
-		$this->setSessionUser($user);
 
 		return (object)
 		[
 			'user' => $user,
 			'success' => true
 		];
+	}
+
+	/**
+	 * This will get the user id and set it to the session.
+	 *
+	 * @param mixed $userId
+	 * @return User|null
+	 */
+	protected function getUserId(mixed $userId): ?User
+	{
+		$user = $this->modelClass::get($userId);
+		if (! $user)
+		{
+			return null;
+		}
+
+		$this->setSessionUser($user);
+		return $user;
 	}
 
 	/**
@@ -115,10 +131,8 @@ class AuthController extends Controller
 	 */
 	protected function updateLoginStatus(int $id, string $status): ?bool
 	{
-		/* we want to check if the user has loged in or out */
 		if ($status === 'online' || $status === 'offline')
 		{
-			/* we want to log the login or logout */
 			$direction = ($status === 'online')? 'login' : 'logout';
 			return LoginLog::create((object)[
 				'dateTimeSetup' => date('Y-m-d H:i:s'),
@@ -163,13 +177,11 @@ class AuthController extends Controller
 			return $this->error('Registration failed');
 		}
 
-		$user = $this->modelClass::get($model->id);
+		$user = $this->getUserId($model->id);
 		if (! $user)
 		{
 			return $this->error('User not found');
 		}
-
-		$this->setSessionUser($user);
 
 		return $this->response([
 			'user' => $user
