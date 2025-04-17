@@ -43,7 +43,7 @@ export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
 		type: 'right',
 		onSubmit: ({ data }) =>
 		{
-			const modelFields = (data.get('model.fields') || '').replace(/\n/g, ' ').trim();
+			const modelFields = (data.get('model.fields') || '').replace(/\n/g, '').trim();
 			data.set('model.fields', modelFields);
 
 			data.xhr.add('', (response) =>
