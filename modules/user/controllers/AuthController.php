@@ -91,11 +91,9 @@ class AuthController extends Controller
 			return $this->error('The user account not found.');
 		}
 
-		return (object)
-		[
-			'user' => $user,
-			'success' => true
-		];
+		return $this->response([
+			'user' => $user
+		]);
 	}
 
 	/**

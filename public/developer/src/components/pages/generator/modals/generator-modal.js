@@ -43,6 +43,9 @@ export const GeneratorModal = ({ resourceType = 'Full Resource' }) =>
 		type: 'right',
 		onSubmit: ({ data }) =>
 		{
+			const modelFields = (data.get('model.fields') || '').replace(/\n/g, ' ').trim();
+			data.set('model.fields', modelFields);
+
 			data.xhr.add('', (response) =>
 			{
 				if (!response || response.success === false)
@@ -189,8 +192,8 @@ function getResourceForm(type, fullResource = false)
 						new FormField({ name: "tableName", label: "Table Name", description: "The database table name." }, [
 							Input({ type: "text", placeholder: "e.g. table_name", required: true, bind: "model.tableName", blur: () => getColumns() })
 						]),
-						new FormField({ name: "alias", label: "Alias", description: "An alias used in queries.", required: true }, [
-							Input({ type: "text", placeholder: "e.g. a", bind: "model.alias" })
+						new FormField({ name: "alias", label: "Alias", description: "An alias used in queries." }, [
+							Input({ type: "text", placeholder: "e.g. a", bind: "model.alias", required: true })
 						]),
 						new FormField({ name: "fields", label: "Fields", description: "Define fields for the model." }, [
 							Textarea({ placeholder: "e.g.\nid:\ncreatedAt:\nupdatedAt:", rows: 4, required: true, bind: "model.fields" })
