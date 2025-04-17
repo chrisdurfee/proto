@@ -16,6 +16,13 @@ use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
 class AuthController extends Controller
 {
 	/**
+	 * Maximum login attempts allowed.
+	 *
+	 * @var int
+	 */
+	const MAX_ATTEMPTS = 10;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string|null $modelClass
@@ -26,6 +33,29 @@ class AuthController extends Controller
 	)
 	{
 		parent::__construct();
+	}
+
+	/**
+	 * This will count login attempt from the ip address.
+	 *
+	 * @param string $username
+	 * @return int
+	 */
+	protected function getAttempts(string $username): int
+	{
+		$controller = new LoginAttemptController();
+		return $controller->countAttempts(Request::ip(), $username);
+	}
+
+	/**
+	 * This will check if the attempts are under the max.
+	 *
+	 * @param int $attempts
+	 * @return bool
+	 */
+	protected function isUnderAttemptMax(int $attempts): bool
+	{
+		return ($attempts < self::MAX_ATTEMPTS);
 	}
 
 	/**
@@ -43,16 +73,22 @@ class AuthController extends Controller
 			return $this->error('Username and password are required');
 		}
 
+		$attempts = $this->getAttempts($username);
+		if ($this->isUnderAttemptMax($attempts) === false)
+		{
+			return $this->error('You have reached the 15 minute limit for that username.');
+		}
+
 		$userId = $this->authenticate($username, $password);
 		if ($userId === -1)
 		{
-			return $this->error('Invalid email or password');
+			return $this->error('The credentials are invalid. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS . '.');
 		}
 
 		$user = $this->getUserId($userId);
-		if (! $user)
+		if (!$user)
 		{
-			return $this->error('User not found');
+			return $this->error('The user account not found.');
 		}
 
 		return (object)

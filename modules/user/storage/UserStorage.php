@@ -124,12 +124,14 @@ class UserStorage extends Storage
 			)
 			->first($params);
 
-		if ($row)
+		if (!$row)
 		{
-			if (PasswordHelper::verifyPassword($password, $row->password))
-			{
-				$userId = $row->id;
-			}
+			return $userId;
+		}
+
+		if (PasswordHelper::verifyPassword($password, $row->password))
+		{
+			$userId = $row->id;
 		}
 
 		return $userId;
@@ -154,12 +156,14 @@ class UserStorage extends Storage
 			)
 			->first($params);
 
-		if ($row)
+		if (!$row)
 		{
-			if (PasswordHelper::verifyPassword($password, $row->password))
-			{
-				$userId = $row->id;
-			}
+			return $userId;
+		}
+
+		if (PasswordHelper::verifyPassword($password, $row->password))
+		{
+			$userId = $row->id;
 		}
 
 		return $userId;
