@@ -1,13 +1,14 @@
 <?php declare(strict_types=1);
-
-namespace Modules\User\Models\Mutifactor;
+namespace Modules\User\Models\Multifactor;
 
 use Proto\Models\Model;
 
 /**
  * UserAuthedLocation
- * 
- * @package Modules\User\Models\Mutifactor
+ *
+ * This model represents the locations that a user has authenticated from.
+ *
+ * @package Modules\User\Models\Multifactor
  */
 class UserAuthedLocation extends Model
 {
@@ -26,17 +27,16 @@ class UserAuthedLocation extends Model
 	 */
 	protected static array $fields = [
 		'id',
-		' createdAt',
-		' updatedAt',
-		' city',
-		' region',
-		' regionCode',
-		' country',
-		' countryCode',
-		' postal',
-		' position',
-		' timezone',
-		' deletedAt'
+		'createdAt',
+		'updatedAt',
+		'city',
+		'region',
+		'regionCode',
+		'country',
+		'countryCode',
+		'postal',
+		'position',
+		'timezone',
+		'deletedAt'
 	];
-
 }

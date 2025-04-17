@@ -1,12 +1,13 @@
 <?php declare(strict_types=1);
-
 namespace Modules\User\Models\Multifactor;
 
 use Proto\Models\Model;
 
 /**
  * UserAuthedConnection
- * 
+ *
+ * This model represents the connections that a user has authenticated from.
+ *
  * @package Modules\User\Models\Multifactor
  */
 class UserAuthedConnection extends Model
@@ -26,12 +27,12 @@ class UserAuthedConnection extends Model
 	 */
 	protected static array $fields = [
 		'id',
-		' createdAt',
-		' accessedAt',
-		' ipAddress',
-		' deviceId',
-		' locationId',
-		' deletedAt'
+		'createdAt',
+		'accessedAt',
+		'ipAddress',
+		'deviceId',
+		'locationId',
+		'deletedAt'
 	];
 
 }
