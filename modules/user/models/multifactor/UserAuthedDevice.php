@@ -2,6 +2,7 @@
 namespace Modules\User\Models\Multifactor;
 
 use Proto\Models\Model;
+use Modules\User\Storage\Multifactor\UserAuthedDeviceStorage;
 
 /**
  * UserAuthedDevice
@@ -41,4 +42,35 @@ class UserAuthedDevice extends Model
 		'deletedAt'
 	];
 
+	/**
+	 * Define joins for the model.
+	 *
+	 * @param object $builder The query builder object
+	 * @return void
+	 */
+	protected static function joins(object $builder): void
+	{
+		UserAuthedConnection::many($builder)
+            ->on(['id', 'deviceId'])
+            ->fields('ipAddress')
+
+			/**
+			 * This will define the relationship between the authenticated connection
+			 * and its location.
+			 */
+            ->one(UserAuthedLocation::class)
+				->on(['locationId', 'id'])
+				->fields(
+					'city',
+					'region',
+					'regionCode',
+					'country',
+					'countryCode'
+				);
+	}
+
+	/**
+	 * @var string $storageType
+	 */
+	protected static string $storageType = UserAuthedDeviceStorage::class;
 }

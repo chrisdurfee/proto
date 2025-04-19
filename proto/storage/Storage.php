@@ -60,6 +60,12 @@ class Storage implements StorageInterface
 	protected static string $compiledSelect;
 
 	/**
+	 * Parameter casts for the model.
+	 * @var array
+	 */
+	protected static array $paramCasts = [];
+
+	/**
 	 * Storage constructor.
 	 *
 	 * @param ModelInterface $model The model instance.

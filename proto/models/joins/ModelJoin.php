@@ -354,6 +354,24 @@ class ModelJoin
 	}
 
 	/**
+	 * Define a 'one' relationship join originating from this join's context.
+	 *
+	 * @param string $modelClass The target model class for the 'one' side.
+	 * @param string $type Join type.
+	 * @return ModelJoin Returns the newly created ModelJoin representing the 'one' side.
+	 */
+	public function one(string $modelClass, string $type = 'left'): ModelJoin
+	{
+		$builder = $this->join($modelClass);
+		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
+
+		$this->multipleJoin = $modelJoin;
+		$modelJoin->references($this->tableName, $this->alias);
+
+		return $modelJoin;
+	}
+
+	/**
 	 * Creates a ModelJoin instance representing a child relationship join.
 	 *
 	 * @param JoinBuilder $builder The builder context (usually linked or created).
