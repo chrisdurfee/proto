@@ -11,7 +11,6 @@ use Modules\User\Models\Permission;
  */
 class PermissionController extends Controller
 {
-
 	/**
 	 * Initializes the model class.
 	 *
