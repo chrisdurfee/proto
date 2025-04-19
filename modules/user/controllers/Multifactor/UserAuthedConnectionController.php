@@ -121,14 +121,14 @@ class UserAuthedConnectionController extends Controller
 	protected function setupLocation(string $ipAddress): ?int
 	{
         $result = $this->getLocation($ipAddress);
-        if(empty($result))
+        if (empty($result))
         {
             return null;
         }
 
 		$model = new UserAuthedLocation($result);
 		$result = $model->setup();
-		return ($result)? $model->id : null;
+		return ($result) ? $model->id : null;
 	}
 
 	/**
