@@ -7,13 +7,13 @@ use Modules\User\Models\Multifactor\UserAuthedLocation;
 use Proto\Controllers\ModelController as Controller;
 
 /**
- * UserAuthedController
+ * UserAuthedConnectionController
  *
  * This controller handles CRUD operations for the UserAuthedConnection model.
  *
  * @package Modules\User\Controllers\Methods
  */
-class UserAuthedController extends Controller
+class UserAuthedConnectionController extends Controller
 {
 	/**
 	 * Initializes the model class.
@@ -73,27 +73,56 @@ class UserAuthedController extends Controller
 	 * This will add or update the device for the user.
 	 *
 	 * @param object $data
-	 * @return bool
+	 * @return int|null
 	 */
-	protected function setupDevice(object $data): bool
+	protected function setupDevice(object $data): ?int
 	{
-		return UserAuthedDevice::put($data);
+		$model = new UserAuthedDevice($data);
+		$result = $model->setup();
+		return ($result)? $model->id : null;
 	}
 
 	/**
 	 * This will add or update the location for the user.
 	 *
 	 * @param string $ipAddress
-	 * @return bool
+	 * @return int|null
 	 */
-	protected function setupLocation(string $ipAddress): bool
+	protected function setupLocation(string $ipAddress): ?int
 	{
         $result = $this->getLocation($ipAddress);
         if(empty($result))
         {
-            return false;
+            return null;
         }
 
-		return UserAuthedLocation::put($result);
+		$model = new UserAuthedLocation($result);
+		$result = $model->setup();
+		return ($result)? $model->id : null;
+	}
+
+	/**
+	 * This will setup the user authed connection.
+	 *
+	 * @param object $data
+	 * @return object
+	 */
+	public function setup(object $data): object
+	{
+		/**
+		 * This will setup the device and location for the user
+		 * before creating the connection.
+		 */
+		$deviceId = $this->setupDevice($data->device);
+		$locationId = $this->setupLocation($data->ipAddress);
+
+		if ($deviceId === null)
+		{
+			return $this->error('Unable to setup device');
+		}
+
+		$data->deviceId = $deviceId;
+		$data->locationId = $locationId ?? null;
+		return parent::setup($data);
 	}
 }
