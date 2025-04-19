@@ -37,6 +37,8 @@ class UserAuthedLocation extends Model
 		'countryCode',
 		'postal',
 		'position',
+		[['X(`position`)'], 'latitude'],
+		[['Y(`position`)'], 'longitude'],
 		'timezone',
 		'deletedAt'
 	];
