@@ -2,6 +2,7 @@
 namespace Modules\User\Models\Multifactor;
 
 use Proto\Models\Model;
+use Modules\User\Storage\Multifactor\UserAuthedConnectionStorage;
 
 /**
  * UserAuthedConnection
@@ -35,4 +36,8 @@ class UserAuthedConnection extends Model
 		'deletedAt'
 	];
 
+	/**
+	 * @var string $storageType
+	 */
+	protected static string $storageType = UserAuthedConnectionStorage::class;
 }

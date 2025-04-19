@@ -2,6 +2,7 @@
 namespace Modules\User\Models\Multifactor;
 
 use Proto\Models\Model;
+use Modules\User\Storage\Multifactor\UserAuthedLocationStorage;
 
 /**
  * UserAuthedLocation
@@ -39,4 +40,9 @@ class UserAuthedLocation extends Model
 		'timezone',
 		'deletedAt'
 	];
+
+	/**
+	 * @var string $storageType
+	 */
+	protected static string $storageType = UserAuthedLocationStorage::class;
 }
