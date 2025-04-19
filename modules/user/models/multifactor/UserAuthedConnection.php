@@ -37,6 +37,28 @@ class UserAuthedConnection extends Model
 	];
 
 	/**
+	 * Define joins for the model.
+	 *
+	 * @param object $builder The query builder object
+	 * @return void
+	 */
+	protected static function joins(object $builder): void
+	{
+		UserAuthedDevice::one($builder)
+			->on(['deviceId', 'id']);
+
+		UserAuthedLocation::one($builder)
+			->on(['locationId', 'id'])
+			->fields(
+				'city',
+				'region',
+				'regionCode',
+				'country',
+				'countryCode'
+			);
+	}
+
+	/**
 	 * @var string $storageType
 	 */
 	protected static string $storageType = UserAuthedConnectionStorage::class;
