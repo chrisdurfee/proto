@@ -4,6 +4,7 @@ namespace Modules\User\Controllers\Multifactor;
 use Modules\User\Models\Multifactor\UserAuthedConnection;
 use Modules\User\Models\Multifactor\UserAuthedDevice;
 use Modules\User\Models\Multifactor\UserAuthedLocation;
+use Modules\User\Integrations\Location\IpApi;
 use Proto\Controllers\ModelController as Controller;
 
 /**
@@ -81,6 +82,35 @@ class UserAuthedConnectionController extends Controller
 		$result = $model->setup();
 		return ($result)? $model->id : null;
 	}
+
+	/**
+	 * This will get the ip address location.
+	 *
+	 * @param string $ipAddress
+	 * @return object|null
+	 */
+	protected function getLocation(string $ipAddress): ?object
+    {
+        $api = new IpApi();
+        $result = $api->getLocation($ipAddress);
+        if (!$result || isset($result->error))
+        {
+            return null;
+        }
+
+        return (object)[
+            'city' => $result->city,
+            'region' => $result->region,
+            'regionCode' => $result->region_code,
+            'country' => $result->country,
+            'countryCode' => $result->country_code,
+            'postal' => $result->postal,
+            'latitude' => $result->latitude,
+            'longitude' => $result->longitude,
+            'position' => $result->latitude . ' ' . $result->longitude,
+            'timezone' => $result->timezone
+        ];
+    }
 
 	/**
 	 * This will add or update the location for the user.
