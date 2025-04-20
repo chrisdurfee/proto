@@ -7,22 +7,26 @@ use Proto\Utils\Sanitize;
 /**
  * UserAuthedLocationStorage
  *
- * This will handle the storage for the user authenticated locations.
+ * Handles persistence for authenticated user locations.
  *
  * @package Modules\User\Storage\Multifactor
  */
 class UserAuthedLocationStorage extends Storage
 {
 	/**
-	 * This will verify if the location exists for the user.
+	 * Verifies that the location already exists for the user.
 	 *
 	 * @param object $data
 	 * @return bool
 	 */
-	protected function exists($data): bool
+	protected function exists(object $data): bool
 	{
 		$rows = $this->select('id')
-			->where("{$this->alias}.region_code = ?", "{$this->alias}.country_code = ?", "{$this->alias}.postal = ?")
+			->where(
+				"{$this->alias}.region_code = ?",
+				"{$this->alias}.country_code = ?",
+				"{$this->alias}.postal = ?"
+			)
 			->limit(1)
 			->fetch([$data->region_code, $data->country_code, $data->postal]);
 
@@ -30,12 +34,53 @@ class UserAuthedLocationStorage extends Storage
 	}
 
 	/**
-	 * This will get the insert parameters for the location.
+	 * Inserts a new location row.
 	 *
 	 * @param object $data
 	 * @return bool
 	 */
-	protected function getParams(object $data): object
+	public function insert(object $data): bool
+	{
+		$params = $this->buildParams($data);
+		$result = $this->table()
+			->insert()
+			->fields($params->cols)
+			->values($params->placeholders)
+			->execute($params->params);
+
+		if (!isset($data->id))
+		{
+			$this->setModelId($result);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Updates an existing location row.
+	 *
+	 * @return bool
+	 */
+	public function update(): bool
+	{
+		$data = $this->getUpdateData();
+		$params = $this->buildParams($data, true);
+
+		return $this->table()
+			->update(...$params->cols)
+			->where('id = ?')
+			->execute($params->params);
+	}
+
+	/**
+	 * Builds column names, placeholders, and params for
+	 * both insert and update operations.
+	 *
+	 * @param object $data
+	 * @param bool $forUpdate
+	 * @return object
+	 */
+	private function buildParams(object $data, bool $forUpdate = false): object
 	{
 		$cols = [];
 		$params = [];
@@ -43,23 +88,54 @@ class UserAuthedLocationStorage extends Storage
 
 		foreach ($data as $key => $val)
 		{
+			if ($forUpdate && $key === 'id')
+			{
+				continue;
+			}
+
+			$cleanKey = '`' . Sanitize::cleanColumn($key) . '`';
+
+			// Special handling for POINT(column)
 			if ($key === 'position')
 			{
-				$parts = explode(' ', $val);
-
-				// this will add two params for the lat and long
+				$parts = explode(' ', $val); // [lat, lon]
 				$params = array_merge($params, $parts);
-				array_push($placeholders, 'POINT(?, ?)');
+
+				if ($forUpdate)
+				{
+					$cols[] = "{$cleanKey} = POINT(?, ?)";
+				}
+				else
+				{
+					$cols[] = $cleanKey;
+					$placeholders[] = 'POINT(?, ?)';
+				}
 			}
+			// Standard scalar column
 			else
 			{
-				array_push($params, $val);
-				array_push($placeholders, '?');
-			}
+				$params[] = $val;
 
-			$key = Sanitize::cleanColumn($key);
-			$key = "`{$key}`";
-			array_push($cols, $key);
+				if ($forUpdate)
+				{
+					$cols[] = "{$cleanKey} = ?";
+				}
+				else
+				{
+					$cols[] = $cleanKey;
+					$placeholders[] = '?';
+				}
+			}
+		}
+
+		// Bind ID at the end for update statements
+		if ($forUpdate)
+		{
+			$params[] = $data->id;
+			return (object)[
+				'cols' => $cols,
+				'params' => $params
+			];
 		}
 
 		return (object)[
@@ -67,85 +143,5 @@ class UserAuthedLocationStorage extends Storage
 			'params' => $params,
 			'placeholders' => $placeholders
 		];
-	}
-
-	/**
-	 * This will insert the location into the database.
-	 *
-	 * @param object $data
-	 * @return bool
-	 */
-	public function insert(object $data): bool
-	{
-		$insertData = $this->getParams($data);
-		$result = $this->table()
-			->insert()
-			->fields($insertData->cols)
-			->values($insertData->placeholders)
-			->execute($insertData->params);
-
-		if (!isset($data->id))
-		{
-			$this->setModelId($result);
-		}
-		return $result;
-	}
-
-	/**
-	 * This will get the update parameters for the location.
-	 *
-	 * @param object $data
-	 * @return object
-	 */
-	protected function getUpdateParams(object $data): object
-	{
-		$cols = [];
-		$params = [];
-
-		foreach ($data as $key => $val)
-		{
-			$key = Sanitize::cleanColumn($key);
-			if ($key === 'id')
-			{
-				continue;
-			}
-
-			if ($key === 'position')
-			{
-				$parts = explode(' ', $val);
-				$params = array_merge($params, $parts);
-				$key = "`{$key}` = POINT(?, ?)";
-			}
-			else
-			{
-				array_push($params, $val);
-				$key = "`{$key}` = ?";
-			}
-
-			array_push($cols, $key);
-		}
-
-		array_push($params, $data->id);
-
-		return (object)[
-			'cols' => $cols,
-			'params' => $params
-		];
-	}
-
-	/**
-	 * This will update the location in the database.
-	 *
-	 * @return bool
-	 */
-	public function update(): bool
-	{
-		$data = $this->getUpdateData();
-		$updateData = $this->getUpdateParams($data);
-
-		return $this->table()
-			->update(...$updateData->cols)
-			->where("id = ?")
-			->execute($updateData->params);
 	}
 }
