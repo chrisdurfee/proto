@@ -22,19 +22,19 @@ class UserAuthedLocationStorage extends Storage
 	protected function exists($data): bool
 	{
 		$rows = $this->select('id')
-            ->where("{$this->alias}.region_code = ?", "{$this->alias}.country_code = ?", "{$this->alias}.postal = ?")
+			->where("{$this->alias}.region_code = ?", "{$this->alias}.country_code = ?", "{$this->alias}.postal = ?")
 			->limit(1)
 			->fetch([$data->region_code, $data->country_code, $data->postal]);
 
 		return $this->checkExistCount($rows);
 	}
 
-    /**
-     * This will get the insert parameters for the location.
-     *
-     * @param object $data
-     * @return bool
-     */
+	/**
+	 * This will get the insert parameters for the location.
+	 *
+	 * @param object $data
+	 * @return bool
+	 */
 	protected function getParams(object $data): object
 	{
 		$cols = [];
@@ -69,20 +69,20 @@ class UserAuthedLocationStorage extends Storage
 		];
 	}
 
-    /**
-     * This will insert the location into the database.
-     *
-     * @param object $data
-     * @return bool
-     */
-    public function insert(object $data): bool
+	/**
+	 * This will insert the location into the database.
+	 *
+	 * @param object $data
+	 * @return bool
+	 */
+	public function insert(object $data): bool
 	{
 		$insertData = $this->getParams($data);
 		$result = $this->table()
 			->insert()
 			->fields($insertData->cols)
 			->values($insertData->placeholders)
-            ->execute($insertData->params);
+			->execute($insertData->params);
 
 		if (!isset($data->id))
 		{
@@ -91,13 +91,13 @@ class UserAuthedLocationStorage extends Storage
 		return $result;
 	}
 
-    /**
-     * This will get the update parameters for the location.
-     *
-     * @param object $data
-     * @return object
-     */
-    protected function getUpdateParams(object $data): object
+	/**
+	 * This will get the update parameters for the location.
+	 *
+	 * @param object $data
+	 * @return object
+	 */
+	protected function getUpdateParams(object $data): object
 	{
 		$cols = [];
 		$params = [];
@@ -133,12 +133,12 @@ class UserAuthedLocationStorage extends Storage
 		];
 	}
 
-    /**
-     * This will update the location in the database.
-     *
-     * @return bool
-     */
-    public function update(): bool
+	/**
+	 * This will update the location in the database.
+	 *
+	 * @return bool
+	 */
+	public function update(): bool
 	{
 		$data = $this->getUpdateData();
 		$updateData = $this->getUpdateParams($data);
@@ -146,6 +146,6 @@ class UserAuthedLocationStorage extends Storage
 		return $this->table()
 			->update(...$updateData->cols)
 			->where("id = ?")
-            ->execute($updateData->params);
+			->execute($updateData->params);
 	}
 }
