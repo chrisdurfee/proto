@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers\Multifactor;
 
+use Modules\User\Integrations\Location\LocationDto;
 use Modules\User\Models\Multifactor\UserAuthedConnection;
 use Modules\User\Models\Multifactor\UserAuthedDevice;
 use Modules\User\Models\Multifactor\UserAuthedLocation;
@@ -87,29 +88,12 @@ class UserAuthedConnectionController extends Controller
 	 * This will get the ip address location.
 	 *
 	 * @param string $ipAddress
-	 * @return object|null
+	 * @return LocationDto|null
 	 */
-	protected function getLocation(string $ipAddress): ?object
+	protected function getLocation(string $ipAddress): ?LocationDto
     {
         $api = new IpApi();
-        $result = $api->getLocation($ipAddress);
-        if (!$result || isset($result->error))
-        {
-            return null;
-        }
-
-        return (object)[
-            'city' => $result->city,
-            'region' => $result->region,
-            'regionCode' => $result->region_code,
-            'country' => $result->country,
-            'countryCode' => $result->country_code,
-            'postal' => $result->postal,
-            'latitude' => $result->latitude,
-            'longitude' => $result->longitude,
-            'position' => $result->latitude . ' ' . $result->longitude,
-            'timezone' => $result->timezone
-        ];
+        return $api->getLocation($ipAddress);
     }
 
 	/**

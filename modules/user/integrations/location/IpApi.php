@@ -6,7 +6,7 @@ use Proto\Integrations\RestService;
 /**
  * IpApi
  *
- * This class provides methods to get the location of an IP address using the IpApi service.
+ * Provides IP geolocation look‑ups via ipapi.co.
  *
  * @package Modules\User\Integrations\Location
  */
@@ -15,17 +15,17 @@ class IpApi extends RestService
 	/**
 	 * @var string $url
 	 */
-	protected string $url = "https://ipapi.co/";
+	protected string $url = 'https://ipapi.co/';
 
 	/**
-	 * This will get the ip address location.
+	 * Retrieves an IP address location.
 	 *
 	 * @param string $ipAddress
-	 * @return object
+	 * @return LocationDto|null
 	 */
-	public function getLocation(string $ipAddress): object
+	public function getLocation(string $ipAddress): ?LocationDto
 	{
-		$url = $ipAddress . '/json';
-		return $this->fetch('GET', $url);
+		$result = $this->fetch('GET', $ipAddress . '/json');
+		return ($result && !isset($result->error)) ? LocationDto::create($result) : null;
 	}
 }
