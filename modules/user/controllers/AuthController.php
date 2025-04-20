@@ -9,9 +9,23 @@ use Proto\Http\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
 
 /**
+ * User statuses
+ *
+ * @var object
+ */
+const USER_STATUSES = (object)[
+	'online' => 'online',
+	'offline' => 'offline',
+	'busy' => 'busy',
+	'away' => 'away',
+];
+
+/**
  * AuthController
  *
  * Handles user authentication, registration, and multi-factor flows.
+ *
+ * @package Modules\User\Controllers
  */
 class AuthController extends Controller
 {
@@ -33,6 +47,22 @@ class AuthController extends Controller
 	)
 	{
 		parent::__construct();
+	}
+
+	/**
+	 * This will udpate the user statue.
+	 *
+	 * @param User $user
+	 * @param string $status
+	 * @param string $appId
+	 * @return void
+	 */
+	public function updateStatus(User $user, string $status): void
+	{
+		$user->status = $status;
+		$user->updateStatus();
+
+		$this->updateLoginStatus($user->id, $status);
 	}
 
 	/**
@@ -165,9 +195,9 @@ class AuthController extends Controller
 	 */
 	protected function updateLoginStatus(int $id, string $status): ?bool
 	{
-		if ($status === 'online' || $status === 'offline')
+		if ($status === USER_STATUSES->online || $status === USER_STATUSES->offline)
 		{
-			$direction = ($status === 'online')? 'login' : 'logout';
+			$direction = ($status === USER_STATUSES->online) ? 'login' : 'logout';
 			return LoginLog::create((object)[
 				'dateTimeSetup' => date('Y-m-d H:i:s'),
 				'userId' => $id,
@@ -183,6 +213,20 @@ class AuthController extends Controller
 	 */
 	public function logout(): object
 	{
+		$user = getSession('user');
+		if (! $user)
+		{
+			return $this->error('Not authenticated.');
+		}
+
+		$userModel = $this->modelClass::get($user->id);
+		if (! $userModel)
+		{
+			return $this->error('User not found.');
+		}
+
+		$this->updateStatus($userModel, USER_STATUSES->offline);
+
 		session()->destroy();
 
 		return $this->response([
