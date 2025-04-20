@@ -121,8 +121,29 @@ class AuthController extends Controller
 			return $this->error('The user account not found.');
 		}
 
+		if ($user->multiFactor === true)
+		{
+			$device = $req::json('device');
+			return $this->multiFactor($user, $device);
+		}
+
+		return $this->permit($user);
+	}
+
+	/**
+	 * This will permit a user access to sign in.
+	 *
+	 * @param User $user
+	 * @return object
+	 */
+	protected function permit(User $user): object
+	{
+		$this->updateStatus($user, USER_STATUSES->online);
+		$this->setSessionUser($user);
+
 		return $this->response([
-			'user' => $user
+			'allowAccess' => true,
+			'user' => $user->getData()
 		]);
 	}
 
@@ -140,7 +161,6 @@ class AuthController extends Controller
 			return null;
 		}
 
-		$this->setSessionUser($user);
 		return $user;
 	}
 
@@ -261,9 +281,7 @@ class AuthController extends Controller
 			return $this->error('User not found');
 		}
 
-		return $this->response([
-			'user' => $user
-		]);
+		return $this->permit($user);
 	}
 
 	/**
