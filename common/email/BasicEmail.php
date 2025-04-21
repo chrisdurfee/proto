@@ -230,10 +230,11 @@ EOT;
 	 */
 	protected function addCompanySignature(): string
 	{
+		$phone = env('contactPhone');
 		return <<<EOT
 <tr>
 	<td class="sub-container">
-		<p></p>
+		<p>Contact us at: {$phone}</p>
 	</td>
 </tr>
 {$this->addBottomMargin()}
