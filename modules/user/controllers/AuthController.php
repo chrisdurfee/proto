@@ -98,7 +98,7 @@ class AuthController extends Controller
 	 */
 	protected function singleFactor(User $user): object
 	{
-		$this->updateLoginStatus($user->id, USER_STATUSES->online);
+		$this->updateStatus($user->id, USER_STATUSES->online);
 		$this->setSessionUser($user);
 
 		return $this->response([
@@ -222,7 +222,7 @@ class AuthController extends Controller
 			return $this->error('User not found');
 		}
 
-		$this->updateLoginStatus($user->id, USER_STATUSES->offline);
+		$this->updateStatus($user->id, USER_STATUSES->offline);
 		session()->destroy();
 
 		return $this->response(['message' => 'Logged out successfully']);
@@ -284,6 +284,22 @@ class AuthController extends Controller
 		}
 
 		return $userId;
+	}
+
+	/**
+	 * This will udpate the user statue.
+	 *
+	 * @param User $user
+	 * @param string $status
+	 * @param string $appId
+	 * @return void
+	 */
+	public function updateStatus(User $user, string $status): void
+	{
+		$user->status = $status;
+		$user->updateStatus();
+
+		$this->updateLoginStatus($user->id, $status);
 	}
 
 	/**
