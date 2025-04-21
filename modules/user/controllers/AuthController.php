@@ -57,6 +57,13 @@ class AuthController extends Controller
 	 */
 	public function login(Request $req): object
 	{
+		/**
+		 * This will wait for 1 second to prevent brute force attacks.
+		 * This is not a security measure, but it will slow down the attacker.
+		 * This will also help in reducing the load on the server during multiple attempts.
+		 */
+		sleep(1);
+
 		$username = $req::input('username');
 		$password = $req::input('password');
 		if (! $username || ! $password)
@@ -164,9 +171,9 @@ class AuthController extends Controller
 	public function verifyAuthCode(Request $req): object
 	{
 		/**
-		 * * This will wait for 1 second to prevent brute force attacks.
-		 * * This is not a security measure, but it will slow down the attacker.
-		 * * This will also help in reducing the load on the server during multiple attempts.
+		 * This will wait for 1 second to prevent brute force attacks.
+		 * This is not a security measure, but it will slow down the attacker.
+		 * This will also help in reducing the load on the server during multiple attempts.
 		 */
 		sleep(1);
 
