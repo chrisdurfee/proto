@@ -103,7 +103,7 @@ const UserFieldset = (isEditing) => (
 			[
 				TelInput({
 					placeholder: "e.g. +1234567890",
-					required: true,
+					required: false,
 					bind: "mobile"
 				})
 			]
