@@ -4,6 +4,8 @@ namespace Modules\User\Controllers;
 use Modules\User\Models\User;
 use Modules\User\Models\LoginLog;
 use Modules\User\Controllers\LoginAttemptController;
+use Modules\User\Services\Auth\MultiFactorAuthService;
+use Modules\User\Controllers\Multifactor\MultiFactorHelper;
 use Proto\Controllers\Controller;
 use Proto\Http\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
@@ -17,20 +19,20 @@ const USER_STATUSES = (object)[
 	'online' => 'online',
 	'offline' => 'offline',
 	'busy' => 'busy',
-	'away' => 'away',
+	'away' => 'away'
 ];
 
 /**
  * AuthController
  *
- * Handles user authentication, registration, and multi-factor flows.
+ * Handles user login, logout, registration, MFA flows, and CSRF token.
  *
  * @package Modules\User\Controllers
  */
 class AuthController extends Controller
 {
 	/**
-	 * Maximum login attempts allowed.
+	 * Maximum failed login attempts allowed.
 	 *
 	 * @var int
 	 */
@@ -40,56 +42,14 @@ class AuthController extends Controller
 	 * Constructor.
 	 *
 	 * @param string|null $modelClass
-	 * @return void
 	 */
-	public function __construct(
-		protected ?string $modelClass = User::class
-	)
+	public function __construct(protected ?string $modelClass = User::class)
 	{
 		parent::__construct();
 	}
 
 	/**
-	 * This will udpate the user statue.
-	 *
-	 * @param User $user
-	 * @param string $status
-	 * @param string $appId
-	 * @return void
-	 */
-	public function updateStatus(User $user, string $status): void
-	{
-		$user->status = $status;
-		$user->updateStatus();
-
-		$this->updateLoginStatus($user->id, $status);
-	}
-
-	/**
-	 * This will count login attempt from the ip address.
-	 *
-	 * @param string $username
-	 * @return int
-	 */
-	protected function getAttempts(string $username): int
-	{
-		$controller = new LoginAttemptController();
-		return $controller->countAttempts(Request::ip(), $username);
-	}
-
-	/**
-	 * This will check if the attempts are under the max.
-	 *
-	 * @param int $attempts
-	 * @return bool
-	 */
-	protected function isUnderAttemptMax(int $attempts): bool
-	{
-		return ($attempts < self::MAX_ATTEMPTS);
-	}
-
-	/**
-	 * This will handle user login.
+	 * Handle a login request.
 	 *
 	 * @param Request $req
 	 * @return object
@@ -98,27 +58,27 @@ class AuthController extends Controller
 	{
 		$username = $req::input('username');
 		$password = $req::input('password');
-		if (!$username || !$password)
+		if (! $username || ! $password)
 		{
 			return $this->error('Username and password are required');
 		}
 
 		$attempts = $this->getAttempts($username);
-		if ($this->isUnderAttemptMax($attempts) === false)
+		if ($attempts >= self::MAX_ATTEMPTS)
 		{
-			return $this->error('You have reached the 15 minute limit for that username.');
+			return $this->error('Maximum login attempts reached. Try again later.');
 		}
 
 		$userId = $this->authenticate($username, $password);
-		if ($userId === -1)
+		if ($userId < 0)
 		{
-			return $this->error('The credentials are invalid. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS . '.');
+			return $this->error('Invalid credentials. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS);
 		}
 
 		$user = $this->getUserId($userId);
 		if (!$user)
 		{
-			return $this->error('The user account not found.');
+			return $this->error('User account not found');
 		}
 
 		if ($user->multiFactor === true)
@@ -127,18 +87,18 @@ class AuthController extends Controller
 			return $this->multiFactor($user, $device);
 		}
 
-		return $this->permit($user);
+		return $this->singleFactor($user);
 	}
 
 	/**
-	 * This will permit a user access to sign in.
+	 * Permit a single‑factor login.
 	 *
 	 * @param User $user
 	 * @return object
 	 */
-	protected function permit(User $user): object
+	protected function singleFactor(User $user): object
 	{
-		$this->updateStatus($user, USER_STATUSES->online);
+		$this->updateLoginStatus($user->id, USER_STATUSES->online);
 		$this->setSessionUser($user);
 
 		return $this->response([
@@ -148,114 +108,128 @@ class AuthController extends Controller
 	}
 
 	/**
-	 * This will get the user id and set it to the session.
+	 * Handle the MFA step.
 	 *
-	 * @param mixed $userId
-	 * @return User|null
-	 */
-	protected function getUserId(mixed $userId): ?User
-	{
-		$user = $this->modelClass::get($userId);
-		if (! $user)
-		{
-			return null;
-		}
-
-		return $user;
-	}
-
-	/**
-	 * This will set the session user.
-	 *
-	 * @param User $user
-	 * @return void
-	 */
-	protected function setSessionUser(User $user): void
-	{
-		setSession('user', $user->getData());
-	}
-
-	/**
-	 * This will authenticate the user.
-	 *
-	 * @param string $username
-	 * @param string $password
-	 * @return int
-	 */
-	protected function authenticate(string $username, string $password): int
-	{
-		$userId = $this->modelClass::authenticate($username, $password);
-		if ($userId === -1)
-		{
-			$this->logAttempt($username);
-		}
-		return $userId;
-	}
-
-	/**
-	 * This will log the login attempt.
-	 *
-	 * @param string $username
+	 * @param User        $user
+	 * @param object|null $device
 	 * @return object
 	 */
-	protected function logAttempt(string $username): object
+	protected function multiFactor(User $user, ?object $device): object
 	{
-		return LoginAttemptController::create((object)[
-			'ipAddress' => Request::ip(),
-			'username' => $username
+		$this->setSessionUser($user);
+		$service = new MultiFactorAuthService();
+		$service->setResources($user, $device);
+
+		if (MultiFactorHelper::isDeviceAuthorized($user, $device))
+		{
+			return $this->singleFactor($user);
+		}
+
+		$options = MultiFactorHelper::getMultiFactorOptions($user);
+
+		return $this->response([
+			'allowAccess' => false,
+			'multiFactor' => true,
+			'options' => $options
 		]);
 	}
 
 	/**
-	 * This will update the user login status to the table.
+	 * Send or resend an MFA code.
 	 *
-	 * @param int $id
-	 * @param string $status
-	 * @return bool|null
+	 * @param Request $req
+	 * @return object
 	 */
-	protected function updateLoginStatus(int $id, string $status): ?bool
+	public function getAuthCode(Request $req): object
 	{
-		if ($status === USER_STATUSES->online || $status === USER_STATUSES->offline)
+		$session = getSession('user');
+		$userId = $session->id ?? null;
+		if (!$userId)
 		{
-			$direction = ($status === USER_STATUSES->online) ? 'login' : 'logout';
-			return LoginLog::create((object)[
-				'dateTimeSetup' => date('Y-m-d H:i:s'),
-				'userId' => $id,
-				'direction' => $direction
-			]);
+			return $this->error('No MFA session found');
 		}
+
+		$user = $this->modelClass::get($userId);
+		if (!$user)
+		{
+			return $this->error('User not found');
+		}
+
+		$type = $req::input('type', 'sms');
+
+		$service = new MultiFactorAuthService();
+		$service->sendCode($user, $type);
+
+		return $this->response(['success' => true]);
 	}
 
 	/**
-	 * User logout.
+	 * Validate the submitted MFA code.
+	 *
+	 * @param Request $req
+	 * @return object
+	 */
+	public function verifyAuthCode(Request $req): object
+	{
+		$code = $req::input('code');
+		$session = getSession('user');
+		$userId = $session->id ?? null;
+		$device = getSession('device') ?? null;
+
+		if (!$userId || !$device)
+		{
+			return $this->error('MFA session not initialized');
+		}
+
+		$user = $this->modelClass::get($userId);
+		if (!$user)
+		{
+			return $this->error('User not found');
+		}
+
+		$service = new MultiFactorAuthService();
+		if (!$service->validateCode($code))
+		{
+			return $this->error('Invalid authentication code');
+		}
+
+		$service->authConnection((object)[
+			'device' => $device,
+			'ipAddress' => Request::ip(),
+			'accessedAt' => date('Y-m-d H:i:s')
+		]);
+
+		return $this->singleFactor($user);
+	}
+
+	/**
+	 * Logout the current user.
 	 *
 	 * @return object
 	 */
 	public function logout(): object
 	{
-		$user = getSession('user');
-		if (! $user)
+		$session = getSession('user');
+		$userId = $session->id ?? null;
+		if (!$userId)
 		{
-			return $this->error('Not authenticated.');
+			return $this->error('Not authenticated');
 		}
 
-		$userModel = $this->modelClass::get($user->id);
-		if (! $userModel)
+		$user = $this->modelClass::get($userId);
+		if (!$user)
 		{
-			return $this->error('User not found.');
+			return $this->error('User not found');
 		}
 
-		$this->updateStatus($userModel, USER_STATUSES->offline);
-
+		$this->updateLoginStatus($user->id, USER_STATUSES->offline);
 		session()->destroy();
 
-		return $this->response([
-			'message' => 'Logged out successfully'
-		]);
+		return $this->response(['message' => 'Logged out successfully']);
 	}
 
 	/**
-	 * User registration.
+	 * Register a new user.
 	 *
 	 * @param Request $req
 	 * @return object
@@ -265,72 +239,19 @@ class AuthController extends Controller
 		$data = $req::json('user');
 		if (!$data)
 		{
-			return $this->error('Invalid data');
+			return $this->error('Invalid registration data');
 		}
 
 		$model = new $this->modelClass($data);
 		$result = $model->add();
-		if (! $result)
+		if (!$result)
 		{
 			return $this->error('Registration failed');
 		}
 
-		$user = $this->getUserId($model->id);
-		if (! $user)
-		{
-			return $this->error('User not found');
-		}
+		$user = $this->modelClass::get($model->id);
 
-		return $this->permit($user);
-	}
-
-	/**
-	 * Generate a simple multi-factor auth code and store it in session.
-	 *
-	 * @return object
-	 */
-	public function getAuthCode(): object
-	{
-		$userId = getSession('userId');
-		if (! $userId)
-		{
-			return $this->error('Not authenticated');
-		}
-
-		// Generate a 6-digit code
-		$code = random_int(100000, 999999);
-		setSession('authCode', $code);
-
-		return (object)
-		[
-			'code' => $code,
-			'success' => true
-		];
-	}
-
-	/**
-	 * Verify the multi-factor authentication code.
-	 *
-	 * @param Request $req
-	 * @return object
-	 */
-	public function verifyAuthCode(Request $req): object
-	{
-		$entered = $req->input('code');
-		$code = getSession('authCode');
-		if (! $entered || (int) $entered !== (int) $code)
-		{
-			return $this->error('Invalid authentication code');
-		}
-
-		// Clear stored code
-		unsetSession('authCode');
-
-		return (object)
-		[
-			'success' => true
-		];
-
+		return $this->singleFactor($user);
 	}
 
 	/**
@@ -340,12 +261,81 @@ class AuthController extends Controller
 	 */
 	public function getToken(): object
 	{
-		$gate = new CrossSiteRequestForgeryGate();
-		$token = $gate->setToken();
+		$token = (new CrossSiteRequestForgeryGate())->setToken();
+		return $this->response(['token' => $token]);
+	}
 
-		return (object)
-		[
-			'token' => $token
-		];
+	/**
+	 * Authenticate credentials and log failed attempts.
+	 *
+	 * @param string $username
+	 * @param string $password
+	 * @return int
+	 */
+	protected function authenticate(string $username, string $password): int
+	{
+		$userId = $this->modelClass::authenticate($username, $password);
+		if ($userId < 0)
+		{
+			LoginAttemptController::create((object)[
+				'ipAddress' => Request::ip(),
+				'username' => $username
+			]);
+		}
+
+		return $userId;
+	}
+
+	/**
+	 * Update login status (login/logout) in LoginLog.
+	 *
+	 * @param int $userId
+	 * @param string $status
+	 * @return void
+	 */
+	protected function updateLoginStatus(int $userId, string $status): void
+	{
+		if ($status === USER_STATUSES->online || $status === USER_STATUSES->offline)
+		{
+			$direction = $status === USER_STATUSES->online ? 'login' : 'logout';
+			LoginLog::create((object)[
+				'dateTimeSetup' => date('Y-m-d H:i:s'),
+				'userId' => $userId,
+				'direction' => $direction
+			]);
+		}
+	}
+
+	/**
+	 * Count recent failed login attempts.
+	 *
+	 * @param string $username
+	 * @return int
+	 */
+	protected function getAttempts(string $username): int
+	{
+		return LoginAttemptController::countAttempts(Request::ip(), $username);
+	}
+
+	/**
+	 * Retrieve a user by ID or null.
+	 *
+	 * @param mixed $userId
+	 * @return User|null
+	 */
+	protected function getUserId(mixed $userId): ?User
+	{
+		return $this->modelClass::get($userId);
+	}
+
+	/**
+	 * Store the authenticated user in session.
+	 *
+	 * @param User $user
+	 * @return void
+	 */
+	protected function setSessionUser(User $user): void
+	{
+		setSession('user', $user->getData());
 	}
 }
