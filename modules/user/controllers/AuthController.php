@@ -163,6 +163,8 @@ class AuthController extends Controller
 	 */
 	public function verifyAuthCode(Request $req): object
 	{
+		sleep(1); // Simulate delay for MFA code validation
+
 		$service = new MultiFactorAuthService();
 		$user = $service->getUser();
 		if (!$user)
