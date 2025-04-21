@@ -1,4 +1,4 @@
-import { Fieldset, Input } from "@base-framework/ui/atoms";
+import { Fieldset, Input, TelInput } from "@base-framework/ui/atoms";
 import { FormField } from "@base-framework/ui/molecules";
 import { UserRoleFieldset } from "./user-role-fieldset.js";
 import { validate } from "./validate.js";
@@ -95,6 +95,16 @@ const UserFieldset = (isEditing) => (
 					placeholder: "e.g. john@example.com",
 					required: true,
 					bind: "email"
+				})
+			]
+		),
+		new FormField(
+			{ name: "mobile", label: "Mobile", description: "Enter the user's mobile number." },
+			[
+				TelInput({
+					placeholder: "e.g. +1234567890",
+					required: true,
+					bind: "mobile"
 				})
 			]
 		)
