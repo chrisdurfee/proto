@@ -21,7 +21,7 @@ class AuthNewConnectionText extends Text
     protected function setupBody(): string
 	{
 		return <<<EOT
-There has been a new multi-factor authorized connection added to your account..
+There has been a new multi-factor authorized connection added to your account.
 EOT;
 	}
 }
