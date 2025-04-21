@@ -100,7 +100,6 @@ class AuthController extends Controller
 	{
 		$this->updateStatus($user, USER_STATUSES->online);
 		$this->setSessionUser($user);
-		setSession('allowAccess', true);
 
 		return $this->response([
 			'allowAccess' => true,
@@ -176,7 +175,7 @@ class AuthController extends Controller
 			return $this->error('The device not found in MFA session.');
 		}
 
-		$code = $req::input(name: 'code');
+		$code = $req::input('code');
 		if (!$service->validateCode($code))
 		{
 			return $this->error('Invalid authentication code.');
