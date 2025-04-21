@@ -29,6 +29,7 @@ class User extends Migration
 			$table->varchar('password', 255);
 			$table->varchar('first_name', 100)->nullable();
 			$table->varchar('last_name', 100)->nullable();
+			$table->varchar('mobile', 14)->nullable();
 			$table->varchar('image', 255)->nullable();
 			$table->enum('status', 'online', 'offline', 'busy', 'away')->default("'offline'");
 			$table->timestamp('email_verified_at')->nullable();

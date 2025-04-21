@@ -60,13 +60,13 @@ class AuthController extends Controller
 		$password = $req::input('password');
 		if (! $username || ! $password)
 		{
-			return $this->error('Username and password are required');
+			return $this->error('The username and password are required.');
 		}
 
 		$attempts = $this->getAttempts($username);
 		if ($attempts >= self::MAX_ATTEMPTS)
 		{
-			return $this->error('Maximum login attempts reached. Try again later.');
+			return $this->error('Maximum login attempts reached. Please try again later.');
 		}
 
 		$userId = $this->authenticate($username, $password);
@@ -78,7 +78,7 @@ class AuthController extends Controller
 		$user = $this->getUserId($userId);
 		if (!$user)
 		{
-			return $this->error('User account not found');
+			return $this->error('The user account is not found.');
 		}
 
 		if ($user->multiFactor === true)
@@ -111,13 +111,12 @@ class AuthController extends Controller
 	/**
 	 * Handle the MFA step.
 	 *
-	 * @param User        $user
+	 * @param User $user
 	 * @param object|null $device
 	 * @return object
 	 */
 	protected function multiFactor(User $user, ?object $device): object
 	{
-		$this->setSessionUser($user);
 		$service = new MultiFactorAuthService();
 		$service->setResources($user, $device);
 
@@ -143,22 +142,14 @@ class AuthController extends Controller
 	 */
 	public function getAuthCode(Request $req): object
 	{
-		$session = getSession('user');
-		$userId = $session->id ?? null;
-		if (!$userId)
-		{
-			return $this->error('No MFA session found');
-		}
-
-		$user = $this->modelClass::get($userId);
+		$service = new MultiFactorAuthService();
+		$user = $service->getUser();
 		if (!$user)
 		{
-			return $this->error('User not found');
+			return $this->error('The user not found in MFA session.');
 		}
 
 		$type = $req::input('type', 'sms');
-
-		$service = new MultiFactorAuthService();
 		$service->sendCode($user, $type);
 
 		return $this->response(['success' => true]);
@@ -179,19 +170,19 @@ class AuthController extends Controller
 
 		if (!$userId || !$device)
 		{
-			return $this->error('MFA session not initialized');
+			return $this->error('The MFA session is not initialized.');
 		}
 
 		$user = $this->modelClass::get($userId);
 		if (!$user)
 		{
-			return $this->error('User not found');
+			return $this->error('The user is not found.');
 		}
 
 		$service = new MultiFactorAuthService();
 		if (!$service->validateCode($code))
 		{
-			return $this->error('Invalid authentication code');
+			return $this->error('Invalid authentication code.');
 		}
 
 		$service->authConnection((object)[
@@ -214,19 +205,19 @@ class AuthController extends Controller
 		$userId = $session->id ?? null;
 		if (!$userId)
 		{
-			return $this->error('Not authenticated');
+			return $this->error('The user is not authenticated.');
 		}
 
 		$user = $this->modelClass::get($userId);
 		if (!$user)
 		{
-			return $this->error('User not found');
+			return $this->error('The user is not found.');
 		}
 
 		$this->updateStatus($user->id, USER_STATUSES->offline);
 		session()->destroy();
 
-		return $this->response(['message' => 'Logged out successfully']);
+		return $this->response(['message' => 'The user has been logged out successfully.']);
 	}
 
 	/**
@@ -240,20 +231,20 @@ class AuthController extends Controller
 		$data = $req::json('user');
 		if (!$data)
 		{
-			return $this->error('Invalid registration data');
+			return $this->error('The data is invalid for registration.');
 		}
 
 		$model = new $this->modelClass($data);
 		$result = $model->add();
 		if (!$result)
 		{
-			return $this->error('Registration failed');
+			return $this->error('The registration has failed.');
 		}
 
 		$user = $this->modelClass::get($model->id);
 		if (!$user)
 		{
-			return $this->error('User not found after registration');
+			return $this->error('The user is not found after registration');
 		}
 
 		return $this->permit($user);

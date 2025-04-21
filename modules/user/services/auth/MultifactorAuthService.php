@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Services\Auth;
 
+use Modules\User\Models\User;
 use Proto\Dispatch\Enqueuer;
 use Modules\User\Auth\Gates\MultiFactorAuthGate;
 use Modules\User\Controllers\Multifactor\UserAuthedConnectionController;
@@ -38,11 +39,11 @@ class MultiFactorAuthService
 	/**
 	 * Generate a new MFA code and dispatch it to the user.
 	 *
-	 * @param object $user User model containing email/mobile.
+	 * @param User $user User model containing email/mobile.
 	 * @param string $type Delivery channel: 'sms' (default) or 'email'.
 	 * @return void
 	 */
-	public function sendCode(object $user, string $type = 'sms'): void
+	public function sendCode(User $user, string $type = 'sms'): void
 	{
 		$code = self::gate()->setCode();
 		$this->dispatchCode($user, $type, $code);
@@ -51,11 +52,11 @@ class MultiFactorAuthService
 	/**
 	 * Persist user and device context for this MFA session.
 	 *
-	 * @param object $user
+	 * @param User $user
 	 * @param object $device
 	 * @return void
 	 */
-	public function setResources(object $user, object $device): void
+	public function setResources(User $user, object $device): void
 	{
 		self::gate()->setResources($user, $device);
 	}
