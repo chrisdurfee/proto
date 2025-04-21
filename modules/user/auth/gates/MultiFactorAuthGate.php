@@ -34,6 +34,20 @@ class MultiFactorAuthGate extends Gate
 	const AUTH_DEVICE = 'AUTH_DEVICE';
 
 	/**
+	 * The maximum number of attempts allowed for MFA code validation.
+	 *
+	 * @var int
+	 */
+	const MAX_ATTEMPTS = 10;
+
+	/**
+	 * The number of attempts made to validate the MFA code.
+	 *
+	 * @var string
+	 */
+	const ATTEMPTS = 'AUTH_ATTEMPTS';
+
+	/**
 	 * Generate a random numeric MFA code.
 	 *
 	 * @return string Nine‑digit code.
@@ -125,13 +139,34 @@ class MultiFactorAuthGate extends Gate
 	}
 
 	/**
+	 * Retrieve the number of attempts made to validate the MFA code.
+	 *
+	 * @return int The number of attempts.
+	 */
+	public function getAttempts(): int
+	{
+		return $this->get(self::ATTEMPTS) ?: 0;
+	}
+
+	/**
+	 * Set the number of attempts made to validate the MFA code.
+	 *
+	 * @param int $attempts The number of attempts.
+	 * @return void
+	 */
+	public function setAttempts(int $attempts): void
+	{
+		$this->set(self::ATTEMPTS, $attempts);
+	}
+
+	/**
 	 * Compare the provided code against the one stored in the session.
 	 * If it matches, the session values are cleared.
 	 *
 	 * @param string $code Code entered by the user.
-	 * @return bool True on success, false otherwise.
+	 * @return bool|null True on success, false if the code is invalid, or null if the number of attempts exceeds the maximum allowed.
 	 */
-	public function validateCode(string $code): bool
+	public function validateCode(string $code): ?bool
 	{
 		$storedCode = $this->get(self::AUTH_KEY);
 		if (empty($storedCode))
@@ -143,7 +178,18 @@ class MultiFactorAuthGate extends Gate
 		if ($valid)
 		{
 			$this->resetCode();
+			$this->setAttempts(0);
+			return $valid;
 		}
+
+		$attempts = $this->getAttempts() + 1;
+		if ($attempts >= self::MAX_ATTEMPTS)
+		{
+			$this->resetCode();
+			return null;
+		}
+
+		$this->setAttempts($attempts);
 		return $valid;
 	}
 }

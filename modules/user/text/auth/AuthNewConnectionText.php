@@ -1,14 +1,14 @@
 <?php declare(strict_types=1);
-namespace App\Text\Auth;
+namespace Modules\User\Text\Auth;
 
-use App\Text\Text;
+use Common\Text\Text;
 
 /**
  * AuthNewConnectionText
  *
- * This is a new connection message.
+ * Sends a message when a new multi-factor authorized connection is added to the user's account.
  *
- * @package App\Text\Auth
+ * @package Modules\User\Text\Auth
  */
 class AuthNewConnectionText extends Text
 {
@@ -18,10 +18,8 @@ class AuthNewConnectionText extends Text
      * @abstract
      * @return string
      */
-    protected function setupBody()
+    protected function setupBody(): string
 	{
-		$code = $this->get('code');
-
 		return <<<EOT
 There has been a new multi-factor authorized connection added to your account..
 EOT;

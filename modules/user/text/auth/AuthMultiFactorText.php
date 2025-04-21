@@ -1,14 +1,14 @@
 <?php declare(strict_types=1);
-namespace App\Text\Auth;
+namespace Modules\User\Text\Auth;
 
-use App\Text\Text;
+use Common\Text\Text;
 
 /**
  * AuthMultiFactorText
  *
- * This is a multi factor auth message.
+ * Sends a message when a multi-factor authentication code is generated.
  *
- * @package App\Text\Auth
+ * @package Modules\User\Text\Auth
  */
 class AuthMultiFactorText extends Text
 {
@@ -18,12 +18,12 @@ class AuthMultiFactorText extends Text
      * @abstract
      * @return string
      */
-    protected function setupBody()
+    protected function setupBody(): string
 	{
 		$code = $this->get('code');
 
 		return <<<EOT
-This is the auth code {$code}.
+This is the sign-in auth code {$code}.
 EOT;
 	}
 }

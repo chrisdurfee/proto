@@ -177,9 +177,15 @@ class AuthController extends Controller
 		}
 
 		$code = $req::input('code');
-		if (!$service->validateCode($code))
+		$isValid = $service->validateCode($code);
+		if ($isValid === false)
 		{
 			return $this->error('Invalid authentication code.');
+		}
+
+		if ($isValid === null)
+		{
+			return $this->error('Invalid authentication code. Too many attempts.');
 		}
 
 		$service->addNewConnection($user, $device, Request::ip());

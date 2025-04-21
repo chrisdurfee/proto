@@ -87,9 +87,9 @@ class MultiFactorAuthService
 	 * Code is cleared from the session on first successful match.
 	 *
 	 * @param string $code
-	 * @return bool
+	 * @return bool|null
 	 */
-	public function validateCode(string $code): bool
+	public function validateCode(string $code): ?bool
 	{
 		return self::gate()->validateCode($code);
 	}
