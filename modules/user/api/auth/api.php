@@ -2,6 +2,7 @@
 namespace Modules\User\Api\Auth;
 
 use Modules\User\Controllers\AuthController;
+use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 use Proto\Http\Router\Router;
 
 /**
@@ -11,6 +12,9 @@ use Proto\Http\Router\Router;
  * login, logout, registration, MFA, and CSRF token retrieval.
  */
 router()
+	->middleware(([
+		CrossSiteProtectionMiddleware::class,
+	]))
 	->group('user/auth', function(Router $router)
 	{
 		$controller = new AuthController();
