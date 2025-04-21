@@ -85,6 +85,6 @@ class Policy extends BasePolicy
 			return true;
 		}
 
-		return $this->resourceGate->ownsResource($ownerId);
+		return $this->resourceGate->isOwner($ownerId);
 	}
 }
