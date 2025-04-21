@@ -163,7 +163,12 @@ class AuthController extends Controller
 	 */
 	public function verifyAuthCode(Request $req): object
 	{
-		sleep(1); // Simulate delay for MFA code validation
+		/**
+		 * * This will wait for 1 second to prevent brute force attacks.
+		 * * This is not a security measure, but it will slow down the attacker.
+		 * * This will also help in reducing the load on the server during multiple attempts.
+		 */
+		sleep(1);
 
 		$service = new MultiFactorAuthService();
 		$user = $service->getUser();
