@@ -2,9 +2,14 @@
 namespace Modules\User\Api\Auth;
 
 use Modules\User\Controllers\AuthController;
-use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 use Proto\Http\Router\Router;
 
+/**
+ * Auth API Routes
+ *
+ * This file defines the API routes for user authentication, including
+ * login, logout, registration, MFA, and CSRF token retrieval.
+ */
 router()
 	->group('user/auth', function(Router $router)
 	{

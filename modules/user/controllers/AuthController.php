@@ -87,19 +87,20 @@ class AuthController extends Controller
 			return $this->multiFactor($user, $device);
 		}
 
-		return $this->singleFactor($user);
+		return $this->permit($user);
 	}
 
 	/**
-	 * Permit a single‑factor login.
+	 * This will permit a user access to sign in.
 	 *
 	 * @param User $user
 	 * @return object
 	 */
-	protected function singleFactor(User $user): object
+	protected function permit(User $user): object
 	{
-		$this->updateStatus($user->id, USER_STATUSES->online);
+		$this->updateStatus($user, USER_STATUSES->online);
 		$this->setSessionUser($user);
+		setSession('allowAccess', true);
 
 		return $this->response([
 			'allowAccess' => true,
@@ -122,7 +123,7 @@ class AuthController extends Controller
 
 		if (MultiFactorHelper::isDeviceAuthorized($user, $device))
 		{
-			return $this->singleFactor($user);
+			return $this->permit($user);
 		}
 
 		$options = MultiFactorHelper::getMultiFactorOptions($user);
@@ -199,7 +200,7 @@ class AuthController extends Controller
 			'accessedAt' => date('Y-m-d H:i:s')
 		]);
 
-		return $this->singleFactor($user);
+		return $this->permit($user);
 	}
 
 	/**
@@ -250,8 +251,12 @@ class AuthController extends Controller
 		}
 
 		$user = $this->modelClass::get($model->id);
+		if (!$user)
+		{
+			return $this->error('User not found after registration');
+		}
 
-		return $this->singleFactor($user);
+		return $this->permit($user);
 	}
 
 	/**

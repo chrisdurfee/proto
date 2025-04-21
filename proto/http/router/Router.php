@@ -183,6 +183,26 @@ class Router
 	}
 
 	/**
+	 * This will return the full URI.
+	 *
+	 * @param string $uri
+	 * @return string
+	 */
+	protected function checkArrayCallback(callable $callback): callable
+	{
+		if (!is_array($callback) || !is_string($callback[0] ?? null) && !is_string($callback[1] ?? null))
+		{
+			return $callback;
+		}
+
+		[$class, $methodName] = $callback;
+		return function($req, $params) use ($class, $methodName)
+		{
+			return (new $class())->{$methodName}($req, $params);
+		};
+	}
+
+	/**
 	 * Registers a route.
 	 *
 	 * @param string $method
@@ -193,6 +213,11 @@ class Router
 	 */
 	protected function addRoute(string $method, string $uri, callable $callback, ?array $middleware = null): self
 	{
+		/**
+		 * This will update any array callbacks.
+		 */
+		$callback = $this->checkArrayCallback($callback);
+
 		$uri = $this->getUri($uri);
 		$route = new Route($method, $uri, $callback);
 		$this->routes[] = $route;
