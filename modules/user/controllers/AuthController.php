@@ -163,33 +163,26 @@ class AuthController extends Controller
 	 */
 	public function verifyAuthCode(Request $req): object
 	{
-		$code = $req::input('code');
-		$session = getSession('user');
-		$userId = $session->id ?? null;
-		$device = getSession('device') ?? null;
-
-		if (!$userId || !$device)
-		{
-			return $this->error('The MFA session is not initialized.');
-		}
-
-		$user = $this->modelClass::get($userId);
+		$service = new MultiFactorAuthService();
+		$user = $service->getUser();
 		if (!$user)
 		{
-			return $this->error('The user is not found.');
+			return $this->error('The user not found in MFA session.');
 		}
 
-		$service = new MultiFactorAuthService();
+		$device = $service->getDevice();
+		if (!$device)
+		{
+			return $this->error('The device not found in MFA session.');
+		}
+
+		$code = $req::input(name: 'code');
 		if (!$service->validateCode($code))
 		{
 			return $this->error('Invalid authentication code.');
 		}
 
-		$service->authConnection((object)[
-			'device' => $device,
-			'ipAddress' => Request::ip(),
-			'accessedAt' => date('Y-m-d H:i:s')
-		]);
+		$service->addNewConnection($user, $device, Request::ip());
 
 		return $this->permit($user);
 	}

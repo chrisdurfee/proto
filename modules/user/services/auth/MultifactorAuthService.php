@@ -4,6 +4,7 @@ namespace Modules\User\Services\Auth;
 use Modules\User\Models\User;
 use Proto\Dispatch\Enqueuer;
 use Modules\User\Auth\Gates\MultiFactorAuthGate;
+use Modules\User\Services\Auth\ConnectionDto;
 use Modules\User\Controllers\Multifactor\UserAuthedConnectionController;
 
 /**
@@ -91,6 +92,20 @@ class MultiFactorAuthService
 	public function validateCode(string $code): bool
 	{
 		return self::gate()->validateCode($code);
+	}
+
+	/**
+	 * This will add a connection.
+	 *
+	 * @param User $user
+	 * @param object $device
+	 * @param string $ipAddress
+	 * @return object
+	 */
+	public function addNewConnection(User $user, object $device, string $ipAddress): object
+	{
+		$connection = ConnectionDto::create($device, $user->id, $ipAddress);
+        return $this->authConnection($connection);
 	}
 
 	/**
