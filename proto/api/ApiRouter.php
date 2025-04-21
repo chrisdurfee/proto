@@ -139,8 +139,12 @@ namespace Proto\Api
 				ApiRateLimiterMiddleware::class,
 			];
 
-			$this->router->all(':resource.*', function ($req, $params) use ($middleware): void
+			$router = $this->router;
+			$router->all(':resource.*', function ($req, $params) use ($middleware): void
 			{
+				/**
+				 * This will get the resource from the request.
+				 */
 				$resource = $params->resource ?? null;
 				if (empty($resource))
 				{
@@ -148,6 +152,9 @@ namespace Proto\Api
 					return;
 				}
 
+				/**
+				 * This will get the resource path from the resource helper.
+				 */
 				$resourcePath = ResourceHelper::getResource($resource);
 				if (!$resourcePath)
 				{
@@ -155,7 +162,23 @@ namespace Proto\Api
 					return;
 				}
 
+				/**
+				 * This will load the resource which will add the
+				 * resource to the router.
+				 */
 				ResourceHelper::includeResource($resourcePath);
+			}, $middleware);
+
+
+			/**
+			 * This will add the default route which will be used if no route was matched.
+			 */
+			$router->all('*', function ($req, $params) use ($middleware, $router): void
+			{
+				/**
+				 * If no route was matched then this will return an error response.
+				 */
+				self::error('The requested resource is not found.', self::HTTP_NOT_FOUND);
 			}, $middleware);
 		}
 
