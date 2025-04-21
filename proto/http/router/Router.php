@@ -231,6 +231,49 @@ class Router
 	}
 
 	/**
+	 * Creates a group URL by appending the URI to the base path.
+	 *
+	 * @param string $oldBase
+	 * @param string $uri
+	 * @return string
+	 */
+	protected function createGroupUrl(string $oldBase, string $uri): string
+	{
+		return rtrim($oldBase, '/') . '/' . trim($uri, '/');
+	}
+
+	/**
+	 * Register a group of routes under a common URI prefix.
+	 *
+	 * @param string $uri URI segment (no leading/trailing slash)
+	 * @param callable $callback Receives $this to add routes
+	 * @param array|null $middleware Middleware to apply to all routes in group
+	 * @return self
+	 */
+	public function group(string $uri, callable $callback, ?array $middleware = null): self
+	{
+		/**
+		 * The base url will be updated to the group URI and will be reset
+		 * after the callback is executed.
+		 */
+		$oldBase = $this->basePath;
+		$oldMiddleware = $this->middleware;
+
+		$this->basePath = $this->createGroupUrl($oldBase, $uri);
+		if ($middleware !== null)
+		{
+			$this->middleware($middleware);
+		}
+
+		$callback($this);
+
+		$this->basePath = $oldBase;
+		$this->middleware = $oldMiddleware;
+
+		return $this;
+	}
+
+	/**
 	 * Redirects a route.
 	 *
 	 * @param string $uri
