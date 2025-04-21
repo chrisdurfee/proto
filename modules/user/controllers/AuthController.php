@@ -11,16 +11,17 @@ use Proto\Http\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
 
 /**
- * User statuses
+ * UserStatus Enum
  *
- * @var object
+ * This enum defines the possible user statuses.
  */
-const USER_STATUSES = (object)[
-	'online' => 'online',
-	'offline' => 'offline',
-	'busy' => 'busy',
-	'away' => 'away'
-];
+enum UserStatus: string
+{
+	case ONLINE  = 'online';
+	case OFFLINE = 'offline';
+	case BUSY    = 'busy';
+	case AWAY    = 'away';
+}
 
 /**
  * AuthController
@@ -98,7 +99,7 @@ class AuthController extends Controller
 	 */
 	protected function permit(User $user): object
 	{
-		$this->updateStatus($user, USER_STATUSES->online);
+		$this->updateStatus($user, UserStatus::ONLINE->value);
 		$this->setSessionUser($user);
 
 		return $this->response([
@@ -206,7 +207,7 @@ class AuthController extends Controller
 			return $this->error('The user is not found.');
 		}
 
-		$this->updateStatus($user->id, USER_STATUSES->offline);
+		$this->updateStatus($user->id, UserStatus::OFFLINE->value);
 		session()->destroy();
 
 		return $this->response(['message' => 'The user has been logged out successfully.']);
@@ -299,9 +300,9 @@ class AuthController extends Controller
 	 */
 	protected function updateLoginStatus(int $userId, string $status): void
 	{
-		if ($status === USER_STATUSES->online || $status === USER_STATUSES->offline)
+		if ($status === UserStatus::ONLINE->value || $status === UserStatus::OFFLINE->value)
 		{
-			$direction = $status === USER_STATUSES->online ? 'login' : 'logout';
+			$direction = $status === UserStatus::ONLINE->value ? 'login' : 'logout';
 			LoginLog::create((object)[
 				'dateTimeSetup' => date('Y-m-d H:i:s'),
 				'userId' => $userId,

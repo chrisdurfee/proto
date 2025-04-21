@@ -14,11 +14,12 @@ class ResourceHelper
 	 * Constructs the full resource file path.
 	 *
 	 * @param string $resourcePath The sanitized resource path segment.
-	 * @return string The complete file path to the resource.
+	 * @return string|null The complete file path to the resource.
 	 */
-	protected static function getResourcePath(string $resourcePath): string
+	protected static function getResourcePath(string $resourcePath): ?string
 	{
-		return realpath(__DIR__ . '/../../modules/' . $resourcePath . '/api.php');
+		$path = realpath(__DIR__ . '/../../modules/' . $resourcePath . '/api.php');
+		return ($path) ? $path : null;
 	}
 
 	/**
@@ -35,8 +36,35 @@ class ResourceHelper
 			return null;
 		}
 
-		$resourcePath = self::getResourcePath($filteredResource);
-		return file_exists($resourcePath) ? $resourcePath : null;
+		return self::getResourcePathFromUrl($filteredResource);
+	}
+
+	/**
+	 * Retrieves the resource file path from the URL.
+	 *
+	 * @param string $url The URL representing the resource.
+	 * @return string|null The file path if found, or null otherwise.
+	 */
+	protected static function getResourcePathFromUrl(string $url): ?string
+	{
+		if (empty($url))
+		{
+			return null;
+		}
+
+		$resourcePath = self::getResourcePath($url);
+		if (empty($resourcePath))
+		{
+			$resourcePath = self::removeLastPart($url);
+			if (empty($resourcePath))
+			{
+				return null;
+			}
+
+			return self::getResourcePathFromUrl($resourcePath);
+		}
+
+		return $resourcePath;
 	}
 
 	/**
@@ -48,6 +76,20 @@ class ResourceHelper
 	public static function includeResource(string $resourcePath): void
 	{
 		require_once $resourcePath;
+	}
+
+	/**
+	 * Removes the last part of the resource path.
+	 *
+	 * @param string $resourcePath The resource path to be modified.
+	 * @return string The resource path without the last part.
+	 */
+	protected static function removeLastPart(string $resourcePath): string
+	{
+		$DIVIDER = '/';
+		$parts = explode($DIVIDER, $resourcePath);
+		array_pop($parts);
+		return implode($DIVIDER, $parts);
 	}
 
 	/**

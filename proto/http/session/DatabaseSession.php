@@ -109,10 +109,9 @@ class DatabaseSession extends Adapter
 	protected function loadData(): void
 	{
 		$data = $this->model->getData()->data ?? null;
-
 		if ($data !== null)
 		{
-			$this->data = JsonFormat::decode($data) ?: [];
+			$this->data = (array)JsonFormat::decode($data) ?: [];
 		}
 	}
 

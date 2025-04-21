@@ -149,7 +149,7 @@ namespace Proto\Api
 				}
 
 				$resourcePath = ResourceHelper::getResource($resource);
-				if (! $resourcePath)
+				if (!$resourcePath)
 				{
 					self::error('The resource path is not valid.', self::HTTP_NOT_FOUND);
 					return;
