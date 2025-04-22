@@ -145,18 +145,17 @@ HTML;
 	 */
 	protected function addHeader(): string
 	{
-		if(empty($this->bannerImg) === true)
-		{
-			return "";
-		}
+		$src = $this->bannerImg
+			? 'http://' . Config::url() . $this->bannerImg
+			: 'https://via.placeholder.com/48x48/eeeeee/aaaaaa?text=%20';
 
 		return <<<HTML
-	<tr>
-		<td class="header" align="center" style="padding: 32px 0;">
-			<img src="https://via.placeholder.com/48x48/eeeeee/aaaaaa?text= " alt="Company Logo" width="48" height="48" style="border-radius: 12px; display:block;">
-		</td>
-	</tr>
-HTML;
+		<tr>
+			<td class="header {$this->headerClass}" align="center" style="padding: 32px 0;">
+				<img src="{$src}" alt="Company Logo" width="48" height="48" style="border-radius: 12px; display: block;">
+			</td>
+		</tr>
+	HTML;
 	}
 
 	/**

@@ -19,7 +19,7 @@ class AuthMultiFactorEmail extends AuthEmail
     {
         $props = $this->props;
 
-        return <<<EOT
+        return <<<HTML
 <tr>
     <td style="vertical-align:top;" class="sub-container">
         <h1>Sign-In Code</h1>
@@ -35,6 +35,6 @@ class AuthMultiFactorEmail extends AuthEmail
     </td>
 </tr>
 {$this->addCompanySignature()}
-EOT;
+HTML;
     }
 }

@@ -17,7 +17,7 @@ class AuthNewConnectionEmail extends AuthEmail
      */
     protected function addBody(): string
     {
-        return <<<EOT
+        return <<<HTML
 <tr>
     <td style="vertical-align:top;" class="sub-container">
         <h1>New Authorized Connection</h1>
@@ -27,6 +27,6 @@ class AuthNewConnectionEmail extends AuthEmail
     </td>
 </tr>
 {$this->addCompanySignature()}
-EOT;
+HTML;
     }
 }
