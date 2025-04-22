@@ -3,6 +3,7 @@ namespace Common\Email;
 
 use Proto\Html\Email\Email;
 use Proto\Config;
+use Proto\Utils\Strings;
 
 /**
  * BasicEmail
@@ -243,10 +244,11 @@ HTML;
 	protected function addCompanySignature(): string
 	{
 		$phone = env('contactPhone');
+		$formattedPhone = Strings::formatPhone($phone, 'NANP');
 		return <<<HTML
 <tr>
 	<td class="sub-container">
-		<p>Contact us at: {$phone}</p>
+		<p>Contact us at: <a href="tel:{$formattedPhone}">{$formattedPhone}</a></p>
 	</td>
 </tr>
 {$this->addBottomMargin()}

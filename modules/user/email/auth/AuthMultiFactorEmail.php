@@ -18,6 +18,7 @@ class AuthMultiFactorEmail extends AuthEmail
     protected function addBody(): string
     {
         $props = $this->props;
+        $code = $props->code ?? '000-000-0000';
 
         return <<<HTML
 <tr>
@@ -25,8 +26,10 @@ class AuthMultiFactorEmail extends AuthEmail
         <h1>Sign-In Code</h1>
         <p>
             This code can be used to authenticate a login attempt. If you wish to validate the request, enter this code in the code area.
+        </p>
+        <p>
         <br>
-            Code: <strong>{$props->code}</strong>
+            Code: <strong>{$code}</strong>
         </p>
         <p>
             You may use the number below to report any invalid requests trying to access your account.
