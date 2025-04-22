@@ -86,24 +86,24 @@ class BasicEmail extends Email
 	{
 		$style = $this->getStyle();
 
-		return <<<EOT
-		<!doctype html>
-		<html>
-			<head>
-				<meta charset="utf-8">
-				<meta name="viewport" content="width=600">
-				<meta name="x-apple-disable-message-reformatting">
-				<title>{$this->getTitle()}</title>
-				{$style}
-				{$this->additionalStyle()}
-			</head>
-			<body>
-				<main>
-					{$this->getContent()}
-				</main>
-			</body>
-		</html>
-EOT;
+		return <<<HTML
+	<!doctype html>
+	<html>
+		<head>
+			<meta charset="utf-8">
+			<meta name="viewport" content="width=600">
+			<meta name="x-apple-disable-message-reformatting">
+			<title>{$this->getTitle()}</title>
+			{$style}
+			{$this->additionalStyle()}
+		</head>
+		<body>
+			<main>
+				{$this->getContent()}
+			</main>
+		</body>
+	</html>
+HTML;
 	}
 
 	/**
@@ -123,13 +123,19 @@ EOT;
 	 */
 	protected function getContent(): string
 	{
-		return <<<EOT
-		<table class="main-container" cellpadding="0" cellspacing="0" align="center" width="100%">
-			{$this->addHeader()}
-			{$this->addBody()}
-			{$this->addFooter()}
-		</table>
-EOT;
+		return <<<HTML
+	<table class="main-wrapper" cellpadding="0" cellspacing="0" width="100%" bgcolor="#f4f4f5">
+		<tr>
+			<td align="center">
+				<table class="main-container" cellpadding="0" cellspacing="0" width="100%">
+					{$this->addHeader()}
+					{$this->addBody()}
+					{$this->addFooter()}
+				</table>
+			</td>
+		</tr>
+	</table>
+HTML;
 	}
 
 	/**
@@ -144,13 +150,13 @@ EOT;
 			return "";
 		}
 
-		return <<<EOT
-		<tr>
-			<td class="image-container {$this->headerClass}" style="text-align:center">
-				{$this->addBanner()}
-			</td>
-		</tr>
-EOT;
+		return <<<HTML
+	<tr>
+		<td class="header" align="center" style="padding: 32px 0;">
+			<img src="https://via.placeholder.com/48x48/eeeeee/aaaaaa?text= " alt="Company Logo" width="48" height="48" style="border-radius: 12px; display:block;">
+		</td>
+	</tr>
+HTML;
 	}
 
 	/**
@@ -183,22 +189,22 @@ EOT;
 	 */
 	protected function addFooter(): string
 	{
-		$baseUrl = Config::url();
-		$siteName = env('siteName');
+		$year = date('Y');
+		$company = env('siteName');
+		$address = env('companyAddress');
+		$unsubscribeUrl = env('unsubscribeUrl');
 
-		return <<<EOT
-		<table class="footer" cellpadding="0" cellspacing="0" width="100%">
-			<tr>
-				<td style="width: 284px;"></td>
-					<td>
-						<a href="https://{$baseUrl}" target="_blank">
-							<img src="http://{$baseUrl}/app/email/media/logo.png" alt="{$siteName}">
-						</a>
-					</td>
-				<td style="width: 284px;"></td>
-			</tr>
-		</table>
-EOT;
+		return <<<HTML
+	<tr>
+		<td class="footer" align="center" style="padding: 32px 16px; background: #f9fafb;">
+			<p style="margin: 0 0 6px; color: #6b7280;">&copy; {$year} {$company}. All rights reserved.</p>
+			<p style="margin: 0 0 6px; color: #6b7280;">{$address}</p>
+			<p style="margin: 0; color: #6b7280;">
+				<a href="{$unsubscribeUrl}" style="color: #3b82f6; text-decoration: none;">Unsubscribe</a>
+			</p>
+		</td>
+	</tr>
+HTML;
 	}
 
 	/**
@@ -210,7 +216,7 @@ EOT;
 	 */
 	protected function addButton(string $href, string $btnText): string
 	{
-		return <<<EOT
+		return <<<HTML
 		<table class="button-container" cellpadding="0" cellspacing="0" width="100%">
 			<tr>
 				<td class="center">
@@ -220,7 +226,7 @@ EOT;
 				</td>
 			</tr>
 		</table>
-EOT;
+HTML;
 	}
 
 	/**
@@ -231,14 +237,14 @@ EOT;
 	protected function addCompanySignature(): string
 	{
 		$phone = env('contactPhone');
-		return <<<EOT
+		return <<<HTML
 <tr>
 	<td class="sub-container">
 		<p>Contact us at: {$phone}</p>
 	</td>
 </tr>
 {$this->addBottomMargin()}
-EOT;
+HTML;
 	}
 
 	/**
@@ -248,13 +254,13 @@ EOT;
 	 */
 	protected function addBottomMargin(): string
 	{
-		return <<<EOT
+		return <<<HTML
 		<table class="bottom-margin" cellpadding="0" cellspacing="0" width="100%">
 			<tr>
 				<td>&nbsp;</td>
 			</tr>
 		</table>
-EOT;
+HTML;
 	}
 
 	/**
