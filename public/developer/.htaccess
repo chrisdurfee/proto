@@ -8,4 +8,4 @@ RewriteRule ^([^/]+)/$ $1 [R=301,L]
 RewriteBase /
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([^?]*)$ /base-update/index.html?page=$1 [NC,L,QSA]
+RewriteRule ^([^?]*)$ /index.html?page=$1 [NC,L,QSA]

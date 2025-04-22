@@ -8,6 +8,8 @@ use Proto\Utils\Filter\Input;
 $template = Input::get('template') ?? "Common\\Email\\BasicEmail";
 $email = Template::create($template);
 
+echo (string)$email;
+
 ?>
 <style>
     html, body{
