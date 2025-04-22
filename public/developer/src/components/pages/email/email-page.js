@@ -49,7 +49,7 @@ export const EmailPage = () =>
 		setData()
 		{
 			return new Data({
-				template: 'Common\\Email\\BasicEmail'
+				template: 'Modules\\User\\Email\\Auth\\AuthMultiFactorEmail'
 			});
 		}
 	};
