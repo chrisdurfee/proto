@@ -40,8 +40,8 @@ class WebPush extends Dispatch
 	/**
 	 * WebPush constructor.
 	 *
-	 * @param array  $settings An array of subscription settings.
-	 * @param string $payload  The push notification payload.
+	 * @param array $settings An array of subscription settings.
+	 * @param string $payload The push notification payload.
 	 */
 	public function __construct(array $settings = [], string $payload = '')
 	{

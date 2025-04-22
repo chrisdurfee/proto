@@ -46,7 +46,7 @@ class Sms extends Dispatch
 	/**
 	 * Constructor for the Sms class.
 	 *
-	 * @param object      $settings     SMS settings.
+	 * @param object $settings SMS settings.
 	 * @param object|null $customDriver Optional custom SMS driver.
 	 *
 	 * @return void

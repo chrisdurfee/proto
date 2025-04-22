@@ -86,11 +86,11 @@ class Email extends Dispatch
 	/**
 	 * Email constructor.
 	 *
-	 * @param string     $to Recipient email address.
-	 * @param string     $messageType Message type ('html' or 'text').
-	 * @param string     $from Sender email address.
-	 * @param string     $subject Email subject.
-	 * @param string     $message Email body message.
+	 * @param string $to Recipient email address.
+	 * @param string $messageType Message type ('html' or 'text').
+	 * @param string $from Sender email address.
+	 * @param string $subject Email subject.
+	 * @param string $message Email body message.
 	 * @param array|null $attachments List of attachment file paths.
 	 */
 	public function __construct(
@@ -102,11 +102,11 @@ class Email extends Dispatch
 		?array $attachments = null
 	)
 	{
-		$this->to          = $to;
+		$this->to = $to;
 		$this->messageType = $messageType;
-		$this->from        = $from;
-		$this->subject     = $subject;
-		$this->message     = $message;
+		$this->from = $from;
+		$this->subject = $subject;
+		$this->message = $message;
 		$this->addAttachments($attachments);
 	}
 
@@ -356,11 +356,11 @@ class Email extends Dispatch
 	private function setupHeader(): string
 	{
 		$fromName = $this->getFromName();
-		$header   = '';
+		$header = '';
 
 		if (count($this->attachments) > 0)
 		{
-			$header  = "From: \"{$fromName}\" <{$this->from}>\r\n";
+			$header = "From: \"{$fromName}\" <{$this->from}>\r\n";
 			$header .= "Reply-To: {$this->from}\r\n";
 			$header .= "Return-Path: {$this->from}\r\n";
 			$header .= "X-Sender: \"{$fromName}\" <{$this->from}>\r\n";
@@ -373,7 +373,7 @@ class Email extends Dispatch
 		{
 			if ($this->messageType === 'html')
 			{
-				$header  = "MIME-Version: 1.0\r\n";
+				$header = "MIME-Version: 1.0\r\n";
 				$header .= "Content-Type: text/html; charset=UTF-8\r\n";
 				$header .= "From: \"{$fromName}\" <{$this->from}>\r\n";
 				$header .= "Return-Path: <{$this->from}>\r\n";
@@ -384,7 +384,7 @@ class Email extends Dispatch
 			}
 			else
 			{
-				$header  = "MIME-Version: 1.0\r\n";
+				$header = "MIME-Version: 1.0\r\n";
 				$header .= "Content-Type: text/plain; charset=UTF-8\r\n";
 				$header .= "From: \"{$fromName}\" <{$this->from}>\r\n";
 				$header .= "Return-Path: <{$this->from}>\r\n";
@@ -403,10 +403,10 @@ class Email extends Dispatch
 	 */
 	private function email(): bool
 	{
-		$to      = $this->to;
+		$to = $this->to;
 		$subject = $this->subject;
 		$message = $this->setupMessage();
-		$header  = $this->setupHeader();
+		$header = $this->setupHeader();
 
 		return mail($to, $subject, wordwrap($message, 70), $header, '-f' . $this->from);
 	}
