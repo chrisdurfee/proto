@@ -29,9 +29,9 @@ spl_autoload_register(function(string $class): void
 
 	// Define base directories to search
 	$baseDirs = [
-		__DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR,                       // Primary base (proto autoload base)
-		__DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR, // ../../../
-		__DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR,             // ../../
+		__DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR,
+		__DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR,
+		__DIR__ . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR,
 	];
 
 	// Loop through each base directory and require the file if found

@@ -13,4 +13,5 @@ export const Links = () => [
 	{ label: 'Users', href: '/developer/users', icon: Icons.user.group, mobileOrder: 5 },
 	{ label: 'IAM', href: '/developer/iam', icon: Icons.locked, mobileOrder: 6 },
 	{ label: 'Docs', href: '/developer/docs', icon: Icons.document.text, mobileOrder: 7 },
+	{ label: 'Email', href: '/developer/email', icon: Icons.at, mobileOrder: 8 },
 ];

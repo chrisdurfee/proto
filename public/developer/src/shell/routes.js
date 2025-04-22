@@ -54,4 +54,9 @@ export const Routes = () => [
 	 * Docs routes
 	 */
 	DynamicRoute('/docs*', () => import('../components/pages/documentation/documentation-page.js'), 'Docs', true),
+
+	/**
+	 * Email routes
+	 */
+	DynamicRoute('/email*', () => import('../components/pages/email/email-page.js'), 'Email', true),
 ];
