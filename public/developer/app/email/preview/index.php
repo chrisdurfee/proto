@@ -2,10 +2,17 @@
 
 include_once __DIR__ . '/../../autoload.php';
 
+use Proto\Base;
 use Proto\Dispatch\Email\Template;
 use Proto\Utils\Filter\Input;
 
-$template = Input::get('template') ?? "Common\\Email\\BasicEmail";
+/**
+ * This will boostrap the application and load the necessary classes.
+ */
+new Base();
+
+$template = Input::get('template') ?? null;
+$template = !empty($template) ? $template : "Common\\Email\\BasicEmail";
 $email = Template::create($template);
 
 echo (string)$email;
