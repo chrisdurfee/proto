@@ -145,14 +145,21 @@ HTML;
 	 */
 	protected function addHeader(): string
 	{
-		$src = $this->bannerImg
-			? 'http://' . Config::url() . $this->bannerImg
-			: 'https://via.placeholder.com/48x48/eeeeee/aaaaaa?text=%20';
+		$src = $this->bannerImg ? 'https://' . Config::url() . $this->bannerImg : '';
 
 		return <<<HTML
 		<tr>
 			<td class="header {$this->headerClass}" align="center" style="padding: 32px 0;">
-				<img src="{$src}" alt="Company Logo" width="48" height="48" style="border-radius: 12px; display: block;">
+			<div style="
+				width: 32px;
+				height: 32px;
+				margin: 16px auto;
+				background-color: #000000;
+				border-radius: 8px;
+				display: block;
+			"></div>
+
+				<!-- <img src="{$src}" alt="Company Logo" width="48" height="48" style="border-radius: 12px; display: block;"> -->
 			</td>
 		</tr>
 	HTML;
