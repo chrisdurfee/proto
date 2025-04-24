@@ -1,12 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Router;
 
-use Proto\Auth\PolicyProxy;
-use Proto\Cache\Cache;
-use Proto\Cache\Policies\ModelPolicy;
 use Proto\Cache\Policies\Policy;
-use Proto\Cache\Policies\PolicyProxy as CacheProxy;
-use Proto\Controllers\Controller;
 use Proto\Controllers\ControllerInterface;
 
 /**
@@ -41,7 +36,7 @@ class Resource
 		protected object $params
 	)
 	{
-		$this->controller = $this->getController($controller);
+		$this->controller = ControllerHelper::getController($controller);
 	}
 
 	/**
@@ -52,70 +47,13 @@ class Resource
 	 */
 	public function policy(
 		string $policy
-	): mixed
+	): self
 	{
 		if (class_exists($policy))
 		{
 			$this->policy = new $policy($this->controller);
 		}
 		return $this;
-	}
-
-	/**
-	 * This will set the caching policy for the controller.
-	 *
-	 * @param Controller $controller
-	 * @param string $policy
-	 * @return mixed
-	 */
-	protected function setCachingPolicy(
-		Controller $controller,
-		string $policy = ModelPolicy::class
-	): mixed
-	{
-		if (Cache::isSupported() !== true)
-		{
-			return $controller;
-		}
-
-		/**
-		 * @var object $cachePolicy
-		 */
-		$cachePolicy = new $policy($controller);
-		return new CacheProxy($controller, $cachePolicy);
-	}
-
-	/**
-	 * This will get the controller. If the controller has a policy
-	 * defined, it will create a policy proxy to auth the actions
-	 * before calling the methods.
-	 *
-	 * @param string $controller
-	 * @return ControllerInterface
-	 */
-	public function getController(string $controller): ControllerInterface
-	{
-		$controller = new $controller();
-
-		/**
-		 * This will set up a caching policy for the controller.
-		 */
-		$controller = $this->setCachingPolicy($controller);
-
-		/**
-		 * This will check if the controller has a policy defined.
-		 */
-		$policy = $controller->getPolicy();
-		if (!isset($policy))
-		{
-			return $controller;
-		}
-
-		/**
-		 * This will create a policy proxy to auth the actions
-		 * before calling the methods.
-		 */
-		return new PolicyProxy($controller, new $policy($controller));
 	}
 
 	/**

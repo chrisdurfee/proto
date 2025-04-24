@@ -186,7 +186,7 @@ class Router
 	 * This will return the full URI.
 	 *
 	 * @param string $uri
-	 * @return string
+	 * @return callable
 	 */
 	protected function checkArrayCallback(callable $callback): callable
 	{
@@ -198,7 +198,18 @@ class Router
 		[$class, $methodName] = $callback;
 		return function($req, $params) use ($class, $methodName)
 		{
-			return (new $class())->{$methodName}($req, $params);
+			/**
+			 * The controller will be set up using the helper to help
+			 * cache and apply the controller policy if it exists.
+			 */
+			$controller = ControllerHelper::getController($class);
+			if (!is_callable([$controller, $methodName]))
+			{
+				$HTTPS_REQUIRED_CODE = 404;
+				$this->sendResponse($HTTPS_REQUIRED_CODE, ['error' => 'Method not found in the resource.']);
+				return;
+			}
+			return $controller->{$methodName}($req, $params);
 		};
 	}
 

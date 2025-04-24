@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
+use Modules\User\Auth\Gates\PasswordRequestGate;
 use Modules\User\Models\User;
 use Modules\User\Models\LoginLog;
 use Modules\User\Controllers\LoginAttemptController;
@@ -352,6 +353,81 @@ class AuthController extends Controller
 	{
 		return $this->modelClass::get($userId);
 	}
+
+	/**
+	 * Validate the password request.
+	 *
+	 * @param Request $req
+	 * @return string|null
+	 */
+	protected function checkPasswordRequest(string $requestId, int $userId): ?string
+	{
+		$gate = new PasswordRequestGate();
+		return $gate->validateRequest($requestId, $userId);
+	}
+
+	/**
+	 * Validate the password request.
+	 *
+	 * @param Request $req
+	 * @return object
+	 */
+	public function validatePasswordRequest(Request $req): object
+    {
+        $requestId = $req::input('requestId');
+		$userId = $req::getInt('userId');
+        if (!isset($requestId) || !isset($userId))
+        {
+            return $this->error('The request id or user id is missing.');
+        }
+
+        $username = $this->checkPasswordRequest($requestId, $userId);
+        if ($username === null)
+        {
+            return $this->error('No request is found.');
+        }
+
+        return $this->response((object)[
+            'username' => $username
+        ]);
+    }
+
+	/**
+	 * Reset the password for a user.
+	 *
+	 * @param Request $req
+	 * @return object
+	 */
+	public function resetPassword(Request $req): object
+    {
+        $user = $req::json('user');
+        if (!isset($user))
+        {
+            return $this->error('The user is not set.');
+        }
+
+        if (empty($user->password))
+        {
+            return $this->error('The password is not set.');
+        }
+
+        $requestId = $user->requestId;
+		$userId = (int)$user->userId;
+		$username = $this->checkPasswordRequest($requestId, $userId);
+        if ($username === null)
+        {
+            return $this->error('No request is found.');
+        }
+
+		$controller = new UserController();
+        $result = $controller->resetPassword($requestId, $userId, $user);
+        if ($result->success)
+        {
+			$gate = new PasswordRequestGate();
+            $gate->resetRequest();
+        }
+        return $result;
+    }
 
 	/**
 	 * Store the authenticated user in session.
