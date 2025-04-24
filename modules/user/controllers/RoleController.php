@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
+use Modules\User\Auth\Policies\RolePolicy;
 use Proto\Controllers\ModelController as Controller;
 use Modules\User\Models\Role;
 
@@ -13,6 +14,11 @@ use Modules\User\Models\Role;
  */
 class RoleController extends Controller
 {
+	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = RolePolicy::class;
+
 	/**
 	 * Initializes the model class.
 	 *

@@ -14,6 +14,11 @@ use Modules\User\Models\RolePermission;
 class RolePermissionController extends Controller
 {
 	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = RolePermission::class;
+
+	/**
 	 * Initializes the model class.
 	 *
 	 * @param string|null $modelClass The model class reference using ::class.

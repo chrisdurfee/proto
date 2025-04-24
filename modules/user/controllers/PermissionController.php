@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
+use Modules\User\Auth\Policies\PermissionPolicy;
 use Proto\Controllers\ModelController as Controller;
 use Modules\User\Models\Permission;
 
@@ -11,6 +12,11 @@ use Modules\User\Models\Permission;
  */
 class PermissionController extends Controller
 {
+	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = PermissionPolicy::class;
+
 	/**
 	 * Initializes the model class.
 	 *

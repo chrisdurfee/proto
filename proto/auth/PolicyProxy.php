@@ -54,7 +54,7 @@ class PolicyProxy implements ControllerInterface
 	 */
 	protected function showErrorResponse(?string $message = null): void
 	{
-		$message ??= 'The policy is blocking the user from accessing this action';
+		$message ??= 'The policy is blocking the user from accessing this action.';
 		$error = $this->error($message);
 		new HttpResponse($error, 403);
 		exit;
