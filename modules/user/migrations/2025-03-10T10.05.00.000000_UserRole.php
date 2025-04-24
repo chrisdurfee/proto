@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the user_roles pivot table.
- *
- * @package Modules\User\Migrations
  */
 class UserRole extends Migration
 {

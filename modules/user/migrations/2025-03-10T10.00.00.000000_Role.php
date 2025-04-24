@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the roles table.
- *
- * @package Modules\User\Migrations
  */
 class Role extends Migration
 {

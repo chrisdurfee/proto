@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the user_authed_devices table.
- *
- * @package App\Migrations
  */
 class UserAuthedDevice extends Migration
 {

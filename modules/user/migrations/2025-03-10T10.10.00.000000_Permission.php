@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the permissions table.
- *
- * @package Modules\User\Migrations
  */
 class Permission extends Migration
 {

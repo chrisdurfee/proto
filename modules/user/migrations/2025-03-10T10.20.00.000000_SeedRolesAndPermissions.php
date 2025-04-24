@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration to seed initial roles and permissions.
- *
- * @package Modules\User\Migrations
  */
 class SeedRolesAndPermissions extends Migration
 {

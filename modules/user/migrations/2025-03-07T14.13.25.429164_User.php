@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the users table.
- *
- * @package Modules\User\Migrations
  */
 class User extends Migration
 {

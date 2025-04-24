@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the login_log table.
- *
- * @package App\Migrations
  */
 class LoginLog extends Migration
 {

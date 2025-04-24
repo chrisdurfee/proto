@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the role_permissions pivot table.
- *
- * @package Modules\User\Migrations
  */
 class RolePermission extends Migration
 {

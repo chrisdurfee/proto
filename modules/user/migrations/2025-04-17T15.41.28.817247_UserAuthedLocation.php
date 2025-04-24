@@ -4,8 +4,6 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the user_authed_locations table.
- *
- * @package App\Migrations
  */
 class UserAuthedLocation extends Migration
 {
