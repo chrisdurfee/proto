@@ -41,19 +41,28 @@ class PublicIp
 	protected static function fetchPublicIp(): ?string
 	{
 		$headers = [
-			"HTTP_CLIENT_IP",
-			"HTTP_X_FORWARDED_FOR",
-			"REMOTE_ADDR"
+			'HTTP_CF_CONNECTING_IP',
+			'HTTP_X_REAL_IP',
+			'HTTP_X_CLUSTER_CLIENT_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_CLIENT_IP',
+			'REMOTE_ADDR',
 		];
 
 		foreach ($headers as $header)
 		{
-			if (!empty($_SERVER[$header]))
+			$value = $_SERVER[$header] ?? null;
+			if (empty($value))
 			{
-				$ipList = explode(',', $_SERVER[$header]);
-				$ip = trim($ipList[0]); // Take the first IP in case of multiple proxies
+				continue;
+			}
 
-				if (self::isValidIp($ip))
+			// X-Forwarded-For and similar can be a comma-separated list.
+			$candidates = explode(',', $value);
+			foreach ($candidates as $ip)
+			{
+				$ip = trim($ip);
+				if (static::isValidIp($ip))
 				{
 					return $ip;
 				}
@@ -71,6 +80,11 @@ class PublicIp
 	 */
 	protected static function isValidIp(?string $ip): bool
 	{
+		if (empty($ip))
+		{
+			return false;
+		}
+
 		return Validate::ip($ip);
 	}
 }

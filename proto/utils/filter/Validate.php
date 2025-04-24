@@ -132,10 +132,11 @@ class Validate extends Filter
 	 *
 	 * @param mixed $key
 	 * @param int $flag
+	 * @param mixed $options
 	 * @return bool
 	 */
-	protected static function filter(mixed $key, int $flag): bool
+	protected static function filter(mixed $key, int $flag, mixed $options = []): bool
 	{
-		return ($key !== null) && (filter_var($key, $flag) !== false);
+		return ($key !== null) && (filter_var($key, $flag, $options) !== false);
 	}
 }

@@ -213,10 +213,10 @@ class Gateway
 				),
 				CodeBlock(
 `router()
-    ->resource('user', UserController::class)
-    ->middleware([
+	->middleware([
         CrossSiteProtectionMiddleware::class
-    ]);`
+    ])
+    ->resource('user', UserController::class);`
 				)
 			]),
 

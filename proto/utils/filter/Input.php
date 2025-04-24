@@ -1,5 +1,4 @@
 <?php declare(strict_types=1);
-
 namespace Proto\Utils\Filter;
 
 use Proto\Utils\Filter\Filter;
