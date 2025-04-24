@@ -72,11 +72,11 @@ export const AuthPage = () =>
 				P(
 					{ class: 'text-muted-foreground' },
 					`Gates are classes responsible for authenticating a particular type of resource.
-					 They should be placed in common/Auth, and typically extend the base Gate class.`
+					 They should be placed in Common\\Auth, and typically extend the base Gate class.`
 				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Within a gate, you can use Proto\\Http\\Session and common/Data to access session
+					`Within a gate, you can use Proto\\Http\\Session and Common\\Data to access session
 					 data or global application data. Gates are named in the singular form, followed by "Gate" (e.g., ExampleGate).`
 				),
 				CodeBlock(
@@ -107,7 +107,7 @@ $value = static::get('key');`
 				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`All gates can be registered within Common/Auth so they can be accessed globally. The framework has a global "auth" function that will return the singleton instance for the "Auth" class.
+					`All gates can be registered within Common\\Auth so they can be accessed globally. The framework has a global "auth" function that will return the singleton instance for the "Auth" class.
 					 For instance, if you have a user gate, you might call:`
 				),
 				CodeBlock(
@@ -139,7 +139,7 @@ $auth->user->isUser(1);`
 					{ class: 'text-muted-foreground' },
 					`Policies are another layer of access control. They validate requests before or after
 					 a controller method runs, ensuring users have the right permissions or roles.
-					 Policies should also be placed in common/Auth/Policies, named in the singular form,
+					 Policies should also be placed in Common\\Auth\\Policies, named in the singular form,
 					 followed by "Policy" (e.g., ExamplePolicy).`
 				),
 				CodeBlock(
