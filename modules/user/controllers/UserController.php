@@ -2,6 +2,7 @@
 namespace Modules\User\Controllers;
 
 use Modules\User\Models\User;
+use Modules\User\Auth\Policies\UserPolicy;
 use Proto\Controllers\ModelController;
 
 /*
@@ -13,6 +14,11 @@ use Proto\Controllers\ModelController;
  */
 class UserController extends ModelController
 {
+	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = UserPolicy::class;
+
 	/**
 	 * This will setup the model class.
 	 *
