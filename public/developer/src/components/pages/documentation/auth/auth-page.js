@@ -107,12 +107,28 @@ $value = static::get('key');`
 				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`All gates should be registered within common/Auth so they can be accessed globally.
+					`All gates can be registered within Common/Auth so they can be accessed globally. The framework has a global "auth" function that will return the singleton instance for the "Auth" class.
 					 For instance, if you have a user gate, you might call:`
 				),
 				CodeBlock(
-`$userGate = Common\\Auth::user();
-$userGate->has('edit-profile');`
+`$userGate = auth()->user;
+$userGate->isUser(1);`
+				),
+
+				P(
+					{ class: 'text-muted-foreground' },
+					`You can register a gate to be globally accessible by setting it on the Auth class.`
+				),
+				CodeBlock(
+`
+// access the global Auth instance
+$auth = auth();
+
+// set the the user gate to the Auth instance
+$auth->user = new UserGate();
+
+// now you can access the user gate globally in any module
+$auth->user->isUser(1);`
 				)
 			]),
 
