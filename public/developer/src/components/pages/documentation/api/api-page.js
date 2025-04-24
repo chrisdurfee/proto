@@ -188,7 +188,7 @@ $router->get('patients/:id/', function($req, $params)
  * @param object $params
  * @return object
  */
-$router->get('patients/:id/', [Patient::class, 'get']);
+$router->get('patients/:id/', [PatientController::class, 'get']);
 
 /**
  * This will redirect with a 301 code.
