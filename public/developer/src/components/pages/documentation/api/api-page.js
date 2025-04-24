@@ -182,6 +182,15 @@ $router->get('patients/:id/', function($req, $params)
 });
 
 /**
+ * This will get a patient by ID.
+ *
+ * @param string $req - the request class
+ * @param object $params
+ * @return object
+ */
+$router->get('patients/:id/', [Patient::class, 'get']);
+
+/**
  * This will redirect with a 301 code.
  *
  * @param string $req - the request class
@@ -247,8 +256,49 @@ $router->get('*', function($req, $params)
 });
 `
 				)
-			])
-		]
-	);
+			]),
+
+			// group routes Section
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Group Routes'),
+				P({ class: 'text-muted-foreground' },
+					`You can group routes together to apply common middleware or settings. For example:`
+				),
+				CodeBlock(
+`<?php declare(strict_types=1);
+namespace Modules\\User\\Api\\Auth;
+
+use Modules\\User\\Controllers\\AuthController;
+use Proto\\Http\\Middleware\\CrossSiteProtectionMiddleware;
+use Proto\\Http\\Router\\Router;
+
+/**
+ * Auth API Routes
+ *
+ * This file defines the API routes for user authentication, including
+ * login, logout, registration, MFA, and CSRF token retrieval.
+ */
+router()
+	->middleware(([
+		CrossSiteProtectionMiddleware::class,
+	]))
+	->group('user/auth', function(Router $router)
+	{
+		$controller = new AuthController();
+		// standard login / logout / register
+		$router->post('login', [$controller, 'login']);
+		$router->post('logout', [$controller, 'logout']);
+		$router->post('register', [$controller, 'register']);
+
+		// MFA: send & verify one-time codes
+		$router->post('mfa/code', [$controller, 'getAuthCode']);
+		$router->post('mfa/verify', [$controller, 'verifyAuthCode']);
+
+		// CSRF token (no body, safe to GET)
+		$router->get('csrf-token', [$controller, 'getToken']);
+	});
+`)
+		])
+	]);
 
 export default ApiPage;
