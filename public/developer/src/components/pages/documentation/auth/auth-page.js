@@ -188,6 +188,51 @@ class ExamplePolicy extends Policy
 					 while after() runs after. If you need a specific post-check for a method named get,
 					 you can implement afterGet().`
 				)
+			]),
+
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Controller Policy Usage'),
+				P(
+					{ class: 'text-muted-foreground' },
+					`Controllers can use policies to secure their methods when called by an API. You can specify a policy for a controller by setting the policy property in the controller class.`
+				),
+				CodeBlock(
+`<?php declare(strict_types=1);
+namespace Module\\User\\Controllers;
+
+use Proto\\Controllers\\ModelController;
+use Modules\\User\\Auth\\Policies\\UserPolicy;
+
+class UserController extends ModelController
+{
+	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = UserPolicy::class;
+}`
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`The Router will use this policy when the controller is called if the controller is registered as a "resource.".`
+				),
+				CodeBlock(
+`<?php declare(strict_types=1);
+namespace Modules\\User\\Api;
+
+use Modules\\User\\Controllers\\UserController;
+
+/**
+ * User API Routes for Accounts
+ *
+ * This file handles API routes for user accounts.
+ */
+router()
+    ->resource('user/:userId/account', UserController::class);`
+				),
+				P(
+					{ class: 'text-muted-foreground' },
+					`This resource is being secured by the UserController policy which will be called and validated to make sure the API request is allowed.`
+				)
 			])
 		]
 	);

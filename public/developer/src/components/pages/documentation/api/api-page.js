@@ -298,6 +298,13 @@ router()
 		$router->get('csrf-token', [$controller, 'getToken']);
 	});
 `)
+		]),
+
+		Section({ class: 'space-y-4 mt-12' }, [
+			H4({ class: 'text-lg font-bold' }, 'Caching'),
+			P({ class: 'text-muted-foreground' },
+				`Proto supports server-side caching for API responses. It will automatically cache and invalidate cache for registered "resource" routes using Redis. The cache is handled by a Cache Proxy that will run after authentication. If the request is a "GET" request, it will check if the cache exists. If it does, it will return the cached response. If not, it will call the controller and cache the response. Non get methods will clear the cache.`
+			)
 		])
 	]);
 
