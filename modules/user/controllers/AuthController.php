@@ -372,14 +372,14 @@ class AuthController extends Controller
 			return $this->error('The user is not found.', 404);
 		}
 
-		$username = $this->pwService->sendResetRequest($user);
-		if ($username === null)
+		$result = $this->pwService->sendResetRequest($user);
+		if (empty($result->email) && empty($result->sms))
 		{
-			return $this->error('No request is found.', 404);
+			return $this->error('The password reset request has failed.', 400);
 		}
 
 		return $this->response((object)[
-			'username' => $username
+			'message' => 'The password reset request has been sent successfully.'
 		]);
 	}
 
