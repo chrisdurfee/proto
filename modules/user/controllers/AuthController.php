@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
-use Modules\User\Auth\Gates\PasswordRequestGate;
 use Modules\User\Models\User;
 use Modules\User\Models\LoginLog;
 use Modules\User\Controllers\LoginAttemptController;
 use Modules\User\Services\Auth\MultiFactorAuthService;
 use Modules\User\Controllers\Multifactor\MultiFactorHelper;
+use Modules\User\Services\Password\PasswordService;
 use Proto\Controllers\Controller;
 use Proto\Http\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
@@ -358,39 +358,31 @@ class AuthController extends Controller
 	 * Validate the password request.
 	 *
 	 * @param Request $req
-	 * @return string|null
-	 */
-	protected function checkPasswordRequest(string $requestId, int $userId): ?string
-	{
-		$gate = new PasswordRequestGate();
-		return $gate->validateRequest($requestId, $userId);
-	}
-
-	/**
-	 * Validate the password request.
-	 *
-	 * @param Request $req
 	 * @return object
 	 */
 	public function validatePasswordRequest(Request $req): object
-    {
-        $requestId = $req::input('requestId');
+	{
+		// This will wait for 1 second to prevent brute force attacks.
+		sleep(1);
+
+		$requestId = $req::input('requestId');
 		$userId = $req::getInt('userId');
-        if (!isset($requestId) || !isset($userId))
-        {
-            return $this->error('The request id or user id is missing.');
-        }
+		if (!isset($requestId) || !isset($userId))
+		{
+			return $this->error('The request id or user id is missing.');
+		}
 
-        $username = $this->checkPasswordRequest($requestId, $userId);
-        if ($username === null)
-        {
-            return $this->error('No request is found.');
-        }
+		$service = new PasswordService();
+		$username = $service->validateRequest($requestId, $userId);
+		if ($username === null)
+		{
+			return $this->error('No request is found.');
+		}
 
-        return $this->response((object)[
-            'username' => $username
-        ]);
-    }
+		return $this->response((object)[
+			'username' => $username
+		]);
+	}
 
 	/**
 	 * Reset the password for a user.
@@ -399,35 +391,30 @@ class AuthController extends Controller
 	 * @return object
 	 */
 	public function resetPassword(Request $req): object
-    {
-        $user = $req::json('user');
-        if (!isset($user))
-        {
-            return $this->error('The user is not set.');
-        }
+	{
+		// This will wait for 1 second to prevent brute force attacks.
+		sleep(1);
 
-        if (empty($user->password))
-        {
-            return $this->error('The password is not set.');
-        }
+		$user = $req::json('user');
+		if (!isset($user))
+		{
+			return $this->error('The user is not set.');
+		}
 
-        $requestId = $user->requestId;
-		$userId = (int)$user->userId;
-		$username = $this->checkPasswordRequest($requestId, $userId);
-        if ($username === null)
-        {
-            return $this->error('No request is found.');
-        }
+		if (empty($user->password))
+		{
+			return $this->error('The password is not set.');
+		}
 
-		$controller = new UserController();
-        $result = $controller->resetPassword($requestId, $userId, $user);
-        if ($result->success)
-        {
-			$gate = new PasswordRequestGate();
-            $gate->resetRequest();
-        }
-        return $result;
-    }
+		$requestId = $user->requestId;
+		$userId = $user->userId;
+
+		$service = new PasswordService();
+		$result = $service->resetPassword($requestId, $userId, $user->password);
+		return $this->response((object)[
+			'message' => ($result)?'The password has been reset successfully.' : 'The password reset has failed.',
+		]);
+	}
 
 	/**
 	 * Store the authenticated user in session.

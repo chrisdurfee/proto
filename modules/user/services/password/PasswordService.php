@@ -5,243 +5,326 @@ use Modules\User\Models\User;
 use Modules\User\Models\PasswordRequest;
 use Proto\Dispatch\Enqueuer;
 use Modules\User\Auth\Gates\PasswordRequestGate;
+use Proto\Controllers\Response;
 
 /**
  * PasswordService
+ *
+ * This will set up the password service.
  *
  * @package Modules\User\Services\Password
  */
 class PasswordService
 {
-    /** @var PasswordRequestGate|null */
-    protected static ?PasswordRequestGate $gate = null;
+	/** @var PasswordRequestGate|null */
+	protected static ?PasswordRequestGate $gate = null;
 
-    /**
-     * Lazy-load the password request gate.
-     *
-     * @return PasswordRequestGate
-     */
-    protected static function gate(): PasswordRequestGate
-    {
-        return self::$gate ?? (self::$gate = new PasswordRequestGate());
-    }
+	/**
+	 * Lazy-load the password request gate.
+	 *
+	 * @return PasswordRequestGate
+	 */
+	protected static function gate(): PasswordRequestGate
+	{
+		return self::$gate ?? (self::$gate = new PasswordRequestGate());
+	}
 
-    /**
-     * This will get the password model.
-     *
-     * @return PasswordRequest
-     */
-    protected function model(): PasswordRequest
-    {
-        return new PasswordRequest();
-    }
+	/**
+	 * This will get the password model.
+	 *
+	 * @return PasswordRequest
+	 */
+	protected function model(): PasswordRequest
+	{
+		return new PasswordRequest();
+	}
 
-    /**
-     * Kick off a new password reset request for the given user.
-     *
-     * @param User $user
-     * @param string $type
-     * @return object
-     */
-    public function sendResetRequest(User $user, string $type = 'email'): object
-    {
-        $model = $this->model();
-        $model->set('userId', $user->id);
-        $model->add();
-        $requestId = $model->requestId;
+	/**
+	 * This will get the user by ID.
+	 *
+	 * @param mixed $userId
+	 * @return object|null
+	 */
+	protected function getUserById(int $userId): ?User
+	{
+		return User::get($userId);
+	}
 
-        self::gate()->setRequest($requestId, $user->id);
+	/**
+	 * This will display the error message.
+	 *
+	 * @param string $message
+	 * @return Response
+	 */
+	protected function error(string $message): Response
+	{
+		$response = new Response();
+		$response->error($message);
+		return $response->display();
+	}
 
-        return $this->dispatchRequest($user, $type, $requestId);
-    }
+	/**
+	 * Kick off a new password reset request for the given user.
+	 *
+	 * @param object $data
+	 * @return object
+	 */
+	public function sendResetRequest(object $data): object
+	{
+		$user = $this->getUserById($data->id);
+		if ($user === null)
+		{
+			return $this->error('User not found.');
+		}
 
-    /**
-     * Route the reset request through email or SMS.
-     *
-     * @param User $user
-     * @param string $type
-     * @param string $requestId
-     * @return object
-     */
-    protected function dispatchRequest(User $user, string $type, string $requestId): object
-    {
-        return $type === 'sms'
-            ? $this->textRequest($user, $requestId)
-            : $this->emailRequest($user, $requestId);
-    }
+		/**
+		 * This will add the password request to the database.
+		 */
+		$model = $this->model();
+		$model->set('userId', $user->id);
+		$model->add();
 
-    /**
-     * Send the reset link/code via email.
-     *
-     * @param User $user
-     * @param string $requestId
-     * @return object
-     */
-    protected function emailRequest(User $user, string $requestId): object
-    {
-        $settings = (object)[
-            'to' => $user->email,
-            'subject' => 'Password Reset Request',
-            'template' => 'Modules\\User\\Email\\Password\\PasswordResetRequestEmail'
-        ];
-        $data = (object)[
-            'username' => $user->username,
-            'resetUrl' => $this->buildResetUrl($requestId, $user->id)
-        ];
+		/**
+		 * This will set the request ID in the session.
+		 */
+		$requestId = $model->requestId;
+		self::gate()->setRequest($requestId, $user->id);
 
-        return $this->dispatchEmail($settings, $data);
-    }
+		return $this->dispatchRequest($user, $requestId);
+	}
 
-    /**
-     * Send the reset link/code via SMS.
-     *
-     * @param User $user
-     * @param string $requestId
-     * @return object
-     */
-    protected function textRequest(User $user, string $requestId): object
-    {
-        $settings = (object)[
-            'to' => $user->mobile,
-            'session' => $this->getSmsSession(),
-            'template' => 'Modules\\User\\Text\\Password\\PasswordResetRequestText'
-        ];
-        $data = (object)[
-            'code' => $requestId,
-            'resetUrl' => $this->buildResetUrl($requestId, $user->id)
-        ];
+	/**
+	 * Route the reset request through email or SMS.
+	 *
+	 * @param User $user
+	 * @param string $requestId
+	 * @return object
+	 */
+	protected function dispatchRequest(User $user, string $requestId): object
+	{
+		$result = (object)[
+			'email' => null,
+			'sms' => null
+		];
 
-        return $this->dispatchText($settings, $data);
-    }
+		if (!empty($user->mobile))
+		{
+			$result->sms = $this->textRequest($user, $requestId);
+		}
 
-    /**
-     * Build the public URL for resetting.
-     *
-     * @param string $requestId
-     * @param int $userId
-     * @return string
-     */
-    protected function buildResetUrl(string $requestId, int $userId): string
-    {
-        return envUrl()
-            . '/api/user/auth/password-reset?requestId='
-            . $requestId
-            . '&userId='
-            . $userId;
-    }
+		if (!empty($user->email))
+		{
+			$result->email = $this->emailRequest($user, $requestId);
+		}
 
-    /**
-     * Complete the password reset.
-     *
-     * @param string $requestId
-     * @param int $userId
-     * @param string $newPassword
-     * @param string $type
-     * @return bool
-     */
-    public function resetPassword(
-        string $requestId,
-        int $userId,
-        string $newPassword,
-        string $type = 'email'
-    ): bool {
-        $username = self::gate()->validateRequest($requestId, $userId);
-        if ($username === null)
-        {
-            return false;
-        }
+		return $result;
+	}
 
-        $user = User::find($userId);
-        $user->password = password_hash($newPassword, PASSWORD_DEFAULT);
-        $user->save();
+	/**
+	 * Send the reset link/code via email.
+	 *
+	 * @param User $user
+	 * @param string $requestId
+	 * @return object
+	 */
+	protected function emailRequest(User $user, string $requestId): object
+	{
+		$settings = (object)[
+			'to' => $user->email,
+			'subject' => 'Password Reset Request',
+			'template' => 'Modules\\User\\Email\\Password\\PasswordResetRequestEmail'
+		];
+		$data = (object)[
+			'username' => $user->username,
+			'resetUrl' => $this->buildResetUrl($requestId, $user->id)
+		];
 
-        $this->storage()->updateStatusByRequest($requestId);
-        self::gate()->resetRequest();
+		return $this->dispatchEmail($settings, $data);
+	}
 
-        $this->dispatchSuccess($user, $type);
-        return true;
-    }
+	/**
+	 * Send the reset link/code via SMS.
+	 *
+	 * @param User $user
+	 * @param string $requestId
+	 * @return object
+	 */
+	protected function textRequest(User $user, string $requestId): object
+	{
+		$settings = (object)[
+			'to' => $user->mobile,
+			'session' => $this->getSmsSession(),
+			'template' => 'Modules\\User\\Text\\Password\\PasswordResetRequestText'
+		];
+		$data = (object)[
+			'code' => $requestId,
+			'resetUrl' => $this->buildResetUrl($requestId, $user->id)
+		];
 
-    /**
-     * Route the success notification through email or SMS.
-     *
-     * @param User $user
-     * @param string $type
-     * @return object
-     */
-    protected function dispatchSuccess(User $user, string $type): object
-    {
-        return $type === 'sms'
-            ? $this->textSuccess($user)
-            : $this->emailSuccess($user);
-    }
+		return $this->dispatchText($settings, $data);
+	}
 
-    /**
-     * Email confirmation of a successful password reset.
-     *
-     * @param User $user
-     * @return object
-     */
-    protected function emailSuccess(User $user): object
-    {
-        $settings = (object)[
-            'to' => $user->email,
-            'subject' => 'Your Password Has Been Reset',
-            'template' => 'Modules\\User\\Email\\Password\\PasswordResetSuccessEmail'
-        ];
+	/**
+	 * Build the public URL for resetting.
+	 *
+	 * @param string $requestId
+	 * @param mixed $userId
+	 * @return string
+	 */
+	protected function buildResetUrl(string $requestId, mixed $userId): string
+	{
+		return envUrl()
+			. '/login/auth/password-reset?requestId='
+			. $requestId
+			. '&userId='
+			. (string)$userId;
+	}
 
-        return $this->dispatchEmail($settings);
-    }
+	/**
+	 * Validate the password reset request.
+	 *
+	 * @param string $requestId
+	 * @param mixed $userId
+	 * @return string|null
+	 */
+	public function validateRequest(string $requestId, mixed $userId): ?string
+	{
+		return self::gate()->validateRequest($requestId, $userId);
+	}
 
-    /**
-     * SMS confirmation of a successful password reset.
-     *
-     * @param User $user
-     * @return object
-     */
-    protected function textSuccess(User $user): object
-    {
-        $settings = (object)[
-            'to' => $user->mobile,
-            'session' => $this->getSmsSession(),
-            'template' => 'Modules\\User\\Text\\Password\\PasswordResetSuccessText'
-        ];
+	/**
+	 * Complete the password reset.
+	 *
+	 * @param string $requestId
+	 * @param mixed $userId
+	 * @param string $newPassword
+	 * @param string $type
+	 * @return bool
+	 */
+	public function resetPassword(
+		string $requestId,
+		mixed $userId,
+		string $newPassword,
+		string $type = 'email'
+	): bool
+	{
+		$username = $this->validateRequest($requestId, $userId);
+		if ($username === null)
+		{
+			return false;
+		}
 
-        return $this->dispatchText($settings);
-    }
+		$user = $this->getUserById($userId);
+		if ($user === null)
+		{
+			return false;
+		}
 
-    /**
-     * Queue an email via the app’s enqueue system.
-     *
-     * @param object $settings
-     * @param object|null $data
-     * @return object
-     */
-    protected function dispatchEmail(object $settings, ?object $data = null): object
-    {
-        return Enqueuer::email($settings, $data);
-    }
+		$result = $user->updatePassword($newPassword);
+		if (!$result)
+		{
+			return false;
+		}
 
-    /**
-     * Queue an SMS via the app’s enqueue system.
-     *
-     * @param object $settings
-     * @param object|null $data
-     * @return object
-     */
-    protected function dispatchText(object $settings, ?object $data = null): object
-    {
-        return Enqueuer::sms($settings, $data);
-    }
+		self::gate()->resetRequest($requestId);
 
-    /**
-     * Helper to get the SMS “from” ID.
-     *
-     * @return string
-     */
-    protected function getSmsSession(): string
-    {
-        $sms = env('sms');
-        return $sms->fromSendId;
-    }
+		$this->dispatchSuccess($user, $type);
+		return true;
+	}
+
+	/**
+	 * Route the success notification through email or SMS.
+	 *
+	 * @param User $user
+	 * @param string $type
+	 * @return object
+	 */
+	protected function dispatchSuccess(User $user, string $type): object
+	{
+		$result = (object)[
+			'email' => null,
+			'sms' => null
+		];
+
+		if (!empty($user->mobile))
+		{
+			$result->sms = $this->textSuccess($user);
+		}
+
+		if (!empty($user->email))
+		{
+			$result->email = $this->emailSuccess($user);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Email confirmation of a successful password reset.
+	 *
+	 * @param User $user
+	 * @return object
+	 */
+	protected function emailSuccess(User $user): object
+	{
+		$settings = (object)[
+			'to' => $user->email,
+			'subject' => 'Your Password Has Been Reset',
+			'template' => 'Modules\\User\\Email\\Password\\PasswordResetSuccessEmail'
+		];
+
+		return $this->dispatchEmail($settings);
+	}
+
+	/**
+	 * SMS confirmation of a successful password reset.
+	 *
+	 * @param User $user
+	 * @return object
+	 */
+	protected function textSuccess(User $user): object
+	{
+		$settings = (object)[
+			'to' => $user->mobile,
+			'session' => $this->getSmsSession(),
+			'template' => 'Modules\\User\\Text\\Password\\PasswordResetSuccessText'
+		];
+
+		return $this->dispatchText($settings);
+	}
+
+	/**
+	 * Queue an email via the app’s enqueue system.
+	 *
+	 * @param object $settings
+	 * @param object|null $data
+	 * @return object
+	 */
+	protected function dispatchEmail(object $settings, ?object $data = null): object
+	{
+		return Enqueuer::email($settings, $data);
+	}
+
+	/**
+	 * Queue an SMS via the app’s enqueue system.
+	 *
+	 * @param object $settings
+	 * @param object|null $data
+	 * @return object
+	 */
+	protected function dispatchText(object $settings, ?object $data = null): object
+	{
+		return Enqueuer::sms($settings, $data);
+	}
+
+	/**
+	 * Helper to get the SMS “from” ID.
+	 *
+	 * @return string
+	 */
+	protected function getSmsSession(): string
+	{
+		$sms = env('sms');
+		return $sms->twilio->accountSid;
+	}
 }

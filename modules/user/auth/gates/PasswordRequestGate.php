@@ -44,10 +44,14 @@ class PasswordRequestGate extends Gate
 	/**
 	 * This will reset the request.
 	 *
+	 * @param string $requestId
 	 * @return void
 	 */
-	public function resetRequest(): void
+	public function resetRequest(string $requestId): void
 	{
+		$model = new PasswordRequest();
+		$model->updateStatusByRequest($requestId);
+
 		$this->set(self::PASSWORD_REQUEST_KEY, null);
 	}
 

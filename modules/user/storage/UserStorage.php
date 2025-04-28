@@ -48,10 +48,17 @@ class UserStorage extends Storage
 	/**
 	 * This will update the password for the user.
 	 *
+	 * @param string $password
 	 * @return bool
 	 */
-	public function updatePassword(int $id, string $password): bool
+	public function updatePassword(string $password): bool
 	{
+		$id = $this->model->id ?? null;
+		if ($id === null)
+		{
+			return false;
+		}
+
 		$password = PasswordHelper::saltPassword($password);
 
 		return $this->db->update($this->tableName, (object)[
