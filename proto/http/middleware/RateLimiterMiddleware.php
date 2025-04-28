@@ -14,18 +14,14 @@ use Proto\Http\RateLimiter;
 class RateLimiterMiddleware
 {
 	/**
-	 * The request limit configuration.
-	 */
-	private Limit $limit;
-
-	/**
 	 * Initializes the rate limiter middleware.
 	 *
 	 * @param Limit $limit The rate limiting configuration.
 	 */
-	public function __construct(Limit $limit)
+	public function __construct(
+		private Limit $limit
+	)
 	{
-		$this->limit = $limit;
 	}
 
 	/**

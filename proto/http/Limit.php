@@ -43,6 +43,16 @@ class Limit
 	}
 
 	/**
+	 * This will get the request limit.
+	 *
+	 * @return int
+	 */
+	public function getRequestLimit(): int
+	{
+		return $this->requestLimit;
+	}
+
+	/**
 	 * Checks if the request count exceeds the limit.
 	 *
 	 * @param int $requests Number of requests made.

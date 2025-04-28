@@ -1,10 +1,8 @@
 <?php declare(strict_types=1);
-
 namespace Proto\Http;
 
 use Proto\Cache\Cache;
 use Proto\Http\Router\Response;
-use Proto\Utils\Format\JsonFormat;
 
 /**
  * Class RateLimiter
@@ -16,13 +14,6 @@ use Proto\Utils\Format\JsonFormat;
 class RateLimiter
 {
 	/**
-	 * Stores all the limits.
-	 *
-	 * @var array
-	 */
-	protected static array $limits = [];
-
-	/**
 	 * Cache class reference.
 	 *
 	 * @var string|null
@@ -32,22 +23,19 @@ class RateLimiter
 	/**
 	 * Initializes the cache class reference.
 	 *
+	 * @param string $cache
 	 * @return void
 	 */
-	protected static function setupCache(): void
+	protected static function setupCache(
+		string $cache = Cache::class
+	): void
 	{
-		self::$cache = Cache::class;
-	}
+		if (!$cache::isSupported())
+		{
+			return;
+		}
 
-	/**
-	 * Checks if cache is supported.
-	 *
-	 * @return bool
-	 */
-	protected static function isCacheSupported(): bool
-	{
-		$cache = self::$cache ?? static::getCache();
-		return isset($cache) && $cache::isSupported();
+		self::$cache = $cache;
 	}
 
 	/**
@@ -55,14 +43,14 @@ class RateLimiter
 	 *
 	 * @return string|null
 	 */
-	protected static function getCache(): ?string
+	protected static function cache(): ?string
 	{
 		if (self::$cache === null)
 		{
 			static::setupCache();
 		}
 
-		return static::isCacheSupported() ? self::$cache : null;
+		return self::$cache ?? null;
 	}
 
 	/**
@@ -73,7 +61,7 @@ class RateLimiter
 	 */
 	protected static function isCached(string $key): bool
 	{
-		$cache = self::getCache();
+		$cache = self::cache();
 		return isset($cache) && $cache::has($key);
 	}
 
@@ -86,7 +74,7 @@ class RateLimiter
 	 */
 	protected static function set(string $key, int $expiration): void
 	{
-		$cache = self::getCache();
+		$cache = self::cache();
 		if ($cache)
 		{
 			$cache::set($key, '1', $expiration);
@@ -101,7 +89,7 @@ class RateLimiter
 	 */
 	protected static function increment(string $key): int
 	{
-		$cache = self::getCache();
+		$cache = self::cache();
 		return isset($cache) ? $cache::incr($key) : 1;
 	}
 
@@ -113,13 +101,13 @@ class RateLimiter
 	 */
 	public static function check(Limit $limit): void
 	{
-		$cache = static::getCache();
+		$cache = static::cache();
 		if ($cache === null)
 		{
 			return;
 		}
 
-		$id = $limit->id();
+		$id = 'rate-limit:' . $limit->id();
 		if (!static::isCached($id))
 		{
 			static::set($id, $limit->getTimeLimit());
@@ -129,25 +117,44 @@ class RateLimiter
 		$requests = static::increment($id);
 		if ($limit->isOverLimit($requests))
 		{
-			static::sendRateLimitResponse();
+			static::sendRateLimitResponse($limit, $requests);
 		}
+	}
+
+	/**
+	 * Sets the rate limit headers.
+	 *
+	 * @param Limit $limit
+	 * @param int $requests
+	 * @return void
+	 */
+	private static function setRateHeaders(Limit $limit, int $requests): void
+	{
+		$maxRequests = $limit->getRequestLimit();
+		header('Retry-After: ' . $limit->getTimeLimit());
+		header('X-RateLimit-Limit: ' . $maxRequests);
+		header('X-RateLimit-Remaining: ' . max(0, $maxRequests - $requests));
 	}
 
 	/**
 	 * Sends a rate limit exceeded response.
 	 *
+	 * @param Limit $limit
+	 * @param int $requests
 	 * @return void
 	 */
-	protected static function sendRateLimitResponse(): void
+	protected static function sendRateLimitResponse(Limit $limit, int $requests): void
 	{
-		$responseCode = 429;
-		$response = new Response();
-		$response->render($responseCode);
+		self::setRateHeaders($limit, $requests);
 
-		JsonFormat::encodeAndRender([
+		$responseCode = 429;
+		$data = (object)[
 			'message' => 'Too Many Requests',
 			'success' => false
-		]);
+		];
+
+		$response = new Response();
+		$response->json($data, $responseCode);
 
 		exit;
 	}
