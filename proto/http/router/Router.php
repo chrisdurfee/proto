@@ -341,7 +341,8 @@ class Router
 		$result = $route->initialize($this->middleware, Request::class);
 		if ($result !== null)
 		{
-			$statusCode = (int) ($result->code ?? 200);
+			$HTTP_CODE = (is_int($result->code ?? '')) ? $result->code : 200;
+			$statusCode = $HTTP_CODE;
 			$this->sendResponse($statusCode, $result);
 		}
 	}

@@ -35,12 +35,16 @@ abstract class Controller extends Base implements ControllerInterface
 	 * Generates an error response.
 	 *
 	 * @param string $message The error message.
+	 * @param int $statusCode The HTTP status code.
 	 * @return object The error response object.
 	 */
-	protected function error(string $message = ''): object
+	protected function error(string $message = '', int $statusCode = 200): object
 	{
 		$response = new Response();
 		$response->error($message);
+		$response->setData([
+			'code' => $statusCode,
+		]);
 		return $response->display();
 	}
 

@@ -3,6 +3,7 @@ namespace Modules\User\Api\Auth;
 
 use Modules\User\Controllers\AuthController;
 use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
+use Proto\Http\Middleware\ThrottleMiddleware;
 use Proto\Http\Router\Router;
 
 /**
@@ -14,6 +15,7 @@ use Proto\Http\Router\Router;
 router()
 	->middleware(([
 		CrossSiteProtectionMiddleware::class,
+		ThrottleMiddleware::class,
 	]))
 	->group('user/auth', function(Router $router)
 	{

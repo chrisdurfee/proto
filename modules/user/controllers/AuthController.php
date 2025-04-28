@@ -44,8 +44,15 @@ class AuthController extends Controller
 	 * Constructor.
 	 *
 	 * @param string|null $modelClass
+	 * @param MultiFactorAuthService $mfaService
+	 * @param PasswordService $pwService
+	 * @return void
 	 */
-	public function __construct(protected ?string $modelClass = User::class)
+	public function __construct(
+		protected ?string $modelClass = User::class,
+		protected MultiFactorAuthService $mfaService = new MultiFactorAuthService(),
+    	protected PasswordService $pwService = new PasswordService(),
+	)
 	{
 		parent::__construct();
 	}
@@ -58,36 +65,29 @@ class AuthController extends Controller
 	 */
 	public function login(Request $req): object
 	{
-		/**
-		 * This will wait for 1 second to prevent brute force attacks.
-		 * This is not a security measure, but it will slow down the attacker.
-		 * This will also help in reducing the load on the server during multiple attempts.
-		 */
-		sleep(1);
-
 		$username = $req::input('username');
 		$password = $req::input('password');
 		if (! $username || ! $password)
 		{
-			return $this->error('The username and password are required.');
+			return $this->error('The username and password are required.', 400);
 		}
 
 		$attempts = $this->getAttempts($username);
 		if ($attempts >= self::MAX_ATTEMPTS)
 		{
-			return $this->error('Maximum login attempts reached. Please try again later.');
+			return $this->error('Maximum login attempts reached. Please try again later.', 429);
 		}
 
 		$userId = $this->authenticate($username, $password);
 		if ($userId < 0)
 		{
-			return $this->error('Invalid credentials. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS);
+			return $this->error('Invalid credentials. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS, 401);
 		}
 
 		$user = $this->getUserId($userId);
 		if (!$user)
 		{
-			return $this->error('The user account is not found.');
+			return $this->error('The user account is not found.', 404);
 		}
 
 		if ($user->multiFactor === true)
@@ -125,8 +125,7 @@ class AuthController extends Controller
 	 */
 	protected function multiFactor(User $user, ?object $device): object
 	{
-		$service = new MultiFactorAuthService();
-		$service->setResources($user, $device);
+		$this->mfaService->setResources($user, $device);
 
 		if (MultiFactorHelper::isDeviceAuthorized($user, $device))
 		{
@@ -150,15 +149,14 @@ class AuthController extends Controller
 	 */
 	public function getAuthCode(Request $req): object
 	{
-		$service = new MultiFactorAuthService();
-		$user = $service->getUser();
+		$user = $this->mfaService->getUser();
 		if (!$user)
 		{
-			return $this->error('The user not found in MFA session.');
+			return $this->error('The user not found in MFA session.', 404);
 		}
 
 		$type = $req::input('type', 'sms');
-		$service->sendCode($user, $type);
+		$this->mfaService->sendCode($user, $type);
 
 		return $this->response(['success' => true]);
 	}
@@ -178,32 +176,31 @@ class AuthController extends Controller
 		 */
 		sleep(1);
 
-		$service = new MultiFactorAuthService();
-		$user = $service->getUser();
+		$user = $this->mfaService->getUser();
 		if (!$user)
 		{
-			return $this->error('The user not found in MFA session.');
+			return $this->error('The user not found in MFA session.', 404);
 		}
 
-		$device = $service->getDevice();
+		$device = $this->mfaService->getDevice();
 		if (!$device)
 		{
-			return $this->error('The device not found in MFA session.');
+			return $this->error('The device not found in MFA session.', 404);
 		}
 
 		$code = $req::input('code');
-		$isValid = $service->validateCode($code);
+		$isValid = $this->mfaService->validateCode($code);
 		if ($isValid === false)
 		{
-			return $this->error('Invalid authentication code.');
+			return $this->error('Invalid authentication code.', 401);
 		}
 
 		if ($isValid === null)
 		{
-			return $this->error('Invalid authentication code. Too many attempts.');
+			return $this->error('Invalid authentication code. Too many attempts.', 429);
 		}
 
-		$service->addNewConnection($user, $device, Request::ip());
+		$this->mfaService->addNewConnection($user, $device, Request::ip());
 
 		return $this->permit($user);
 	}
@@ -219,13 +216,13 @@ class AuthController extends Controller
 		$userId = $session->id ?? null;
 		if (!$userId)
 		{
-			return $this->error('The user is not authenticated.');
+			return $this->error('The user is not authenticated.', 401);
 		}
 
 		$user = $this->modelClass::get($userId);
 		if (!$user)
 		{
-			return $this->error('The user is not found.');
+			return $this->error('The user is not found.', 404);
 		}
 
 		$this->updateStatus($user->id, UserStatus::OFFLINE->value);
@@ -245,20 +242,20 @@ class AuthController extends Controller
 		$data = $req::json('user');
 		if (!$data)
 		{
-			return $this->error('The data is invalid for registration.');
+			return $this->error('The data is invalid for registration.', 400);
 		}
 
 		$model = new $this->modelClass($data);
 		$result = $model->add();
 		if (!$result)
 		{
-			return $this->error('The registration has failed.');
+			return $this->error('The registration has failed.', 400);
 		}
 
 		$user = $this->modelClass::get($model->id);
 		if (!$user)
 		{
-			return $this->error('The user is not found after registration');
+			return $this->error('The user is not found after registration', 404);
 		}
 
 		return $this->permit($user);
@@ -297,7 +294,7 @@ class AuthController extends Controller
 	}
 
 	/**
-	 * This will udpate the user statue.
+	 * This will update the user statue.
 	 *
 	 * @param User $user
 	 * @param string $status
@@ -362,21 +359,17 @@ class AuthController extends Controller
 	 */
 	public function validatePasswordRequest(Request $req): object
 	{
-		// This will wait for 1 second to prevent brute force attacks.
-		sleep(1);
-
 		$requestId = $req::input('requestId');
 		$userId = $req::getInt('userId');
 		if (!isset($requestId) || !isset($userId))
 		{
-			return $this->error('The request id or user id is missing.');
+			return $this->error('The request id or user id is missing.', 400);
 		}
 
-		$service = new PasswordService();
-		$username = $service->validateRequest($requestId, $userId);
+		$username = $this->pwService->validateRequest($requestId, $userId);
 		if ($username === null)
 		{
-			return $this->error('No request is found.');
+			return $this->error('No request is found.', 404);
 		}
 
 		return $this->response((object)[
@@ -392,25 +385,21 @@ class AuthController extends Controller
 	 */
 	public function resetPassword(Request $req): object
 	{
-		// This will wait for 1 second to prevent brute force attacks.
-		sleep(1);
-
 		$user = $req::json('user');
 		if (!isset($user))
 		{
-			return $this->error('The user is not set.');
+			return $this->error('The user is not set.', 400);
 		}
 
 		if (empty($user->password))
 		{
-			return $this->error('The password is not set.');
+			return $this->error('The password is not set.', 400);
 		}
 
 		$requestId = $user->requestId;
 		$userId = $user->userId;
 
-		$service = new PasswordService();
-		$result = $service->resetPassword($requestId, $userId, $user->password);
+		$result = $this->pwService->resetPassword($requestId, $userId, $user->password);
 		return $this->response((object)[
 			'message' => ($result)?'The password has been reset successfully.' : 'The password reset has failed.',
 		]);
