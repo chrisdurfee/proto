@@ -169,13 +169,6 @@ class AuthController extends Controller
 	 */
 	public function verifyAuthCode(Request $req): object
 	{
-		/**
-		 * This will wait for 1 second to prevent brute force attacks.
-		 * This is not a security measure, but it will slow down the attacker.
-		 * This will also help in reducing the load on the server during multiple attempts.
-		 */
-		sleep(1);
-
 		$user = $this->mfaService->getUser();
 		if (!$user)
 		{
@@ -359,7 +352,7 @@ class AuthController extends Controller
 	 */
 	public function requestPasswordReset(Request $req): object
 	{
-		$email = $req::getInt('email');
+		$email = $req::input('email');
 		if (!isset($email))
 		{
 			return $this->error('The email is missing.', 400);
