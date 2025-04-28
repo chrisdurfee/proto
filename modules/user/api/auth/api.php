@@ -31,7 +31,7 @@ router()
 
 		// Password reset: request & verify reset codes
 		$router->post('password/request', [$controller, 'requestPasswordReset']);
-		$router->post('password/verify', [$controller, 'verifyPasswordReset']);
+		$router->post('password/verify', [$controller, 'validatePasswordRequest']);
 		$router->post('password/reset', [$controller, 'resetPassword']);
 
 		// CSRF token (no body, safe to GET)
