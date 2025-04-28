@@ -92,6 +92,28 @@ class UserStorage extends Storage
 	}
 
 	/**
+	 * This will get a user by email.
+	 *
+	 * @param string $email
+	 * @return object|null
+	 */
+	public function getByEmail(string $email): ?object
+	{
+		if (!$email)
+		{
+			return null;
+		}
+
+		$params = ['email' => $email];
+
+		return $this->select()
+			->where(
+				'email = ?'
+			)
+			->first($params);
+	}
+
+	/**
 	 * This will update the username for the user.
 	 *
 	 * @param int $id

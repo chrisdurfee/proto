@@ -352,6 +352,38 @@ class AuthController extends Controller
 	}
 
 	/**
+	 * Request a password reset.
+	 *
+	 * @param Request $req
+	 * @return object
+	 */
+	public function requestPasswordReset(Request $req): object
+	{
+		$email = $req::getInt('email');
+		if (!isset($email))
+		{
+			return $this->error('The email is missing.', 400);
+		}
+
+		$model = new $this->modelClass();
+		$user = $model->getByEmail($email);
+		if (!$user)
+		{
+			return $this->error('The user is not found.', 404);
+		}
+
+		$username = $this->pwService->sendResetRequest($user);
+		if ($username === null)
+		{
+			return $this->error('No request is found.', 404);
+		}
+
+		return $this->response((object)[
+			'username' => $username
+		]);
+	}
+
+	/**
 	 * Validate the password request.
 	 *
 	 * @param Request $req

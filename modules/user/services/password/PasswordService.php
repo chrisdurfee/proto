@@ -66,17 +66,11 @@ class PasswordService
 	/**
 	 * Kick off a new password reset request for the given user.
 	 *
-	 * @param object $data
+	 * @param User $user
 	 * @return object
 	 */
-	public function sendResetRequest(object $data): object
+	public function sendResetRequest(User $user): object
 	{
-		$user = $this->getUserById($data->id);
-		if ($user === null)
-		{
-			return $this->error('User not found.');
-		}
-
 		/**
 		 * This will add the password request to the database.
 		 */
