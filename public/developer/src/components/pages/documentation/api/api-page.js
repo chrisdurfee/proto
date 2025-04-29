@@ -165,18 +165,20 @@ function session(): Session\\SessionInterface
 				CodeBlock(
 `<?php declare(strict_types=1);
 
+use Proto\\Http\\Router\\Request;
+
 $router = router();
 
 /**
  * This will get a patient by ID.
  *
- * @param string $req - the request class
+ * @param string $req
  * @param object $params
  * @return object
  */
-$router->get('patients/:id/', function($req, $params)
+$router->get('patients/:id/', function(Request $req, $params)
 {
-	$id = $req::input('module');
+	$id = $req->input('module');
 
 	return $params;
 });
@@ -184,7 +186,7 @@ $router->get('patients/:id/', function($req, $params)
 /**
  * This will get a patient by ID.
  *
- * @param string $req - the request class
+ * @param Request $req
  * @param object $params
  * @return object
  */
@@ -193,7 +195,7 @@ $router->get('patients/:id/', [PatientController::class, 'get']);
 /**
  * This will redirect with a 301 code.
  *
- * @param string $req - the request class
+ * @param Request $req
  * @param object $params
  * @return object
  */
@@ -202,11 +204,11 @@ $router->redirect('patients/:id/', './appointments/', 302);
 /**
  * This will get a resource with a 301 code.
  *
- * @param string $req - the request class
+ * @param Request $req
  * @param object $params
  * @return object
  */
-$router->get('patients/:id?/', function($req, $params)
+$router->get('patients/:id?/', function(Request $req, $params)
 {
 	// this will set a response code
 	$params->code = 301;
@@ -218,11 +220,11 @@ $router->get('patients/:id?/', function($req, $params)
 /**
  * This will post a resource.
  *
- * @param string $req - the request class
+ * @param Request $req
  * @param object $params
  * @return object
  */
-$router->post('patients/:id?/', function($req, $params)
+$router->post('patients/:id?/', function(Request $req, $params)
 {
 	// this will json encode the value
 	return $params;
@@ -231,13 +233,13 @@ $router->post('patients/:id?/', function($req, $params)
 /**
  * This will get an upload file.
  *
- * @param string $req - the request class
+ * @param Request $req
  * @param object $params
  * @return object
  */
-$router->get('appoinmtents/*', function($req, $params)
+$router->get('appoinmtents/*', function(Request $req, $params)
 {
-	$file = $req::file('fileName');
+	$file = $req->file('fileName');
 
 	// this will json encode the value
 	return $params;
@@ -246,7 +248,7 @@ $router->get('appoinmtents/*', function($req, $params)
 /**
  * This will always route.
  *
- * @param string $req - the request class
+ * @param Request $req
  * @param object $params
  * @return object
  */
