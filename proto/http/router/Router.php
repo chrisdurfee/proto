@@ -347,8 +347,7 @@ class Router
 		$result = $route->initialize($this->middleware, $this->request);
 		if ($result !== null)
 		{
-			$HTTP_CODE = (is_int($result->code ?? '')) ? $result->code : 200;
-			$statusCode = $HTTP_CODE;
+			$statusCode = (is_int($result->code ?? '')) ? $result->code : 200;
 			$this->sendResponse($statusCode, $result);
 		}
 	}
@@ -441,7 +440,7 @@ class Router
 	protected function sendResponse(int $statusCode, mixed $data = null): void
 	{
 		$response = new Response();
-		$response->sendHeaders($statusCode)->json($data);
+		$response->sendHeaders($statusCode)->json($data, $statusCode);
 		exit;
 	}
 }
