@@ -440,7 +440,7 @@ class Router
 	protected function sendResponse(int $statusCode, mixed $data = null): void
 	{
 		$response = new Response();
-		$response->sendHeaders($statusCode)->json($data, $statusCode);
+		$response->json($data, $statusCode);
 		exit;
 	}
 }
