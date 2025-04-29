@@ -1,10 +1,9 @@
 <?php declare(strict_types=1);
-
 namespace Proto\Http\Middleware;
 
 use Proto\Http\Limit;
 use Proto\Http\RateLimiter;
-use Proto\Http\Request;
+use Proto\Http\Router\Request;
 
 /**
  * LoginRateLimiterMiddleware
@@ -25,24 +24,25 @@ class LoginRateLimiterMiddleware
 	/**
 	 * Handles login rate limiting.
 	 *
-	 * @param string $request The incoming request.
+	 * @param Request $request The incoming request.
 	 * @param callable $next The next middleware handler.
 	 * @return mixed The processed request.
 	 */
-	public function handle(string $request, callable $next): mixed
+	public function handle(Request $request, callable $next): mixed
 	{
-		RateLimiter::check($this->getLimit());
+		RateLimiter::check($this->getLimit($request));
 		return $next($request);
 	}
 
 	/**
 	 * Configures the login attempt limit.
 	 *
+	 * @param Request $request The incoming request.
 	 * @return Limit The rate limit configuration.
 	 */
-	protected function getLimit(): Limit
+	protected function getLimit(Request $request): Limit
 	{
-		$rateLimitKey = Request::input('username') . ':' . Request::ip();
+		$rateLimitKey = $request->input('username') . ':' . $request->ip();
 		return Limit::perMinute(self::ATTEMPT_LIMIT)->by($rateLimitKey);
 	}
 }

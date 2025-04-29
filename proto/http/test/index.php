@@ -9,7 +9,7 @@ $router = new Router('/public/proto/http/test/');
 // this will get params from the url
 $router->get('patients/:id/', function($req, $params)
 {
-	$id = $req::input('module');
+	$id = $req->input('module');
 
 	return $params;
 });
@@ -35,7 +35,7 @@ $router->post('patients/:id?/', function($req, $params)
 
 $router->get('appoinmtents/*', function($req, $params)
 {
-	$file = $req::file('fileName');
+	$file = $req->file('fileName');
 
 	// this will json encode the value
 	return $params;

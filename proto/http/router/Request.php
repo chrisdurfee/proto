@@ -12,14 +12,37 @@ use Proto\Utils\Sanitize;
  *
  * @package Proto\Http\Router
  */
-class Request extends BaseRequest
+class Request
 {
+	/**
+	 * This will get the properties from the base request.
+	 *
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function __get(string $name): mixed
+	{
+		return BaseRequest::${$name};
+	}
+
+	/**
+	 * This will call the base request methods.
+	 *
+	 * @param string $name
+	 * @param array $arguments
+	 * @return mixed
+	 */
+	public function __call(string $name, array $arguments): mixed
+	{
+		return BaseRequest::{$name}(...$arguments);
+	}
+
 	/**
 	 * Retrieves all request inputs and sanitizes them.
 	 *
 	 * @return array
 	 */
-	public static function all(): array
+	public function all(): array
 	{
 		return static::clean($_REQUEST ?? []);
 	}
@@ -31,10 +54,10 @@ class Request extends BaseRequest
 	 * @param mixed $default The default value if input is not found.
 	 * @return mixed The sanitized input value.
 	 */
-	public static function input(string $name, mixed $default = null): mixed
+	public function input(string $name, mixed $default = null): mixed
 	{
-		$input = static::raw($name, $default);
-		return static::clean($input);
+		$input = BaseRequest::raw($name, $default);
+		return $this->clean($input);
 	}
 
 	/**
@@ -43,7 +66,7 @@ class Request extends BaseRequest
 	 * @param mixed $data The data to sanitize.
 	 * @return mixed The sanitized data.
 	 */
-	protected static function clean(mixed $data): mixed
+	protected function clean(mixed $data): mixed
 	{
 		if (is_array($data))
 		{

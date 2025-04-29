@@ -7,6 +7,7 @@ use Modules\User\Controllers\UserRoleController;
 use Modules\User\Controllers\PermissionController;
 use Modules\User\Controllers\RolePermissionController;
 use Proto\Http\Router\Router;
+use Proto\Http\Router\Request;
 use Developer\App\Auth\Auth;
 use Developer\App\Controllers\GeneratorController;
 use Developer\App\Controllers\MigrationController;
@@ -23,10 +24,10 @@ $router = new Router('/developer/api/');
 /**
  * This will create a new server resource from the generator.
  */
-$router->post('generator', function(string $req, $params)
+$router->post('generator', function(Request $req, $params)
 {
-	$resource = $req::json('resource');
-	$type = $req::input('type');
+	$resource = $req->json('resource');
+	$type = $req->input('type');
 
 	$controller = new GeneratorController();
 	return $controller->addByType($type, $resource);
@@ -52,14 +53,14 @@ function getFilter(?string $filter): array
 /**
  * This will get all migrations added to the migration table.
  */
-$router->get('migration*', function($req, $params)
+$router->get('migration*', function(Request $req, $params)
 {
-	$filter = getFilter($req::input('filter'));
-	$offset = $req::getInt('start');
+	$filter = getFilter($req->input('filter'));
+	$offset = $req->getInt('start');
 	$start = !empty($offset)? $offset : 0;
-	$count = $req::getInt('stop');
-	$search = $req::input('search');
-	$custom = $req::input('custom');
+	$count = $req->getInt('stop');
+	$search = $req->input('search');
+	$custom = $req->input('custom');
 
 	$controller = new MigrationController();
 	return $controller->all($filter, $start, $count, [
@@ -71,9 +72,9 @@ $router->get('migration*', function($req, $params)
 /**
  * This will migrate the database up or down.
  */
-$router->post('migration', function($req, $params)
+$router->post('migration', function(Request $req, $params)
 {
-	$direction = $req::input('direction');
+	$direction = $req->input('direction');
 
 	$controller = new MigrationController();
 	return $controller->update($direction);
@@ -101,14 +102,14 @@ function setFilter(?string $filter): array
 /**
  * This will get all migrations added to the migration table.
  */
-$router->get('error*', function($req, $params)
+$router->get('error*', function(Request $req, $params)
 {
-	$filter = setFilter($req::input('filter'));
-	$offset = $req::getInt('start');
+	$filter = setFilter($req->input('filter'));
+	$offset = $req->getInt('start');
 	$start = !empty($offset)? $offset : 0;
-	$count = $req::getInt('stop');
-	$search = $req::input('search');
-	$custom = $req::input('custom');
+	$count = $req->getInt('stop');
+	$search = $req->input('search');
+	$custom = $req->input('custom');
 
 	$controller = new ErrorController();
 	return $controller->all($filter, $start, $count, [
@@ -120,10 +121,10 @@ $router->get('error*', function($req, $params)
 /**
  * This will get all migrations added to the migration table.
  */
-$router->patch('error', function($req, $params)
+$router->patch('error', function(Request $req, $params)
 {
-	$id = $req::getInt('id');
-	$resolved = $req::getInt('resolved');
+	$id = $req->getInt('id');
+	$resolved = $req->getInt('resolved');
 
 	$controller = new ErrorController();
 	return $controller->updateResolved($id, $resolved);
@@ -132,10 +133,10 @@ $router->patch('error', function($req, $params)
 /**
  * This will get the table columns.
  */
-$router->get('table/columns*', function($req, $params)
+$router->get('table/columns*', function(Request $req, $params)
 {
-	$connection = $req::input('connection');
-	$tableName = $req::input('tableName');
+	$connection = $req->input('connection');
+	$tableName = $req->input('tableName');
 
 	if(!$connection || !$tableName)
 	{

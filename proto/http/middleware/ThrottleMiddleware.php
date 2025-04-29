@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Middleware;
 
+use Proto\Http\Router\Request;
+
 /**
  * ThrottleMiddleware
  *
@@ -13,11 +15,11 @@ class ThrottleMiddleware
 	/**
 	 * Handles the request by introducing a delay.
 	 *
-	 * @param string $request The incoming request.
+	 * @param Request $request The incoming request.
 	 * @param callable $next The next middleware handler.
 	 * @return mixed The processed request.
 	 */
-	public function handle(string $request, callable $next): mixed
+	public function handle(Request $request, callable $next): mixed
 	{
 		sleep(1);
 		return $next($request);

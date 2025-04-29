@@ -47,8 +47,14 @@ class Router
 	 *
 	 * @param string|null $basePath
 	 * @param bool $requireHttps
+	 * @param Request $request
+	 * @return void
 	 */
-	public function __construct(?string $basePath = null, bool $requireHttps = false)
+	public function __construct(
+		?string $basePath = null,
+		bool $requireHttps = false,
+		protected $request = new Request()
+	)
 	{
 		$this->setupHeaders();
 		$this->setBasePath($basePath);
@@ -105,8 +111,8 @@ class Router
 	 */
 	protected function setupRequest(): void
 	{
-		$this->method = Request::method();
-		$this->path = $this->filterPath(Request::path());
+		$this->method = $this->request->method();
+		$this->path = $this->filterPath($this->request->path());
 
 		if (!$this->isValidMethod($this->method))
 		{
@@ -338,7 +344,7 @@ class Router
 	 */
 	protected function activateRoute(Uri $route): void
 	{
-		$result = $route->initialize($this->middleware, Request::class);
+		$result = $route->initialize($this->middleware, $this->request);
 		if ($result !== null)
 		{
 			$HTTP_CODE = (is_int($result->code ?? '')) ? $result->code : 200;

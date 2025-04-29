@@ -3,6 +3,7 @@ namespace Proto\Http\Middleware;
 
 use Proto\Http\Limit;
 use Proto\Http\RateLimiter;
+use Proto\Http\Router\Request;
 
 /**
  * RateLimiterMiddleware
@@ -27,11 +28,11 @@ class RateLimiterMiddleware
 	/**
 	 * Handles the rate limiting check.
 	 *
-	 * @param string $request The incoming request.
+	 * @param Request $request The incoming request.
 	 * @param callable $next The next middleware handler.
 	 * @return mixed The processed request.
 	 */
-	public function handle(string $request, callable $next): mixed
+	public function handle(Request $request, callable $next): mixed
 	{
 		RateLimiter::check($this->getLimit());
 		return $next($request);

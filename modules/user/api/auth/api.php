@@ -30,7 +30,7 @@ router()
 		$router->post('mfa/verify', [$controller, 'verifyAuthCode']);
 
 		// Password reset: request & verify reset codes
-		$router->post('password/request', [$controller, 'requestPasswordReset']);
+		$router->get('password/request', [$controller, 'requestPasswordReset']);
 		$router->post('password/verify', [$controller, 'validatePasswordRequest']);
 		$router->post('password/reset', [$controller, 'resetPassword']);
 

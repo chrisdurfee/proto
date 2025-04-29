@@ -58,7 +58,7 @@ class Route extends Uri
 	 * @param string $request The request URI.
 	 * @return mixed The result of the callback action.
 	 */
-	public function activate(string $request): mixed
+	public function activate(Request $request): mixed
 	{
 		return call_user_func($this->callback, $request, $this->params);
 	}

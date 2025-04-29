@@ -8,7 +8,7 @@ use Modules\User\Services\Auth\MultiFactorAuthService;
 use Modules\User\Controllers\Multifactor\MultiFactorHelper;
 use Modules\User\Services\Password\PasswordService;
 use Proto\Controllers\Controller;
-use Proto\Http\Request;
+use Proto\Http\Router\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
 
 /**
@@ -65,20 +65,20 @@ class AuthController extends Controller
 	 */
 	public function login(Request $req): object
 	{
-		$username = $req::input('username');
-		$password = $req::input('password');
+		$username = $req->input('username');
+		$password = $req->input('password');
 		if (! $username || ! $password)
 		{
 			return $this->error('The username and password are required.', 400);
 		}
 
-		$attempts = $this->getAttempts($username);
+		$attempts = $this->getAttempts($username, $req->ip());
 		if ($attempts >= self::MAX_ATTEMPTS)
 		{
 			return $this->error('Maximum login attempts reached. Please try again later.', 429);
 		}
 
-		$userId = $this->authenticate($username, $password);
+		$userId = $this->authenticate($username, $password, $req->ip());
 		if ($userId < 0)
 		{
 			return $this->error('Invalid credentials. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS, 401);
@@ -92,7 +92,7 @@ class AuthController extends Controller
 
 		if ($user->multiFactor === true)
 		{
-			$device = $req::json('device');
+			$device = $req->json('device');
 			return $this->multiFactor($user, $device);
 		}
 
@@ -155,7 +155,7 @@ class AuthController extends Controller
 			return $this->error('The user not found in MFA session.', 404);
 		}
 
-		$type = $req::input('type', 'sms');
+		$type = $req->input('type', 'sms');
 		$this->mfaService->sendCode($user, $type);
 
 		return $this->response(['success' => true]);
@@ -181,7 +181,7 @@ class AuthController extends Controller
 			return $this->error('The device not found in MFA session.', 404);
 		}
 
-		$code = $req::input('code');
+		$code = $req->input('code');
 		$isValid = $this->mfaService->validateCode($code);
 		if ($isValid === false)
 		{
@@ -193,7 +193,7 @@ class AuthController extends Controller
 			return $this->error('Invalid authentication code. Too many attempts.', 429);
 		}
 
-		$this->mfaService->addNewConnection($user, $device, Request::ip());
+		$this->mfaService->addNewConnection($user, $device, $req->ip());
 
 		return $this->permit($user);
 	}
@@ -232,7 +232,7 @@ class AuthController extends Controller
 	 */
 	public function register(Request $req): object
 	{
-		$data = $req::json('user');
+		$data = $req->json('user');
 		if (!$data)
 		{
 			return $this->error('The data is invalid for registration.', 400);
@@ -270,15 +270,16 @@ class AuthController extends Controller
 	 *
 	 * @param string $username
 	 * @param string $password
+	 * @param string $ipAddress
 	 * @return int
 	 */
-	protected function authenticate(string $username, string $password): int
+	protected function authenticate(string $username, string $password, string $ipAddress): int
 	{
 		$userId = $this->modelClass::authenticate($username, $password);
 		if ($userId < 0)
 		{
 			LoginAttemptController::create((object)[
-				'ipAddress' => Request::ip(),
+				'ipAddress' => $ipAddress,
 				'username' => $username
 			]);
 		}
@@ -326,11 +327,12 @@ class AuthController extends Controller
 	 * Count recent failed login attempts.
 	 *
 	 * @param string $username
+	 * @param string $ipAddress
 	 * @return int
 	 */
-	protected function getAttempts(string $username): int
+	protected function getAttempts(string $username, string $ipAddress): int
 	{
-		return LoginAttemptController::countAttempts(Request::ip(), $username);
+		return LoginAttemptController::countAttempts($ipAddress, $username);
 	}
 
 	/**
@@ -352,7 +354,7 @@ class AuthController extends Controller
 	 */
 	public function requestPasswordReset(Request $req): object
 	{
-		$email = $req::input('email');
+		$email = $req->input('email');
 		if (!isset($email))
 		{
 			return $this->error('The email is missing.', 400);
@@ -384,8 +386,8 @@ class AuthController extends Controller
 	 */
 	public function validatePasswordRequest(Request $req): object
 	{
-		$requestId = $req::input('requestId');
-		$userId = $req::getInt('userId');
+		$requestId = $req->input('requestId');
+		$userId = $req->getInt('userId');
 		if (!isset($requestId) || !isset($userId))
 		{
 			return $this->error('The request id or user id is missing.', 400);
@@ -410,7 +412,7 @@ class AuthController extends Controller
 	 */
 	public function resetPassword(Request $req): object
 	{
-		$user = $req::json('user');
+		$user = $req->json('user');
 		if (!isset($user))
 		{
 			return $this->error('The user is not set.', 400);

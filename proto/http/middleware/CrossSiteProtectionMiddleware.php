@@ -4,6 +4,7 @@ namespace Proto\Http\Middleware;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate as CSRF;
 use Proto\Http\Router\Response;
 use Proto\Utils\Format\JsonFormat;
+use Proto\Http\Router\Request;
 
 /**
  * CrossSiteProtectionMiddleware
@@ -28,13 +29,13 @@ class CrossSiteProtectionMiddleware
 	/**
 	 * Handles incoming requests.
 	 *
-	 * @param string $request The incoming request.
+	 * @param Request $request The incoming request.
 	 * @param callable $next The next middleware handler.
 	 * @return mixed The processed request.
 	 */
-	public function handle(string $request, callable $next): mixed
+	public function handle(Request $request, callable $next): mixed
 	{
-        $method = $request::method();
+        $method = $request->method();
 		if ($this->isSafeMethod($method) === true)
 		{
 			return $next($request);

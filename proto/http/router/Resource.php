@@ -105,15 +105,15 @@ class Resource
 	/**
 	 * Activates the route, executing the associated controller action.
 	 *
-	 * @param string $request The request URI.
+	 * @param Request $request The request URI.
 	 * @return mixed The result of the controller action.
 	 */
-	public function activate(string $request): mixed
+	public function activate(Request $request): mixed
 	{
-		$item = $request::json('item');
+		$item = $request->json('item');
 		$resourceId = $this->params->id ?? null;
 
-		$method = $request::method();
+		$method = $request->method();
 		switch ($method)
 		{
 			case "GET":

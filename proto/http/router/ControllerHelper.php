@@ -46,12 +46,15 @@ class ControllerHelper
 	 * defined, it will create a policy proxy to auth the actions
 	 * before calling the methods.
 	 *
-	 * @param string $controller
+	 * @param ControllerInterface|string $controller
 	 * @return ControllerInterface
 	 */
-	public static function getController(string $controller): ControllerInterface
+	public static function getController(ControllerInterface|string $controller): ControllerInterface
 	{
-		$controller = new $controller();
+		if (is_string($controller) === true)
+		{
+			$controller = new $controller();
+		}
 
 		/**
 		 * This will set up a caching policy for the controller.
