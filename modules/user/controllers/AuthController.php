@@ -4,6 +4,7 @@ namespace Modules\User\Controllers;
 use Modules\User\Models\User;
 use Modules\User\Models\LoginLog;
 use Modules\User\Controllers\LoginAttemptController;
+use Modules\User\Controllers\UserStatus;
 use Modules\User\Services\Auth\MultiFactorAuthService;
 use Modules\User\Controllers\Multifactor\MultiFactorHelper;
 use Modules\User\Services\Password\PasswordService;
@@ -24,19 +25,6 @@ enum HttpStatus: int
 	case NOT_FOUND = 404;
 	case TOO_MANY_REQUESTS = 429;
 	case INTERNAL_SERVER_ERROR = 500;
-}
-
-/**
- * UserStatus Enum
- *
- * This enum defines the possible user statuses.
- */
-enum UserStatus: string
-{
-	case ONLINE = 'online';
-	case OFFLINE = 'offline';
-	case BUSY = 'busy';
-	case AWAY = 'away';
 }
 
 /**
@@ -303,14 +291,13 @@ class AuthController extends Controller
 	}
 
 	/**
-	 * This will update the user statue.
+	 * This will update the user status.
 	 *
 	 * @param User $user
 	 * @param string $status
-	 * @param string $appId
 	 * @return void
 	 */
-	public function updateStatus(User $user, string $status): void
+	protected function updateStatus(User $user, string $status): void
 	{
 		$user->status = $status;
 		$user->updateStatus();

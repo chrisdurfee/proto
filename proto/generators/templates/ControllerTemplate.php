@@ -38,7 +38,7 @@ class ControllerTemplate extends ClassTemplate
 	 */
 	public function __construct(protected ?string \$modelClass = {$className}::class)
 	{
-		parent::__construct(\$modelClass);
+		parent::__construct();
 	}
 EOT;
 	}

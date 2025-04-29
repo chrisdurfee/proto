@@ -1,11 +1,12 @@
 <?php declare(strict_types=1);
-
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
 
 /**
  * LoginLog
+ *
+ * Tracks the user's login activity.
  *
  * @package Modules\User\Models
  */

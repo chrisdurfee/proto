@@ -26,6 +26,6 @@ class RoleController extends Controller
 	 */
 	public function __construct(protected ?string $modelClass = Role::class)
 	{
-		parent::__construct($modelClass);
+		parent::__construct();
 	}
 }

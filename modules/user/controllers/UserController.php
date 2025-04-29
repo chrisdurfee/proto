@@ -28,7 +28,7 @@ class UserController extends ModelController
 		protected ?string $modelClass = User::class
 	)
 	{
-		parent::__construct($modelClass);
+		parent::__construct();
 	}
 
 	/**

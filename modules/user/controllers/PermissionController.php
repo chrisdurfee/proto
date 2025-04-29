@@ -24,6 +24,6 @@ class PermissionController extends Controller
 	 */
 	public function __construct(protected ?string $modelClass = Permission::class)
 	{
-		parent::__construct($modelClass);
+		parent::__construct();
 	}
 }

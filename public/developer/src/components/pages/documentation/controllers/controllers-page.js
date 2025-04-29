@@ -136,8 +136,7 @@ class ExampleController extends ModelController
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Pass-Through Responses'),
 				P({ class: 'text-muted-foreground' },
-					`Controllers have a property called \`passResponse\` that, when enabled, automatically wraps
-					the result of any undeclared method call in a Response object. This makes it faster to add new
+					`Controllers automatically wraps the result of any undeclared method call in a Response object. This makes it faster to add new
 					resources without rewriting response logic.`
 				)
 			]),

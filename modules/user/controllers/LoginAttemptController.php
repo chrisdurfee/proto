@@ -19,7 +19,7 @@ class LoginAttemptController extends Controller
 	 */
 	public function __construct(protected ?string $modelClass = LoginAttempt::class)
 	{
-		parent::__construct($modelClass);
+		parent::__construct();
 	}
 
 	/**

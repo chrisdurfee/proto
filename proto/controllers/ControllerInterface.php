@@ -8,7 +8,6 @@ namespace Proto\Controllers;
  * that they implement the necessary methods for handling responses.
  *
  * @package Proto\Controllers
- * @abstract
  */
 interface ControllerInterface
 {

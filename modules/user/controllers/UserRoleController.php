@@ -26,7 +26,7 @@ class UserRoleController extends Controller
 	 */
 	public function __construct(protected ?string $modelClass = UserRole::class)
 	{
-		parent::__construct($modelClass);
+		parent::__construct();
 	}
 
 	/**

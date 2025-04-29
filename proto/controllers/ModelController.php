@@ -13,11 +13,16 @@ namespace Proto\Controllers;
 abstract class ModelController extends Controller
 {
 	/**
+	 * @var string|null $modelClass The model class reference using ::class.
+	 */
+	protected ?string $modelClass = null;
+
+	/**
 	 * Initializes the model controller.
 	 *
-	 * @param string|null $modelClass The model class reference using ::class.
+	 * @return void
 	 */
-	public function __construct(protected ?string $modelClass = null)
+	public function __construct()
 	{
 		parent::__construct();
 		$this->setModelClass();
