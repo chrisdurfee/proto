@@ -9,4 +9,4 @@ use Modules\User\Controllers\UserController;
  * This file contains the API routes for the User module.
  */
 router()
-    ->resource('user/:userId/account', UserController::class);
+	->resource('user/:userId/account', UserController::class);

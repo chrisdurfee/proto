@@ -9,4 +9,4 @@ use Modules\User\Controllers\PermissionController;
  * This file contains the API routes for the permission module.
  */
 router()
-    ->resource('user/role/:roleId/permission', PermissionController::class);
+	->resource('user/role/:roleId/permission', PermissionController::class);
