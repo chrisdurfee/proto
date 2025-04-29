@@ -163,7 +163,7 @@ HTML;
 				<!-- <img src="{$src}" alt="Company Logo" width="48" height="48" style="border-radius: 12px; display: block;"> -->
 			</td>
 		</tr>
-	HTML;
+HTML;
 	}
 
 	/**
@@ -185,8 +185,8 @@ HTML;
 	 */
 	protected function addBody(): string
 	{
-		return <<<EOT
-EOT;
+		return <<<HTML
+HTML;
 	}
 
 	/**

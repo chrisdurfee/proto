@@ -12,16 +12,31 @@ use Proto\Http\Router\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
 
 /**
+ * HttpStatus Enum
+ *
+ * Defines standard HTTP status codes.
+ */
+enum HttpStatus: int
+{
+	case BAD_REQUEST = 400;
+	case UNAUTHORIZED = 401;
+	case FORBIDDEN = 403;
+	case NOT_FOUND = 404;
+	case TOO_MANY_REQUESTS = 429;
+	case INTERNAL_SERVER_ERROR = 500;
+}
+
+/**
  * UserStatus Enum
  *
  * This enum defines the possible user statuses.
  */
 enum UserStatus: string
 {
-	case ONLINE  = 'online';
+	case ONLINE = 'online';
 	case OFFLINE = 'offline';
-	case BUSY    = 'busy';
-	case AWAY    = 'away';
+	case BUSY = 'busy';
+	case AWAY = 'away';
 }
 
 /**
@@ -51,7 +66,7 @@ class AuthController extends Controller
 	public function __construct(
 		protected ?string $modelClass = User::class,
 		protected MultiFactorAuthService $mfaService = new MultiFactorAuthService(),
-    	protected PasswordService $pwService = new PasswordService(),
+		protected PasswordService $pwService = new PasswordService(),
 	)
 	{
 		parent::__construct();
@@ -69,25 +84,25 @@ class AuthController extends Controller
 		$password = $req->input('password');
 		if (! $username || ! $password)
 		{
-			return $this->error('The username and password are required.', 400);
+			return $this->error('The username and password are required.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		$attempts = $this->getAttempts($username, $req->ip());
 		if ($attempts >= self::MAX_ATTEMPTS)
 		{
-			return $this->error('Maximum login attempts reached. Please try again later.', 429);
+			return $this->error('Maximum login attempts reached. Please try again later.', HttpStatus::TOO_MANY_REQUESTS->value);
 		}
 
 		$userId = $this->authenticate($username, $password, $req->ip());
 		if ($userId < 0)
 		{
-			return $this->error('Invalid credentials. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS, 401);
+			return $this->error('Invalid credentials. Attempt ' . ++$attempts . ' of ' . self::MAX_ATTEMPTS, HttpStatus::UNAUTHORIZED->value);
 		}
 
 		$user = $this->getUserId($userId);
 		if (!$user)
 		{
-			return $this->error('The user account is not found.', 404);
+			return $this->error('The user account is not found.', HttpStatus::NOT_FOUND->value);
 		}
 
 		if ($user->multiFactor === true)
@@ -152,7 +167,7 @@ class AuthController extends Controller
 		$user = $this->mfaService->getUser();
 		if (!$user)
 		{
-			return $this->error('The user not found in MFA session.', 404);
+			return $this->error('The user not found in MFA session.', HttpStatus::NOT_FOUND->value);
 		}
 
 		$type = $req->input('type', 'sms');
@@ -172,25 +187,25 @@ class AuthController extends Controller
 		$user = $this->mfaService->getUser();
 		if (!$user)
 		{
-			return $this->error('The user not found in MFA session.', 404);
+			return $this->error('The user not found in MFA session.', HttpStatus::NOT_FOUND->value);
 		}
 
 		$device = $this->mfaService->getDevice();
 		if (!$device)
 		{
-			return $this->error('The device not found in MFA session.', 404);
+			return $this->error('The device not found in MFA session.', HttpStatus::NOT_FOUND->value);
 		}
 
 		$code = $req->input('code');
 		$isValid = $this->mfaService->validateCode($code);
 		if ($isValid === false)
 		{
-			return $this->error('Invalid authentication code.', 401);
+			return $this->error('Invalid authentication code.', HttpStatus::UNAUTHORIZED->value);
 		}
 
 		if ($isValid === null)
 		{
-			return $this->error('Invalid authentication code. Too many attempts.', 429);
+			return $this->error('Invalid authentication code. Too many attempts.', HttpStatus::TOO_MANY_REQUESTS->value);
 		}
 
 		$this->mfaService->addNewConnection($user, $device, $req->ip());
@@ -209,13 +224,13 @@ class AuthController extends Controller
 		$userId = $session->id ?? null;
 		if (!$userId)
 		{
-			return $this->error('The user is not authenticated.', 401);
+			return $this->error('The user is not authenticated.', HttpStatus::UNAUTHORIZED->value);
 		}
 
 		$user = $this->modelClass::get($userId);
 		if (!$user)
 		{
-			return $this->error('The user is not found.', 404);
+			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
 		}
 
 		$this->updateStatus($user->id, UserStatus::OFFLINE->value);
@@ -235,20 +250,20 @@ class AuthController extends Controller
 		$data = $req->json('user');
 		if (!$data)
 		{
-			return $this->error('The data is invalid for registration.', 400);
+			return $this->error('The data is invalid for registration.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		$model = new $this->modelClass($data);
 		$result = $model->add();
 		if (!$result)
 		{
-			return $this->error('The registration has failed.', 400);
+			return $this->error('The registration has failed.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		$user = $this->modelClass::get($model->id);
 		if (!$user)
 		{
-			return $this->error('The user is not found after registration', 404);
+			return $this->error('The user is not found after registration', HttpStatus::NOT_FOUND->value);
 		}
 
 		return $this->permit($user);
@@ -357,20 +372,20 @@ class AuthController extends Controller
 		$email = $req->input('email');
 		if (!isset($email))
 		{
-			return $this->error('The email is missing.', 400);
+			return $this->error('The email is missing.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		$model = new $this->modelClass();
 		$user = $model->getByEmail($email);
 		if (!$user)
 		{
-			return $this->error('The user is not found.', 404);
+			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
 		}
 
 		$result = $this->pwService->sendResetRequest($user);
 		if (empty($result->email) && empty($result->sms))
 		{
-			return $this->error('The password reset request has failed.', 400);
+			return $this->error('The password reset request has failed.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		return $this->response((object)[
@@ -390,13 +405,13 @@ class AuthController extends Controller
 		$userId = $req->getInt('userId');
 		if (!isset($requestId) || !isset($userId))
 		{
-			return $this->error('The request id or user id is missing.', 400);
+			return $this->error('The request id or user id is missing.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		$username = $this->pwService->validateRequest($requestId, $userId);
 		if ($username === null)
 		{
-			return $this->error('No request is found.', 404);
+			return $this->error('No request is found.', HttpStatus::NOT_FOUND->value);
 		}
 
 		return $this->response((object)[
@@ -415,12 +430,12 @@ class AuthController extends Controller
 		$user = $req->json('user');
 		if (!isset($user))
 		{
-			return $this->error('The user is not set.', 400);
+			return $this->error('The user is not set.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		if (empty($user->password))
 		{
-			return $this->error('The password is not set.', 400);
+			return $this->error('The password is not set.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		$requestId = $user->requestId;
