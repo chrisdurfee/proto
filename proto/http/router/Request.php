@@ -3,6 +3,7 @@ namespace Proto\Http\Router;
 
 use Proto\Http\Request as BaseRequest;
 use Proto\Utils\Sanitize;
+use Proto\Utils\Format\JsonFormat;
 
 /**
  * Request
@@ -90,6 +91,8 @@ class Request
 			return null;
 		}
 
-		return BaseRequest::json($item);
+		$item = preg_replace("/\\\\/", "\\\\\\", $item);
+		$item = preg_replace("/\\n/", "\\\\n", $item);
+		return JsonFormat::decode($item);
 	}
 }
