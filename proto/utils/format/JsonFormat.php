@@ -88,7 +88,7 @@ class JsonFormat extends Format
 			return null;
 		}
 
-		$decodedData = json_decode(self::normalizeString($data));
+		$decodedData = json_decode($data);
 
 		if (json_last_error() !== JSON_ERROR_NONE)
 		{
@@ -108,6 +108,6 @@ class JsonFormat extends Format
 	 */
 	protected static function logError(string $message, mixed $data): bool
 	{
-		return error_log($message . " | Data: " . var_export($data, true));
+		return error($message . ' data: ' . $data, __FILE__, __LINE__);
 	}
 }

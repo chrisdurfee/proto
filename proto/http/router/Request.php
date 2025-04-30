@@ -75,4 +75,21 @@ class Request
 
 		return Sanitize::clean($data);
 	}
+
+	/**
+	 * This will get an item and decode it from json.
+	 *
+	 * @param string $name
+	 * @return mixed
+	 */
+	public function json(string $name): mixed
+	{
+		$item = $this->input($name);
+		if (!$item)
+		{
+			return null;
+		}
+
+		return BaseRequest::json($item);
+	}
 }

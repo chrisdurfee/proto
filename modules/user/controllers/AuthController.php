@@ -175,13 +175,13 @@ class AuthController extends Controller
 		$user = $this->mfaService->getUser();
 		if (!$user)
 		{
-			return $this->error('The user not found in MFA session.', HttpStatus::NOT_FOUND->value);
+			return $this->error('The user is not found in MFA session.', HttpStatus::NOT_FOUND->value);
 		}
 
 		$device = $this->mfaService->getDevice();
 		if (!$device)
 		{
-			return $this->error('The device not found in MFA session.', HttpStatus::NOT_FOUND->value);
+			return $this->error('The device is not found in MFA session.', HttpStatus::NOT_FOUND->value);
 		}
 
 		$code = $req->input('code');
