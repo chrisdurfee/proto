@@ -8,6 +8,7 @@ use Modules\User\Controllers\UserStatus;
 use Modules\User\Services\Auth\MultiFactorAuthService;
 use Modules\User\Controllers\Multifactor\MultiFactorHelper;
 use Modules\User\Services\Password\PasswordService;
+use Modules\User\Services\User\NewUserService;
 use Proto\Controllers\Controller;
 use Proto\Http\Router\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
@@ -241,17 +242,11 @@ class AuthController extends Controller
 			return $this->error('The data is invalid for registration.', HttpStatus::BAD_REQUEST->value);
 		}
 
-		$model = new $this->modelClass($data);
-		$result = $model->add();
-		if (!$result)
-		{
-			return $this->error('The registration has failed.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		$user = $this->modelClass::get($model->id);
+		$service = new NewUserService();
+		$user = $service->createUser($data);
 		if (!$user)
 		{
-			return $this->error('The user is not found after registration', HttpStatus::NOT_FOUND->value);
+			return $this->error('The registration has failed.', HttpStatus::BAD_REQUEST->value);
 		}
 
 		return $this->permit($user);
@@ -310,19 +305,21 @@ class AuthController extends Controller
 	 *
 	 * @param int $userId
 	 * @param string $status
-	 * @return void
+	 * @return bool
 	 */
-	protected function updateLoginStatus(int $userId, string $status): void
+	protected function updateLoginStatus(int $userId, string $status): bool
 	{
-		if ($status === UserStatus::ONLINE->value || $status === UserStatus::OFFLINE->value)
+		if ($status !== UserStatus::ONLINE->value && $status !== UserStatus::OFFLINE->value)
 		{
-			$direction = $status === UserStatus::ONLINE->value ? 'login' : 'logout';
-			LoginLog::create((object)[
-				'dateTimeSetup' => date('Y-m-d H:i:s'),
-				'userId' => $userId,
-				'direction' => $direction
-			]);
+			return false;
 		}
+
+		$direction = $status === UserStatus::ONLINE->value ? 'login' : 'logout';
+		return LoginLog::create((object)[
+			'dateTimeSetup' => date('Y-m-d H:i:s'),
+			'userId' => $userId,
+			'direction' => $direction
+		]);
 	}
 
 	/**
