@@ -290,14 +290,18 @@ class AuthController extends Controller
 	 *
 	 * @param User $user
 	 * @param string $status
-	 * @return void
+	 * @return bool
 	 */
-	protected function updateStatus(User $user, string $status): void
+	protected function updateStatus(User $user, string $status): bool
 	{
 		$user->status = $status;
-		$user->updateStatus();
+		$success = $user->updateStatus();
+		if (!$success)
+		{
+			return false;
+		}
 
-		$this->updateLoginStatus($user->id, $status);
+		return $this->updateLoginStatus($user->id, $status);
 	}
 
 	/**
