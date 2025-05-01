@@ -2,6 +2,8 @@
 namespace Modules\User\Services\User;
 
 use Modules\User\Models\User;
+use Modules\User\Models\UserRole;
+use Modules\User\Models\Role;
 use Modules\User\Models\EmailVerification;
 use Proto\Dispatch\Enqueuer;
 
@@ -27,6 +29,92 @@ class NewUserService
 	}
 
 	/**
+	 * This will create a new user and send the verification email.
+	 *
+	 * @param object $data
+	 * @return User
+	 */
+	public function createUser(object $data): User
+	{
+		$user = $this->addUser($data);
+		if (!$user)
+		{
+			return $user;
+		}
+
+		if (!$this->addRoles($user))
+		{
+			return $user;
+		}
+
+		if (!$this->sendVerification($user))
+		{
+			return $user;
+		}
+
+		return $user;
+	}
+
+	/**
+	 * This will add a new user to the database.
+	 *
+	 * @param object $data
+	 * @return User
+	 */
+	protected function addUser(object $data): User
+	{
+		$model = new User($data);
+		$model->add();
+		return $model;
+	}
+
+	/**
+	 * This will add the roles to the user.
+	 *
+	 * @param User $user
+	 * @return bool
+	 */
+	protected function addRoles(User $user): bool
+	{
+		$success = true;
+		$roles = [
+			'user',
+		];
+
+		foreach ($roles as $role)
+		{
+			$result = $this->addRole($user, $role) && $success;
+			if (!$result)
+			{
+				$success = false;
+			}
+		}
+		return $success;
+	}
+
+	/**
+	 * This will add the role to the user.
+	 *
+	 * @param User $user
+	 * @param string $role
+	 * @return bool
+	 */
+	protected function addRole(User $user, string $role): bool
+	{
+		$role = (new Role())->getBySlug($role);
+		if (!$role)
+		{
+			return false;
+		}
+
+		$model = new UserRole((object)[
+			'userId' => $user->id,
+			'roleId' => $role->id
+		]);
+		return $model->add();
+	}
+
+	/**
 	 * Generate and store email verification token.
 	 *
 	 * @param User $user
@@ -38,7 +126,7 @@ class NewUserService
 		$model->set('userId', $user->id);
 		$model->add();
 
-		return $model->token;
+		return $model->requestId;
 	}
 
 	/**
@@ -50,9 +138,10 @@ class NewUserService
 	 */
 	protected function emailVerification(User $user, string $token): object
 	{
+		$siteName = env('siteName');
 		$settings = (object)[
 			'to' => $user->email,
-			'subject' => 'Welcome to OurApp! Please verify your email',
+			'subject' => 'Welcome to ' . $siteName . '! Please verify your email',
 			'template' => 'Modules\\User\\Email\\Welcome\\WelcomeVerificationEmail'
 		];
 		$data = (object)[

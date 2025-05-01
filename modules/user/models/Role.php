@@ -2,6 +2,7 @@
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
+use Modules\User\Storage\RoleStorage;
 
 /**
  * Role
@@ -57,4 +58,9 @@ class Role extends Model
 				'module'
 			);
 	}
+
+	/**
+	 * @var string $storageType
+	 */
+	protected static string $storageType = RoleStorage::class;
 }
