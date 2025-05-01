@@ -94,6 +94,17 @@ class UserPolicy extends Policy
 	}
 
 	/**
+	 * Determines if the user can update an existing user.
+	 *
+	 * @param object $data The updated user data.
+	 * @return bool True if the user can edit users, otherwise false.
+	 */
+	public function updateStatus(object $data): bool
+	{
+		return $this->canEdit($data);
+	}
+
+	/**
 	 * Determines if the user can delete a user.
 	 *
 	 * @param mixed $data User data or ID.

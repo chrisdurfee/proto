@@ -13,4 +13,5 @@ router()
 	->middleware([
 		CrossSiteProtectionMiddleware::class
 	])
+	->patch('user/status', [UserController::class, 'updateStatus'])
 	->resource('user', UserController::class);
