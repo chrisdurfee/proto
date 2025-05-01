@@ -20,14 +20,13 @@ class WelcomeVerificationEmail extends BasicEmail
 	protected function addBody(): string
 	{
 		$props = $this->props;
-		$user = $props->username ?? '';
 		$url = $props->verifyUrl ?? '#';
 		$siteName = env('siteName');
 
 		return <<<HTML
 <tr>
 		<td style="vertical-align:top;" class="sub-container">
-			<h1>Welcome to {$siteName}, {$user}!</h1>
+			<h1>Welcome to {$siteName}!</h1>
 			<p>Thank you for signing up. Please verify your email address by clicking the link below:</p>
 			<p><a href="{$url}" class="bttn">Verify Email</a></p>
 			<p>If you did not create this account, no further action is required.</p>
