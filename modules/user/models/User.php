@@ -87,7 +87,6 @@ class User extends Model
 				);
 
 		NotificationPreference::one($builder)
-			->on(['id', 'userId'])
 			->fields(
 				'allowEmail',
 				'allowSms',
