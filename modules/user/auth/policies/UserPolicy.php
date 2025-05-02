@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Auth\Policies;
 
+use Proto\Http\Router\Request;
+
 /**
  * Class UserPolicy
  *
@@ -46,7 +48,7 @@ class UserPolicy extends Policy
 	 */
 	public function get(mixed $id): bool
 	{
-		return $this->canAccess('users.view');
+		return $this->canAccess('users.view') || $this->ownsResource($id);
 	}
 
 	/**
@@ -102,6 +104,18 @@ class UserPolicy extends Policy
 	public function updateStatus(object $data): bool
 	{
 		return $this->canEdit($data);
+	}
+
+	/**
+	 * Determines if the user can verify their email address.
+	 *
+	 * @param Request $request The request containing the user ID.
+	 * @return bool True if the user can verify their email, otherwise false.
+	 */
+	public function verifyEmail(Request $request): bool
+	{
+		$userId = $request->input('userId');
+		return $this->ownsResource($userId);
 	}
 
 	/**

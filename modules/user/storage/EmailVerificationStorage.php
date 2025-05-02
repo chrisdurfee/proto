@@ -23,6 +23,26 @@ class EmailVerificationStorage extends Storage
 		return bin2hex(random_bytes($length));
 	}
 
+	/**
+	 * This will get a validation request by request ID and user ID.
+	 *
+	 * @param string $requestId
+	 * @param mixed $userId
+	 * @return object|null
+	 */
+	public function getByRequest(string $requestId, mixed $userId): ?object
+	{
+		$params = ['requestId' => $requestId, 'userId' => $userId];
+
+		return $this->select()
+			->where(
+				'requestId = ?',
+				'userId = ?',
+				'status = "pending"'
+			)
+			->first($params);
+	}
+
     /**
 	 * This will add a new password request.
 	 *

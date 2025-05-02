@@ -14,4 +14,5 @@ router()
 		CrossSiteProtectionMiddleware::class
 	])
 	->patch('user/status', [UserController::class, 'updateStatus'])
+	->patch('user/verify-email', [UserController::class, 'verifyEmail'])
 	->resource('user', UserController::class);
