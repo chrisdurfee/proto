@@ -16,6 +16,19 @@ use Proto\Utils\Format\JsonFormat;
 class Request
 {
 	/**
+	 * Constructor to initialize the request parameters.
+	 *
+	 * @param object|null $params The request parameters.
+	 * @return void
+	 */
+	public function __construct(
+		protected ?object $params = null
+	)
+	{
+
+	}
+
+	/**
 	 * This will get the properties from the base request.
 	 *
 	 * @param string $name
@@ -24,6 +37,27 @@ class Request
 	public function __get(string $name): mixed
 	{
 		return BaseRequest::${$name};
+	}
+
+	/**
+	 * This will set the params for the request.
+	 *
+	 * @param object $params
+	 * @return void
+	 */
+	public function setParams(object $params): void
+	{
+		$this->params = $params;
+	}
+
+	/**
+	 * This will get the params from the request.
+	 *
+	 * @return ?object
+	 */
+	public function params(): ?object
+	{
+		return $this->params;
 	}
 
 	/**

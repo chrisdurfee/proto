@@ -32,8 +32,7 @@ class Resource
 	 * @param callable $callback The callback action to execute when the route is activated.
 	 */
 	public function __construct(
-		string $controller,
-		protected object $params
+		string $controller
 	)
 	{
 		$this->controller = ControllerHelper::getController($controller);
@@ -111,7 +110,7 @@ class Resource
 	public function activate(Request $request): mixed
 	{
 		$item = $request->json('item');
-		$resourceId = $this->params->id ?? null;
+		$resourceId = $request->params()->id ?? null;
 
 		$method = $request->method();
 		switch ($method)

@@ -22,6 +22,7 @@ class Route extends Uri
 	 * @param string $method The HTTP method for the route.
 	 * @param string $uri The route URI.
 	 * @param callable $callback The callback action to execute when the route is activated.
+	 * @return void
 	 */
 	public function __construct(string $method, string $uri, callable $callback)
 	{
@@ -60,6 +61,7 @@ class Route extends Uri
 	 */
 	public function activate(Request $request): mixed
 	{
-		return call_user_func($this->callback, $request, $this->params);
+		$request = new Request($this->params);
+		return call_user_func($this->callback, $request);
 	}
 }

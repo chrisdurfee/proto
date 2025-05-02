@@ -24,7 +24,7 @@ $router = new Router('/developer/api/');
 /**
  * This will create a new server resource from the generator.
  */
-$router->post('generator', function(Request $req, $params)
+$router->post('generator', function(Request $req)
 {
 	$resource = $req->json('resource');
 	$type = $req->input('type');
@@ -53,7 +53,7 @@ function getFilter(?string $filter): array
 /**
  * This will get all migrations added to the migration table.
  */
-$router->get('migration*', function(Request $req, $params)
+$router->get('migration*', function(Request $req)
 {
 	$filter = getFilter($req->input('filter'));
 	$offset = $req->getInt('start');
@@ -72,7 +72,7 @@ $router->get('migration*', function(Request $req, $params)
 /**
  * This will migrate the database up or down.
  */
-$router->post('migration', function(Request $req, $params)
+$router->post('migration', function(Request $req)
 {
 	$direction = $req->input('direction');
 
@@ -102,7 +102,7 @@ function setFilter(?string $filter): array
 /**
  * This will get all migrations added to the migration table.
  */
-$router->get('error*', function(Request $req, $params)
+$router->get('error*', function(Request $req)
 {
 	$filter = setFilter($req->input('filter'));
 	$offset = $req->getInt('start');
@@ -121,7 +121,7 @@ $router->get('error*', function(Request $req, $params)
 /**
  * This will get all migrations added to the migration table.
  */
-$router->patch('error', function(Request $req, $params)
+$router->patch('error', function(Request $req)
 {
 	$id = $req->getInt('id');
 	$resolved = $req->getInt('resolved');
@@ -133,7 +133,7 @@ $router->patch('error', function(Request $req, $params)
 /**
  * This will get the table columns.
  */
-$router->get('table/columns*', function(Request $req, $params)
+$router->get('table/columns*', function(Request $req)
 {
 	$connection = $req->input('connection');
 	$tableName = $req->input('tableName');

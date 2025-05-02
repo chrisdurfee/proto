@@ -262,9 +262,9 @@ class Router
 	 */
 	public function resource(string $uri, string $controller, ?array $middleware = null): self
 	{
-		$callback = function($req, $params) use ($controller): mixed
+		$callback = function($req) use ($controller): mixed
 		{
-			$resource = new Resource($controller, $params);
+			$resource = new Resource($controller);
 			return $resource->activate($req);
 		};
 

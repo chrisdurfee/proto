@@ -11,20 +11,6 @@ namespace Proto\Http\Router;
 class Redirect extends Uri
 {
 	/**
-	 * Redirect target URL.
-	 *
-	 * @var string
-	 */
-	protected string $redirectUrl;
-
-	/**
-	 * HTTP response code for the redirect.
-	 *
-	 * @var int
-	 */
-	protected int $responseCode;
-
-	/**
 	 * Creates a new redirect route.
 	 *
 	 * @param string $uri The URI to match.
@@ -32,11 +18,13 @@ class Redirect extends Uri
 	 * @param int $responseCode The HTTP response code (default: 301).
 	 * @return void
 	 */
-	public function __construct(string $uri, string $redirectUrl, int $responseCode = 301)
+	public function __construct(
+		string $uri,
+		protected string $redirectUrl,
+		protected int $responseCode = 301
+	)
 	{
 		parent::__construct($uri);
-		$this->redirectUrl = $redirectUrl;
-		$this->responseCode = $responseCode;
 	}
 
 	/**

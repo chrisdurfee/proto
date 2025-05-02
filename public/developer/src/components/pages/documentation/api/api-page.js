@@ -173,21 +173,19 @@ $router = router();
  * This will get a patient by ID.
  *
  * @param string $req
- * @param object $params
  * @return object
  */
-$router->get('patients/:id/', function(Request $req, $params)
+$router->get('patients/:id/', function(Request $req)
 {
 	$id = $req->input('module');
 
-	return $params;
+	return $req->params();
 });
 
 /**
  * This will get a patient by ID.
  *
  * @param Request $req
- * @param object $params
  * @return object
  */
 $router->get('patients/:id/', [PatientController::class, 'get']);
@@ -196,7 +194,6 @@ $router->get('patients/:id/', [PatientController::class, 'get']);
  * This will redirect with a 301 code.
  *
  * @param Request $req
- * @param object $params
  * @return object
  */
 $router->redirect('patients/:id/', './appointments/', 302);
@@ -205,11 +202,11 @@ $router->redirect('patients/:id/', './appointments/', 302);
  * This will get a resource with a 301 code.
  *
  * @param Request $req
- * @param object $params
  * @return object
  */
-$router->get('patients/:id?/', function(Request $req, $params)
+$router->get('patients/:id?/', function(Request $req)
 {
+	$params = $req->params();
 	// this will set a response code
 	$params->code = 301;
 
@@ -221,40 +218,37 @@ $router->get('patients/:id?/', function(Request $req, $params)
  * This will post a resource.
  *
  * @param Request $req
- * @param object $params
  * @return object
  */
-$router->post('patients/:id?/', function(Request $req, $params)
+$router->post('patients/:id?/', function(Request $req)
 {
 	// this will json encode the value
-	return $params;
+	return $req->params();
 });
 
 /**
  * This will get an upload file.
  *
  * @param Request $req
- * @param object $params
  * @return object
  */
-$router->get('appoinmtents/*', function(Request $req, $params)
+$router->get('appoinmtents/*', function(Request $req)
 {
 	$file = $req->file('fileName');
 
 	// this will json encode the value
-	return $params;
+	return $req->params();
 });
 
 /**
  * This will always route.
  *
  * @param Request $req
- * @param object $params
  * @return object
  */
-$router->get('*', function($req, $params)
+$router->get('*', function($req)
 {
-	var_dump($params);
+	var_dump($req->params());
 });
 `
 				)
