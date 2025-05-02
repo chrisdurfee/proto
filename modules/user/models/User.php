@@ -85,6 +85,14 @@ class User extends Model
 					'name',
 					'slug'
 				);
+
+		NotificationPreference::one($builder)
+			->on(['id', 'userId'])
+			->fields(
+				'allowEmail',
+				'allowSms',
+				'allowPush'
+			);
 	}
 
 	/**

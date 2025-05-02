@@ -485,29 +485,6 @@ class Storage implements StorageInterface
 	}
 
 	/**
-	 * Retrieve model fields with join columns.
-	 *
-	 * @param array &$joins Join definitions.
-	 * @return array
-	 */
-	protected function getModelFields(array &$joins): array
-	{
-		$cols = [];
-		$isSnakeCase = $this->model->isSnakeCase();
-		$fields = $this->model->getFields();
-		foreach ($fields as $field)
-		{
-			$cols[] = FieldHelper::formatField($field, $isSnakeCase);
-		}
-
-		if (count($joins) > 0)
-		{
-			$this->getJoinCols($joins, $cols, $isSnakeCase);
-		}
-		return $cols;
-	}
-
-	/**
 	 * Append join columns (potentially as subqueries) to model fields.
 	 *
 	 * @param array $joins Join definitions from the model.
@@ -549,7 +526,7 @@ class Storage implements StorageInterface
 	  * @param array $joins Join definitions.
 	  * @return array
 	  */
-	protected function getColNames(array $joins): array // Renamed from getModelFields
+	protected function getColNames(array $joins): array
 	{
 		$cols = [];
 		$isSnakeCase = $this->model->isSnakeCase();
@@ -582,6 +559,7 @@ class Storage implements StorageInterface
 			return [];
 		}
 
+		$isSnakeCase = $this->model->isSnakeCase();
 		$mapped = [];
 		foreach ($joins as $join)
 		{
@@ -598,7 +576,7 @@ class Storage implements StorageInterface
 				'type' => $join->getType(),
 				'on' => $join->getOn(),
 				'using' => $join->getUsing(),
-				'fields' => ($allowFields && !$join->isMultiple()) ? FieldHelper::formatFields($join->getFields()) : null
+				'fields' => ($allowFields && !$join->isMultiple()) ? FieldHelper::formatFields($join->getFields(), $isSnakeCase) : null
 			];
 		}
 
