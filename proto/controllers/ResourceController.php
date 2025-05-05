@@ -27,7 +27,7 @@ abstract class ResourceController extends Controller
 		$this->setModelClass();
 	}
 
-    /**
+	/**
 	 * Retrieves the request item from the request object.
 	 *
 	 * @param Request $request The request object.
@@ -47,10 +47,10 @@ abstract class ResourceController extends Controller
 	public function setup(Request $request): object
 	{
 		$data = $this->getRequestItem($request);
-        if (empty($data))
-        {
-            return $this->error('No item provided.');
-        }
+		if (empty($data))
+		{
+			return $this->error('No item provided.');
+		}
 
 		$model = $this->model($data);
 		return $model->setup()
@@ -87,10 +87,10 @@ abstract class ResourceController extends Controller
 	public function merge(Request $request): object
 	{
 		$data = $this->getRequestItem($request);
-        if (empty($data))
-        {
-            return $this->error('No item provided.');
-        }
+		if (empty($data))
+		{
+			return $this->error('No item provided.');
+		}
 
 		$model = $this->model($data);
 		return $model->merge()
@@ -106,18 +106,18 @@ abstract class ResourceController extends Controller
 	 */
 	public function updateStatus(Request $request): object
 	{
-        $id = $request->params()->id ?? null;
-        $status = $request->params()->status ?? null;
-        if ($id === null || $status === null)
-        {
-            return $this->error('The ID and status are required.');
-        }
+		$id = $request->params()->id ?? null;
+		$status = $request->params()->status ?? null;
+		if ($id === null || $status === null)
+		{
+			return $this->error('The ID and status are required.');
+		}
 
 		return $this->response(
-            $this->model((object) [
-                'id' => $id,
-                'status' => $status
-            ])->updateStatus()
+			$this->model((object) [
+				'id' => $id,
+				'status' => $status
+			])->updateStatus()
 		);
 	}
 
@@ -130,14 +130,14 @@ abstract class ResourceController extends Controller
 	public function update(Request $request): object
 	{
 		$data = $this->getRequestItem($request);
-        if (empty($data))
-        {
-            return $this->error('No item provided.');
-        }
+		if (empty($data))
+		{
+			return $this->error('No item provided.');
+		}
 
 		return $this->response(
-            $this->model($data)->update()
-        );
+			$this->model($data)->update()
+		);
 	}
 
 	/**
@@ -148,31 +148,31 @@ abstract class ResourceController extends Controller
 	 */
 	public function delete(Request $request): object
 	{
-        $id = $request->params()->id ?? null;
-        if ($id === null)
-        {
-            $data = $this->getRequestItem($request);
-            if (empty($data))
-            {
-                return $this->error('No item provided.');
-            }
-            $id = $data->id ?? null;
-        }
+		$id = $request->params()->id ?? null;
+		if ($id === null)
+		{
+			$data = $this->getRequestItem($request);
+			if (empty($data))
+			{
+				return $this->error('No item provided.');
+			}
+			$id = $data->id ?? null;
+		}
 
-        if ($id === null)
-        {
-            return $this->error('The ID is required.');
-        }
+		if ($id === null)
+		{
+			return $this->error('The ID is required.');
+		}
 
-        $data = $this->getRequestItem($request);
-        if (empty($data))
-        {
-            return $this->error('No item provided.');
-        }
+		$data = $this->getRequestItem($request);
+		if (empty($data))
+		{
+			return $this->error('No item provided.');
+		}
 
-        return $this->response(
-            $this->model((object) ['id' => $id])->delete()
-        );
+		return $this->response(
+			$this->model((object) ['id' => $id])->delete()
+		);
 	}
 
 	/**
@@ -183,28 +183,28 @@ abstract class ResourceController extends Controller
 	 */
 	public function get(Request $request): object
 	{
-        $id = $request->params()->id ?? null;
-        if ($id === null)
-        {
-            return $this->error('The ID is required.');
-        }
+		$id = $request->params()->id ?? null;
+		if ($id === null)
+		{
+			return $this->error('The ID is required.');
+		}
 
 		return $this->response(['row' => $this->modelClass::get($id)]);
 	}
 
-    /**
-     * This will get the filter from the request.
-     *
-     * @param Request $request The request object.
-     * @return mixed The filter criteria.
-     */
-    public function getFilter(Request $request): mixed
+	/**
+	 * This will get the filter from the request.
+	 *
+	 * @param Request $request The request object.
+	 * @return mixed The filter criteria.
+	 */
+	public function getFilter(Request $request): mixed
 	{
-        $filter = $request->input('filter') ?? $request->input('option');
-        if (is_string($filter))
-        {
-            $filter = urldecode($filter);
-        }
+		$filter = $request->input('filter') ?? $request->input('option');
+		if (is_string($filter))
+		{
+			$filter = urldecode($filter);
+		}
 
 		return JsonFormat::decode($filter) ?? (object)[];
 	}
@@ -223,11 +223,11 @@ abstract class ResourceController extends Controller
 		$filter = $this->getFilter($request);
 		$offset = $request->getInt('start') ?? 0;
 		$count = $request->getInt('count') ?? 50;
-        $search = $request->input('search');
+		$search = $request->input('search');
 
 		$result = $this->modelClass::all($filter, $offset, $count, [
-            'search' => $search
-        ]);
+			'search' => $search
+		]);
 		return $this->response($result);
 	}
 
@@ -240,10 +240,10 @@ abstract class ResourceController extends Controller
 	public function search(Request $request): object
 	{
 		$search = $request->input('search');
-        if (empty($search))
-        {
-            return $this->error('No search term provided.');
-        }
+		if (empty($search))
+		{
+			return $this->error('No search term provided.');
+		}
 
 		return $this->response(['rows' => $this->modelClass::search($search)]);
 	}

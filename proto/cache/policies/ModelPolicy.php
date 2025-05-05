@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Cache\Policies;
 
+use Proto\Http\Router\Request;
+
 /**
  * ModelPolicy
  *
@@ -13,48 +15,49 @@ class ModelPolicy extends Policy
 	/**
 	 * Adds or updates model data.
 	 *
-	 * @param object $data The data object.
+	 * @param Request $request The request object.
 	 * @return object The updated model data.
 	 */
-	public function setup(object $data): object
+	public function setup(Request $request): object
 	{
 		$this->deleteAll();
-		return $this->controller->setup($data);
+		return $this->controller->setup($request);
 	}
 
 	/**
 	 * Adds new model data.
 	 *
-	 * @param object $data The data object.
+	 * @param Request $request The request object.
 	 * @return object The newly added model data.
 	 */
-	public function add(object $data): object
+	public function add(Request $request): object
 	{
 		$this->deleteAll();
-		return $this->controller->add($data);
+		return $this->controller->add($request);
 	}
 
 	/**
 	 * Merges new data into the model.
 	 *
-	 * @param object $data The data object.
+	 * @param Request $request The request object.
 	 * @return object The merged model data.
 	 */
-	public function merge(object $data): object
+	public function merge(Request $request): object
 	{
 		$this->deleteAll();
-		return $this->controller->merge($data);
+		return $this->controller->merge($request);
 	}
 
 	/**
 	 * Updates model data.
 	 *
-	 * @param object $data The data object.
+	 * @param Request $request The request object.
 	 * @return object The updated model data.
 	 */
-	public function update(object $data): object
+	public function update(Request $request): object
 	{
-		$id = $data->id ?? null;
+		$item = $this->controller->getRequestItem($request);
+		$id = $item->id ?? null;
 		if ($id !== null)
 		{
 			$key = $this->createKey('get', $id);
@@ -65,18 +68,18 @@ class ModelPolicy extends Policy
 		}
 
 		$this->deleteAll();
-		return $this->controller->update($data);
+		return $this->controller->update($request);
 	}
 
 	/**
 	 * Updates the model's status.
 	 *
-	 * @param int $id The model ID.
-	 * @param mixed $status The new status value.
+	 * @param Request $request The request object.
 	 * @return object The updated model.
 	 */
-	public function updateStatus(int $id, mixed $status): object
+	public function updateStatus(Request $request): object
 	{
+		$id = $request->getInt('id') ?? null;
 		$key = $this->createKey('get', $id);
 		if ($this->hasKey($key))
 		{
@@ -84,18 +87,25 @@ class ModelPolicy extends Policy
 		}
 
 		$this->deleteAll();
-		return $this->controller->updateStatus($id, $status);
+		return $this->controller->updateStatus($request);
 	}
 
 	/**
 	 * Deletes model data.
 	 *
-	 * @param int|object $data The model ID or data object.
+	 * @param Request $request The request object.
 	 * @return object The deleted model.
 	 */
-	public function delete(int|object $data): object
+	public function delete(Request $request): object
 	{
-		$id = is_object($data) ? $data->id ?? null : $data;
+		$id = $request->params()->id ?? null;
+        if ($id === null)
+        {
+            $item = $this->controller->getRequestItem($request);
+            $id = $item->id ?? null;
+        }
+
+        $id = $request->getInt('id') ?? null;
 		if ($id !== null)
 		{
 			$key = $this->createKey('get', $id);
@@ -106,24 +116,25 @@ class ModelPolicy extends Policy
 		}
 
 		$this->deleteAll();
-		return $this->controller->delete($data);
+		return $this->controller->delete($request);
 	}
 
 	/**
 	 * Retrieves model data.
 	 *
-	 * @param mixed $id The model ID.
+	 * @param Request $request The request object.
 	 * @return object The retrieved model.
 	 */
-	public function get(mixed $id): object
+	public function get(Request $request): object
 	{
+		$id = $request->getInt('id') ?? null;
 		$key = $this->createKey('get', $id);
 		if ($this->hasKey($key))
 		{
 			return $this->getValue($key);
 		}
 
-		$response = $this->controller->get($id);
+		$response = $this->controller->get($request);
 		$this->setValue($key, $response, $this->expire);
 
 		return $response;
@@ -150,10 +161,10 @@ class ModelPolicy extends Policy
 	/**
 	 * Determines if modifiers contain a search query.
 	 *
-	 * @param array|null $modifiers The modifiers array.
+	 * @param string|null $search The search query.
 	 * @return bool True if searching, otherwise false.
 	 */
-	protected function isSearching(?array $modifiers = null): bool
+	protected function isSearching(?string $search = null): bool
 	{
 		return !empty($modifiers['search']);
 	}
@@ -164,14 +175,14 @@ class ModelPolicy extends Policy
 	 * @param mixed $filter The filter criteria.
 	 * @param int|null $offset The offset value.
 	 * @param int|null $count The count value.
-	 * @param array|null $modifiers The modifiers array.
+	 * @param string|null $search The search query.
 	 * @return string The generated parameter string.
 	 */
 	public function setupAllParams(
 		mixed $filter = null,
 		?int $offset = null,
 		?int $count = null,
-		?array $modifiers = null
+		?string $search = null
 	): string
 	{
 		$params = [];
@@ -191,9 +202,9 @@ class ModelPolicy extends Policy
 			$params[] = (string) $count;
 		}
 
-		if (!empty($modifiers))
+		if (!empty($search))
 		{
-			$params[] = implode(':', $modifiers);
+			$params[] = (string) $search;
 		}
 
 		return implode(':', $params);
@@ -202,33 +213,30 @@ class ModelPolicy extends Policy
 	/**
 	 * Retrieves model rows from the cache or database.
 	 *
-	 * @param mixed $filter The filter criteria.
-	 * @param int|null $offset The offset value.
-	 * @param int|null $count The count value.
-	 * @param array|null $modifiers Additional modifiers.
+	 * @param Request $request The request object.
 	 * @return object The retrieved model rows.
 	 */
-	public function all(
-		mixed $filter = null,
-		?int $offset = null,
-		?int $count = null,
-		?array $modifiers = null
-	): object
+	public function all(Request $request): object
 	{
+		$filter = $this->controller->getFilter($request);
+		$offset = $request->getInt('start') ?? 0;
+		$count = $request->getInt('count') ?? 50;
+		$search = $request->input('search') ?? null;
+
 		// Skip caching for searches
-		if ($this->isSearching($modifiers))
+		if ($this->isSearching($search))
 		{
-			return $this->controller->all($filter, $offset, $count, $modifiers);
+			return $this->controller->all($request);
 		}
 
-		$params = $this->setupAllParams($filter, $offset, $count, $modifiers);
+		$params = $this->setupAllParams($filter, $offset, $count, $search);
 		$key = $this->createKey('all', $params);
 		if ($this->hasKey($key))
 		{
 			return $this->getValue($key);
 		}
 
-		$response = $this->controller->all($filter, $offset, $count, $modifiers);
+		$response = $this->controller->all($request);
 		$this->setValue($key, $response, $this->expire);
 
 		return $response;
