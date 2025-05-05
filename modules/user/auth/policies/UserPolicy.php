@@ -25,39 +25,38 @@ class UserPolicy extends Policy
 	/**
 	 * Determines if the user can list all users.
 	 *
-	 * @param mixed $filter Filter criteria (optional).
-	 * @param int|null $offset Pagination offset (optional).
-	 * @param int|null $count Number of items to return (optional).
-	 * @param array|null $modifiers Additional query modifiers (optional).
+	 * @param Request $request The request object.
 	 * @return bool True if the user can view users, otherwise false.
 	 */
-	public function all(
-		mixed $filter = null,
-		?int $offset = null,
-		?int $count = null,
-		?array $modifiers = null
-	): bool {
+	public function all(Request $request): bool
+	{
 		return $this->canAccess('users.view');
 	}
 
 	/**
 	 * Determines if the user can get a single user's information.
 	 *
-	 * @param mixed $id The user ID.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can view users, otherwise false.
 	 */
-	public function get(mixed $id): bool
+	public function get(Request $request): bool
 	{
+		$id = $request->input('id') ?? null;
+		if ($id === null)
+		{
+			return false;
+		}
+
 		return $this->canAccess('users.view') || $this->ownsResource($id);
 	}
 
 	/**
 	 * Determines if the user can add/create a user.
 	 *
-	 * @param object $data User data.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can create users, otherwise false.
 	 */
-	public function add(object $data): bool
+	public function add(Request $request): bool
 	{
 		return $this->canAccess('users.create');
 	}
@@ -87,22 +86,34 @@ class UserPolicy extends Policy
 	/**
 	 * Determines if the user can update an existing user.
 	 *
-	 * @param object $data The updated user data.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can edit users, otherwise false.
 	 */
-	public function update(object $data): bool
+	public function update(Request $request): bool
 	{
+		$data = $this->controller->getRequestItem($request);
+		if (empty($data) || empty($data->id))
+		{
+			return false;
+		}
+
 		return $this->canEdit($data);
 	}
 
 	/**
 	 * Determines if the user can update an existing user.
 	 *
-	 * @param object $data The updated user data.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can edit users, otherwise false.
 	 */
-	public function updateStatus(object $data): bool
+	public function updateStatus(Request $request): bool
 	{
+		$data = $this->controller->getRequestItem($request);
+		if (empty($data) || empty($data->id))
+		{
+			return false;
+		}
+
 		return $this->canEdit($data);
 	}
 
@@ -121,10 +132,10 @@ class UserPolicy extends Policy
 	/**
 	 * Determines if the user can delete a user.
 	 *
-	 * @param mixed $data User data or ID.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can delete users, otherwise false.
 	 */
-	public function delete(mixed $data): bool
+	public function delete(Request $request): bool
 	{
 		return $this->canAccess('users.delete');
 	}
@@ -132,10 +143,21 @@ class UserPolicy extends Policy
 	/**
 	 * Determines if the user can search among users.
 	 *
-	 * @param mixed $search The search criteria.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can view users, otherwise false.
 	 */
-	public function search(mixed $search): bool
+	public function search(Request $request): bool
+	{
+		return $this->canAccess('users.view');
+	}
+
+	/**
+	 * Determines if the user can count among users.
+	 *
+	 * @param Request $request The request object.
+	 * @return bool True if the user can count users, otherwise false.
+	 */
+	public function count(Request $request): bool
 	{
 		return $this->canAccess('users.view');
 	}
