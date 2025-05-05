@@ -98,7 +98,7 @@ class ModelPolicy extends Policy
 	 */
 	public function delete(Request $request): object
 	{
-		$id = $request->params()->id ?? null;
+		$id = $request->getInt('id') ?? null;
         if ($id === null)
         {
             $item = $this->controller->getRequestItem($request);

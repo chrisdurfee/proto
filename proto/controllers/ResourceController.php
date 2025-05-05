@@ -35,7 +35,7 @@ abstract class ResourceController extends Controller
 	 */
 	public function getRequestItem(Request $request): object
 	{
-		return $request->json('item') ?? (object) $request->params()->all();
+		return $request->json('item') ?? (object) $request->all();
 	}
 
 	/**
@@ -106,8 +106,8 @@ abstract class ResourceController extends Controller
 	 */
 	public function updateStatus(Request $request): object
 	{
-		$id = $request->params()->id ?? null;
-		$status = $request->params()->status ?? null;
+		$id = $request->getInt('id') ?? null;
+		$status = $request->input('status') ?? null;
 		if ($id === null || $status === null)
 		{
 			return $this->error('The ID and status are required.');
@@ -143,12 +143,12 @@ abstract class ResourceController extends Controller
 	/**
 	 * Deletes model data.
 	 *
-	 * @param int|object $data The model ID or object.
+	 * @param Request $request The request object.
 	 * @return object The response.
 	 */
 	public function delete(Request $request): object
 	{
-		$id = $request->params()->id ?? null;
+		$id = $request->getInt('id') ?? null;
 		if ($id === null)
 		{
 			$data = $this->getRequestItem($request);
@@ -183,7 +183,7 @@ abstract class ResourceController extends Controller
 	 */
 	public function get(Request $request): object
 	{
-		$id = $request->params()->id ?? null;
+		$id = $request->getInt('id') ?? null;
 		if ($id === null)
 		{
 			return $this->error('The ID is required.');
@@ -251,9 +251,10 @@ abstract class ResourceController extends Controller
 	/**
 	 * Retrieves the model row count.
 	 *
+	 * @param Request $request The request object.
 	 * @return object The response.
 	 */
-	public function count(): object
+	public function count(Request $request): object
 	{
 		return $this->response($this->modelClass::count());
 	}
