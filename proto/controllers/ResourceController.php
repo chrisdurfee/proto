@@ -106,7 +106,7 @@ abstract class ResourceController extends Controller
 	 */
 	public function updateStatus(Request $request): object
 	{
-		$id = $request->params()->id ?? null;
+		$id = $request->getInt('id') ?? $request->params()->id ?? null;
 		$status = $request->input('status') ?? null;
 		if ($id === null || $status === null)
 		{
@@ -183,7 +183,7 @@ abstract class ResourceController extends Controller
 	 */
 	public function get(Request $request): object
 	{
-		$id = $request->getInt('id') ?? null;
+		$id = $request->getInt('id') ?? $request->params()->id ?? null;
 		if ($id === null)
 		{
 			return $this->error('The ID is required.');
