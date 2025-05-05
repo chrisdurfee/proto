@@ -49,6 +49,17 @@ class ModelPolicy extends Policy
 	}
 
 	/**
+	 * Retrieves the resource ID from the request.
+	 *
+	 * @param Request $request The request object.
+	 * @return int|null The resource ID, or null if not found.
+	 */
+	protected function getResourceId(Request $request): ?int
+	{
+		return $request->getInt('id') ?? $request->params()->id ?? null;
+	}
+
+	/**
 	 * Updates model data.
 	 *
 	 * @param Request $request The request object.
@@ -57,7 +68,7 @@ class ModelPolicy extends Policy
 	public function update(Request $request): object
 	{
 		$item = $this->controller->getRequestItem($request);
-		$id = $item->id ?? $request->params()->id ?? null;
+		$id = $item->id ?? $this->getResourceId($request);
 		if ($id !== null)
 		{
 			$key = $this->createKey('get', $id);
@@ -79,7 +90,7 @@ class ModelPolicy extends Policy
 	 */
 	public function updateStatus(Request $request): object
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		$id = $this->getResourceId($request);
 		$key = $this->createKey('get', $id);
 		if ($this->hasKey($key))
 		{
@@ -98,12 +109,12 @@ class ModelPolicy extends Policy
 	 */
 	public function delete(Request $request): object
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;;
-        if ($id === null)
-        {
-            $item = $this->controller->getRequestItem($request);
-            $id = $item->id ?? null;
-        }
+		$id = $this->getResourceId($request);
+		if ($id === null)
+		{
+			$item = $this->controller->getRequestItem($request);
+			$id = $item->id ?? null;
+		}
 
 		if ($id !== null)
 		{
@@ -126,7 +137,7 @@ class ModelPolicy extends Policy
 	 */
 	public function get(Request $request): object
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		$id = $this->getResourceId($request);
 		$key = $this->createKey('get', $id);
 		if ($this->hasKey($key))
 		{

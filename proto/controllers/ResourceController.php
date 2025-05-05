@@ -99,6 +99,17 @@ abstract class ResourceController extends Controller
 	}
 
 	/**
+	 * Retrieves the resource ID from the request.
+	 *
+	 * @param Request $request The request object.
+	 * @return int|null The resource ID or null if not found.
+	 */
+	protected function getResourceId(Request $request): ?int
+	{
+		return $request->getInt('id') ?? $request->params()->id ?? null;
+	}
+
+	/**
 	 * Updates model item status.
 	 *
 	 * @param Request $request The request object.
@@ -106,7 +117,7 @@ abstract class ResourceController extends Controller
 	 */
 	public function updateStatus(Request $request): object
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		$id = $this->getResourceId($request);
 		$status = $request->input('status') ?? null;
 		if ($id === null || $status === null)
 		{
@@ -135,7 +146,7 @@ abstract class ResourceController extends Controller
 			return $this->error('No item provided.');
 		}
 
-		$data->id = $data->id ?? $request->params()->id ?? null;
+		$data->id = $data->id ?? $this->getResourceId($request);
 		return $this->response(
 			$this->model($data)->update()
 		);
@@ -149,7 +160,7 @@ abstract class ResourceController extends Controller
 	 */
 	public function delete(Request $request): object
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		$id = $this->getResourceId($request);
 		if ($id === null)
 		{
 			$data = $this->getRequestItem($request);
@@ -184,7 +195,7 @@ abstract class ResourceController extends Controller
 	 */
 	public function get(Request $request): object
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		$id = $this->getResourceId($request);
 		if ($id === null)
 		{
 			return $this->error('The ID is required.');
