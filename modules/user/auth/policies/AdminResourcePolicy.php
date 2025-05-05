@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Auth\Policies;
 
+use Proto\Http\Router\Request;
+
 /**
  * AdminResourcePolicy
  *
@@ -23,10 +25,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if a user can get a resource.
 	 *
-	 * @param mixed $id
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function get(mixed $id): bool
+	public function get(Request $request): bool
 	{
 		return $this->isAdmin();
 	}
@@ -34,10 +36,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if the user can update a resource.
 	 *
-	 * @param object $data
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function setup(object $data): bool
+	public function setup(Request $request): bool
 	{
 		return $this->isAdmin();
 	}
@@ -45,10 +47,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if the user can add a resource.
 	 *
-	 * @param object $data
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function add(object $data): bool
+	public function add(Request $request): bool
 	{
 		return $this->isAdmin();
 	}
@@ -56,10 +58,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if the user can update a resource.
 	 *
-	 * @param object $data
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function update(object $data): bool
+	public function update(Request $request): bool
 	{
 		return $this->isAdmin();
 	}
@@ -67,11 +69,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if the user can update the status of a resource.
 	 *
-	 * @param mixed $id
-	 * @param mixed $status
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function updateStatus(mixed $id, $status): bool
+	public function updateStatus(Request $request): bool
 	{
 		return $this->isAdmin();
 	}
@@ -79,10 +80,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if the user can delete a resource.
 	 *
-	 * @param int|object $data
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function delete(int|object $data): bool
+	public function delete(Request $request): bool
 	{
 		return $this->isAdmin();
 	}
@@ -90,15 +91,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if a user can get a resource.
 	 *
-	 * @param array|null $filter
-	 * @param int|null $offset
-	 * @param int|null $count
-	 * @param array|null $modifiers
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function all(
-		mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null
-	): bool
+	public function all(Request $request): bool
 	{
 		return $this->isAdmin();
 	}
@@ -106,10 +102,10 @@ class AdminResourcePolicy extends Policy
 	/**
 	 * This will check if a user can search a resource.
 	 *
-	 * @param mixed $search
+	 * @param Request $request The request object.
 	 * @return bool
 	 */
-	public function search(mixed $search): bool
+	public function search(Request $request): bool
 	{
 		return $this->isAdmin();
 	}

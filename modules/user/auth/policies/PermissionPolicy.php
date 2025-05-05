@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Auth\Policies;
 
+use Proto\Http\Router\Request;
+
 /**
  * Class PermissionPolicy
  *
@@ -23,39 +25,38 @@ class PermissionPolicy extends Policy
 	/**
 	 * Determines if the user can list all permissions.
 	 *
-	 * @param mixed $filter Filter criteria (optional).
-	 * @param int|null $offset Pagination offset (optional).
-	 * @param int|null $count Number of items to return (optional).
-	 * @param array|null $modifiers Additional query modifiers (optional).
+	 * @param Request $request The request object.
 	 * @return bool True if the user can view permissions, otherwise false.
 	 */
-	public function all(
-		mixed $filter = null,
-		?int $offset = null,
-		?int $count = null,
-		?array $modifiers = null
-	): bool {
+	public function all(Request $request): bool
+	{
 		return $this->canAccess('permissions.view');
 	}
 
 	/**
 	 * Determines if the user can get a single permission resource.
 	 *
-	 * @param mixed $id The permission ID.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can view permissions, otherwise false.
 	 */
-	public function get(mixed $id): bool
+	public function get(Request $request): bool
 	{
+		$id = $request->input('id') ?? null;
+		if ($id === null)
+		{
+			return false;
+		}
+
 		return $this->canAccess('permissions.view');
 	}
 
 	/**
 	 * Determines if the user can assign or create new permissions.
 	 *
-	 * @param object $data The permission data.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can assign permissions, otherwise false.
 	 */
-	public function add(object $data): bool
+	public function add(Request $request): bool
 	{
 		return $this->canAccess('permissions.assign');
 	}
@@ -63,10 +64,10 @@ class PermissionPolicy extends Policy
 	/**
 	 * Determines if the user can update existing permissions.
 	 *
-	 * @param object $data Updated permission data.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can assign permissions, otherwise false.
 	 */
-	public function update(object $data): bool
+	public function update(Request $request): bool
 	{
 		return $this->canAccess('permissions.assign');
 	}
@@ -74,10 +75,10 @@ class PermissionPolicy extends Policy
 	/**
 	 * Determines if the user can delete a permission.
 	 *
-	 * @param mixed $data Permission data or ID.
-	 * @return bool True if the user can assign permissions, otherwise false.
+	 * @param Request $request The request object.
+	 * @return bool True if the user can delete permissions, otherwise false.
 	 */
-	public function delete(mixed $data): bool
+	public function delete(Request $request): bool
 	{
 		return $this->canAccess('permissions.assign');
 	}
@@ -85,10 +86,10 @@ class PermissionPolicy extends Policy
 	/**
 	 * Determines if the user can search permissions.
 	 *
-	 * @param mixed $search Search criteria.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can view permissions, otherwise false.
 	 */
-	public function search(mixed $search): bool
+	public function search(Request $request): bool
 	{
 		return $this->canAccess('permissions.view');
 	}

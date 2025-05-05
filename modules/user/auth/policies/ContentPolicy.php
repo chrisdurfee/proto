@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Auth\Policies;
 
+use Proto\Http\Router\Request;
+
 /**
  * ContentPolicy
  *
@@ -23,15 +25,10 @@ class ContentPolicy extends Policy
 	/**
 	 * Example: can the user "view all" content?
 	 *
-	 * @param mixed $filter The filter criteria for retrieving content.
-	 * @param ?int $offset The offset for pagination.
-	 * @param ?int $count The number of items to retrieve.
-	 * @param ?array $modifiers Additional modifiers for the query.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can view all content, otherwise false.
 	 */
-	public function all(
-		mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null
-	): bool
+	public function all(Request $request): bool
 	{
 		return $this->canAccess('content.view');
 	}
@@ -39,65 +36,94 @@ class ContentPolicy extends Policy
 	/**
 	 * Example: can the user "get" a single content resource?
 	 *
-	 * @param mixed $id The ID of the content to retrieve.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can access the content, otherwise false.
 	 */
-	public function get(mixed $id): bool
+	public function get(Request $request): bool
 	{
-		return $this->canAccess('content.view');
+		$id = $request->input('id') ?? null;
+		if ($id === null)
+		{
+			return false;
+		}
+
+		return $this->canAccess('content.view') || $this->ownsResource($id);
 	}
 
 	/**
 	 * Example: can the user "create" new content?
 	 *
-	 * @param object $data The data for the new content.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can create content, otherwise false.
 	 */
-	public function add(object $data): bool
+	public function add(Request $request): bool
 	{
 		return $this->canAccess('content.create');
 	}
 
 	/**
+	 * Determines if the user can edit an existing user.
+	 *
+	 * @param mixed $data User data or ID.
+	 * @return bool True if the user can edit users, otherwise false.
+	 */
+	protected function can(string $permission, Request $request): bool
+	{
+		if ($this->canAccess($permission))
+		{
+			return true;
+		}
+
+		$data = $this->controller->getRequestItem($request);
+		$createdBy = $data->createdBy ?? null;
+		if ($createdBy === null)
+		{
+			return false;
+		}
+
+		return $this->ownsResource($createdBy);
+	}
+
+	/**
 	 * Example: can the user "update" existing content?
 	 *
-	 * @param object $data The data for the content to update.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can update content, otherwise false.
 	 */
-	public function update(object $data): bool
+	public function update(Request $request): bool
 	{
-		return $this->canAccess('content.edit');
+		return $this->can('content.edit', $request);
 	}
 
 	/**
 	 * Example: can the user "delete" content?
 	 *
-	 * @param mixed $data The data for the content to delete.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can delete content, otherwise false.
 	 */
-	public function delete(mixed $data): bool
+	public function delete(Request $request): bool
 	{
-		return $this->canAccess('content.delete');
+		return $this->can('content.delete', $request);
 	}
 
 	/**
 	 * Example: can the user "publish" content?
 	 *
-	 * @param mixed $id The ID of the content to publish.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can publish content, otherwise false.
 	 */
-	public function publish(mixed $id): bool
+	public function publish(Request $request): bool
 	{
-		return $this->canAccess('content.publish');
+		return $this->can('content.publish', $request);
 	}
 
 	/**
 	 * Example: can the user "search" among content?
 	 *
-	 * @param mixed $search The search criteria.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can search content, otherwise false.
 	 */
-	public function search(mixed $search): bool
+	public function search(Request $request): bool
 	{
 		return $this->canAccess('content.view');
 	}
@@ -105,11 +131,10 @@ class ContentPolicy extends Policy
 	/**
 	 * Another example: can the user "updateStatus" of content?
 	 *
-	 * @param mixed $id The ID of the content to update the status.
-	 * @param mixed $status The new status value.
+	 * @param Request $request The request object.
 	 * @return bool True if the user can update the status, otherwise false.
 	 */
-	public function updateStatus(mixed $id, $status): bool
+	public function updateStatus(Request $request): bool
 	{
 		return $this->canAccess('content.edit');
 	}
