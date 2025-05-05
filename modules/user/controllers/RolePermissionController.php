@@ -1,8 +1,9 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
-use Proto\Controllers\ModelController as Controller;
+use Proto\Controllers\ResourceController as Controller;
 use Modules\User\Models\RolePermission;
+use Proto\Http\Router\Request;
 
 /**
  * RolePermissionController
@@ -34,8 +35,14 @@ class RolePermissionController extends Controller
 	 * @param int|object $data The model ID or object.
 	 * @return object The response.
 	 */
-	public function delete(int|object $data): object
+	public function delete(Request $request): object
 	{
+		$data = $this->getRequestItem($request);
+		if (empty($data) || empty($data->roleId) || empty($data->permissionId))
+		{
+			return $this->error('No item provided.');
+		}
+
 		return $this->response(
 			$this->model()->deleteRolePermission($data->roleId, $data->permissionId)
 		);

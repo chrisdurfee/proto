@@ -2,7 +2,7 @@
 namespace Modules\User\Controllers;
 
 use Modules\User\Auth\Policies\PermissionPolicy;
-use Proto\Controllers\ModelController as Controller;
+use Proto\Controllers\ResourceController as Controller;
 use Modules\User\Models\Permission;
 
 /**

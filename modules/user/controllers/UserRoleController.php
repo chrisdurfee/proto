@@ -2,8 +2,9 @@
 namespace Modules\User\Controllers;
 
 use Modules\User\Auth\Policies\RolePolicy;
-use Proto\Controllers\ModelController as Controller;
+use Proto\Controllers\ResourceController as Controller;
 use Modules\User\Models\UserRole;
+use Proto\Http\Router\Request;
 
 /**
  * UserRoleController
@@ -32,11 +33,17 @@ class UserRoleController extends Controller
 	/**
 	 * Deletes model data.
 	 *
-	 * @param int|object $data The model ID or object.
+	 * @param Request $request The request object.
 	 * @return object The response.
 	 */
-	public function delete(int|object $data): object
+	public function delete(Request $request): object
 	{
+		$data = $this->getRequestItem($request);
+		if (empty($data) || empty($data->userId) || empty($data->roleId))
+		{
+			return $this->error('No item provided.');
+		}
+
 		return $this->response(
 			$this->model()->deleteUserRole($data->userId, $data->roleId)
 		);

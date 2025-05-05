@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
-use Proto\Controllers\ModelController as Controller;
+use Proto\Controllers\ResourceController as Controller;
 use Modules\User\Models\NotificationPreference;
 
 /**

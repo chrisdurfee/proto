@@ -4,7 +4,7 @@ namespace Modules\User\Controllers;
 use Modules\User\Auth\Gates\EmailVerificationGate;
 use Modules\User\Models\User;
 use Modules\User\Auth\Policies\UserPolicy;
-use Proto\Controllers\ModelController;
+use Proto\Controllers\ResourceController;
 use Proto\Http\Router\Request;
 
 /*
@@ -14,7 +14,7 @@ use Proto\Http\Router\Request;
  *
  * @package Modules\User\Controllers
  */
-class UserController extends ModelController
+class UserController extends ResourceController
 {
 	/**
 	 * @var string|null $policy
@@ -36,18 +36,24 @@ class UserController extends ModelController
 	/**
 	 * Adds a model entry.
 	 *
-	 * @param object $data The model data.
+	 * @param Request $request The request object.
 	 * @return object The response.
 	 */
-	public function add(object $data): object
+	public function add(Request $request): object
 	{
+		$data = $this->getRequestItem($request);
+		if (empty($data) || empty($data->username))
+		{
+			return $this->error('No item provided.');
+		}
+
 		$isTaken = User::isUsernameTaken($data->username ?? '');
 		if ($isTaken)
 		{
 			return $this->error('Username is already taken.');
 		}
 
-		return parent::add($data);
+		return parent::add($request);
 	}
 
 	/**
