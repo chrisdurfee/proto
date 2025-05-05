@@ -62,7 +62,7 @@ EOT;
 	{
 		$dir = $this->getModuleDir();
 		$className = $this->getNamespace() . $this->get('className');
-		return "use Proto\\Controllers\\ModelController as Controller;
+		return "use Proto\\Controllers\\ResourceController as Controller;
 use {$dir}\\Models\\{$className};";
 	}
 
