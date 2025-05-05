@@ -41,7 +41,7 @@ class ContentPolicy extends Policy
 	 */
 	public function get(Request $request): bool
 	{
-		$id = $request->input('id') ?? null;
+		$id = $this->getResourceId($request);
 		if ($id === null)
 		{
 			return false;

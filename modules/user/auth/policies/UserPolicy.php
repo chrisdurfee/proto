@@ -34,17 +34,6 @@ class UserPolicy extends Policy
 	}
 
 	/**
-	 * This will get the user ID from the request.
-	 *
-	 * @param Request $request
-	 * @return int|null
-	 */
-	protected function getUserId(Request $request): ?int
-	{
-		return $request->getInt('id') ?? $request->params()->id ?? null;
-	}
-
-	/**
 	 * Determines if the user can get a single user's information.
 	 *
 	 * @param Request $request The request object.
@@ -52,7 +41,7 @@ class UserPolicy extends Policy
 	 */
 	public function get(Request $request): bool
 	{
-		$id = $this->getUserId($request);
+		$id = $this->getResourceId($request);
 		if ($id === null)
 		{
 			return false;
@@ -103,7 +92,7 @@ class UserPolicy extends Policy
 	public function update(Request $request): bool
 	{
 		$data = $this->controller->getRequestItem($request);
-		$data->id = $data->id ?? $request->params()->id ?? null;
+		$data->id = $data->id ?? $this->getResourceId($request);
 		if (empty($data) || empty($data->id))
 		{
 			return false;
@@ -120,7 +109,7 @@ class UserPolicy extends Policy
 	 */
 	public function updateStatus(Request $request): bool
 	{
-		$id = $this->getUserId($request);
+		$id = $this->getResourceId($request);
 		if ($id === null)
 		{
 			return false;
@@ -137,7 +126,7 @@ class UserPolicy extends Policy
 	 */
 	public function verifyEmail(Request $request): bool
 	{
-		$userId = $this->getUserId($request);
+		$userId = $this->getResourceId($request);
 		if ($userId === null)
 		{
 			return false;
