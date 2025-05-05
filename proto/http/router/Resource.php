@@ -109,27 +109,24 @@ class Resource
 	 */
 	public function activate(Request $request): mixed
 	{
-		$item = $request->json('item');
-		$resourceId = $request->params()->id ?? null;
-
 		$method = $request->method();
 		switch ($method)
 		{
 			case "GET":
+				$resourceId = $request->params()->id ?? null;
 				if ($resourceId === null)
 				{
-					return $this->call('all');
+					return $this->call('all', [$request]);
 				}
-				return $this->call('get', [$resourceId]);
+				return $this->call('get', [$request]);
 			case "POST":
-				return $this->call('add', [$item]);
+				return $this->call('add', [$request]);
 			case "PUT":
-				return $this->call('setup', [$item]);
+				return $this->call('setup', [$request]);
 			case "DELETE":
-				$data = $item ?? $resourceId;
-				return $this->call('delete', [$data]);
+				return $this->call('delete', [$request]);
 			case "PATCH":
-				return $this->call('update', [$item]);
+				return $this->call('update', [$request]);
 			default:
 				$this->notFound();
 				die;
