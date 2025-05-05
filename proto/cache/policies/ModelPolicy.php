@@ -57,7 +57,7 @@ class ModelPolicy extends Policy
 	public function update(Request $request): object
 	{
 		$item = $this->controller->getRequestItem($request);
-		$id = $item->id ?? null;
+		$id = $item->id ?? $request->params()->id ?? null;
 		if ($id !== null)
 		{
 			$key = $this->createKey('get', $id);

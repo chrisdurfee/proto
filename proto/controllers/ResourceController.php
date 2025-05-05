@@ -135,6 +135,7 @@ abstract class ResourceController extends Controller
 			return $this->error('No item provided.');
 		}
 
+		$data->id = $data->id ?? $request->params()->id ?? null;
 		return $this->response(
 			$this->model($data)->update()
 		);
