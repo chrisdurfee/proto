@@ -79,7 +79,7 @@ class ModelPolicy extends Policy
 	 */
 	public function updateStatus(Request $request): object
 	{
-		$id = $request->getInt('id') ?? null;
+		$id = $request->getInt('id') ?? $request->params()->id ?? null;
 		$key = $this->createKey('get', $id);
 		if ($this->hasKey($key))
 		{
@@ -98,14 +98,13 @@ class ModelPolicy extends Policy
 	 */
 	public function delete(Request $request): object
 	{
-		$id = $request->getInt('id') ?? null;
+		$id = $request->getInt('id') ?? $request->params()->id ?? null;;
         if ($id === null)
         {
             $item = $this->controller->getRequestItem($request);
             $id = $item->id ?? null;
         }
 
-        $id = $request->getInt('id') ?? null;
 		if ($id !== null)
 		{
 			$key = $this->createKey('get', $id);
@@ -127,7 +126,7 @@ class ModelPolicy extends Policy
 	 */
 	public function get(Request $request): object
 	{
-		$id = $request->getInt('id') ?? null;
+		$id = $request->getInt('id') ?? $request->params()->id ?? null;
 		$key = $this->createKey('get', $id);
 		if ($this->hasKey($key))
 		{
