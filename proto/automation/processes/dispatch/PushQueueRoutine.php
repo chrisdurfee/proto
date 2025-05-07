@@ -14,29 +14,29 @@ use Proto\Models\ModelInterface;
  */
 class PushQueueRoutine extends QueueRoutine
 {
-    /**
-     * This will get the queue model.
-     *
-     * @param object|null $data
-     * @return ModelInterface
-     */
-    protected function getModel(?object $data = null): ModelInterface
-    {
-        return new PushQueue($data);
-    }
+	/**
+	 * This will get the queue model.
+	 *
+	 * @param object|null $data
+	 * @return ModelInterface
+	 */
+	protected function getModel(?object $data = null): ModelInterface
+	{
+		return new PushQueue($data);
+	}
 
-    /**
-     * This will dispatch the item.
-     *
-     * @param object $item
-     * @return bool
-     */
-    protected function dispatch($item): bool
-    {
-        $item->compiledTemplate = $item->message;
-        $item->subscriptions = \unserialize($item->subscriptions);
+	/**
+	 * This will dispatch the item.
+	 *
+	 * @param object $item
+	 * @return bool
+	 */
+	protected function dispatch($item): bool
+	{
+		$item->compiledTemplate = $item->message;
+		$item->subscriptions = \unserialize($item->subscriptions);
 
-        $result = Dispatcher::push($item);
-        return ($result->sent === 'yes');
-    }
+		$result = Dispatcher::push($item);
+		return ($result->sent === 'yes');
+	}
 }

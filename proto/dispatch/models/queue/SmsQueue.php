@@ -15,7 +15,7 @@ class SmsQueue extends Queue
 	/**
 	 * @var string $tableName
 	 */
-    protected static string $tableName = 'sms_queue';
+	protected static string $tableName = 'sms_queue';
 
 	/**
 	 * @var string $alias
@@ -25,11 +25,11 @@ class SmsQueue extends Queue
 	/**
 	 * @var array $fields
 	 */
-    protected static array $fields = [
-        'id',
+	protected static array $fields = [
+		'id',
 		'createdAt',
 		'updatedAt',
-        'agentId',
+		'agentId',
 		'dispatchId',
 		'recipient',
 		'session',
@@ -79,5 +79,5 @@ class SmsQueue extends Queue
 	/**
 	 * @var string $storageType
 	 */
-    protected static string $storageType = QueueStorage::class;
+	protected static string $storageType = QueueStorage::class;
 }

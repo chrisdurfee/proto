@@ -51,8 +51,8 @@ const CodeBlock = Atom((props, children) => (
 export const ServicesPage = () =>
 	DocPage(
 		{
-			title: 'Services',
-			description: 'Learn how to create, register, and activate services in Proto.'
+			title: 'Service Providers',
+			description: 'Learn how to create, register, and activate service providers in Proto.'
 		},
 		[
 			// Overview
@@ -60,7 +60,7 @@ export const ServicesPage = () =>
 				H4({ class: 'text-lg font-bold' }, 'Overview'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Services in Proto are self-contained and provide additional functionality that is loaded immediately after the framework boots.
+					`Service providers in Proto are self-contained and provide additional functionality that is loaded immediately after the framework boots.
 					They are registered in your configuration file (typically within common/Config) under the "services" key, for example:`
 				),
 				CodeBlock(
@@ -71,7 +71,7 @@ export const ServicesPage = () =>
 				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Once registered, services can listen for events, especially from the storage layer, and set up any global functionality your application needs.`
+					`Once registered, service providers can listen for events, especially from the storage layer, and set up any global functionality your application needs.`
 				)
 			]),
 
@@ -84,7 +84,9 @@ export const ServicesPage = () =>
 				),
 				CodeBlock(
 `<?php
-namespace Common\\Services;
+namespace Common\\Services\\Providers;
+
+use Proto\\Providers\\ServiceProvider as Service;
 
 class ExampleService extends Service
 {
@@ -106,7 +108,7 @@ class ExampleService extends Service
 				H4({ class: 'text-lg font-bold' }, 'Activation'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Services are activated when the framework boots. This allows services to register any actions or listeners they need to be available
+					`Service providers are activated when the framework boots. This allows service providers to register any actions or listeners they need to be available
 					immediately as the application starts. For example:`
 				),
 				CodeBlock(
@@ -123,7 +125,7 @@ public function activate()
 				H4({ class: 'text-lg font-bold' }, 'Events'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Services can also register events to respond to various actions, such as storage events.
+					`Service providers can also register events to respond to various actions, such as storage events.
 					Within your service, use the inherited event method to set up event listeners. For example:`
 				),
 				CodeBlock(

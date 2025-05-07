@@ -74,9 +74,9 @@ export const TestsPage = () =>
 				CodeBlock(
 `<?php
 declare(strict_types=1);
-namespace Tests\\Unit;
+namespace Module\\User\\Unit;
 
-use Tests\\Test;
+use Proto\\Tests\\Test;
 
 class ExampleTest extends Test
 {

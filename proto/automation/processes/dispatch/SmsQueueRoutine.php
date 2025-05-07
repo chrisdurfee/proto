@@ -14,29 +14,29 @@ use Proto\Models\ModelInterface;
  */
 class SmsQueueRoutine extends QueueRoutine
 {
-    /**
-     * This will get the queue model.
-     *
-     * @param object|null $data
-     * @return ModelInterface
-     */
-    protected function getModel(?object $data = null): ModelInterface
-    {
-        return new SmsQueue($data);
-    }
+	/**
+	 * This will get the queue model.
+	 *
+	 * @param object|null $data
+	 * @return ModelInterface
+	 */
+	protected function getModel(?object $data = null): ModelInterface
+	{
+		return new SmsQueue($data);
+	}
 
-    /**
-     * This will dispatch the item.
-     *
-     * @param object $item
-     * @return bool
-     */
-    protected function dispatch(object $item): bool
-    {
-        $item->compiledTemplate = $item->message;
-        $item->to = $item->recipient;
+	/**
+	 * This will dispatch the item.
+	 *
+	 * @param object $item
+	 * @return bool
+	 */
+	protected function dispatch(object $item): bool
+	{
+		$item->compiledTemplate = $item->message;
+		$item->to = $item->recipient;
 
-        $result = Dispatcher::sms($item);
-        return ($result->sent === 'yes');
-    }
+		$result = Dispatcher::sms($item);
+		return ($result->sent === 'yes');
+	}
 }

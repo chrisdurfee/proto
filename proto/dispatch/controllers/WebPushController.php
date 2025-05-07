@@ -39,7 +39,7 @@ class WebPushController extends Controller
 
 		return (object)[
 			'subscriptions' => $settings->subscriptions,
-			'message'       => (string)$template
+			'message' => (string)$template
 		];
 	}
 

@@ -14,30 +14,30 @@ use Proto\Models\ModelInterface;
  */
 class EmailQueueRoutine extends QueueRoutine
 {
-    /**
-     * This will get the queue model.
-     *
-     * @param object|null $data
-     * @return ModelInterface
-     */
-    protected function getModel(?object $data = null): ModelInterface
-    {
-        return new EmailQueue($data);
-    }
+	/**
+	 * This will get the queue model.
+	 *
+	 * @param object|null $data
+	 * @return ModelInterface
+	 */
+	protected function getModel(?object $data = null): ModelInterface
+	{
+		return new EmailQueue($data);
+	}
 
-    /**
-     * This will dispatch the item.
-     *
-     * @param object $item
-     * @return bool
-     */
-    protected function dispatch(object $item): bool
-    {
-        $item->compiledTemplate = $item->message;
-        $item->attachments = (is_string($item->attachments))? \unserialize($item->attachments) : null;
-        $item->to = $item->recipient;
+	/**
+	 * This will dispatch the item.
+	 *
+	 * @param object $item
+	 * @return bool
+	 */
+	protected function dispatch(object $item): bool
+	{
+		$item->compiledTemplate = $item->message;
+		$item->attachments = (is_string($item->attachments))? \unserialize($item->attachments) : null;
+		$item->to = $item->recipient;
 
-        $result = Dispatcher::email($item);
-        return ($result->sent === 'yes');
-    }
+		$result = Dispatcher::email($item);
+		return ($result->sent === 'yes');
+	}
 }

@@ -108,8 +108,8 @@ Enqueuer::email($settings);`
 				]),
 				CodeBlock(
 `$settings = (object)[
-    'to'  => '1112221111',
-    'session' => 'zipwhip session id',
+    'to' => '1112221111',
+    'session' => 'twilio session id',
     'template' => 'Common\\Text\\ExampleSms'
 ];
 
