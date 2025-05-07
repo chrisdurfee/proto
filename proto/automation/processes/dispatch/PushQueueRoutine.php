@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
-namespace App\Automation\Processes\Dispatch;
+namespace Proto\Automation\Processes\Dispatch;
 
-use App\Models\Queue\PushQueue;
-use App\Dispatch\Dispatch;
+use Proto\Models\Queue\PushQueue;
+use Proto\Dispatch\Dispatcher;
+use Proto\Models\ModelInterface;
 
 /**
  * PushQueueRoutine
  *
  * This will handle the push queue.
  *
- * @package App\Automation\Processes\Dispatch
+ * @package Proto\Automation\Processes\Dispatch
  */
 class PushQueueRoutine extends QueueRoutine
 {
@@ -17,9 +18,9 @@ class PushQueueRoutine extends QueueRoutine
      * This will get the queue model.
      *
      * @param object|null $data
-     * @return object
+     * @return ModelInterface
      */
-    protected function getModel($data = null)
+    protected function getModel(?object $data = null): ModelInterface
     {
         return new PushQueue($data);
     }
@@ -35,7 +36,7 @@ class PushQueueRoutine extends QueueRoutine
         $item->compiledTemplate = $item->message;
         $item->subscriptions = \unserialize($item->subscriptions);
 
-        $result = Dispatch::push($item);
+        $result = Dispatcher::push($item);
         return ($result->sent === 'yes');
     }
 }

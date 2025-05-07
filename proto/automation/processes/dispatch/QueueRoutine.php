@@ -1,14 +1,15 @@
 <?php declare(strict_types=1);
-namespace App\Automation\Processes\Dispatch;
+namespace Proto\Automation\Processes\Dispatch;
 
-use App\Automation\Processes\Routine;
+use Proto\Automation\Processes\Routine;
+use Proto\Models\ModelInterface;
 
 /**
  * QueueRoutine
  *
  * This is a base class for queue routines.
  *
- * @package App\Automation\Processes\Dispatch
+ * @package Proto\Automation\Processes\Dispatch
  */
 abstract class QueueRoutine extends Routine
 {
@@ -50,16 +51,16 @@ abstract class QueueRoutine extends Routine
      * This will get the queue model.
      *
      * @param object|null $data
-     * @return object
+     * @return ModelInterface
      */
-    abstract protected function getModel($data = null);
+    abstract protected function getModel(?object $data = null): ModelInterface;
 
     /**
      * Starts the routine's process.
      *
      * @return void
      */
-    protected function process()
+    protected function process(): void
     {
         $queue = $this->fetchData();
         if (!$queue || count($queue) < 1)
@@ -135,7 +136,7 @@ abstract class QueueRoutine extends Routine
      * @param object $item
      * @return bool
      */
-    abstract protected function dispatch($item): bool;
+    abstract protected function dispatch(object $item): bool;
 
     /**
      * This will delete the items from the queue.

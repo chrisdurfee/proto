@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
-namespace App\Automation\Processes\Dispatch;
+namespace Proto\Automation\Processes\Dispatch;
 
-use App\Models\Queue\EmailQueue;
-use App\Dispatch\Dispatch;
+use Proto\Models\Queue\EmailQueue;
+use Proto\Dispatch\Dispatcher;
+use Proto\Models\ModelInterface;
 
 /**
  * EmailQueueRoutine
  *
  * This will handle the email queue.
  *
- * @package App\Automation\Processes\Dispatch
+ * @package Proto\Automation\Processes\Dispatch
  */
 class EmailQueueRoutine extends QueueRoutine
 {
@@ -17,9 +18,9 @@ class EmailQueueRoutine extends QueueRoutine
      * This will get the queue model.
      *
      * @param object|null $data
-     * @return object
+     * @return ModelInterface
      */
-    protected function getModel($data = null)
+    protected function getModel(?object $data = null): ModelInterface
     {
         return new EmailQueue($data);
     }
@@ -30,13 +31,13 @@ class EmailQueueRoutine extends QueueRoutine
      * @param object $item
      * @return bool
      */
-    protected function dispatch($item): bool
+    protected function dispatch(object $item): bool
     {
         $item->compiledTemplate = $item->message;
         $item->attachments = (is_string($item->attachments))? \unserialize($item->attachments) : null;
         $item->to = $item->recipient;
 
-        $result = Dispatch::email($item);
+        $result = Dispatcher::email($item);
         return ($result->sent === 'yes');
     }
 }

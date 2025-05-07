@@ -7,10 +7,9 @@ use Proto\Automation\Cron\Cron;
  * This will get the routine name from the command line args
  * and run the routine.
  *
- * This should be the namespace of the routine wihout the
- * "Routine" suffix.
+ * This should be the namespace of the routine.
  *
- * e.g. /Example
+ * e.g. Proto\Automation\Routines\ExampleRoutine
  *
  * This will run the routine: Proto\Automation\Routines\ExampleRoutine
  *

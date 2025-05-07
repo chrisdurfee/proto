@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
-namespace App\Automation\Processes\Dispatch;
+namespace Proto\Automation\Processes\Dispatch;
 
-use App\Models\Queue\SmsQueue;
-use App\Dispatch\Dispatch;
+use Proto\Models\Queue\SmsQueue;
+use Proto\Dispatch\Dispatcher;
+use Proto\Models\ModelInterface;
 
 /**
  * SmsQueueRoutine
  *
  * This will handle the sms queue.
  *
- * @package App\Automation\Processes\Dispatch
+ * @package Proto\Automation\Processes\Dispatch
  */
 class SmsQueueRoutine extends QueueRoutine
 {
@@ -17,9 +18,9 @@ class SmsQueueRoutine extends QueueRoutine
      * This will get the queue model.
      *
      * @param object|null $data
-     * @return object
+     * @return ModelInterface
      */
-    protected function getModel($data = null)
+    protected function getModel(?object $data = null): ModelInterface
     {
         return new SmsQueue($data);
     }
@@ -30,12 +31,12 @@ class SmsQueueRoutine extends QueueRoutine
      * @param object $item
      * @return bool
      */
-    protected function dispatch($item): bool
+    protected function dispatch(object $item): bool
     {
         $item->compiledTemplate = $item->message;
         $item->to = $item->recipient;
 
-        $result = Dispatch::sms($item);
+        $result = Dispatcher::sms($item);
         return ($result->sent === 'yes');
     }
 }

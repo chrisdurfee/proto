@@ -130,7 +130,7 @@ abstract class Process extends Base
 		/**
 		 * @var object $class The fully qualified class name of the routine.
 		 */
-		$class = __NAMESPACE__ . '\\Processes\\' . $routine . 'Routine';
+		$class = $routine;
 		return new $class();
 	}
 

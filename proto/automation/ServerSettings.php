@@ -16,6 +16,7 @@ class ServerSettings
 	 * @param bool $setLimits
 	 * @param string $memoryLimit
 	 * @param int $timeLimit
+	 * @return void
 	 */
 	public function __construct(
 		public bool $setLimits = true,
