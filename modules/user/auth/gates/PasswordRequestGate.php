@@ -21,9 +21,11 @@ class PasswordRequestGate extends Gate
 	/**
 	 * This will set the request.
 	 *
+	 * @param string $requestId
+	 * @param int|string $userId
 	 * @return void
 	 */
-	public function setRequest(string $requestId, int $userId): void
+	public function setRequest(string $requestId, int|string $userId): void
 	{
 		$this->set(self::PASSWORD_REQUEST_KEY, (object)[
 			'requestId' => $requestId,
@@ -59,10 +61,10 @@ class PasswordRequestGate extends Gate
 	 * This will validate the request.
 	 *
 	 * @param string $requestId
-	 * @param int $userId
+	 * @param int|string $userId
 	 * @return string|null
 	 */
-	public function validateRequest(string $requestId, int $userId): ?string
+	public function validateRequest(string $requestId, int|string $userId): ?string
 	{
 		$model = new PasswordRequest();
 		$username = $model->checkRequest($requestId, $userId);
@@ -79,10 +81,10 @@ class PasswordRequestGate extends Gate
 	 * This will compare the request.
 	 *
 	 * @param string $requestId
-	 * @param int $userId
+	 * @param int|string $userId
 	 * @return bool
 	 */
-	public function compareRequest(string $requestId, int $userId): bool
+	public function compareRequest(string $requestId, int|string $userId): bool
 	{
 		$request = $this->get(self::PASSWORD_REQUEST_KEY);
 		if (empty($request))

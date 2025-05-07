@@ -71,7 +71,7 @@ class AuthController extends Controller
 	{
 		$username = $req->input('username');
 		$password = $req->input('password');
-		if (! $username || ! $password)
+		if (!$username || !$password)
 		{
 			return $this->error('The username and password are required.', HttpStatus::BAD_REQUEST->value);
 		}

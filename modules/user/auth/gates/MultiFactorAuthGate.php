@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Auth\Gates;
 
+use Modules\User\Models\User;
 use Proto\Auth\Gates\Gate;
 
 /**
@@ -73,23 +74,23 @@ class MultiFactorAuthGate extends Gate
 	/**
 	 * Persist both user and device references for the current MFA flow.
 	 *
-	 * @param object $user Authenticated user model.
+	 * @param User $user Authenticated user model.
 	 * @param object $device Device/fingerprint model.
 	 * @return void
 	 */
-	public function setResources(object $user, object $device): void
+	public function setResources(User $user, object $device): void
 	{
-		$this->setUser($user);
+		$this->setUser($user->getData());
 		$this->setDevice($device);
 	}
 
 	/**
 	 * Store the user object in the session.
 	 *
-	 * @param object $user
+	 * @param User $user
 	 * @return void
 	 */
-	public function setUser(object $user): void
+	public function setUser(User $user): void
 	{
 		$this->set(self::AUTH_USER, $user);
 	}

@@ -30,13 +30,13 @@ class UserAuthedConnectionController extends Controller
 	/**
 	 * Checks if the connection is authenticated.
 	 *
-	 * @param string $userId The user ID.
+	 * @param mixed $userId The user ID.
 	 * @param string $guid The GUID.
 	 * @param string $ipAddress The IP address.
 	 * @return bool True if authenticated, false otherwise.
 	 */
 	public function isAuthed(
-		string $userId,
+		mixed $userId,
 		string $guid,
 		string $ipAddress
 	): bool
@@ -57,13 +57,13 @@ class UserAuthedConnectionController extends Controller
 	/**
 	 * Checks if the connection is permitted.
 	 *
-	 * @param string $userId The user ID.
+	 * @param mixed $userId The user ID.
 	 * @param string $guid The GUID.
 	 * @param string $ipAddress The IP address.
 	 * @return bool True if permitted, false otherwise.
 	 */
 	public function isPermitted(
-        string $userId,
+        mixed $userId,
         string $guid,
         string $ipAddress
     ): bool

@@ -25,7 +25,7 @@ class EmailVerificationGate extends Gate
 	 * @return void
 	 */
 	public function __construct(
-		protected $modelClass = EmailVerification::class
+		protected string $modelClass = EmailVerification::class
 	)
 	{
 		parent::__construct();
