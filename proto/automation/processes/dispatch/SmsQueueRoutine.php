@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Automation\Processes\Dispatch;
 
-use Proto\Models\Queue\SmsQueue;
+use Proto\Dispatch\Models\Queue\SmsQueue;
 use Proto\Dispatch\Dispatcher;
 use Proto\Models\ModelInterface;
 

@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Proto\Models\Queue;
+namespace Proto\Dispatch\Models\Queue;
 
 use Proto\Models\Model;
 
@@ -8,9 +8,8 @@ use Proto\Models\Model;
  *
  * This will be the base class for all queue models.
  *
- * @package Proto\Models\Queue
+ * @package Proto\Dispatch\Models\Queue
  */
 abstract class Queue extends Model
 {
-    protected $passModel = true;
 }

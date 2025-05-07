@@ -1,17 +1,35 @@
-<?php
-namespace App\Models\Queue;
+<?php declare(strict_types=1);
+namespace Proto\Dispatch\Models\Queue;
 
-use App\Storage\Queue\QueueStorage;
+use Proto\Dispatch\Storage\Queue\QueueStorage;
 
+/**
+ * PushQueue
+ *
+ * This will handle the push queue.
+ *
+ * @package Proto\Dispatch\Models\Queue
+ */
 class PushQueue extends Queue
 {
-    protected static $tableName = 'web_push_queue';
+	/**
+	 * @var string $tableName
+	 */
+	protected static string $tableName = 'web_push_queue';
 
-    protected static $fields = [
-        'id',
+	/**
+	 * @var string $alias
+	 */
+	protected static string $alias = 'wq';
+
+	/**
+	 * @var array $fields
+	 */
+	protected static array $fields = [
+		'id',
 		'createdAt',
 		'updatedAt',
-        'agentId',
+		'agentId',
 		'dispatchId',
 		'subscriptions',
 		'message',
@@ -20,7 +38,7 @@ class PushQueue extends Queue
 		'status'
 	];
 
-    /**
+	/**
 	 * This can be used to format the data.
 	 *
 	 * @param object|null $data
@@ -28,7 +46,7 @@ class PushQueue extends Queue
 	 */
 	protected static function format(?object $data): ?object
 	{
-		if(!$data)
+		if (!$data)
 		{
 			return $data;
 		}
@@ -47,12 +65,12 @@ class PushQueue extends Queue
 	protected static function getAttachments($data): ?object
 	{
 		$attachments = $data->attachments ?? null;
-		if(isset($attachments))
+		if (isset($attachments))
 		{
-			if(gettype($attachments) === 'string')
+			if (gettype($attachments) === 'string')
 			{
 				$attachments = \unserialize($attachments);
-				if(empty($attachments))
+				if (empty($attachments))
 				{
 					$attachments = null;
 				}
@@ -71,7 +89,7 @@ class PushQueue extends Queue
 	 */
 	protected static function augment($data = null): mixed
 	{
-		if(!$data)
+		if (!$data)
 		{
 			return $data;
 		}
@@ -81,5 +99,8 @@ class PushQueue extends Queue
 		return $data;
 	}
 
-    protected static $storageType = QueueStorage::class;
+	/**
+	 * @var string $storageType
+	 */
+	protected static string $storageType = QueueStorage::class;
 }

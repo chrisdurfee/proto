@@ -1,24 +1,39 @@
-<?php
-namespace App\Models\Queue;
+<?php declare(strict_types=1);
+namespace Proto\Dispatch\Models\Queue;
 
-use App\Storage\Queue\EmailQueueStorage;
+use Proto\Dispatch\Storage\Queue\QueueStorage;
 
-class EmailQueue extends Queue
+/**
+ * SmsQueue
+ *
+ * This will handle the sms queue.
+ *
+ * @package Proto\Dispatch\Models\Queue
+ */
+class SmsQueue extends Queue
 {
-    protected static $tableName = 'email_queue';
+	/**
+	 * @var string $tableName
+	 */
+    protected static string $tableName = 'sms_queue';
 
-    protected static $fields = [
+	/**
+	 * @var string $alias
+	 */
+	protected static string $alias = 'sq';
+
+	/**
+	 * @var array $fields
+	 */
+    protected static array $fields = [
         'id',
 		'createdAt',
 		'updatedAt',
         'agentId',
 		'dispatchId',
 		'recipient',
-		'from',
-		'fromName',
-		'subject',
+		'session',
 		'message',
-		'unsubscribeUrl',
 		'attachments',
 		'priority',
 		'status'
@@ -32,7 +47,7 @@ class EmailQueue extends Queue
 	 */
 	protected static function format(?object $data): ?object
 	{
-		if(!$data)
+		if (!$data)
 		{
 			return $data;
 		}
@@ -47,11 +62,11 @@ class EmailQueue extends Queue
 	 * its added to the data mapper.
 	 *
 	 * @param mixed $data
-	 * @return mixed
+	 * @return object
 	 */
 	protected static function augment($data = null): mixed
 	{
-		if(!$data)
+		if (!$data)
 		{
 			return $data;
 		}
@@ -61,5 +76,8 @@ class EmailQueue extends Queue
 		return $data;
 	}
 
-    protected static $storageType = EmailQueueStorage::class;
+	/**
+	 * @var string $storageType
+	 */
+    protected static string $storageType = QueueStorage::class;
 }
