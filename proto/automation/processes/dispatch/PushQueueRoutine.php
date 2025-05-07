@@ -37,6 +37,6 @@ class PushQueueRoutine extends QueueRoutine
 		$item->subscriptions = \unserialize($item->subscriptions);
 
 		$result = Dispatcher::push($item);
-		return ($result->sent === 'yes');
+		return ($result->sent);
 	}
 }

@@ -38,6 +38,6 @@ class EmailQueueRoutine extends QueueRoutine
 		$item->to = $item->recipient;
 
 		$result = Dispatcher::email($item);
-		return ($result->sent === 'yes');
+		return ($result->sent);
 	}
 }

@@ -37,6 +37,6 @@ class SmsQueueRoutine extends QueueRoutine
 		$item->to = $item->recipient;
 
 		$result = Dispatcher::sms($item);
-		return ($result->sent === 'yes');
+		return ($result->sent);
 	}
 }

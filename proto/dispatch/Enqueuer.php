@@ -1,7 +1,10 @@
 <?php declare(strict_types=1);
 namespace Proto\Dispatch;
 
+use Proto\Dispatch\Models\Queue\EmailQueue;
 use Proto\Dispatch\Controllers;
+use Proto\Dispatch\Models\Queue\SmsQueue;
+use Proto\Dispatch\Models\Queue\PushQueue;
 
 /**
  * Class Enqueuer
@@ -21,7 +24,10 @@ class Enqueuer
 	 */
 	public static function sms(object $settings, ?object $data = null): object
 	{
-		return Controllers\TextController::enqueue($settings, $data);
+		$settings = Controllers\TextController::enqueue($settings, $data);
+		SmsQueue::create($settings);
+
+		return $settings;
 	}
 
 	/**
@@ -33,7 +39,10 @@ class Enqueuer
 	 */
 	public static function email(object $settings, ?object $data = null): object
 	{
-		return Controllers\EmailController::enqueue($settings, $data);
+		$settings = Controllers\EmailController::enqueue($settings, $data);
+		EmailQueue::create($settings);
+
+		return $settings;
 	}
 
 	/**
@@ -45,6 +54,9 @@ class Enqueuer
 	 */
 	public static function push(object $settings, ?object $data = null): object
 	{
-		return Controllers\WebPushController::enqueue($settings, $data);
+		$settings = Controllers\WebPushController::enqueue($settings, $data);
+		PushQueue::create($settings);
+
+		return $settings;
 	}
 }
