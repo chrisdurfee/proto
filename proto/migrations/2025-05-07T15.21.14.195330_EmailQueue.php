@@ -35,7 +35,7 @@ class EmailQueue extends Migration
 			$table->varchar('unsubscribe_url', 512);
 			$table->text('attachments');
 			$table->tinyInteger('priority', 1)->default(0);
-			$table->enum('status', ['pending', 'sending', 'sent', 'error'])->default('"pending"');
+			$table->enum('status', 'pending', 'sending', 'sent', 'error')->default('"pending"');
 
 			// Indexes
 			$table->index('status')->fields('status', 'agent_id', 'priority');
