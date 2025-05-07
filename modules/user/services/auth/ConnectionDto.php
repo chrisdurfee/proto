@@ -27,12 +27,12 @@ class ConnectionDto
 	 * Factory to build from raw device, user and IP.
 	 *
 	 * @param object $device Raw device object
-	 * @param int $userId User ID
+	 * @param int|string $userId User ID
 	 * @param string $ipAddress IP address
 	 * @param string|null $accessedAt Optional timestamp (defaults to now)
 	 * @return self
 	 */
-	public static function create(object $device, int $userId, string $ipAddress, ?string $accessedAt = null): self
+	public static function create(object $device, int|string $userId, string $ipAddress, ?string $accessedAt = null): self
 	{
 		$dateTime = $accessedAt ?? date('Y-m-d H:i:s');
 		$devDto = DeviceDto::fromRaw($device, $userId, $dateTime);

@@ -307,11 +307,11 @@ class AuthController extends Controller
 	/**
 	 * Update login status (login/logout) in LoginLog.
 	 *
-	 * @param int $userId
+	 * @param int|string $userId
 	 * @param string $status
 	 * @return bool
 	 */
-	protected function updateLoginStatus(int $userId, string $status): bool
+	protected function updateLoginStatus(int|string $userId, string $status): bool
 	{
 		if ($status !== UserStatus::ONLINE->value && $status !== UserStatus::OFFLINE->value)
 		{
