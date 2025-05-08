@@ -2,7 +2,7 @@
 namespace Modules\User\Services\Auth;
 
 use Modules\User\Models\User;
-use Proto\Dispatch\Enqueuer;
+use Proto\Dispatch\Dispatcher;
 use Modules\User\Auth\Gates\MultiFactorAuthGate;
 use Modules\User\Services\Auth\ConnectionDto;
 use Modules\User\Controllers\Multifactor\UserAuthedConnectionController;
@@ -179,7 +179,8 @@ class MultiFactorAuthService
 	 */
 	protected function dispatchEmail(object $settings, ?object $data = null): object
 	{
-		return Enqueuer::email($settings, $data);
+		$settings->queue = true;
+		return Dispatcher::email($settings, $data);
 	}
 
 	/**
@@ -237,6 +238,7 @@ class MultiFactorAuthService
 	 */
 	protected function dispatchText(object $settings, ?object $data = null): object
 	{
-		return Enqueuer::sms($settings, $data);
+		$settings->queue = true;
+		return Dispatcher::sms($settings, $data);
 	}
 }

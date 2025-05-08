@@ -13,29 +13,38 @@ class Response
 	/** @var bool Whether the response has been sent */
 	public bool $sent = false;
 
-	/** @var bool Whether the response indicates an error */
-	public bool $error;
-
 	/** @var bool Whether the response indicates success */
 	public bool $success;
 
-	/** @var string Response message */
-	public string $message;
-
 	/** @var mixed Response data payload */
 	protected mixed $data = null;
+
+	/** @var bool Whether the response is queued */
+	public bool $queued = false;
 
 	/**
 	 * Response constructor.
 	 *
 	 * @param bool $error Whether the response indicates an error.
 	 * @param string $message The response message.
+	 * @return void
 	 */
-	public function __construct(bool $error = false, string $message = '')
+	public function __construct(
+		public bool $error = false,
+		public string $message = ''
+	)
 	{
-		$this->error = $error;
 		$this->success = !$error;
-		$this->message = $message;
+	}
+
+	/**
+	 * This will set the response to be queued.
+	 *
+	 * @return void
+	 */
+	public function queue(): void
+	{
+		$this->queued = true;
 	}
 
 	/**

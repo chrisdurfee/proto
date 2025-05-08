@@ -30,6 +30,19 @@ class Dispatcher
 	}
 
 	/**
+	 * Creates a queued response.
+	 *
+	 * @param string $message
+	 * @return Response
+	 */
+	protected static function createQueuedResponse(string $message): Response
+	{
+		$response = new Response(false, $message);
+		$response->queue();
+		return $response;
+	}
+
+	/**
 	 * Sends an SMS message.
 	 *
 	 * @param object $settings
@@ -38,6 +51,12 @@ class Dispatcher
 	 */
 	public static function sms(object $settings, ?object $data = null): Response
 	{
+		if ($settings->queue)
+		{
+			Enqueuer::sms($settings, $data);
+			return self::createQueuedResponse('SMS message queued.');
+		}
+
 		return Controllers\TextController::dispatch($settings, $data);
 	}
 
@@ -50,6 +69,12 @@ class Dispatcher
 	 */
 	public static function email(object $settings, ?object $data = null): Response
 	{
+		if ($settings->queue)
+		{
+			Enqueuer::email($settings, $data);
+			return self::createQueuedResponse('Email message queued.');
+		}
+
 		return Controllers\EmailController::dispatch($settings, $data);
 	}
 
@@ -62,6 +87,12 @@ class Dispatcher
 	 */
 	public static function push(object $settings, ?object $data = null): Response
 	{
+		if ($settings->queue)
+		{
+			Enqueuer::push($settings, $data);
+			return self::createQueuedResponse('Web push message queued.');
+		}
+
 		return Controllers\WebPushController::dispatch($settings, $data);
 	}
 }

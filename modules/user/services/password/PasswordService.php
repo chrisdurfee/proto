@@ -3,7 +3,7 @@ namespace Modules\User\Services\Password;
 
 use Modules\User\Models\User;
 use Modules\User\Models\PasswordRequest;
-use Proto\Dispatch\Enqueuer;
+use Proto\Dispatch\Dispatcher;
 use Modules\User\Auth\Gates\PasswordRequestGate;
 use Proto\Controllers\Response;
 
@@ -296,7 +296,8 @@ class PasswordService
 	 */
 	protected function dispatchEmail(object $settings, ?object $data = null): object
 	{
-		return Enqueuer::email($settings, $data);
+		$settings->queue = true;
+		return Dispatcher::email($settings, $data);
 	}
 
 	/**
@@ -308,7 +309,8 @@ class PasswordService
 	 */
 	protected function dispatchText(object $settings, ?object $data = null): object
 	{
-		return Enqueuer::sms($settings, $data);
+		$settings->queue = true;
+		return Dispatcher::sms($settings, $data);
 	}
 
 	/**

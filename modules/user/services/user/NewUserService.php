@@ -5,7 +5,7 @@ use Modules\User\Models\User;
 use Modules\User\Models\UserRole;
 use Modules\User\Models\Role;
 use Modules\User\Models\EmailVerification;
-use Proto\Dispatch\Enqueuer;
+use Proto\Dispatch\Dispatcher;
 
 /**
  * NewUserService
@@ -173,6 +173,7 @@ class NewUserService
 	 */
 	protected function dispatchEmail(object $settings, ?object $data = null): object
 	{
-		return Enqueuer::email($settings, $data);
+		$settings->queue = true;
+		return Dispatcher::email($settings, $data);
 	}
 }

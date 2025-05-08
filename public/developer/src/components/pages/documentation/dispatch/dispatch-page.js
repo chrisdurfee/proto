@@ -88,7 +88,11 @@ export const DispatchPage = () =>
 Dispatcher::email($settings);
 
 // Enqueue email to send later:
-Enqueuer::email($settings);`
+Enqueuer::email($settings);
+
+// or set the queue option to true:
+$settings->queue = true;
+Dispatcher::email($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
 					`An API endpoint is available for testing email dispatch: /api/email?op=test&to={email}.`
@@ -117,7 +121,11 @@ Enqueuer::email($settings);`
 Dispatcher::sms($settings);
 
 // Enqueue SMS to send later:
-Enqueuer::sms($settings);`
+Enqueuer::sms($settings);
+
+// or set the queue option to true:
+$settings->queue = true;
+Dispatcher::sms($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
 					`Test SMS sending via the API endpoint: /api/text?op=test&to={number}.`
