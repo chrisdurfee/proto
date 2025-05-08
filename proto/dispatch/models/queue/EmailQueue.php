@@ -55,8 +55,7 @@ class EmailQueue extends Queue
 			return $data;
 		}
 
-		$attachments = $data->attachments ?? '';
-		$data->attachments = gettype($attachments) === 'string'? \unserialize($attachments) : $attachments;
+		$data->attachments = static::unserialize($data->attachments ?? '');
 		return $data;
 	}
 
@@ -74,8 +73,7 @@ class EmailQueue extends Queue
 			return $data;
 		}
 
-		$attachments = $data->attachments ?? '';
-		$data->attachments = gettype($attachments) !== 'string'? \serialize($attachments) : $attachments;
+		$data->attachments = static::serialize($data->attachments ?? '');
 		return $data;
 	}
 

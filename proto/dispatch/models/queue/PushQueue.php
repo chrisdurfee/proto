@@ -52,7 +52,7 @@ class PushQueue extends Queue
 		}
 
 		$data->attachments = self::getAttachments($data);
-		$data->subscriptions = gettype($data->subscriptions) === 'string'? \unserialize($data->subscriptions) : $data->subscriptions;
+		$data->subscriptions = static::unserialize($data->subscriptions ?? '');
 		return $data;
 	}
 
@@ -95,7 +95,7 @@ class PushQueue extends Queue
 		}
 
 		$data->attachments = self::getAttachments($data);
-		$data->subscriptions = gettype($data->subscriptions) !== 'string'? \serialize($data->subscriptions) : $data->subscriptions;
+		$data->subscriptions = static::serialize($data->subscriptions ?? '');
 		return $data;
 	}
 
