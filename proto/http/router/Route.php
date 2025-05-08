@@ -21,10 +21,10 @@ class Route extends Uri
 	 *
 	 * @param string $method The HTTP method for the route.
 	 * @param string $uri The route URI.
-	 * @param callable $callback The callback action to execute when the route is activated.
+	 * @param callable|array $callback The callback action to execute when the route is activated.
 	 * @return void
 	 */
-	public function __construct(string $method, string $uri, callable $callback)
+	public function __construct(string $method, string $uri, callable|array $callback)
 	{
 		parent::__construct($uri);
 		$this->setMethod($method);

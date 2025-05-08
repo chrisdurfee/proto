@@ -196,9 +196,9 @@ class Router
 	 * This will return the full URI.
 	 *
 	 * @param string $uri
-	 * @return callable
+	 * @return callable|array
 	 */
-	protected function checkArrayCallback(callable $callback): callable
+	protected function checkArrayCallback(callable|array $callback): callable
 	{
 		if (!is_array($callback) || !is_string($callback[0] ?? null) && !is_string($callback[1] ?? null))
 		{
@@ -227,11 +227,11 @@ class Router
 	 *
 	 * @param string $method
 	 * @param string $uri
-	 * @param callable $callback
+	 * @param callable|array $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	protected function addRoute(string $method, string $uri, callable $callback, ?array $middleware = null): self
+	protected function addRoute(string $method, string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		/**
 		 * This will update any array callbacks.
@@ -291,11 +291,11 @@ class Router
 	 * Register a group of routes under a common URI prefix.
 	 *
 	 * @param string $uri URI segment (no leading/trailing slash)
-	 * @param callable $callback Receives $this to add routes
+	 * @param callable|array $callback Receives $this to add routes
 	 * @param array|null $middleware Middleware to apply to all routes in group
 	 * @return self
 	 */
-	public function group(string $uri, callable $callback, ?array $middleware = null): self
+	public function group(string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		/**
 		 * The base url will be updated to the group URI and will be reset
@@ -359,11 +359,11 @@ class Router
 	 * Registers a GET route.
 	 *
 	 * @param string $uri
-	 * @param callable $callback
+	 * @param callable|array $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	public function get(string $uri, callable $callback, ?array $middleware = null): self
+	public function get(string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		return $this->addRoute('GET', $uri, $callback, $middleware);
 	}
@@ -372,11 +372,11 @@ class Router
 	 * Registers a POST route.
 	 *
 	 * @param string $uri
-	 * @param callable $callback
+	 * @param callable|array $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	public function post(string $uri, callable $callback, ?array $middleware = null): self
+	public function post(string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		return $this->addRoute('POST', $uri, $callback, $middleware);
 	}
@@ -385,11 +385,11 @@ class Router
 	 * Registers a PUT route.
 	 *
 	 * @param string $uri
-	 * @param callable $callback
+	 * @param callable|array $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	public function put(string $uri, callable $callback, ?array $middleware = null): self
+	public function put(string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		return $this->addRoute('PUT', $uri, $callback, $middleware);
 	}
@@ -398,11 +398,11 @@ class Router
 	 * Registers a PATCH route.
 	 *
 	 * @param string $uri
-	 * @param callable $callback
+	 * @param callable|array $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	public function patch(string $uri, callable $callback, ?array $middleware = null): self
+	public function patch(string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		return $this->addRoute('PATCH', $uri, $callback, $middleware);
 	}
@@ -411,11 +411,11 @@ class Router
 	 * Registers a DELETE route.
 	 *
 	 * @param string $uri
-	 * @param callable $callback
+	 * @param callable|array $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	public function delete(string $uri, callable $callback, ?array $middleware = null): self
+	public function delete(string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		return $this->addRoute('DELETE', $uri, $callback, $middleware);
 	}
@@ -424,11 +424,11 @@ class Router
 	 * Registers a wildcard route that matches any HTTP method.
 	 *
 	 * @param string $uri
-	 * @param callable $callback
+	 * @param callable|array $callback
 	 * @param array|null $middleware
 	 * @return self
 	 */
-	public function all(string $uri, callable $callback, ?array $middleware = null): self
+	public function all(string $uri, callable|array $callback, ?array $middleware = null): self
 	{
 		return $this->addRoute('ALL', $uri, $callback, $middleware);
 	}

@@ -106,7 +106,8 @@ abstract class ResourceController extends Controller
 	 */
 	protected function getResourceId(Request $request): ?int
 	{
-		return $request->getInt('id') ?? $request->params()->id ?? null;
+		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		return (isset($id) && is_numeric($id)) ? (int) $id : null;
 	}
 
 	/**
