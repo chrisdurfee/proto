@@ -12,25 +12,25 @@ use Proto\Models\Model;
  */
 abstract class Queue extends Model
 {
-    /**
-     * This will unserialize the data.
-     *
-     * @param mixed $data
-     * @return mixed
-     */
-    protected static function unserialize(mixed $data): mixed
-    {
-        return (gettype($data) === 'string') ? \unserialize($data) : $data;
-    }
+	/**
+	 * This will unserialize the data.
+	 *
+	 * @param mixed $data
+	 * @return mixed
+	 */
+	protected static function unserialize(mixed $data): mixed
+	{
+		return (gettype($data) === 'string') ? \unserialize($data) : $data;
+	}
 
-    /**
-     * This will serialize the data.
-     *
-     * @param mixed $data
-     * @return string
-     */
-    protected static function serialize(mixed $data): string
-    {
-        return (gettype($data) !== 'string') ? \serialize($data) : $data;
-    }
+	/**
+	 * This will serialize the data.
+	 *
+	 * @param mixed $data
+	 * @return string
+	 */
+	protected static function serialize(mixed $data): string
+	{
+		return (gettype($data) !== 'string') ? \serialize($data) : $data;
+	}
 }
