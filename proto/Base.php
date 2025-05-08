@@ -42,7 +42,7 @@ class Base
 		}
 
 		self::$system = new System();
-		ServiceManager::activate($config->services ?? []);
 		ModuleManager::activate($config->modules ?? []);
+		ServiceManager::activate($config->services ?? []);
 	}
 }
