@@ -132,6 +132,56 @@ class ExampleController extends ModelController
 				)
 			]),
 
+			// Route Resource Controllers
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Route Resource Controllers'),
+				P({ class: 'text-muted-foreground' },
+					`Resource controllers are used to manage resources in a RESTful way. The ResourceController class provides full CRUD functionality
+					for a model. To create a resource controller, extend the ResourceController class and specify the model class in the constructor.`
+				),
+				P({ class: 'text-muted-foreground' },
+					`These classes are used with the router and can be passed as a resource for a route. The controller method receives the request object when the route is called.`
+				),
+				P({ class: 'text-muted-foreground' },
+					`For example, a resource controller might look like this:`
+				),
+				CodeBlock(
+`<?php declare(strict_types=1);
+namespace Modules\\User\\Controllers;
+
+use Modules\\User\\Models\\User;
+use Proto\\Controllers\\ResourceController;
+use Proto\\Http\\Router\\Request;
+
+class UserController extends ResourceController
+{
+	public function __construct(
+		protected ?string $modelClass = User::class
+	)
+	{
+		parent::__construct();
+	}
+
+	public function add(Request $request): object
+	{
+		$data = $this->getRequestItem($request);
+		if (empty($data) || empty($data->username))
+		{
+			return $this->error('No item provided.');
+		}
+
+		$isTaken = User::isUsernameTaken($data->username ?? '');
+		if ($isTaken)
+		{
+			return $this->error('Username is already taken.');
+		}
+
+		return parent::add($request);
+	}
+}`
+				)
+			]),
+
 			// Pass-Through Responses
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Pass-Through Responses'),
