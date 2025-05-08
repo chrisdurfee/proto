@@ -81,7 +81,12 @@ export const DispatchPage = () =>
 `$settings = (object)[
     'to' => 'email@email.com',
     'subject' => 'Subject',
-    'template' => 'Common\\Email\\ExampleEmail'
+	'fromName' => 'Sender Name', // optional
+	'unsubscribeUrl' => '', // optional
+    'template' => 'Common\\Email\\ExampleEmail',
+	'attachments' => [
+		'/path/to/file1.pdf',
+	]
 ];
 
 // Dispatch email immediately:

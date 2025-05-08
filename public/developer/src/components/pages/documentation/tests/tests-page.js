@@ -74,7 +74,7 @@ export const TestsPage = () =>
 				CodeBlock(
 `<?php
 declare(strict_types=1);
-namespace Module\\User\\Unit;
+namespace Module\\User\\Tests\\Unit;
 
 use Proto\\Tests\\Test;
 
