@@ -2,7 +2,6 @@
 namespace Proto\Cache;
 
 use Proto\Patterns\Creational\Singleton;
-use Proto\Config;
 use Proto\Cache\Drivers\Driver;
 
 /**
@@ -50,7 +49,7 @@ class Cache extends Singleton
 	 */
 	protected function getDriverClassName(): ?string
 	{
-		$cache = Config::access('cache');
+		$cache = env('cache');
 		$driver = $cache->driver ?? null;
 
 		return !empty($driver) ? __NAMESPACE__ . '\\Drivers\\' . $driver : null;
@@ -144,7 +143,7 @@ class Cache extends Singleton
 	 */
 	protected static function getEnv(): string
 	{
-		return static::$env ??= Config::access('env');
+		return static::$env ??= env('env');
 	}
 
 	/**
