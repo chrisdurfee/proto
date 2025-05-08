@@ -52,7 +52,8 @@ class LocalDriver extends Driver
 	protected function initializeBucket(string $bucket): void
 	{
 		$settings = $this->getSettings($bucket);
-		if ($settings === null || empty($settings->path)) {
+		if ($settings === null || empty($settings->path))
+		{
 			throw new \Exception("Invalid local storage settings for bucket: {$bucket}");
 		}
 

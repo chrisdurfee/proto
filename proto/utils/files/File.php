@@ -137,7 +137,8 @@ class File extends Util
 	 */
 	public static function getMimeType(string $path): string|false
 	{
-		if (!\file_exists($path)) {
+		if (!\file_exists($path))
+		{
 			return false;
 		}
 

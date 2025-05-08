@@ -1,7 +1,0 @@
-RewriteEngine on
-
-#redirect all page requests to main index
-RewriteBase /
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ /common/automation/cron/index.php [NC,L,QSA]

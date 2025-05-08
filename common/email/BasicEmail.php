@@ -8,7 +8,8 @@ use Proto\Utils\Strings;
 /**
  * BasicEmail
  *
- * This is the base email class.
+ * This basic template is used to style the application emails. It should be used
+ * for all child emails.
  *
  * @package Common\Email
  */

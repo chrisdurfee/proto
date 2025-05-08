@@ -31,7 +31,7 @@ namespace
 	/**
 	 * This will return the session instance.
 	 *
-	 * @return Session\SessionInterface
+	 * @return SessionInterface
 	 */
 	function session(): SessionInterface
 	{
@@ -68,6 +68,7 @@ namespace Proto\Api
 {
 	use Proto\Base;
 	use Proto\Http\Response;
+	use Proto\Http\Router\Request;
 	use Proto\Http\Router\Router;
 	use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 	use Proto\Http\Middleware\ApiRateLimiterMiddleware;
@@ -140,12 +141,12 @@ namespace Proto\Api
 			];
 
 			$router = $this->router;
-			$router->all(':resource.*', function ($req, $params) use ($middleware): void
+			$router->all(':resource.*', function(Request $req): void
 			{
 				/**
 				 * This will get the resource from the request.
 				 */
-				$resource = $params->resource ?? null;
+				$resource = $req->params()->resource ?? null;
 				if (empty($resource))
 				{
 					self::error('No resource was specified.', self::HTTP_NOT_FOUND);
@@ -173,7 +174,7 @@ namespace Proto\Api
 			/**
 			 * This will add the default route which will be used if no route was matched.
 			 */
-			$router->all('*', function ($req, $params) use ($middleware, $router): void
+			$router->all('*', function(Request $req): void
 			{
 				/**
 				 * If no route was matched then this will return an error response.

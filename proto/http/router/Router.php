@@ -5,6 +5,23 @@ use Proto\Http\Middleware\RateLimiterMiddleware;
 use Proto\Http\Limit;
 
 /**
+ * HttpStatus Enum
+ *
+ * Defines standard HTTP status codes.
+ */
+enum HttpStatus: int
+{
+	case OK = 200;
+	case BAD_REQUEST = 400;
+	case UNAUTHORIZED = 401;
+	case FORBIDDEN = 403;
+	case NOT_FOUND = 404;
+	case METHOD_NOT_ALLOWED = 405;
+	case TOO_MANY_REQUESTS = 429;
+	case INTERNAL_SERVER_ERROR = 500;
+}
+
+/**
  * Router
  *
  * Handles HTTP routing and middleware integration.
@@ -56,13 +73,12 @@ class Router
 		protected $request = new Request()
 	)
 	{
-		$this->setupHeaders();
+		Headers::set(self::METHODS);
 		$this->setBasePath($basePath);
 
 		if ($requireHttps && !$this->isHttps())
 		{
-			$HTTPS_REQUIRED_CODE = 403;
-			$this->sendResponse($HTTPS_REQUIRED_CODE, ['error' => 'HTTPS required.']);
+			$this->sendResponse(HttpStatus::FORBIDDEN->value, ['error' => 'HTTPS required.']);
 		}
 
 		$this->setupRequest();
@@ -93,18 +109,6 @@ class Router
 	}
 
 	/**
-	 * Sets up response headers.
-	 *
-	 * @return void
-	 */
-	protected function setupHeaders(): void
-	{
-		header('Access-Control-Allow-Origin: *');
-		header('Access-Control-Allow-Headers: *');
-		header('Access-Control-Allow-Methods: ' . implode(', ', self::METHODS));
-	}
-
-	/**
 	 * Initializes the request method and path.
 	 *
 	 * @return void
@@ -116,7 +120,7 @@ class Router
 
 		if (!$this->isValidMethod($this->method))
 		{
-			$this->sendResponse(405, ['error' => 'Method Not Allowed']);
+			$this->sendResponse(HttpStatus::METHOD_NOT_ALLOWED->value, ['error' => 'Method Not Allowed']);
 		}
 	}
 
@@ -202,7 +206,7 @@ class Router
 		}
 
 		[$class, $methodName] = $callback;
-		return function($req, $params) use ($class, $methodName)
+		return function(Request $req) use ($class, $methodName)
 		{
 			/**
 			 * The controller will be set up using the helper to help
@@ -211,11 +215,10 @@ class Router
 			$controller = ControllerHelper::getController($class);
 			if (!is_callable([$controller, $methodName]))
 			{
-				$HTTPS_REQUIRED_CODE = 404;
-				$this->sendResponse($HTTPS_REQUIRED_CODE, ['error' => 'Method not found in the resource.']);
+				$this->sendResponse(HttpStatus::NOT_FOUND->value, ['error' => 'Method not found in the resource.']);
 				return;
 			}
-			return $controller->{$methodName}($req, $params);
+			return $controller->{$methodName}($req);
 		};
 	}
 
@@ -262,7 +265,7 @@ class Router
 	 */
 	public function resource(string $uri, string $controller, ?array $middleware = null): self
 	{
-		$callback = function($req) use ($controller): mixed
+		$callback = function(Request $req) use ($controller): mixed
 		{
 			$resource = new Resource($controller);
 			return $resource->activate($req);
@@ -347,7 +350,7 @@ class Router
 		$result = $route->initialize($this->middleware, $this->request);
 		if ($result !== null)
 		{
-			$statusCode = (is_int($result->code ?? '')) ? $result->code : 200;
+			$statusCode = (is_int($result->code ?? '')) ? $result->code : HttpStatus::OK->value;
 			$this->sendResponse($statusCode, $result);
 		}
 	}

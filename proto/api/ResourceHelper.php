@@ -115,7 +115,7 @@ class ResourceHelper
 		$parts = explode('/', $resourcePath);
 
 		// remove numerical segments
-		$parts = array_filter($parts, function ($part)
+		$parts = array_filter($parts, function($part)
 		{
 			return !is_numeric($part);
 		});

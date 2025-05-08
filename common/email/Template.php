@@ -6,7 +6,7 @@ use Proto\Dispatch\Email\Template as BaseTemplate;
 /**
  * Template
  *
- * This is the base email template class.
+ * The base class for all email templates. This class is used to create email templates.
  *
  * @package Common\Email
  */

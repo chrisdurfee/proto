@@ -4,7 +4,11 @@ namespace Common\Actions;
 /**
  * ExampleAction
  *
- * This is an example action.
+ * Actions are used to perform a specific task or operation. They can be used
+ * in various contexts, such as handling user input, processing data, or
+ * triggering events.
+ *
+ * @package Common\Actions
  */
 class ExampleAction
 {
