@@ -11,7 +11,7 @@ use Proto\Utils\Format\JsonFormat;
  *
  * @package Proto\Cache\Policies
  */
-abstract class Policy
+abstract class Policy implements CachePolicyInterface
 {
 	/**
 	 * Controller instance.
