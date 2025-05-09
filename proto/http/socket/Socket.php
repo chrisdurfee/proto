@@ -12,20 +12,14 @@ namespace Proto\Http\Socket;
 class Socket implements SocketInterface
 {
 	/**
-	 * The socket instance.
-	 *
-	 * @var \Socket
-	 */
-	protected readonly \Socket $socket;
-
-	/**
 	 * Initializes a socket instance.
 	 *
 	 * @param \Socket $socket The socket resource.
 	 */
-	public function __construct(\Socket $socket)
+	public function __construct(
+		protected readonly \Socket $socket
+	)
 	{
-		$this->socket = $socket;
 	}
 
 	/**
@@ -50,7 +44,8 @@ class Socket implements SocketInterface
 	 */
 	protected static function validateSocket(\Socket|bool $socket): \Socket
 	{
-		if ($socket === false) {
+		if ($socket === false)
+		{
 			exit('Error: Unable to create socket.');
 		}
 

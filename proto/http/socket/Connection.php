@@ -16,21 +16,27 @@ class Connection extends SocketHandler
 	protected const MAX_LENGTH = 1500;
 
 	/**
-	 * The socket instance.
-	 *
-	 * @var SocketInterface
-	 */
-	protected readonly SocketInterface $socket;
-
-	/**
 	 * Initializes a new connection.
 	 *
 	 * @param SocketInterface $socket The socket instance.
+	 * @return void
 	 */
-	public function __construct(SocketInterface $socket)
+	public function __construct(
+		protected readonly SocketInterface $socket
+	)
 	{
 		parent::__construct();
-		$this->socket = $socket;
+	}
+
+	/**
+	 * Make the underlying socket blocking or non-blocking.
+	 *
+	 * @param bool $enable Whether to enable blocking mode.
+	 * @return bool True on success, false on failure.
+	 */
+	public function blocking(bool $enable): bool
+	{
+		return $this->socket->setBlocking($enable);
 	}
 
 	/**

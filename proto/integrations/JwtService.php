@@ -49,12 +49,13 @@ abstract class JwtService extends Oauth2Service
 	 */
 	public function __construct(?string $clientSecret = null)
 	{
-		$this->clientSecret = $clientSecret;
+		parent::__construct(
+			clientSecret: $clientSecret
+		);
+
 		$this->authUrl = $this->authUrl ?? $this->url;
 		$this->setupToken();
 		$this->getJwt();
-
-		parent::__construct();
 	}
 
 	/**

@@ -25,13 +25,6 @@ class EventLoop
 	protected TickTimer $timer;
 
 	/**
-	 * The collection of events.
-	 *
-	 * @var SplObjectStorage
-	 */
-	protected SplObjectStorage $events;
-
-	/**
 	 * Indicates if the loop is active.
 	 *
 	 * @var bool
@@ -42,11 +35,15 @@ class EventLoop
 	 * Constructs the EventLoop instance.
 	 *
 	 * @param int $tickInterval The tick interval in milliseconds.
+	 * @param SplObjectStorage $events The events storage.
+	 * @return void
 	 */
-	public function __construct(int $tickInterval = 10)
+	public function __construct(
+		int $tickInterval = 10,
+		protected SplObjectStorage $events = new SplObjectStorage()
+	)
 	{
 		$this->timer = new TickTimer($tickInterval);
-		$this->events = new SplObjectStorage();
 	}
 
 	/**
@@ -111,6 +108,11 @@ class EventLoop
 		foreach ($this->events as $event)
 		{
 			$event->tick();
+
+			if ($event instanceof AsyncEventInterface && $event->isTerminated())
+			{
+				$this->removeEvent($event);
+			}
 		}
 	}
 

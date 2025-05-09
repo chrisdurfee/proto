@@ -1,6 +1,10 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Socket;
 
+use Proto\Http\Loop\EventLoop;
+use Proto\Http\Loop\FiberEvent;
+use Fiber;
+
 /**
  * Server
  *
@@ -25,6 +29,13 @@ class Server extends SocketHandler
 	protected readonly StreamSocket $socket;
 
 	/**
+	 * The event loop instance.
+	 *
+	 * @var EventLoop
+	 */
+	protected EventLoop $loop;
+
+	/**
 	 * Initializes the server.
 	 *
 	 * @param string $address The server address (e.g., "127.0.0.1").
@@ -34,7 +45,12 @@ class Server extends SocketHandler
 	{
 		parent::__construct();
 		$this->preventTimeout();
+
+		/**
+		 * This will set up a stream socket that is non-blocking.
+		 */
 		$this->socket = StreamSocket::server("{$address}:{$port}");
+		$this->blocking(false);
 	}
 
 	/**
@@ -116,41 +132,50 @@ class Server extends SocketHandler
 	/**
 	 * Listens for incoming connections and processes client requests.
 	 *
+	 * @param int $tickInterval The interval for processing events (default: 200ms).
 	 * @return void
 	 */
-	protected function listen(): void
+	protected function listen(int $tickInterval = 200): void
 	{
-		while ($this->isConnected())
+		$this->loop = new EventLoop($tickInterval);
+
+		/**
+		 * Each tick we try one non-blocking accept.
+		 */
+		$this->blocking(false);
+		$this->loop->addEvent(new FiberEvent(fn() => $this->accept(0.0)));
+
+		/**
+		 * When the accept emits 'connection', spawn a new reader fiber.
+		 */
+		$this->on('connection', function(Connection $conn)
 		{
-			$connection = $this->accept();
-			if ($connection === null)
+			// Make sure this socket is non-blocking too
+			$conn->blocking(false);
+
+			// One fiber per connection
+			$this->loop->addEvent(new FiberEvent(function() use ($conn)
 			{
-				$DELAY = 500000; // Delay in microseconds (0.5s)
-				usleep($DELAY); // Prevent CPU overuse (wait 0.5s before retrying)
-				continue;
-			}
-
-			while ($this->isConnected())
-			{
-				$input = $connection->read();
-				if ($input === null)
+				while (true)
 				{
-					break; // Disconnect client if read fails
+					$data = $conn->read();
+					$ShouldExit = (trim((string)$data) === 'exit');
+					if ($data === null || $ShouldExit)
+					{
+						$conn->close();
+						if ($ShouldExit)
+						{
+							$this->shutdown();
+						}
+						return;
+					}
+					Fiber::suspend();
 				}
+			}));
+		});
 
-				if ($input === 'exit')
-				{
-					$connection->close();
-					$this->shutdown();
-					break 2; // Exit both loops
-				}
-
-				$ONE_SECOND = 1000000; // One second in microseconds
-				usleep($ONE_SECOND); // Reduce CPU load (wait 1s)
-			}
-
-			$connection->close();
-		}
+		// This will start the loop
+		$this->loop->loop();
 	}
 
 	/**
@@ -161,5 +186,17 @@ class Server extends SocketHandler
 	public function run(): void
 	{
 		$this->listen();
+	}
+
+	/**
+	 * Shuts down the stream.
+	 *
+	 * @param int $mode The shutdown mode (default: 2).
+	 * @return void
+	 */
+	public function shutdown(int $mode = 2): void
+	{
+		parent::shutdown($mode);
+		$this->loop->end();
 	}
 }

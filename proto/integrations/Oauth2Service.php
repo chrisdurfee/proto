@@ -12,27 +12,6 @@ namespace Proto\Integrations;
 abstract class Oauth2Service extends RestService
 {
 	/**
-	 * Client ID.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $clientId;
-
-	/**
-	 * Client Secret.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $clientSecret;
-
-	/**
-	 * Redirect URL.
-	 *
-	 * @var string|null
-	 */
-	protected ?string $redirectUrl;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param string|null $clientId
@@ -41,15 +20,11 @@ abstract class Oauth2Service extends RestService
 	 * @return void
 	 */
 	public function __construct(
-		?string $clientId = null,
-		?string $clientSecret = null,
-		?string $redirectUrl = null
+		protected ?string $clientId = null,
+		protected ?string $clientSecret = null,
+		protected ?string $redirectUrl = null
 	)
 	{
-		$this->clientId = $clientId;
-		$this->clientSecret = $clientSecret;
-		$this->redirectUrl = $redirectUrl;
-
 		parent::__construct();
 	}
 

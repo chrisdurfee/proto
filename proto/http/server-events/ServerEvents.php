@@ -2,6 +2,7 @@
 namespace Proto\Http\ServerEvents;
 
 use Proto\Events\EventEmitter;
+use Proto\Http\Loop\FiberEvent;
 use Proto\Http\Router\StreamResponse;
 use Proto\Http\Loop\EventLoop;
 use Proto\Http\Loop\UpdateEvent;
@@ -41,7 +42,7 @@ class ServerEvents extends EventEmitter
 	 *
 	 * @param int $interval The interval between event loop ticks in seconds.
 	 */
-	public function __construct(int $interval = 10)
+	public function __construct(int $interval = 200)
 	{
 		parent::__construct();
 		$this->initialize($interval);
@@ -118,7 +119,7 @@ class ServerEvents extends EventEmitter
 	{
 		return $this->start(function(EventLoop $loop) use ($callback)
 		{
-			$loop->addEvent(new UpdateEvent(function(UpdateEvent $event) use ($callback, $loop)
+			$loop->addEvent(new FiberEvent(function(FiberEvent $event) use ($callback, $loop)
 			{
 				$result = $callback($event);
 				$loop->end(); // Runs only once

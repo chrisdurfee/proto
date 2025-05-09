@@ -2,8 +2,8 @@
 
 include __DIR__ . '../../../autoload.php';
 
+use Proto\Http\Loop\FiberEvent;
 use Proto\Http\ServerEvents\ServerEvents;
-use Proto\Http\Loop\UpdateEvent;
 
 /**
  * This will set up the interval in seconds.
@@ -17,7 +17,7 @@ $server = new ServerEvents($INTERVAL_IN_SECONDS);
  */
 $server->start(function($loop)
 {
-	$loop->addEvent(new UpdateEvent(function(UpdateEvent $event)
+	$loop->addEvent(new FiberEvent(function(FiberEvent $event)
 	{
 		/**
 		 * Perform any operation on the server and get the response.
@@ -40,9 +40,9 @@ $server->start(function($loop)
 });
 
 /**
- * or you can stream a single reeponse.
+ * or you can stream a single response.
  */
-$server->stream(function(UpdateEvent $event)
+$server->stream(function(FiberEvent $event)
 {
 	// Perform any operation on the server and get the response.
 	return (object) [

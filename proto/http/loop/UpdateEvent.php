@@ -24,18 +24,18 @@ class UpdateEvent extends Event
 	 */
 	public function __construct(callable $callback)
 	{
-		$this->callback = $callback;
 		parent::__construct();
+		$this->callback = $callback;
 	}
 
-    /**
+	/**
 	 * Defines the logic to be executed when the event is created.
 	 * Subclasses must implement this method.
 	 */
 	protected function run(): void
-    {
+	{
 
-    }
+	}
 
 	/**
 	 * Executes on each tick of the event loop.
