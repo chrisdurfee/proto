@@ -5,7 +5,6 @@ use Proto\Events\EventEmitter;
 use Proto\Http\Loop\FiberEvent;
 use Proto\Http\Router\StreamResponse;
 use Proto\Http\Loop\EventLoop;
-use Proto\Http\Loop\UpdateEvent;
 
 /**
  * ServerEvents
