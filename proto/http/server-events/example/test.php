@@ -2,7 +2,6 @@
 
 include __DIR__ . '../../../autoload.php';
 
-use Proto\Http\Loop\EventLoop;
 use Proto\Http\Loop\FiberEvent;
 use Proto\Http\ServerEvents\ServerEvents;
 
@@ -16,7 +15,7 @@ $server = new ServerEvents($INTERVAL_IN_SECONDS);
  * This will start a server event and add a
  * message event listener.
  */
-$server->start(function(EventLoop $loop)
+$server->start(function($loop)
 {
 	$loop->addEvent(new FiberEvent(function(FiberEvent $event)
 	{
