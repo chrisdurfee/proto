@@ -39,8 +39,8 @@
 	margin: 0 0 0 61px;
 }
 
-.navigation li.option:hover,
-.navigation li.option:active,
+.navigation li.option:hover > *,
+.navigation li.option:active > *,
 .mobile-link .active i {
 	@apply bg-accent;
 }

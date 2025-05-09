@@ -1,6 +1,6 @@
 /*
  * Logo
  */
- a.logo {
+a.logo {
 	@apply bg-primary rounded-md;
 }
