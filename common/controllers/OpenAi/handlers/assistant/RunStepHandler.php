@@ -34,7 +34,9 @@ class RunStepHandler extends Handler
     {
         $result = $this->api->retrieveRunStep($threadId, $runId, $stepId);
         return decode($result);
-    }    /**
+    }
+
+    /**
      * Lists all steps for a specific run.
      *
      * Retrieves information about all steps that occurred during

@@ -30,7 +30,9 @@ class MessageFileHandler extends Handler
     {
         $result = $this->api->retrieveMessageFile($threadId, $messageId, $fileId);
         return decode($result);
-    }    /**
+    }
+
+    /**
      * Lists all files attached to a specific message.
      *
      * @param string $threadId ID of the thread containing the message
