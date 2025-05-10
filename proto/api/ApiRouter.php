@@ -2,9 +2,12 @@
 namespace
 {
 	use Proto\Base;
+	use Proto\Http\Loop\EventLoop;
+	use Proto\Http\Loop\FiberEvent;
 	use Proto\Http\Router\Router;
 	use Proto\Http\Session;
 	use Proto\Http\Session\SessionInterface;
+	use Proto\Http\ServerEvents\ServerEvents;
 
 	/**
 	 * @var Base $base This will boostrap the application.
@@ -61,6 +64,34 @@ namespace
 	{
 		$session = session();
 		return $session->{$key} ?? null;
+	}
+
+	/**
+	 * Creates a server event that triggers at specified intervals.
+	 *
+	 * @param int $interval
+	 * @param callable $callback
+	 * @return void
+	 */
+	function serverEvent(int $interval, callable $callback): void
+	{
+		$server = new ServerEvents($interval);
+        $server->start(function(EventLoop $loop) use($callback)
+        {
+            $loop->addEvent(new FiberEvent($callback));
+        });
+	}
+
+	/**
+	 * Creates a server event stream that triggers when data is available.
+	 *
+	 * @param callable $callback
+	 * @return void
+	 */
+	function eventStream(callable $callback): void
+	{
+		$server = new ServerEvents();
+        $server->stream($callback);
 	}
 }
 
