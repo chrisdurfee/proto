@@ -10,7 +10,8 @@ namespace Common\Controllers\OpenAi;
  * @package Common\Controllers\OpenAi
  */
 class Settings
-{    /**
+{
+    /**
      * Configures API request parameters.
      *
      * @param string $model OpenAI model ID to use
@@ -31,7 +32,9 @@ class Settings
         protected int $maxTokens = 2000
     )
     {
-    }    /**
+    }
+
+    /**
      * Returns settings as an API-ready array.
      *
      * @return array Formatted settings for API request

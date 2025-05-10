@@ -13,7 +13,8 @@ use function Common\Controllers\OpenAi\Handlers\decode;
  * @package Common\Controllers\OpenAi\Handlers\Assistant
  */
 class MessageFileHandler extends Handler
-{    /**
+{
+    /**
      * Retrieves details of a specific file attached to a message.
      *
      * @param string $threadId ID of the thread containing the message

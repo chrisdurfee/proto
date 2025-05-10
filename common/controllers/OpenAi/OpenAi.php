@@ -22,7 +22,8 @@ use Common\Controllers\OpenAi\Handlers\Assistant\AssistantHandler;
  * @package Common\Controllers\OpenAi
  */
 class OpenAi extends Controller
-{	/**
+{
+    /**
 	 * Initializes the OpenAI controller with an API key.
 	 *
 	 * @param string|null $apiKey API key or null to use environment settings
