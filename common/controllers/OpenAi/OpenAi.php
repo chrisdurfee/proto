@@ -35,6 +35,7 @@ class OpenAi extends Controller
 		parent::__construct();
 		$this->getApiKey($apiKey);
 	}
+
 	/**
 	 * Sets the API key from provided value or environment.
 	 *
@@ -45,6 +46,7 @@ class OpenAi extends Controller
 	{
 		$this->apiKey = $apiKey ?? env('apis')->openAi->key ?? null;
 	}
+
 	/**
 	 * Provides access to Chat API functionalities.
 	 *
@@ -57,6 +59,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to Text Completion API functionalities.
 	 *
@@ -69,6 +72,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to Embeddings API functionalities.
 	 *
@@ -81,6 +85,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to Audio API functionalities.
 	 *
@@ -93,6 +98,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to File Management API functionalities.
 	 *
@@ -105,6 +111,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to Fine-tuning API functionalities.
 	 *
@@ -117,6 +124,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to Image Generation API functionalities.
 	 *
@@ -129,6 +137,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to Content Moderation API functionalities.
 	 *
@@ -141,6 +150,7 @@ class OpenAi extends Controller
 	{
 		return new $handler($this->apiKey);
 	}
+
 	/**
 	 * Provides access to Assistants API functionalities.
 	 *
