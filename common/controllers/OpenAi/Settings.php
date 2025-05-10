@@ -1,26 +1,25 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi;
+namespace Common\Controllers\OpenAi;
 
 /**
- * Settings
+ * OpenAI API Configuration Settings
  *
- * This will be the settings for the OpenAi integration.
+ * Configures parameters for OpenAI API requests with support
+ * for model selection, message formatting, and response controls.
  *
- * @package App\Controllers\OpenAi
+ * @package Common\Controllers\OpenAi
  */
 class Settings
-{
-    /**
-     * This will set the request settings.
+{    /**
+     * Configures API request parameters.
      *
-     * @param string $model
-     * @param array $messages
-     * @param boolean $stream
-     * @param float $temperature
-     * @param integer $frequencyPenalty
-     * @param integer $presencePenalty
-     * @param integer $maxTokens
-     * @return void
+     * @param string $model OpenAI model ID to use
+     * @param array $messages Array of conversation messages
+     * @param boolean $stream Whether to stream the response
+     * @param float $temperature Controls randomness (0-2)
+     * @param integer $frequencyPenalty Reduces repetition of tokens (-2 to 2)
+     * @param integer $presencePenalty Reduces topic repetition (-2 to 2)
+     * @param integer $maxTokens Maximum tokens to generate
      */
 	public function __construct(
         protected string $model = 'gpt-3.5-turbo',
@@ -32,12 +31,10 @@ class Settings
         protected int $maxTokens = 2000
     )
     {
-    }
-
-    /**
-     * This will get the settings.
+    }    /**
+     * Returns settings as an API-ready array.
      *
-     * @return array
+     * @return array Formatted settings for API request
      */
     public function get(): array
     {

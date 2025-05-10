@@ -1,25 +1,25 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers\Assistant;
+namespace Common\Controllers\OpenAi\Handlers\Assistant;
 
-use App\Controllers\OpenAi\Handlers\Handler;
-use function App\Controllers\OpenAi\Handlers\decode;
+use Common\Controllers\OpenAi\Handlers\Handler;
+use function Common\Controllers\OpenAi\Handlers\decode;
 
 /**
- * MessageFileHandler
+ * Message File Management for Assistant API
  *
- * This will handle the assistant thread message files.
+ * Handles operations for files attached to messages in assistant threads,
+ * including retrieving details and listing attached files.
  *
- * @package App\Controllers\OpenAi\Handlers\Assistant
+ * @package Common\Controllers\OpenAi\Handlers\Assistant
  */
 class MessageFileHandler extends Handler
-{
-    /**
-     * This will retrieve the message.
+{    /**
+     * Retrieves details of a specific file attached to a message.
      *
-     * @param string $threadId
-     * @param string $messageId
-     * @param string $fileId
-     * @return array|null
+     * @param string $threadId ID of the thread containing the message
+     * @param string $messageId ID of the message with the attached file
+     * @param string $fileId ID of the file to retrieve
+     * @return object|null File details or null on failure
      */
     public function retrieve(
         string $threadId,
@@ -29,14 +29,12 @@ class MessageFileHandler extends Handler
     {
         $result = $this->api->retrieveMessageFile($threadId, $messageId, $fileId);
         return decode($result);
-    }
-
-    /**
-     * This will list the assistants.
+    }    /**
+     * Lists all files attached to a specific message.
      *
-     * @param string $threadId
-     * @param string $messageId
-     * @return object|null
+     * @param string $threadId ID of the thread containing the message
+     * @param string $messageId ID of the message to list files for
+     * @return object|null List of files or null on failure
      */
     public function list(
         string $threadId,

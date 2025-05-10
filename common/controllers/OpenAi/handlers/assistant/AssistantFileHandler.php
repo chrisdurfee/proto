@@ -43,12 +43,8 @@ class AssistantFileHandler extends Handler
      */
     public function retrieve(
         string $assistantId,
-        string $fileId
-    ): ?object
+        string $fileId    ): ?object
     {
-        /**
-         * This will get the response.
-         */
         $result = $this->api->retrieveAssistantFile($assistantId, $fileId);
         return decode($result);
     }
@@ -78,12 +74,8 @@ class AssistantFileHandler extends Handler
      */
     public function delete(
         string $assistantId,
-        string $fileId
-    ): ?object
+        string $fileId    ): ?object
     {
-        /**
-         * This will get the response.
-         */
         $result = $this->api->deleteAssistantFile($assistantId, $fileId);
         return decode($result);
     }
