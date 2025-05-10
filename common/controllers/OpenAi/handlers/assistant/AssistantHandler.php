@@ -1,29 +1,30 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers\Assistant;
+namespace Common\Controllers\OpenAi\Handlers\Assistant;
 
-use App\Controllers\OpenAi\Settings\AssistantSettings;
-use App\Controllers\OpenAi\Handlers\Handler;
-use function App\Controllers\OpenAi\Handlers\decode;
+use Common\Controllers\OpenAi\Settings\AssistantSettings;
+use Common\Controllers\OpenAi\Handlers\Handler;
+use function Common\Controllers\OpenAi\Handlers\decode;
 
 /**
- * AssistantHandler
+ * OpenAI Assistant API Handler
  *
- * This will handle the assistant.
+ * Manages interactions with OpenAI's Assistant API, allowing the creation,
+ * modification, and use of AI assistants with specific capabilities.
  *
- * @package App\Controllers\OpenAi\Handlers\Assistant
+ * @package Common\Controllers\OpenAi\Handlers\Assistant
  */
 class AssistantHandler extends Handler
 {
     /**
-     * This will get the settings.
+     * Configures assistant settings for API requests.
      *
-     * @param string $name
-     * @param string $description
-     * @param string $instructions
-     * @param array $tools
-     * @param array $file_ids
-     * @param string $model
-     * @return array
+     * @param string $name The name of the assistant
+     * @param string $description Short description of the assistant's purpose
+     * @param string $instructions Detailed instructions for the assistant's behavior
+     * @param array $tools Array of tools the assistant can use (e.g., code_interpreter)
+     * @param array $file_ids Array of file IDs to attach to the assistant
+     * @param string $model OpenAI model to use (defaults to gpt-3.5-turbo)
+     * @return array Prepared settings for the API request
      */
     protected function settings(
         string $name,

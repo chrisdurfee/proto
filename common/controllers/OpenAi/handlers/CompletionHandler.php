@@ -1,24 +1,26 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
-use App\Controllers\OpenAi\Settings\CompletionSettings;
+use Common\Controllers\OpenAi\Settings\CompletionSettings;
 
 /**
- * CompletionHandler
+ * Text Completion API Handler
  *
- * This will handle the completions.
+ * Manages interactions with OpenAI's Text Completion API,
+ * enabling text generation based on prompts with configurable
+ * parameters for controlling response behavior.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class CompletionHandler extends Handler
 {
     /**
-     * This will get the settings.
+     * Configures text completion settings for API requests.
      *
-     * @param string $prompt
-     * @param object|null $systemSettings
-     * @param bool $stream
-     * @return array
+     * @param string $prompt Input text to generate completions for
+     * @param object|null $systemSettings Optional system settings to customize behavior
+     * @param bool $stream Whether to stream the response (default: false)
+     * @return array Prepared settings for the API request
      */
     protected function settings(
         string $prompt,

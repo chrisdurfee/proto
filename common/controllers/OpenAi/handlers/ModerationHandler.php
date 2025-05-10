@@ -1,22 +1,27 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
 /**
- * ModerationHandler
+ * Content Moderation API Handler
  *
- * This will handle moderations.
+ * Manages interactions with OpenAI's Moderation API to detect
+ * potentially harmful or inappropriate content across various categories.
+ * Helps implement content filters and safety features.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class ModerationHandler extends Handler
 {
     /**
-     * This will create the embeddings.
+     * Analyzes text content for potentially harmful categories.
+     *
+     * Evaluates text for harmful content in categories such as hate, harassment,
+     * self-harm, sexual content, and violence. Returns category scores and flags.
      *
      * @link https://platform.openai.com/docs/api-reference/moderations
-     * @param string $input
-     * @param string $model
-     * @return object|null
+     * @param string $input Text content to analyze
+     * @param string $model Model to use for moderation (default: text-moderation-latest)
+     * @return object|null Moderation results with category flags or null on failure
      */
     public function moderation(
         string $input,

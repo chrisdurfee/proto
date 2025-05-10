@@ -1,22 +1,27 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
 /**
- * EmbeddingHandler
+ * Embeddings API Handler
  *
- * This will handle the embeddings.
+ * Manages interactions with OpenAI's Embeddings API for creating
+ * vector representations of text that capture semantic meaning,
+ * useful for search, clustering, and recommendations.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class EmbeddingHandler extends Handler
 {
     /**
-     * This will create the embeddings.
+     * Creates vector embeddings from input text.
+     *
+     * Vector embeddings capture the semantic meaning of text and can be used
+     * for search, recommendations, clustering, and other machine learning tasks.
      *
      * @link https://platform.openai.com/docs/guides/embeddings/what-are-embeddings
-     * @param string $input
-     * @param string $model
-     * @return object|null
+     * @param string $input Text to convert to an embedding
+     * @param string $model Model to use for embedding generation (default: text-embedding-ada-002)
+     * @return object|null Response containing the embedding vectors or null on failure
      */
     public function create(
         string $input,

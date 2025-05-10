@@ -1,24 +1,29 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers\Assistant;
+namespace Common\Controllers\OpenAi\Handlers\Assistant;
 
-use App\Controllers\OpenAi\Handlers\Handler;
-use function App\Controllers\OpenAi\Handlers\decode;
+use Common\Controllers\OpenAi\Handlers\Handler;
+use function Common\Controllers\OpenAi\Handlers\decode;
 
 /**
- * MessageHandler
+ * Thread Message Management for Assistant API
  *
- * This will handle the assistant thread messages.
+ * Manages creation, retrieval, and manipulation of messages within
+ * Assistant conversation threads. Messages represent individual
+ * communications between users and assistants.
  *
- * @package App\Controllers\OpenAi\Handlers\Assistant
+ * @package Common\Controllers\OpenAi\Handlers\Assistant
  */
 class MessageHandler extends Handler
 {
     /**
-     * This will create a message within a thread.
+     * Creates a new message in a conversation thread.
      *
-     * @param string $threadId
-     * @param array $data
-     * @return object|null
+     * Adds a user message to the specified thread with optional attachments
+     * and metadata.
+     *
+     * @param string $threadId ID of the thread to add the message to
+     * @param array $data Message content and metadata
+     * @return object|null Message object or null on failure
      */
     public function create(
         string $threadId,

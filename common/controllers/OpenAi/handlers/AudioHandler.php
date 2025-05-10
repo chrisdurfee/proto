@@ -1,23 +1,25 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
 /**
- * AudioHandler
+ * Audio API Handler
  *
- * This will handle the audio.
+ * Manages interactions with OpenAI's Audio API for transcription
+ * and translation of audio files to text. Supports various file formats
+ * and provides configuration options for language processing.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class AudioHandler extends Handler
 {
     use CurlFileTrait;
 
     /**
-     * This will transcribe the file.
+     * Transcribes speech from an audio file to text.
      *
-     * @param string $file The file path.
-     * @param string $model
-     * @return object
+     * @param string $file Path to the audio file to transcribe
+     * @param string $model The model to use for transcription (default: whisper-1)
+     * @return object Transcription response containing the text
      */
     public function transcribe(
         string $file,

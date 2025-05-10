@@ -1,24 +1,29 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers\Assistant;
+namespace Common\Controllers\OpenAi\Handlers\Assistant;
 
-use App\Controllers\OpenAi\Handlers\Handler;
-use function App\Controllers\OpenAi\Handlers\decode;
+use Common\Controllers\OpenAi\Handlers\Handler;
+use function Common\Controllers\OpenAi\Handlers\decode;
 
 /**
- * RunHandler
+ * Run Management for Assistant API
  *
- * This will handle the assistant thread run.
+ * Handles the execution and management of assistant runs on threads.
+ * Runs represent the process of an assistant analyzing and responding
+ * to messages in a conversation thread.
  *
- * @package App\Controllers\OpenAi\Handlers\Assistant
+ * @package Common\Controllers\OpenAi\Handlers\Assistant
  */
 class RunHandler extends Handler
 {
     /**
-     * This will create a execute a run on a thread.
+     * Initiates an assistant run on a conversation thread.
      *
-     * @param string $threadId
-     * @param array $data
-     * @return object|null
+     * Starts the process of an assistant analyzing and responding to
+     * messages in the specified thread.
+     *
+     * @param string $threadId ID of the thread to run the assistant on
+     * @param array $data Configuration data including assistant ID and options
+     * @return object|null Run object or null on failure
      */
     public function create(
         string $threadId,

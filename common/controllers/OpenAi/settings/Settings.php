@@ -1,12 +1,14 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Settings;
+namespace Common\Controllers\OpenAi\Settings;
 
 /**
- * Settings
+ * Abstract Settings Base Class
  *
- * This will be the settings for the OpenAi integration.
+ * Base class for all OpenAI API settings configurations.
+ * Implements the SettingsInterface to ensure consistent
+ * configuration across different OpenAI service handlers.
  *
- * @package App\Controllers\OpenAi
+ * @package Common\Controllers\OpenAi
  */
 abstract class Settings implements SettingsInterface
 {

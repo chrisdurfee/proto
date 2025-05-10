@@ -1,25 +1,26 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Settings;
+namespace Common\Controllers\OpenAi\Settings;
 
 /**
- * ChatSettings
+ * Chat Completion API Configuration
  *
- * This will be the chat settings for the OpenAi integration.
+ * Configures parameters for OpenAI Chat Completion API requests.
+ * Handles model selection, message formatting, and response controls.
  *
- * @package App\Controllers\OpenAi
+ * @package Common\Controllers\OpenAi
  */
 class ChatSettings extends Settings
 {
     /**
-     * This will set the request settings.
+     * Configures chat completion request parameters.
      *
-     * @param string $model
-     * @param array $messages
-     * @param bool $stream
-     * @param float $temperature
-     * @param int $frequencyPenalty
-     * @param int $presencePenalty
-     * @param int $maxTokens
+     * @param string $model Model ID to use for completion (e.g., gpt-3.5-turbo)
+     * @param array $messages Array of message objects with role and content
+     * @param bool $stream Whether to stream the response incrementally
+     * @param float $temperature Controls randomness (0-2, lower is more deterministic)
+     * @param int $frequencyPenalty Reduces repetition of token sequences (-2 to 2)
+     * @param int $presencePenalty Reduces repetition of topics (-2 to 2)
+     * @param int $maxTokens Maximum tokens to generate in the completion
      * @return void
      */
 	public function __construct(

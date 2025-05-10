@@ -1,24 +1,26 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
 /**
- * ImageHandler
+ * Image Generation API Handler
  *
- * This will handle images.
+ * Manages interactions with OpenAI's DALL-E image generation API.
+ * Supports creating, editing, and modifying images from text prompts
+ * with various configuration options.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class ImageHandler extends Handler
 {
     use CurlFileTrait;
 
     /**
-     * This will generate an image.
+     * Generates new images from a text prompt.
      *
-     * @param string $prompt
-     * @param string $size
-     * @param int $number
-     * @return object|null
+     * @param string $prompt Text description of the desired image(s)
+     * @param string $size Size of the generated image(s) (e.g., "1024x1024")
+     * @param int $number Number of images to generate
+     * @return object|null Response containing generated image URLs or null on failure
      */
     public function create(
         string $prompt,

@@ -1,24 +1,26 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
-use App\Controllers\OpenAi\Settings\ChatSettings;
+use Common\Controllers\OpenAi\Settings\ChatSettings;
 
 /**
- * ChatHandler
+ * Chat Completion API Handler
  *
- * This will handle the chat.
+ * Manages interactions with OpenAI's Chat Completion API,
+ * enabling conversational AI capabilities with support for
+ * various models, streaming responses, and conversation history.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class ChatHandler extends Handler
 {
     /**
-     * This will get the settings.
+     * Configures chat completion settings for API requests.
      *
-     * @param array $messages
-     * @param object|null $systemSettings
-     * @param bool $stream
-     * @return array
+     * @param array $messages Array of message objects with role and content
+     * @param object|null $systemSettings Optional system settings to customize behavior
+     * @param bool $stream Whether to stream the response (default: false)
+     * @return array Prepared settings for the API request
      */
     protected function settings(
         array $messages,

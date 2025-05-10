@@ -1,25 +1,26 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Settings;
+namespace Common\Controllers\OpenAi\Settings;
 
 /**
- * CompletionSettings
+ * Text Completion API Configuration
  *
- * This will be the completion settings for the OpenAi integration.
+ * Configures parameters for OpenAI Text Completion API requests.
+ * Controls prompt handling, response generation, and output formatting.
  *
- * @package App\Controllers\OpenAi
+ * @package Common\Controllers\OpenAi
  */
 class CompletionSettings extends Settings
 {
     /**
-     * This will set the request settings.
+     * Configures text completion request parameters.
      *
-     * @param string $model
-     * @param string $prompt
-     * @param bool $stream
-     * @param float $temperature
-     * @param int $frequencyPenalty
-     * @param int $presencePenalty
-     * @param int $maxTokens
+     * @param string $model Model ID to use for completion
+     * @param string $prompt Text prompt to complete
+     * @param bool $stream Whether to stream the response incrementally
+     * @param float $temperature Controls randomness (0-2, lower is more deterministic)
+     * @param int $frequencyPenalty Reduces repetition of token sequences (-2 to 2)
+     * @param int $presencePenalty Reduces repetition of topics (-2 to 2)
+     * @param int $maxTokens Maximum tokens to generate in the completion
      * @return void
      */
 	public function __construct(

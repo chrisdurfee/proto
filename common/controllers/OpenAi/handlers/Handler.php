@@ -1,16 +1,16 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
 require_once __DIR__ . '/../../../../vendor/autoload.php';
 
 use Orhanerday\OpenAi\OpenAi;
-use Dashr\Utils\Format\JsonFormat;
+use Proto\Utils\Format\JsonFormat;
 
 /**
- * This will decode the data.
+ * Decodes JSON data received from OpenAI API responses.
  *
- * @param mixed $data
- * @return mixed
+ * @param mixed $data The data to decode
+ * @return mixed Decoded data or false on failure
  */
 function decode(mixed $data): mixed
 {
@@ -23,16 +23,17 @@ function decode(mixed $data): mixed
 }
 
 /**
- * Handler
+ * Base Handler for OpenAI API Interactions
  *
- * This will be the base handler for open ai.
+ * Provides common functionality for all OpenAI API service handlers,
+ * including authentication and request handling.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 abstract class Handler
 {
     /**
-     * This will store the integration.
+     * The OpenAI API client instance.
      *
      * @var OpenAi $api
      */

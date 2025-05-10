@@ -1,25 +1,30 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers\Assistant;
+namespace Common\Controllers\OpenAi\Handlers\Assistant;
 
-use App\Controllers\OpenAi\Handlers\Handler;
-use function App\Controllers\OpenAi\Handlers\decode;
+use Common\Controllers\OpenAi\Handlers\Handler;
+use function Common\Controllers\OpenAi\Handlers\decode;
 
 /**
- * RunStepHandler
+ * Run Step Management for Assistant API
  *
- * This will handle the run thread step.
+ * Handles the individual steps that occur during an assistant run.
+ * Steps provide detailed information about what actions the assistant
+ * is taking when processing messages in a thread.
  *
- * @package App\Controllers\OpenAi\Handlers\Assistant
+ * @package Common\Controllers\OpenAi\Handlers\Assistant
  */
 class RunStepHandler extends Handler
 {
     /**
-     * This will retrieve the message.
+     * Retrieves a specific step from a run.
      *
-     * @param string $threadId
-     * @param string $messageId
-     * @param string $stepId
-     * @return array|null
+     * Gets detailed information about an individual step that occurred
+     * during the execution of an assistant run on a thread.
+     *
+     * @param string $threadId ID of the conversation thread
+     * @param string $runId ID of the run
+     * @param string $stepId ID of the step to retrieve
+     * @return object|null Step object or null on failure
      */
     public function retrieve(
         string $threadId,
@@ -29,14 +34,15 @@ class RunStepHandler extends Handler
     {
         $result = $this->api->retrieveRunStep($threadId, $runId, $stepId);
         return decode($result);
-    }
-
-    /**
-     * This will list the assistants.
+    }    /**
+     * Lists all steps for a specific run.
      *
-     * @param string $threadId
-     * @param string $runId
-     * @return object|null
+     * Retrieves information about all steps that occurred during
+     * the execution of an assistant run on a thread.
+     *
+     * @param string $threadId ID of the conversation thread
+     * @param string $runId ID of the run to list steps for
+     * @return object|null List of steps or null on failure
      */
     public function list(
         string $threadId,

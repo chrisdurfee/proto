@@ -1,23 +1,28 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers\Assistant;
+namespace Common\Controllers\OpenAi\Handlers\Assistant;
 
-use App\Controllers\OpenAi\Handlers\Handler;
-use function App\Controllers\OpenAi\Handlers\decode;
+use Common\Controllers\OpenAi\Handlers\Handler;
+use function Common\Controllers\OpenAi\Handlers\decode;
 
 /**
- * ThreadHandler
+ * Thread Management for Assistant API
  *
- * This will handle the assistant threads.
+ * Handles creation and management of conversation threads for OpenAI Assistants.
+ * Threads represent ongoing conversations with users and maintain context
+ * between interactions.
  *
- * @package App\Controllers\OpenAi\Handlers\Assistant
+ * @package Common\Controllers\OpenAi\Handlers\Assistant
  */
 class ThreadHandler extends Handler
 {
     /**
-     * This will create a thread that assistants can interact with.
+     * Creates a new conversation thread.
      *
-     * @param array $messages
-     * @return object|null
+     * Initializes a thread that can be used for interactions with assistants,
+     * optionally with initial messages to establish context.
+     *
+     * @param array $messages Initial messages to add to the thread
+     * @return object|null Thread object or null on failure
      */
     public function create(
         array $messages

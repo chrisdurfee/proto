@@ -1,21 +1,26 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
 /**
- * FileHandler
+ * Files API Handler
  *
- * This will handle the files.
+ * Manages interactions with OpenAI's Files API for uploading,
+ * listing, retrieving, and deleting files used with OpenAI services.
+ * Particularly useful for fine-tuning and assistants.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class FileHandler extends Handler
 {
     use CurlFileTrait;
 
     /**
-     * This will list the files.
+     * Lists all files uploaded to OpenAI.
      *
-     * @return object|null
+     * Retrieves a list of files that belong to the user's organization
+     * with their metadata.
+     *
+     * @return object|null List of files or null on failure
      */
     public function list(): ?object
     {

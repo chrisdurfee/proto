@@ -1,19 +1,20 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Settings;
+namespace Common\Controllers\OpenAi\Settings;
 
 /**
- * SettingsInterface
+ * OpenAI Settings Interface
  *
- * This will be the settings interface.
+ * Defines the contract for all OpenAI API configuration settings classes.
+ * Ensures consistent configuration handling across different API services.
  *
- * @package App\Controllers\OpenAi\Settings
+ * @package Common\Controllers\OpenAi\Settings
  */
 interface SettingsInterface
 {
     /**
-     * This will get the settings.
+     * Retrieves the settings as an array.
      *
-     * @return array
+     * @return array Settings configuration for API requests
      */
     public function get(): array;
 }

@@ -1,22 +1,24 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
-use Dashr\Utils\Files\File;
+use Proto\Utils\Files\File;
 
 /**
- * CurlFileTrait
+ * CURL File Handling Trait
  *
- * This will handle the curl file.
+ * Provides utility methods for handling file uploads and conversions
+ * for CURL-based API requests to OpenAI's services. Handles remote files,
+ * local files, and proper formatting for multipart/form-data requests.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 trait CurlFileTrait
 {
     /**
-     * This will get the tmp path.
+     * Gets a temporary file path for a remote URL.
      *
-     * @param string $url
-     * @return string
+     * @param string $url Remote file URL to download
+     * @return string Path to the downloaded temporary file
      */
     protected function getTmpPath(string $url): string
     {

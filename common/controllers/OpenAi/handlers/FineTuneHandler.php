@@ -1,20 +1,25 @@
 <?php declare(strict_types=1);
-namespace App\Controllers\OpenAi\Handlers;
+namespace Common\Controllers\OpenAi\Handlers;
 
 /**
- * FineTuneHandler
+ * Fine-Tuning API Handler
  *
- * This will handle the fine tune.
+ * Manages interactions with OpenAI's Fine-Tuning API to create,
+ * monitor, and manage custom models trained on specific datasets.
+ * Enables more specialized AI behavior for specific use cases.
  *
- * @package App\Controllers\OpenAi\Handlers
+ * @package Common\Controllers\OpenAi\Handlers
  */
 class FineTuneHandler extends Handler
 {
     /**
-     * This will create a fine-tune.
+     * Creates a new fine-tuning job.
      *
-     * @param string $file
-     * @return object
+     * Starts the process of training a new model variant based on a provided
+     * training data file. The file must be previously uploaded via the Files API.
+     *
+     * @param string $file ID of the uploaded training data file
+     * @return object Response with fine-tuning job details
      */
     public function create(
         string $file
