@@ -14,12 +14,12 @@ use Proto\Utils\Format\JsonFormat;
  */
 function decode(mixed $data): mixed
 {
-    if ($data === false)
-    {
-        return false;
-    }
+	if ($data === false)
+	{
+		return false;
+	}
 
-    return JsonFormat::decode($data);
+	return JsonFormat::decode($data);
 }
 
 /**
@@ -32,38 +32,38 @@ function decode(mixed $data): mixed
  */
 abstract class Handler
 {
-    /**
-     * The OpenAI API client instance.
-     *
-     * @var OpenAi $api
-     */
-    protected OpenAi $api;
+	/**
+	 * The OpenAI API client instance.
+	 *
+	 * @var OpenAi $api
+	 */
+	protected OpenAi $api;
 
 	/**
-     * This will set the api key.
-     *
-     * @param string $apiKey
-     * @param OpenAi $integration
-     * @return void
-     */
+	 * This will set the api key.
+	 *
+	 * @param string $apiKey
+	 * @param OpenAi $integration
+	 * @return void
+	 */
 	public function __construct(
-        protected string $apiKey,
-        protected $integration = OpenAi::class
-    )
-    {
-        $this->api = new $integration($this->apiKey);
-    }
+		protected string $apiKey,
+		protected $integration = OpenAi::class
+	)
+	{
+		$this->api = new $integration($this->apiKey);
+	}
 
-    /**
-     * This will get the system content.
-     *
-     * @return array
-     */
-    protected function getSystemContent(?string $systemContent = null): array
-    {
-        return [
-            "role" => "system",
-            "content" => $systemContent ?? "You are a helpful assistant."
-        ];
-    }
+	/**
+	 * This will get the system content.
+	 *
+	 * @return array
+	 */
+	protected function getSystemContent(?string $systemContent = null): array
+	{
+		return [
+			"role" => "system",
+			"content" => $systemContent ?? "You are a helpful assistant."
+		];
+	}
 }

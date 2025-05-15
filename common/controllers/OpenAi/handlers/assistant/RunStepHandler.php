@@ -15,45 +15,45 @@ use function Common\Controllers\OpenAi\Handlers\decode;
  */
 class RunStepHandler extends Handler
 {
-    /**
-     * Retrieves a specific step from a run.
-     *
-     * Gets detailed information about an individual step that occurred
-     * during the execution of an assistant run on a thread.
-     *
-     * @param string $threadId ID of the conversation thread
-     * @param string $runId ID of the run
-     * @param string $stepId ID of the step to retrieve
-     * @return object|null Step object or null on failure
-     */
-    public function retrieve(
-        string $threadId,
-        string $runId,
-        string $stepId
-    ): ?object
-    {
-        $result = $this->api->retrieveRunStep($threadId, $runId, $stepId);
-        return decode($result);
-    }
+	/**
+	 * Retrieves a specific step from a run.
+	 *
+	 * Gets detailed information about an individual step that occurred
+	 * during the execution of an assistant run on a thread.
+	 *
+	 * @param string $threadId ID of the conversation thread
+	 * @param string $runId ID of the run
+	 * @param string $stepId ID of the step to retrieve
+	 * @return object|null Step object or null on failure
+	 */
+	public function retrieve(
+		string $threadId,
+		string $runId,
+		string $stepId
+	): ?object
+	{
+		$result = $this->api->retrieveRunStep($threadId, $runId, $stepId);
+		return decode($result);
+	}
 
-    /**
-     * Lists all steps for a specific run.
-     *
-     * Retrieves information about all steps that occurred during
-     * the execution of an assistant run on a thread.
-     *
-     * @param string $threadId ID of the conversation thread
-     * @param string $runId ID of the run to list steps for
-     * @return object|null List of steps or null on failure
-     */
-    public function list(
-        string $threadId,
-        string $runId
-    ): ?object
-    {
-        $query = ['limit' => 10];
+	/**
+	 * Lists all steps for a specific run.
+	 *
+	 * Retrieves information about all steps that occurred during
+	 * the execution of an assistant run on a thread.
+	 *
+	 * @param string $threadId ID of the conversation thread
+	 * @param string $runId ID of the run to list steps for
+	 * @return object|null List of steps or null on failure
+	 */
+	public function list(
+		string $threadId,
+		string $runId
+	): ?object
+	{
+		$query = ['limit' => 10];
 
-        $result = $this->api->listRunSteps($threadId, $runId, $query);
-        return decode($result);
-    }
+		$result = $this->api->listRunSteps($threadId, $runId, $query);
+		return decode($result);
+	}
 }

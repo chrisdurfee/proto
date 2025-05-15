@@ -12,29 +12,29 @@ namespace Common\Controllers\OpenAi\Handlers;
  */
 class ModerationHandler extends Handler
 {
-    /**
-     * Analyzes text content for potentially harmful categories.
-     *
-     * Evaluates text for harmful content in categories such as hate, harassment,
-     * self-harm, sexual content, and violence. Returns category scores and flags.
-     *
-     * @link https://platform.openai.com/docs/api-reference/moderations
-     * @param string $input Text content to analyze
-     * @param string $model Model to use for moderation (default: text-moderation-latest)
-     * @return object|null Moderation results with category flags or null on failure
-     */
-    public function moderation(
-        string $input,
-        string $model = 'text-moderation-latest'
-    ): ?object
-    {
-        /**
-         * This will get the response.
-         */
-        $result = $this->api->moderation([
-            'input' => $input,
-            'model' => $model
-        ]);
-        return decode($result);
-    }
+	/**
+	 * Analyzes text content for potentially harmful categories.
+	 *
+	 * Evaluates text for harmful content in categories such as hate, harassment,
+	 * self-harm, sexual content, and violence. Returns category scores and flags.
+	 *
+	 * @link https://platform.openai.com/docs/api-reference/moderations
+	 * @param string $input Text content to analyze
+	 * @param string $model Model to use for moderation (default: text-moderation-latest)
+	 * @return object|null Moderation results with category flags or null on failure
+	 */
+	public function moderation(
+		string $input,
+		string $model = 'text-moderation-latest'
+	): ?object
+	{
+		/**
+		 * This will get the response.
+		 */
+		$result = $this->api->moderation([
+			'input' => $input,
+			'model' => $model
+		]);
+		return decode($result);
+	}
 }
