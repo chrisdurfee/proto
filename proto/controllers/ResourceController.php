@@ -237,9 +237,11 @@ abstract class ResourceController extends Controller
 		$offset = $request->getInt('start') ?? 0;
 		$count = $request->getInt('count') ?? 50;
 		$search = $request->input('search');
+		$custom = $request->input('custom');
 
 		$result = $this->modelClass::all($filter, $offset, $count, [
-			'search' => $search
+			'search' => $search,
+			'custom' => $custom
 		]);
 		return $this->response($result);
 	}
