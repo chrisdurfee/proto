@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const MigrationModel = Model.extend({
-	url: 'https://proto.local/api/developer/migration',
+	url: '/api/developer/migration',
 
 	xhr: {
 

@@ -14,5 +14,15 @@ export default defineConfig({
 			'@components': path.resolve(__dirname, 'src/components'),
 			'@shell': path.resolve(__dirname, 'src/shell'),
 		}
+	},
+	server: {
+		cors: true,
+		proxy: {
+			'/api': {
+				target: 'https://proto.local',
+				changeOrigin: true,
+				secure: false
+			}
+		}
 	}
 });
