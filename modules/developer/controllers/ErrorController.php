@@ -2,6 +2,7 @@
 namespace Modules\Developer\Controllers;
 
 use Proto\Error\Models\ErrorLog;
+use Proto\Http\Router\Request;
 
 /**
  * ErrorController
@@ -12,6 +13,23 @@ use Proto\Error\Models\ErrorLog;
  */
 class ErrorController extends Controller
 {
+	/**
+	 * This will toggle the resolved status of an error.
+	 *
+	 * @param Request $request
+	 * @return object
+	 */
+	public function toggleResolve(Request $request): object
+	{
+		$id = $request->getInt('id');
+		$resolved = $request->input('resolved');
+		if (empty($id) || empty($resolved))
+		{
+			return $this->response()->error('Invalid request.');
+		}
+
+		return $this->updateResolved($id, $resolved);
+	}
 	/**
 	 * This will update model item resolved status.
 	 *
@@ -29,23 +47,50 @@ class ErrorController extends Controller
 		return $this->response($result);
 	}
 
+	/**
+	 * This will get the filter for the model.
+	 *
+	 * @param string|null $filter
+	 * @return array
+	 */
+	protected function setFilter(?string $filter): array
+	{
+		$filter = strtolower($filter ?? '');
+		if (empty($filter) || $filter === 'all')
+		{
+			return [];
+		}
+
+		return [
+			['env', $filter]
+		];
+	}
+
     /**
 	 * This will get rows from a model.
 	 *
-	 * @param mixed $filter
-	 * @param int $offset
-	 * @param int $count
-	 * @param array|null $modifiers
+	 * @param Request $request
 	 * @return object
 	 */
 	public function all(
-        $filter = null,
-        ?int $offset = null,
-        ?int $count = null,
-        ?array $modifiers = null
+        Request $request
     ): object
 	{
-		$result = ErrorLog::all($filter, $offset, $count, $modifiers);
+		/**
+		 * This will format the filter.
+		 */
+		$filter = $request->input('filter');
+		$filter = $this->setFilter($filter);
+
+		$offset = $request->getInt('offset');
+		$count = $request->getInt('count');
+		$search = $request->input('search');
+		$custom = $request->input('custom');
+
+		$result = ErrorLog::all($filter, $offset, $count, [
+			'search' => $search,
+			'custom' => $custom
+		]);
 		return $this->response($result);
 	}
 }

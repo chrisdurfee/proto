@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\Developer\Controllers;
 
+use Proto\Http\Router\Request;
 use Developer\App\Storage\TableStorage;
 
 /**
@@ -13,46 +14,33 @@ use Developer\App\Storage\TableStorage;
 class TableController extends Controller
 {
 	/**
-	 * Table storage instance.
-	 *
-	 * @var TableStorage|null
-	 */
-	protected ?TableStorage $storage = null;
-
-	/**
-	 * Constructor.
-	 *
-	 * Initializes the TableController with the given connection and table name.
+	 * Gets the table storage instance.
 	 *
 	 * @param string $connection Database connection name.
 	 * @param string $tableName Name of the table.
-	 * @return void
+	 * @return TableStorage
 	 */
-	public function __construct(string $connection, string $tableName)
+	protected function getStorage(string $connection, string $tableName): TableStorage
 	{
-		parent::__construct();
-		$this->setStorage($connection, $tableName);
-	}
-
-	/**
-	 * Sets the table storage instance.
-	 *
-	 * @param string $connection Database connection name.
-	 * @param string $tableName Name of the table.
-	 * @return void
-	 */
-	protected function setStorage(string $connection, string $tableName): void
-	{
-		$this->storage = new TableStorage($connection, $tableName);
+		return new TableStorage($connection, $tableName);
 	}
 
 	/**
 	 * Retrieves the table columns.
 	 *
+	 * @param Request $req The request object.
 	 * @return array List of columns in the table.
 	 */
-	public function getColumns(): array
+	public function getColumns(Request $req): array
 	{
-		return $this->storage->getColumns();
+		$connection = $req->input('connection');
+		$tableName = $req->input('tableName');
+		if (!$connection || !$tableName)
+		{
+			return [];
+		}
+
+		$storage = $this->getStorage($connection, $tableName);
+		return $storage->getColumns();
 	}
 }

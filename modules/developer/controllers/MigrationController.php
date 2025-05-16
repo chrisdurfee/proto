@@ -3,6 +3,7 @@ namespace Modules\Developer\Controllers;
 
 use Proto\Database\Migrations\Guide;
 use Proto\Database\Migrations\Models\Migration;
+use Proto\Http\Router\Request;
 
 /**
  * MigrationController
@@ -25,6 +26,18 @@ class MigrationController extends Controller
 	{
 		parent::__construct();
 	}
+
+	/**
+	 * Handles migration requests.
+	 *
+	 * @param Request $req The request object containing migration parameters.
+	 * @return object Response object.
+	 */
+	public function migrate(Request $req): object
+    {
+        $direction = $req->input('direction');
+        return $this->update($direction);
+    }
 
 	/**
 	 * Updates migrations based on the provided direction.
