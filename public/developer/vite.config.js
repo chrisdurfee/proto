@@ -6,9 +6,6 @@ import { Configs } from './src/configs.js';
 export default defineConfig({
 	plugins: [],
 	base: Configs.router.baseUrl,
-	server: {
-		open: true
-	},
 	resolve: {
 		alias: {
 			'@components': path.resolve(__dirname, 'src/components'),
@@ -16,6 +13,7 @@ export default defineConfig({
 		}
 	},
 	server: {
+		open: true,
 		cors: true,
 		proxy: {
 			'/api': {

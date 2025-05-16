@@ -15,7 +15,6 @@ table {
 }
 
 .main-wrapper {
-	background-color: #f4f4f5;
 	padding: 0;
 }
 

@@ -38,7 +38,7 @@ abstract class Email extends Template
 	protected function getContent(): string
 	{
 		return <<<HTML
-		<table class="main_container" cellpadding="0" cellspacing="0" align="center">
+		<table class="main-container" cellpadding="0" cellspacing="0" align="center">
 			<tbody>
 				<tr>
 					<td>{$this->addHeader()}</td>

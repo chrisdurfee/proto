@@ -204,7 +204,7 @@ HTML;
 
 		return <<<HTML
 	<tr>
-		<td class="footer" align="center" style="padding: 32px 16px; background: #f9fafb;">
+		<td class="footer" align="center" style="padding: 32px 16px;">
 			<p style="margin: 0 0 6px; color: #6b7280;">&copy; {$year} {$company}. All rights reserved.</p>
 			<p style="margin: 0 0 6px; color: #6b7280;">{$address}</p>
 			<p style="margin: 0; color: #6b7280;">

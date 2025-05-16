@@ -25,7 +25,7 @@ export const ContentSwitch = (props) => (
 			}),
 			Div({ class: "flex-1 border border-muted rounded-lg overflow-hidden" }, [
 				Iframe({
-					src: `//proto.local/developer/app/email/preview/index.php?template=[[template]]`,
+					src: `/api/developer/email/preview?template=[[template]]`,
 					class: "w-full h-full border-none",
 					allowTransparency: true,
 					allowFullScreen: true
