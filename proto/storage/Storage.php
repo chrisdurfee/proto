@@ -743,17 +743,17 @@ class Storage implements StorageInterface
 	 *
 	 * @param array|object|null $filter Filter criteria.
 	 * @param int|null $offset Offset.
-	 * @param int|null $count Limit count.
+	 * @param int|null $limit Limit count.
 	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
-	public function getRows($filter = null, $offset = null, $count = null, ?array $modifiers = null): object
+	public function getRows($filter = null, $offset = null, $limit = null, ?array $modifiers = null): object
 	{
 		$params = [];
 		$where = static::getWhere($params, $filter, $modifiers);
 		$sql = $this->select()
 			->where(...$where)
-			->limit($offset, $count);
+			->limit($offset, $limit);
 
 		$this->setOrderBy($sql, $modifiers);
 

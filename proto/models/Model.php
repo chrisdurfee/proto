@@ -686,13 +686,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @param array|object|null $filter Filter criteria.
 	 * @param int|null $offset Offset.
-	 * @param int|null $count Count.
+	 * @param int|null $limit Count.
 	 * @param array|null $modifiers Modifiers.
 	 * @return object|false
 	 */
-	public static function all(mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null): object|false
+	public static function all(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object|false
 	{
-		return static::getRows($filter, $offset, $count, $modifiers);
+		return static::getRows($filter, $offset, $limit, $modifiers);
 	}
 
 	/**
@@ -700,14 +700,14 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @param array|object|null $filter Filter criteria.
 	 * @param int|null $offset Offset.
-	 * @param int|null $count Count.
+	 * @param int|null $limit Count.
 	 * @param array|null $modifiers Modifiers.
 	 * @return object|false
 	 */
-	public static function getRows(mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null): object|false
+	public static function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object|false
 	{
 		$instance = new static();
-		$result = $instance->storage->getRows($filter, $offset, $count, $modifiers);
+		$result = $instance->storage->getRows($filter, $offset, $limit, $modifiers);
 		if ($result !== false && !empty($result->rows))
 		{
 			$result->rows = $instance->convertRows($result->rows);

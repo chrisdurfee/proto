@@ -10,9 +10,10 @@ use Proto\Http\Router\Router;
  * This file contains the API routes for the Migration module.
  */
 router()
-	->group('developer/migration', function(Router $router)
+	->post('developer/migration', [MigrationController::class, 'apply'])
+	->group('developer', function(Router $router)
 	{
 		$router
-			->post('', [MigrationController::class, 'migrate'])
-			->get('*', [MigrationController::class, 'all']);
+			//->post('migration', [MigrationController::class, 'apply'])
+			->get('migration*', [MigrationController::class, 'all']);
 	});

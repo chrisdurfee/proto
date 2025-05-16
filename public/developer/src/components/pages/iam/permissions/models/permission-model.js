@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const PermissionModel = Model.extend({
-	url: 'https://proto.local/developer/api/permission',
+	url: 'https://proto.local/api/user/permission',
 
 	xhr: {
 

@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const ErrorModel = Model.extend({
-	url: 'https://proto.local/developer/api/error',
+	url: 'https://proto.local/api/developer/error',
 
 	xhr: {
 
@@ -24,7 +24,7 @@ export const ErrorModel = Model.extend({
 			const id = this.model.get('id');
 			const resolved = this.model.get('resolved');
 
-			let params = 'op=updateResolved' +
+			let params =
 				'&id=' + id +
 				'&resolved=' + resolved;
 

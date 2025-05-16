@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const UserModel = Model.extend({
-	url: 'https://proto.local/developer/api/user',
+	url: 'https://proto.local/api/user',
 
 	xhr: {
 

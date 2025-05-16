@@ -2,7 +2,6 @@
 namespace Modules\Developer\Api;
 
 use Modules\Developer\Controllers\ErrorController;
-use Modules\Developer\Controllers\MigrationController;
 use Proto\Http\Router\Router;
 
 /**
@@ -11,9 +10,9 @@ use Proto\Http\Router\Router;
  * This file contains the API routes for the Migration module.
  */
 router()
-	->group('developer/error', function(Router $router)
+	->group('developer', function(Router $router)
 	{
 		$router
-			->post('', [ErrorController::class, 'toggleResolve'])
-			->get('*', [ErrorController::class, 'all']);
+			->patch('error', [ErrorController::class, 'toggleResolve'])
+			->get('error*', [ErrorController::class, 'all']);
 	});

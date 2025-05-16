@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const GeneratorModel = Model.extend({
-	url: 'https://proto.local/developer/api/generator',
+	url: 'https://proto.local/api/developer/generator',
 
 	xhr: {
 		/**
@@ -25,8 +25,9 @@ export const GeneratorModel = Model.extend({
 		 */
 		add(instanceParams, callBack)
 		{
-			let params = 'type=' + this.model.get('type') +
-					'&' + this.setupObjectData();
+			let params =
+				'type=' + this.model.get('type') +
+				'&' + this.setupObjectData();
 
 			return this._post('', params, instanceParams, callBack);
 		}

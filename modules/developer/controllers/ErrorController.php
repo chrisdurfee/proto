@@ -76,18 +76,15 @@ class ErrorController extends Controller
         Request $request
     ): object
 	{
-		/**
-		 * This will format the filter.
-		 */
 		$filter = $request->input('filter');
 		$filter = $this->setFilter($filter);
 
 		$offset = $request->getInt('offset');
-		$count = $request->getInt('count');
+		$limit = $request->getInt('limit');
 		$search = $request->input('search');
 		$custom = $request->input('custom');
 
-		$result = ErrorLog::all($filter, $offset, $count, [
+		$result = ErrorLog::all($filter, $offset, $limit, [
 			'search' => $search,
 			'custom' => $custom
 		]);

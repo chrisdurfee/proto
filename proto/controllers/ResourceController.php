@@ -227,19 +227,19 @@ abstract class ResourceController extends Controller
 	 *
 	 * @param array|object|null $filter Filter criteria.
 	 * @param int|null $offset Offset.
-	 * @param int|null $count Count.
+	 * @param int|null $limit Count.
 	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
 	public function all(Request $request): object
 	{
 		$filter = $this->getFilter($request);
-		$offset = $request->getInt('start') ?? 0;
-		$count = $request->getInt('count') ?? 50;
+		$offset = $request->getInt('offset') ?? 0;
+		$limit = $request->getInt('limit') ?? 50;
 		$search = $request->input('search');
 		$custom = $request->input('custom');
 
-		$result = $this->modelClass::all($filter, $offset, $count, [
+		$result = $this->modelClass::all($filter, $offset, $limit, [
 			'search' => $search,
 			'custom' => $custom
 		]);

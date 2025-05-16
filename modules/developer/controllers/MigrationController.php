@@ -33,7 +33,7 @@ class MigrationController extends Controller
 	 * @param Request $req The request object containing migration parameters.
 	 * @return object Response object.
 	 */
-	public function migrate(Request $req): object
+	public function apply(Request $req): object
     {
         $direction = $req->input('direction');
         return $this->update($direction);
@@ -87,22 +87,47 @@ class MigrationController extends Controller
 	}
 
 	/**
+	 * Sets the filter for migration records.
+	 *
+	 * @param string|null $filter Optional filter for migration rows.
+	 * @return array Filter array.
+	 */
+	protected function setFilter(?string $filter): array
+	{
+		if (empty($filter))
+		{
+			return [];
+		}
+
+		$obj = json_decode(urldecode($filter)) ?? (object)[];
+		return (array)$obj;
+	}
+
+	/**
 	 * Retrieves migration records.
 	 *
 	 * @param mixed $filter Optional filter for migration rows.
 	 * @param int|null $offset Optional offset for pagination.
-	 * @param int|null $count Optional count of rows to retrieve.
+	 * @param int|null $limit Optional count of rows to retrieve.
 	 * @param array|null $modifiers Optional query modifiers.
 	 * @return object Response object containing migration records.
 	 */
 	public function all(
-		$filter = null,
-		?int $offset = null,
-		?int $count = null,
-		?array $modifiers = null
+		Request $request
 	): object
 	{
-		$result = Migration::all($filter, $offset, $count, $modifiers);
+		$filter = $request->input('filter');
+		$filter = $this->setFilter($filter);
+
+		$offset = $request->getInt('offset');
+		$limit = $request->getInt('limit');
+		$search = $request->input('search');
+		$custom = $request->input('custom');
+
+		$result = Migration::all($filter, $offset, $limit, [
+			'search' => $search,
+			'custom' => $custom
+		]);
 		return $this->response($result);
 	}
 }
