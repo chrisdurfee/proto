@@ -116,6 +116,11 @@ class Router
 	protected function setupRequest(): void
 	{
 		$this->method = $this->request->method();
+		if ($this->method === 'OPTIONS')
+		{
+			$this->sendResponse(HttpStatus::OK->value);
+		}
+
 		$this->path = $this->filterPath($this->request->path());
 
 		if (!$this->isValidMethod($this->method))

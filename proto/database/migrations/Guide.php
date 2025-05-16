@@ -280,7 +280,7 @@ class Guide
 		$migrations = $this->getNewMigrations();
 		if (empty($migrations))
 		{
-			return false;
+			return true;
 		}
 
 		$result = true;
