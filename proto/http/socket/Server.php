@@ -2,7 +2,7 @@
 namespace Proto\Http\Socket;
 
 use Proto\Http\Loop\EventLoop;
-use Proto\Http\Loop\FiberEvent;
+use Proto\Http\Loop\AsyncEvent;
 use Fiber;
 
 /**
@@ -143,7 +143,7 @@ class Server extends SocketHandler
 		 * Each tick we try one non-blocking accept.
 		 */
 		$this->blocking(false);
-		$this->loop->addEvent(new FiberEvent(fn() => $this->accept(0.0)));
+		$this->loop->addEvent(new AsyncEvent(fn() => $this->accept(0.0)));
 
 		/**
 		 * When the accept emits 'connection', spawn a new reader fiber.
@@ -154,7 +154,7 @@ class Server extends SocketHandler
 			$conn->blocking(false);
 
 			// One fiber per connection
-			$this->loop->addEvent(new FiberEvent(function() use ($conn)
+			$this->loop->addEvent(new AsyncEvent(function() use ($conn)
 			{
 				while (true)
 				{

@@ -11,12 +11,12 @@ namespace Common\Push;
 class PushTest extends Push
 {
 	/**
-     * This should be overridden to return the message body.
-     *
-     * @abstract
-     * @return string|array
-     */
-    protected function setupBody(): string|array
+	 * This should be overridden to return the message body.
+	 *
+	 * @abstract
+	 * @return string|array
+	 */
+	protected function setupBody(): string|array
 	{
 		$ticket = $this->get('ticket');
 

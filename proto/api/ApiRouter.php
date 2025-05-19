@@ -3,7 +3,7 @@ namespace
 {
 	use Proto\Base;
 	use Proto\Http\Loop\EventLoop;
-	use Proto\Http\Loop\FiberEvent;
+	use Proto\Http\Loop\AsyncEvent;
 	use Proto\Http\Router\Router;
 	use Proto\Http\Session;
 	use Proto\Http\Session\SessionInterface;
@@ -78,7 +78,7 @@ namespace
 		$server = new ServerEvents($interval);
         $server->start(function(EventLoop $loop) use($callback)
         {
-            $loop->addEvent(new FiberEvent($callback));
+            $loop->addEvent(new AsyncEvent($callback));
         });
 	}
 

@@ -2,7 +2,7 @@
 
 include __DIR__ . '../../../autoload.php';
 
-use Proto\Http\Loop\FiberEvent;
+use Proto\Http\Loop\AsyncEvent;
 use Proto\Http\ServerEvents\ServerEvents;
 
 /**
@@ -17,7 +17,7 @@ $server = new ServerEvents($INTERVAL_IN_SECONDS);
  */
 $server->start(function($loop)
 {
-	$loop->addEvent(new FiberEvent(function(FiberEvent $event)
+	$loop->addEvent(new AsyncEvent(function(AsyncEvent $event)
 	{
 		/**
 		 * Perform any operation on the server and get the response.
@@ -42,7 +42,7 @@ $server->start(function($loop)
 /**
  * or you can stream a single response.
  */
-$server->stream(function(FiberEvent $event)
+$server->stream(function(AsyncEvent $event)
 {
 	// Perform any operation on the server and get the response.
 	return (object) [

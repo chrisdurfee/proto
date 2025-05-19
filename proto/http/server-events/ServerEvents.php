@@ -2,7 +2,7 @@
 namespace Proto\Http\ServerEvents;
 
 use Proto\Events\EventEmitter;
-use Proto\Http\Loop\FiberEvent;
+use Proto\Http\Loop\AsyncEvent;
 use Proto\Http\Router\StreamResponse;
 use Proto\Http\Loop\EventLoop;
 
@@ -118,7 +118,7 @@ class ServerEvents extends EventEmitter
 	{
 		return $this->start(function(EventLoop $loop) use ($callback)
 		{
-			$loop->addEvent(new FiberEvent(function(FiberEvent $event) use ($callback, $loop)
+			$loop->addEvent(new AsyncEvent(function(AsyncEvent $event) use ($callback, $loop)
 			{
 				$result = $callback($event);
 				$loop->end(); // Runs only once

@@ -4,13 +4,13 @@ namespace Proto\Http\Loop;
 use Fiber;
 
 /**
- * FiberEvent
+ * AsyncEvent
  *
  * This class handles events using PHP Fibers.
  *
  * @package Proto\Http\Loop
  */
-class FiberEvent extends Event implements AsyncEventInterface
+class AsyncEvent extends Event implements AsyncEventInterface
 {
 	/**
 	 * The Fiber instance.
