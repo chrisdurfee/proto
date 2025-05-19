@@ -45,6 +45,16 @@ class ChatService extends Service
         return $message;
     }
 
+    /**
+     * This will stream the content.
+     *
+     * @param string|array $content
+     * @param string $type
+     * @param mixed $settings
+     * @param object $event
+     * @param callable|null $callBack
+     * @return void
+     */
     public function stream(
         string|array $content,
         string $type,
@@ -119,6 +129,14 @@ class ChatService extends Service
         );
     }
 
+    /**
+     * This will generate the content.
+     *
+     * @param string|array $content
+     * @param string $type
+     * @param mixed $settings
+     * @return object
+     */
     public function generate(
         string|array $content,
         string $type,
