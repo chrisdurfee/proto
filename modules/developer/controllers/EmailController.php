@@ -42,7 +42,8 @@ class EmailController extends Controller
 		$settings = (object)[
 			'to' => $toAddress,
 			'subject' => 'Test Email',
-			'template' => 'Modules\\Developer\\Email\\Test\\TestEmail'
+			'template' => 'Modules\\Developer\\Email\\Test\\TestEmail',
+			'queue' => (bool)$req->input('queue')
 		];
 
 		return Dispatcher::email($settings);
