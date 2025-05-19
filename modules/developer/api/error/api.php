@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
-namespace Modules\Developer\Api;
+namespace Modules\Developer\Api\Error;
 
 use Modules\Developer\Controllers\ErrorController;
 use Proto\Http\Router\Router;
 
 /**
- * Migration Routes
+ * Error Routes
  *
- * This file contains the API routes for the Migration module.
+ * This file contains the API routes for the Error module.
  */
 router()
 	->group('developer', function(Router $router)

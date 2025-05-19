@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\Developer\Api;
+namespace Modules\Developer\Api\Generator;
 
 use Modules\Developer\Controllers\GeneratorController;
 

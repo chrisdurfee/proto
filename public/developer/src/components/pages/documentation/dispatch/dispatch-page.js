@@ -100,7 +100,7 @@ $settings->queue = true;
 Dispatcher::email($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
-					`An API endpoint is available for testing email dispatch: /api/email?op=test&to={email}.`
+					`An API endpoint is available for testing email dispatch: /api/developer/email/test?to={email}.`
 				)
 			]),
 
@@ -133,7 +133,7 @@ $settings->queue = true;
 Dispatcher::sms($settings);`
 				),
 				P({ class: 'text-muted-foreground' },
-					`Test SMS sending via the API endpoint: /api/text?op=test&to={number}.`
+					`Test SMS sending via the API endpoint: /api/developer/sms/test?to={number}.`
 				)
 			]),
 

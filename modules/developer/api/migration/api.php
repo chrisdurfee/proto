@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\Developer\Api;
+namespace Modules\Developer\Api\Migration;
 
 use Modules\Developer\Controllers\MigrationController;
 use Proto\Http\Router\Router;
