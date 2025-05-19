@@ -12,13 +12,13 @@ use Proto\Automation\Processes\Routine;
  */
 class ExampleRoutine extends Routine
 {
-    /**
-     * This should be overridden to perform the routine process.
-     *
-     * @return void
-     */
-    protected function process(): void
-    {
-        // do something here
-    }
+	/**
+	 * This should be overridden to perform the routine process.
+	 *
+	 * @return void
+	 */
+	protected function process(): void
+	{
+		// do something here
+	}
 }
