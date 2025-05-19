@@ -11,12 +11,12 @@ namespace Common\Text;
 class TestMessage extends Text
 {
 	/**
-     * This should be overriden to return the message body.
-     *
-     * @abstract
-     * @return string
-     */
-    protected function setupBody(): string
+	 * This should be overriden to return the message body.
+	 *
+	 * @abstract
+	 * @return string
+	 */
+	protected function setupBody(): string
 	{
 		return <<<EOT
 This is a test sms.

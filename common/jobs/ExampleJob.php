@@ -10,15 +10,15 @@ namespace Common\Jobs;
  */
 class ExampleJob
 {
-    /**
-     * This will run the job.
-     *
-     * @param mixed $data
-     * @return mixed
-     */
-    public function handle(mixed $data): mixed
-    {
-        // do something
-        return false;
-    }
+	/**
+	 * This will run the job.
+	 *
+	 * @param mixed $data
+	 * @return mixed
+	 */
+	public function handle(mixed $data): mixed
+	{
+		// do something
+		return false;
+	}
 }

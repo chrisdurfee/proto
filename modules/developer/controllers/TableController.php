@@ -2,7 +2,7 @@
 namespace Modules\Developer\Controllers;
 
 use Proto\Http\Router\Request;
-use Developer\App\Storage\TableStorage;
+use Modules\Developer\Storage\TableStorage;
 
 /**
  * TableController

@@ -3,6 +3,7 @@ namespace Modules\Developer\Controllers;
 
 use Proto\Http\Router\Request;
 use Proto\Dispatch\Email\Template;
+use Proto\Dispatch\Dispatcher;
 
 /**
  * EmailController
@@ -27,5 +28,23 @@ class EmailController extends Controller
 		$email = Template::create($template);
 		echo (string)$email;
 		die;
+	}
+
+	/**
+	 * Sends a test email.
+	 *
+	 * @param Request $req The request object.
+	 * @return object
+	 */
+	public function test(Request $req): object
+	{
+		$toAddress = $req->input('to') ?? null;
+		$settings = (object)[
+			'to' => $toAddress,
+			'subject' => 'Test Email',
+			'template' => 'Modules\\Developer\\Email\\Test\\TestEmail'
+		];
+
+		return Dispatcher::email($settings);
 	}
 }
