@@ -1,4 +1,4 @@
-import { Code, H4, Li, P, Pre, Section, Ul } from "@base-framework/atoms";
+import { A, Code, H4, Li, P, Pre, Section, Ul } from "@base-framework/atoms";
 import { Atom } from "@base-framework/base";
 import { Icons } from "@base-framework/ui/icons";
 import { DocPage } from "../../doc-page.js";
@@ -143,6 +143,16 @@ Dispatcher::sms($settings);`
 				P({ class: 'text-muted-foreground' },
 					`To dispatch a push notification, add push configurations to your Common\\Config .env file under "push".
 					The dispatch system uses these settings when sending notifications, and the push templates should be placed in the Common\\Push or module Push folder.`
+				),
+				P({ class: 'text-muted-foreground' },
+					`New VAPID keys can be created at this link:`
+				),
+				A(
+					{
+						href: 'https://web-push-codelab.glitch.me/',
+						target: '_blank'
+					},
+					'VAPID Key Generator'
 				),
 				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
 					Li("Dispatch web push immediately:"),
