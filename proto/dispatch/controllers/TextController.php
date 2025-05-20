@@ -62,6 +62,15 @@ class TextController extends Controller
 			$settings->message = self::createText($settings->template, $data);
 		}
 
+		/**
+		 * If the ssession is not set, we will use the default session
+		 * from the env file.
+		 */
+		if (empty($settings->session))
+		{
+			$settings->session = env('sms')->session ?? '';
+		}
+
 		if (isset($settings->subject) && !empty($settings->subject))
 		{
 			$settings->message = $settings->subject . ' - ' . $settings->message;

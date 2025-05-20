@@ -118,7 +118,7 @@ Dispatcher::email($settings);`
 				CodeBlock(
 `$settings = (object)[
     'to' => '1112221111',
-    'session' => 'twilio session id',
+    'session' => 'session id', // if different than the default
     'template' => 'Common\\Text\\ExampleSms'
 ];
 

@@ -41,7 +41,6 @@ class SmsController extends Controller
 		$toAddress = $req->input('to') ?? null;
 		$settings = (object)[
 			'to' => $toAddress,
-			'session' => env('sms')->twilio->session ?? '',
 			'template' => 'Modules\\Developer\\Text\\Test\\TestText',
 			'queue' => (bool)$req->input('queue')
 		];

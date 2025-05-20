@@ -28,7 +28,7 @@ class SmsQueue extends Migration
 			$table->varchar('agent_id', 255);
 			$table->varchar('dispatch_id', 255);
 			$table->varchar('recipient', 255);
-			$table->varchar('session', 255);
+			$table->varchar('session', 255)->nullable();
 			$table->text('message');
 			$table->text('attachments');
 			$table->tinyInteger('priority', 1)->default(0);
