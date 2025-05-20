@@ -137,28 +137,45 @@ Dispatcher::sms($settings);`
 				)
 			]),
 
-			// Web-Push Dispatch
+			// web push dispatch
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Web-Push'),
 				P({ class: 'text-muted-foreground' },
-					`For web push notifications, add push configurations to your Common\\Config .env file under "push".
-					The dispatch system uses these settings when sending notifications, and the push templates should be placed in the Common\\Push or module Push folder.
-					To simplify web push notifications, use the Common\\Controllers\\Push\\WebPushController which automatically retrieves
-					user push settings.`
+					`To dispatch a push notification, add push configurations to your Common\\Config .env file under "push".
+					The dispatch system uses these settings when sending notifications, and the push templates should be placed in the Common\\Push or module Push folder.`
 				),
 				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
 					Li("Dispatch web push immediately:"),
 					Li("Enqueue web push for later sending:")
 				]),
 				CodeBlock(
-`$userId = 1;
-$data = (object)[ /* your data here */ ];
+`$settings = (object)[
+    'subscriptions' => [
+		[
+			'id' => 'subscription id',
+			'endpoint' => 'https://example.com/push/endpoint',
+			'keys' => [
+				'auth' => 'auth key',
+				'p256dh' => 'p256dh key'
+			]
+		]
+	],
+    'template' => 'Common\\Push\\ExamplePush',
+	'queue' => false, // optional
+};
 
-// Dispatch web push immediately:
-WebPushController::dispatch($userId, 'Common\\Push\\PushTest', $data);
+// Dispatch Push immediately:
+Dispatcher::push($settings);
 
-// Enqueue web push to send later:
-WebPushController::enqueue($userId, 'Common\\Push\\PushTest', $data);`
+// Enqueue Push to send later:
+Enqueuer::push($settings);
+
+// or set the queue option to true:
+$settings->queue = true;
+Dispatcher::push($settings);`
+				),
+				P({ class: 'text-muted-foreground' },
+					`Test Push sending via the API endpoint: /api/developer/push/test?userId={userId}.`
 				)
 			])
 		]
