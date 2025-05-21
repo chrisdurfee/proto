@@ -698,6 +698,42 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Get rows from storage.
 	 *
+	 * @param array $filter Filter criteria.
+	 * @return object|false
+	 */
+	public static function getBy(array $filter): object|false
+	{
+		$instance = new static();
+		$row = $instance->storage->getBy($filter);
+		if ($row)
+		{
+			$row = $instance->convertRows([$row]);
+		}
+
+		return $row;
+	}
+
+	/**
+	 * Get rows from storage.
+	 *
+	 * @param array $filter Filter criteria.
+	 * @return array|null
+	 */
+	public static function where(array $filter): ?array
+	{
+		$instance = new static();
+		$rows = $instance->storage->where($filter);
+		if ($rows !== false && !empty($rows))
+		{
+			$rows = $instance->convertRows($rows);
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * Get rows from storage.
+	 *
 	 * @param array|object|null $filter Filter criteria.
 	 * @param int|null $offset Offset.
 	 * @param int|null $limit Count.

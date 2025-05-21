@@ -89,15 +89,18 @@ export const DispatchPage = () =>
 	]
 ];
 
+$data = (object)[];
+
 // Dispatch email immediately:
-Dispatcher::email($settings);
+Dispatcher::email($settings, $data);
 
 // Enqueue email to send later:
-Enqueuer::email($settings);
+Enqueuer::email($settings, $data);
 
 // or set the queue option to true:
 $settings->queue = true;
-Dispatcher::email($settings);`
+Dispatcher::email($settings, $data);
+`
 				),
 				P({ class: 'text-muted-foreground' },
 					`An API endpoint is available for testing email dispatch: /api/developer/email/test?to={email}.`
@@ -122,15 +125,17 @@ Dispatcher::email($settings);`
     'template' => 'Common\\Text\\ExampleSms'
 ];
 
+$data = (object)[];
+
 // Dispatch SMS immediately:
-Dispatcher::sms($settings);
+Dispatcher::sms($settings, $data);
 
 // Enqueue SMS to send later:
-Enqueuer::sms($settings);
+Enqueuer::sms($settings, $data);
 
 // or set the queue option to true:
 $settings->queue = true;
-Dispatcher::sms($settings);`
+Dispatcher::sms($settings, $data);`
 				),
 				P({ class: 'text-muted-foreground' },
 					`Test SMS sending via the API endpoint: /api/developer/sms/test?to={number}.`
@@ -174,18 +179,38 @@ Dispatcher::sms($settings);`
 	'queue' => false, // optional
 };
 
+$data = (object)[];
+
 // Dispatch Push immediately:
-Dispatcher::push($settings);
+Dispatcher::push($settings, $data);
 
 // Enqueue Push to send later:
-Enqueuer::push($settings);
+Enqueuer::push($settings, $data);
 
 // or set the queue option to true:
 $settings->queue = true;
-Dispatcher::push($settings);`
+Dispatcher::push($settings, $data);`
 				),
 				P({ class: 'text-muted-foreground' },
 					`Test Push sending via the API endpoint: /api/developer/push/test?userId={userId}.`
+				),
+				P({ class: 'text-muted-foreground' },
+					`The User Module has a PushGateway to make sending push notifications easier to a user. This is a wrapper around the Dispatcher class. Here is an example on how to use it:`
+				),
+				CodeBlock(
+`$settings = (object)[
+    'template' => 'Common\\Push\\ExamplePush',
+	'queue' => false, // optional
+};
+
+$userId = 1; // user id
+$data = (object)[];
+
+modules()->user()->push()->send(
+	$userId,
+	$settings,
+	$data
+);`
 				)
 			])
 		]

@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
+use Modules\User\Models\NotificationPreference;
 use Proto\Controllers\ResourceController as Controller;
 use Modules\User\Models\WebPushUser;
 use Proto\Dispatch\Dispatcher;
@@ -20,6 +21,18 @@ class WebPushUserController extends Controller
 	public function __construct(protected ?string $modelClass = WebPushUser::class)
 	{
 		parent::__construct();
+	}
+
+	protected function canPush(
+		mixed $userId,
+		NotificationPreference $preference = NotificationPreference::class
+	): bool
+	{
+		$model = new $preference();
+		$preference = $model->getBy([
+			['user_id', $userId]
+		]);
+		return $preference?->allowPush ?? false;
 	}
 
 	/**

@@ -715,7 +715,7 @@ class Storage implements StorageInterface
 	 * Retrieve a single record by filter.
 	 *
 	 * @param array|object $filter Filter criteria.
-	 * @return object|bool
+	 * @return object|null
 	 */
 	public function getBy($filter): mixed
 	{
