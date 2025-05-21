@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const GeneratorModel = Model.extend({
-	url: 'https://proto.local/api/developer/generator',
+	url: '/api/developer/generator',
 
 	xhr: {
 		/**

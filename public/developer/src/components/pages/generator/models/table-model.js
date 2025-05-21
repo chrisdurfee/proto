@@ -9,7 +9,7 @@ import { Model } from "@base-framework/base";
  */
 export const TableModel = Model.extend(
 {
-    url: 'https://proto.local/developer/api/table',
+    url: '/api/developer/table',
 
     xhr: {
         /**

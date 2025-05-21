@@ -31,6 +31,7 @@ class NotificationPreference extends Migration
 
 			// Indexes
 			$table->index('user_id')->fields('user_id');
+			$table->unique('user_id')->fields('user_id');
 
 			// Foreign keys
 			$table->foreign('user_id')

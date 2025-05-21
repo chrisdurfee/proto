@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const ErrorModel = Model.extend({
-	url: 'https://proto.local/api/developer/error',
+	url: '/api/developer/error',
 
 	xhr: {
 

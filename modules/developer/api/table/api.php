@@ -9,4 +9,4 @@ use Modules\Developer\Controllers\TableController;
  * This file contains the API routes for the Table module.
  */
 router()
-	->post('developer/table/columns*', [TableController::class, 'getColumns']);
+	->get('developer/table/columns*', [TableController::class, 'getColumns']);
