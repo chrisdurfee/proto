@@ -23,6 +23,13 @@ class WebPushUserController extends Controller
 		parent::__construct();
 	}
 
+	/**
+	 * This will check if the user can receive push notifications.
+	 *
+	 * @param mixed $userId
+	 * @param NotificationPreference $preference
+	 * @return bool
+	 */
 	protected function canPush(
 		mixed $userId,
 		NotificationPreference $preference = NotificationPreference::class
@@ -46,6 +53,11 @@ class WebPushUserController extends Controller
 	public function send(mixed $userId, object $settings, ?object $data = null): ?object
 	{
 		if (!isset($userId))
+		{
+			return null;
+		}
+
+		if (!$this->canPush($userId))
 		{
 			return null;
 		}
