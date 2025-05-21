@@ -101,6 +101,14 @@ class WebPush extends Dispatch
 			return null;
 		}
 
+		if (!isset($settings['keys']))
+		{
+			$settings['keys'] = [
+				'auth' => $settings['authKeys']['auth'] ?? null,
+				'p256dh' => $settings['authKeys']['p256dh'] ?? null
+			];
+		}
+
 		return Subscription::create($settings);
 	}
 

@@ -37,6 +37,22 @@ class WebPushUser extends Model
 	];
 
 	/**
+	 * This will decode the authKeys field.
+	 *
+	 * @param mixed $data
+	 * @return object|null
+	 */
+	protected static function format(?object $data): ?object
+	{
+		if (isset($data->authKeys))
+		{
+			$data->authKeys = json_decode($data->authKeys);
+		}
+
+		return $data;
+	}
+
+	/**
 	 * @var string $storageType
 	 */
 	protected static string $storageType = WebPushUserStorage::class;
