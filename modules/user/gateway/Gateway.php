@@ -29,4 +29,14 @@ class Gateway
 	{
 		return new PushGateway();
 	}
+
+	/**
+	 * This will return the secure request gateway.
+	 *
+	 * @return SecureRequestGateway
+	 */
+	public function secureRequest(): SecureRequestGateway
+	{
+		return new SecureRequestGateway();
+	}
 }

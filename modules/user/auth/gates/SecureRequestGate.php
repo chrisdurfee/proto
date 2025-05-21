@@ -42,6 +42,20 @@ class SecureRequestGate extends Gate
 	}
 
 	/**
+	 * This will get the request.
+	 *
+	 * @return SecureRequest|null
+	 */
+	public function create(int $userId): ?SecureRequest
+	{
+		$model = new $this->modelClass((object)[
+			'userId' => $userId
+		]);
+		$result = $model->add();
+		return $result ? $model : null;
+	}
+
+	/**
 	 * This will update the request status.
 	 *
 	 * @param string $requestId
