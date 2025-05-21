@@ -10,9 +10,9 @@ use Proto\Http\Router\Router;
  * This file contains the API routes for the push notifications.
  */
 router()
-	->group('user/{id}', function(Router $router)
+	->group('user/{id}/push', function(Router $router)
 	{
 		$router
-			->post('push/subscribe', [WebPushController::class, 'subscribe'])
-			->post('push/unsubscribe', [WebPushController::class, 'unsubscribe']);
+			->post('subscribe', [WebPushController::class, 'subscribe'])
+			->post('unsubscribe', [WebPushController::class, 'unsubscribe']);
 	});
