@@ -32,5 +32,6 @@ class Headers
 		header('Access-Control-Allow-Origin: *');
 		header('Access-Control-Allow-Headers: *');
 		header('Access-Control-Allow-Methods: ' . self::convertMethodsToString($methods));
+		header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 	}
 }
