@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
+use Modules\User\Auth\Policies\PushPolicy;
 use Proto\Controllers\Controller;
 use Modules\User\Models\WebPushUser;
 use Modules\User\Models\NotificationPreference;
@@ -15,6 +16,11 @@ use Proto\Http\Router\Request;
  */
 class WebPushController extends Controller
 {
+	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = PushPolicy::class;
+
 	/**
 	 * Initializes the model class.
 	 *

@@ -9,4 +9,5 @@ use Modules\User\Controllers\WebPushController;
  * This file contains the API routes for the push notifications.
  */
 router()
-	->resource('push', WebPushController::class);
+	->post('push/subscribe', [WebPushController::class, 'subscribe'])
+    ->post('push/unsubscribe', [WebPushController::class, 'unsubscribe']);

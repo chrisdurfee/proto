@@ -4,25 +4,15 @@ namespace Modules\User\Auth\Policies;
 use Proto\Http\Router\Request;
 
 /**
- * Class UserPolicy
+ * Class PushPolicy
  *
- * Policy that governs access control for managing users.
+ * Policy that governs access control for managing push notifications.
  *
  * @package Modules\User\Auth\Policies
  */
-class UserPolicy extends Policy
+class PushPolicy extends Policy
 {
 	/**
-	 * Default policy for methods that don't have an explicit policy method.
-	 *
-	 * @return bool True if the user can view users, otherwise false.
-	 */
-	public function default(): bool
-	{
-		return $this->canAccess('users.view');
-	}
-
-    /**
      * This will check if the user can subscribe to web push notifications.
      *
      * @param Request $request
