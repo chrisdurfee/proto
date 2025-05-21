@@ -1,25 +1,25 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Models;
 
-use Modules\User\Storage\EmailVerificationStorage;
+use Modules\User\Storage\SecureRequestStorage;
 use Proto\Models\Model;
 
 /**
- * EmailVerification
+ * SecureRequest
  *
  * @package Modules\User\Models
  */
-class EmailVerification extends Model
+class SecureRequest extends Model
 {
 	/**
 	 * @var string|null $tableName
 	 */
-	protected static ?string $tableName = 'email_verification';
+	protected static ?string $tableName = 'secure_requests';
 
 	/**
 	 * @var string|null $alias
 	 */
-	protected static ?string $alias = 'e';
+	protected static ?string $alias = 's';
 
 	/**
 	 * @var array $fields
@@ -33,8 +33,8 @@ class EmailVerification extends Model
 		'status'
 	];
 
-	/**
+    /**
 	 * @var string $storageType
 	 */
-	protected static string $storageType = EmailVerificationStorage::class;
+	protected static string $storageType = SecureRequestStorage::class;
 }

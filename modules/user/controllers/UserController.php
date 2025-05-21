@@ -60,9 +60,13 @@ class UserController extends ResourceController
 	 * This will verify the email address.
 	 *
 	 * @param Request $request
+	 * @param EmailVerificationGate $gate
 	 * @return object
 	 */
-	public function verifyEmail(Request $request): object
+	public function verifyEmail(
+		Request $request,
+		EmailVerificationGate $gate = new EmailVerificationGate()
+	): object
 	{
 		$userId = $request->getInt('userId');
 		if ($userId === null)
@@ -70,7 +74,6 @@ class UserController extends ResourceController
 			return $this->error('Invalid user ID.');
 		}
 
-		$gate = new EmailVerificationGate();
 		if (!$gate->isValid($request->input('requestId'), $userId))
 		{
 			return $this->error('Invalid request.');

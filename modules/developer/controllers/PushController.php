@@ -45,11 +45,10 @@ class PushController extends Controller
         }
 
 		$settings = (object)[
-			'subscriptions' => [$userId],
 			'template' => 'Modules\\Developer\\Push\\Test\\TestPush',
 			'queue' => (bool)$req->input('queue')
 		];
 
-		return Dispatcher::push($settings);
+		return modules()->user()->push()->send($userId, $settings);
 	}
 }
