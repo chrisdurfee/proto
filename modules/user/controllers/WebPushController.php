@@ -41,7 +41,7 @@ class WebPushController extends Controller
 	 * @param Request $request
 	 * @return object|null
 	 */
-	protected function getRequestItem(Request $request): ?object
+	public function getRequestItem(Request $request): ?object
 	{
 		$item = $request->json('item');
 		if (!isset($item))
