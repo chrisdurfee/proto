@@ -19,4 +19,14 @@ class Gateway
 	{
 		// implementation for adding a user
 	}
+
+	/**
+	 * This will return the push gateway.
+	 *
+	 * @return PushGateway
+	 */
+	public function push(): PushGateway
+	{
+		return new PushGateway();
+	}
 }
