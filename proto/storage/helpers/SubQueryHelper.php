@@ -112,8 +112,29 @@ class SubQueryHelper
 		}
 	}
 
+	/**
+	 * Sets up the bridge fields for the JSON_OBJECT.
+	 * This is a helper function to add fields from the bridge join to the JSON_OBJECT.
+	 *
+	 * @param ModelJoin $bridgeJoin The join representing the bridge table (e.g., UserRole, RolePermission).
+	 * @param array &$jsonObjectMap The JSON_OBJECT map to populate with field mappings.
+	 * @param bool $isSnakeCase Snake case flag.
+	 */
+	protected static function setupBridgeFields(ModelJoin $bridgeJoin, array &$jsonObjectMap, bool $isSnakeCase): void
+	{
+		if (count($bridgeJoin->getFields()) > 0)
+		{
+			// If the bridge join has fields, add them to the JSON_OBJECT
+			$bridgeFields = FieldHelper::formatFields($bridgeJoin->getFields(), $isSnakeCase, $bridgeJoin->getAlias());
+			foreach ($bridgeFields as $field)
+			{
+				$key = preg_replace('/^.*\./', '', $field);
+				$jsonObjectMap[$key] = $field;
+			}
+		}
+	}
 
-	 /**
+	/**
 	 * Generates the complete subquery SQL string for a specific aggregation level.
 	 * This is the function called recursively.
 	 *
@@ -138,16 +159,7 @@ class SubQueryHelper
 			return null;
 		}
 
-		if (count($bridgeJoin->getFields()) > 0)
-		{
-			// If the bridge join has fields, add them to the JSON_OBJECT
-			$bridgeFields = FieldHelper::formatFields($bridgeJoin->getFields(), $isSnakeCase, $bridgeJoin->getAlias());
-			foreach ($bridgeFields as $field)
-			{
-				$key = preg_replace('/^.*\./', '', $field);
-				$jsonObjectMap[$key] = $field;
-			}
-		}
+		self::setupBridgeFields($bridgeJoin, $jsonObjectMap, $isSnakeCase);
 
 		// 2. Generate the JSON_ARRAYAGG(JSON_OBJECT(...)) SQL part
 		$jsonAggSelect = self::getJsonAggSql('dummy_alias', $jsonObjectMap); // Alias doesn't matter here
