@@ -22,7 +22,6 @@ class NotificationPreference extends Migration
 	{
 		$this->create('notification_preferences', function($table)
 		{
-			$table->id();
 			$table->timestamps();
 			$table->integer('user_id', 30)->primary();
 			$table->tinyInteger('allow_email', 1)->default(1);
@@ -31,7 +30,6 @@ class NotificationPreference extends Migration
 
 			// Indexes
 			$table->index('user_id')->fields('user_id');
-			$table->unique('user_id')->fields('user_id');
 
 			// Foreign keys
 			$table->foreign('user_id')
