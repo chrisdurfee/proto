@@ -29,6 +29,7 @@ class UserRole extends Model
 		'id',
 		'userId',
 		'roleId',
+		'organizationId',
 		'createdAt',
 		'updatedAt'
 	];
@@ -60,14 +61,15 @@ class UserRole extends Model
 	 *
 	 * @param mixed $userId
 	 * @param mixed $roleId
+	 * @param int|null $organizationId
 	 * @return bool
 	 */
-	public function deleteUserRole(mixed $userId, mixed $roleId): bool
+	public function deleteUserRole(mixed $userId, mixed $roleId, ?int $organizationId = null): bool
 	{
 		return $this->storage
 			->table()
 			->delete()
-			->where('user_id = ?', 'role_id = ?')
-			->execute([$userId, $roleId]);
+			->where('user_id = ?', 'role_id = ?', 'organization_id = ?')
+			->execute([$userId, $roleId, $organizationId]);
 	}
 }

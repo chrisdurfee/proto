@@ -95,9 +95,9 @@ class SubQueryHelper
 			// Add the current join to this level's subquery
 			$joins[] = [
 				'table' => $currentLevelJoin->getTableName(),
-				'type'  => $currentLevelJoin->getType(),
+				'type' => $currentLevelJoin->getType(),
 				'alias' => $currentLevelJoin->getAlias(),
-				'on'    => $currentLevelJoin->getOn(),
+				'on' => $currentLevelJoin->getOn(),
 				'using' => $currentLevelJoin->getUsing()
 			];
 
@@ -136,6 +136,17 @@ class SubQueryHelper
 		if (empty($jsonObjectMap))
 		{
 			return null;
+		}
+
+		if (count($bridgeJoin->getFields()) > 0)
+		{
+			// If the bridge join has fields, add them to the JSON_OBJECT
+			$bridgeFields = FieldHelper::formatFields($bridgeJoin->getFields(), $isSnakeCase, $bridgeJoin->getAlias());
+			foreach ($bridgeFields as $field)
+			{
+				$key = preg_replace('/^.*\./', '', $field);
+				$jsonObjectMap[$key] = $field;
+			}
 		}
 
 		// 2. Generate the JSON_ARRAYAGG(JSON_OBJECT(...)) SQL part

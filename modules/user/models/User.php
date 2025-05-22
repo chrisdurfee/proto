@@ -64,6 +64,9 @@ class User extends Model
 		 * and the roles table.
 		 */
 		UserRole::bridge($builder)
+			->fields(
+				'organizationId'
+			)
 			->many(Role::class)
 			->on(['roleId', 'id'])
 			->fields(
@@ -85,6 +88,14 @@ class User extends Model
 					'name',
 					'slug'
 				);
+
+		OrganizationUser::bridge($builder)
+			->many(Organization::class)
+			->on(['organizationId', 'id'])
+			->fields(
+				'id',
+				'name'
+			);
 
 		NotificationPreference::one($builder)
 			->fields(

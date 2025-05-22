@@ -16,9 +16,10 @@ class RoleGate extends Gate
 	 * Checks if the user has the specified role.
 	 *
 	 * @param string $role The role to check.
+	 * @param int|null $organizationId The organization ID to check against.
 	 * @return bool True if the user has the role, otherwise false.
 	 */
-	public function hasRole(string $role): bool
+	public function hasRole(string $role, ?int $organizationId = null): bool
 	{
 		$user = $this->get('user');
 		if (!$user)
