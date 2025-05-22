@@ -1,12 +1,13 @@
 <?php declare(strict_types=1);
-
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
 
 /**
  * OrganizationUser
- * 
+ *
+ * This is the model class for the pivot table "organization_user".
+ *
  * @package Modules\User\Models
  */
 class OrganizationUser extends Model
@@ -32,4 +33,18 @@ class OrganizationUser extends Model
 		'organizationId'
 	];
 
+	/**
+	 * Define joins for the organization user model.
+	 *
+	 * @param object $builder The query builder object
+	 * @return void
+	 */
+	protected static function joins(object $builder): void
+	{
+		Organization::one($builder)
+			->on(['organizationId', 'id'])
+			->fields(
+				['name', 'organizationName']
+			);
+	}
 }
