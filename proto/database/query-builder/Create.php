@@ -211,6 +211,20 @@ class Create extends Blueprint
 	}
 
 	/**
+	 * Creates a unique index.
+	 *
+	 * @param string $name The name of the unique index.
+	 * @return CreateIndex
+	 */
+	public function unique(string $name): CreateIndex
+	{
+		$index = new CreateIndex($name);
+		$index->unique();
+		$this->indices[] = $index;
+		return $index;
+	}
+
+	/**
 	 * Creates a foreign key.
 	 *
 	 * @param string $field The field for the foreign key.
