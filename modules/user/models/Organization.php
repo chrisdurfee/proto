@@ -1,12 +1,13 @@
 <?php declare(strict_types=1);
-
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
 
 /**
  * Organization
- * 
+ *
+ * This is the model class for the table "organizations".
+ *
  * @package Modules\User\Models
  */
 class Organization extends Model
@@ -30,5 +31,4 @@ class Organization extends Model
 		'updatedAt',
 		'name'
 	];
-
 }
