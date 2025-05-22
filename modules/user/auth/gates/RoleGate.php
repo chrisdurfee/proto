@@ -13,13 +13,25 @@ use Proto\Auth\Gates\Gate;
 class RoleGate extends Gate
 {
 	/**
+	 * This will check if the user has access to the organization.
+	 *
+	 * @param mixed $organizationId
+	 * @param object $role
+	 * @return bool
+	 */
+	protected function canAccessOrg(?int $organizationId, object $role): bool
+	{
+		return !isset($organizationId) || ($role->organizationId === $organizationId);
+	}
+
+	/**
 	 * Checks if the user has the specified role.
 	 *
-	 * @param string $role The role to check.
+	 * @param string $roleSlug The role to check.
 	 * @param int|null $organizationId The organization ID to check against.
 	 * @return bool True if the user has the role, otherwise false.
 	 */
-	public function hasRole(string $role, ?int $organizationId = null): bool
+	public function hasRole(string $roleSlug, ?int $organizationId = null): bool
 	{
 		$user = $this->get('user');
 		if (!$user)
@@ -28,9 +40,14 @@ class RoleGate extends Gate
 		}
 
 		$roles = $user->roles ?? [];
-		foreach ($roles as $r)
+		foreach ($roles as $role)
 		{
-			if ($r->slug === $role)
+			if (!$this->canAccessOrg($organizationId, $role))
+			{
+				continue;
+			}
+
+			if ($role->slug === $roleSlug)
 			{
 				return true;
 			}
@@ -41,10 +58,11 @@ class RoleGate extends Gate
 	/**
 	 * Checks if the user has the specified role.
 	 *
-	 * @param string $role The role name to check.
+	 * @param string $roleName The role name to check.
+	 * @param int|null $organizationId The organization ID to check against.
 	 * @return bool True if the user has the role, otherwise false.
 	 */
-	public function hasRoleName(string $role): bool
+	public function hasRoleName(string $roleName, ?int $organizationId = null): bool
 	{
 		$user = $this->get('user');
 		if (!$user)
@@ -53,9 +71,14 @@ class RoleGate extends Gate
 		}
 
 		$roles = $user->roles ?? [];
-		foreach ($roles as $r)
+		foreach ($roles as $role)
 		{
-			if ($r->name === $role)
+			if (!$this->canAccessOrg($organizationId, $role))
+			{
+				continue;
+			}
+
+			if ($role->name === $roleName)
 			{
 				return true;
 			}
