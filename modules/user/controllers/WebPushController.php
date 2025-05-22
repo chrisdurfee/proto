@@ -69,7 +69,7 @@ class WebPushController extends Controller
 		$this->notificationPreference->userId = $userId;
 		$this->notificationPreference->status = $status;
 
-		return $this->notificationPreference->merge();
+		return $this->notificationPreference->setup();
 	}
 
 	/**

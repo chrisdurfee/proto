@@ -185,15 +185,17 @@ class ModelPolicy extends Policy
 	 *
 	 * @param mixed $filter The filter criteria.
 	 * @param int|null $offset The offset value.
-	 * @param int|null $count The count value.
+	 * @param int|null $limit The count value.
 	 * @param string|null $search The search query.
+	 * @param array|null $custom Custom parameters.
 	 * @return string The generated parameter string.
 	 */
 	public function setupAllParams(
 		mixed $filter = null,
 		?int $offset = null,
-		?int $count = null,
-		?string $search = null
+		?int $limit = null,
+		?string $search = null,
+		?array $custom = null
 	): string
 	{
 		$params = [];
@@ -208,14 +210,19 @@ class ModelPolicy extends Policy
 			$params[] = (string) $offset;
 		}
 
-		if ($count !== null)
+		if ($limit !== null)
 		{
-			$params[] = (string) $count;
+			$params[] = (string) $limit;
 		}
 
 		if (!empty($search))
 		{
 			$params[] = (string) $search;
+		}
+
+		if (!empty($custom))
+		{
+			$params[] = implode(':', $custom);
 		}
 
 		return implode(':', $params);
@@ -230,9 +237,10 @@ class ModelPolicy extends Policy
 	public function all(Request $request): object
 	{
 		$filter = $this->controller->getFilter($request);
-		$offset = $request->getInt('start') ?? 0;
-		$count = $request->getInt('count') ?? 50;
+		$offset = $request->getInt('offset') ?? 0;
+		$limit = $request->getInt('limit') ?? 50;
 		$search = $request->input('search') ?? null;
+		$custom = $request->input('custom') ?? null;
 
 		// Skip caching for searches
 		if ($this->isSearching($search))
@@ -240,7 +248,7 @@ class ModelPolicy extends Policy
 			return $this->controller->all($request);
 		}
 
-		$params = $this->setupAllParams($filter, $offset, $count, $search);
+		$params = $this->setupAllParams($filter, $offset, $limit, $search, $custom);
 		$key = $this->createKey('all', $params);
 		if ($this->hasKey($key))
 		{

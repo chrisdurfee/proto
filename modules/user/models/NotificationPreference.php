@@ -23,10 +23,16 @@ class NotificationPreference extends Model
 	protected static ?string $alias = 'np';
 
 	/**
+	 * Identifier key name.
+	 *
+	 * @var string
+	 */
+	protected static string $idKeyName = 'userId';
+
+	/**
 	 * @var array $fields
 	 */
 	protected static array $fields = [
-		'id',
 		'createdAt',
 		'updatedAt',
 		'userId',

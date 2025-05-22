@@ -24,7 +24,7 @@ class NotificationPreference extends Migration
 		{
 			$table->id();
 			$table->timestamps();
-			$table->integer('user_id', 30);
+			$table->integer('user_id', 30)->primary();
 			$table->tinyInteger('allow_email', 1)->default(1);
 			$table->tinyInteger('allow_sms', 1)->default(1);
 			$table->tinyInteger('allow_push', 1)->default(1);
