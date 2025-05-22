@@ -1,5 +1,5 @@
 import { Div } from "@base-framework/atoms";
-import { Fieldset, Input, Textarea } from "@base-framework/ui/atoms";
+import { Fieldset, Input } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField, Modal } from "@base-framework/ui/molecules";
 import { OrganizationModel } from "../models/organization-model.js";
@@ -12,29 +12,11 @@ import { OrganizationModel } from "../models/organization-model.js";
  * @returns {Array} - Array of form field components.
  */
 const getOrganizationForm = () => ([
-	Fieldset({ legend: "Permission Settings" }, [
+	Fieldset({ legend: "Organization Settings" }, [
 		new FormField(
-			{ name: "name", label: "Permission Name", description: "Enter the name of the permission." },
+			{ name: "name", label: "Organization Name", description: "Enter the name of the organization." },
 			[
-				Input({ type: "text", placeholder: "e.g. View Users", required: true, bind: "name" })
-			]
-		),
-		new FormField(
-			{ name: "slug", label: "Slug", description: "URL-friendly version of the permission name." },
-			[
-				Input({ type: "text", placeholder: "e.g. users.view", required: true, bind: "slug" })
-			]
-		),
-		new FormField(
-			{ name: "description", label: "Description", description: "A brief description of the permission." },
-			[
-				Textarea({ placeholder: "A short description...", rows: 3, bind: "description" })
-			]
-		),
-		new FormField(
-			{ name: "module", label: "Module", description: "The module that registered the permission." },
-			[
-				Input({ type: "text", placeholder: "module", required: true, bind: "module" })
+				Input({ type: "text", placeholder: "e.g. Acme Corp", required: true, bind: "name" })
 			]
 		)
 	])
@@ -121,9 +103,9 @@ export const OrganizationModal = (props = {}) =>
 
 	return new Modal({
 		data: new OrganizationModel(item),
-		title: mode === 'edit' ? 'Edit Permission' : 'Add Permission',
+		title: mode === 'edit' ? 'Edit Organization' : 'Add Organization',
 		icon: mode === 'edit' ? Icons.pencil.square : Icons.document.add,
-		description: mode === 'edit' ? `Editing the '${item.name}' Permission` : 'Let\'s add a new Permission.',
+		description: mode === 'edit' ? `Editing the '${item.name}' Organization` : 'Let\'s add a new Organization.',
 		size: 'md',
 		type: 'right',
 		onSubmit: ({ data }) =>
