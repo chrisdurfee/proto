@@ -2,16 +2,16 @@ import { Div } from "@base-framework/atoms";
 import { Fieldset, Input, Textarea } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField, Modal } from "@base-framework/ui/molecules";
-import { PermissionModel } from "../models/permission-model.js";
+import { OrganizationModel } from "../models/organization-model.js";
 
 /**
- * getPermissionForm
+ * getOrganizationForm
  *
- * Returns an array of form fields for creating a new permission.
+ * Returns an array of form fields for creating a new organization.
  *
  * @returns {Array} - Array of form field components.
  */
-const getPermissionForm = () => ([
+const getOrganizationForm = () => ([
 	Fieldset({ legend: "Permission Settings" }, [
 		new FormField(
 			{ name: "name", label: "Permission Name", description: "Enter the name of the permission." },
@@ -41,7 +41,7 @@ const getPermissionForm = () => ([
 ]);
 
 /**
- * Add a new permission.
+ * Add a new organization.
  *
  * @param {object} data
  * @param {function} onClose
@@ -74,7 +74,7 @@ const add = (data, onClose) =>
 };
 
 /**
- * Update an existing permission.
+ * Update an existing organization.
  *
  * @param {object} data
  * @param {function} onClose
@@ -107,20 +107,20 @@ const update = (data, onClose) =>
 };
 
 /**
- * PermissionModal
+ * OrganizationModal
  *
- * A modal for creating a new Permission using PermissionModel data.
+ * A modal for creating a new Organization using OrganizationModel data.
  *
  * @param {object} props - The properties for the modal.
  * @returns {Modal} - A new instance of the Modal component.
  */
-export const PermissionModal = (props = {}) =>
+export const OrganizationModal = (props = {}) =>
 {
 	const item = props.item || {};
 	const mode = item.id ? 'edit' : 'add';
 
 	return new Modal({
-		data: new PermissionModel(item),
+		data: new OrganizationModel(item),
 		title: mode === 'edit' ? 'Edit Permission' : 'Add Permission',
 		icon: mode === 'edit' ? Icons.pencil.square : Icons.document.add,
 		description: mode === 'edit' ? `Editing the '${item.name}' Permission` : 'Let\'s add a new Permission.',
@@ -141,7 +141,7 @@ export const PermissionModal = (props = {}) =>
 		}
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
-			Div({ class: "flex flex-auto flex-col w-full gap-4" }, getPermissionForm())
+			Div({ class: "flex flex-auto flex-col w-full gap-4" }, getOrganizationForm())
 		])
 	]).open();
 };

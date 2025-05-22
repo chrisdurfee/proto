@@ -21,6 +21,7 @@ const Page = (url, title, importCallback) => ({
 export const IamSwitch = (basePath) => ([
 	Page(`${basePath}`, 'Roles', () => import('./roles/role-page.js')),
 	Page(`${basePath}/permissions`, 'Permissions', () => import('./permissions/permission-page.js')),
+	Page(`${basePath}/organizations`, 'Organizations', () => import('./organizations/organizations-page.js')),
 ]);
 
 export default IamSwitch;

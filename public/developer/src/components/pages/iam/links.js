@@ -13,5 +13,9 @@ export const Links = (path) => ([
 	{
 		href: `${path}/permissions`,
 		label: 'Permissions'
+	},
+	{
+		href: `${path}/organizations`,
+		label: 'Organizations'
 	}
 ]);
