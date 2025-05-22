@@ -35,9 +35,6 @@ export const OrganizationRow = (row, onSelect) => (
 		]),
 		Td({ class: 'p-4' }, String(row.id)),
 		Td({ class: 'p-4 truncate max-w-[150px]' }, row.name),
-		Td({ class: 'p-4 truncate max-w-[150px]' }, row.slug),
-		Td({ class: 'p-4 truncate max-w-[200px]' }, row.description),
-		Td({ class: 'p-4 truncate max-w-[200px]' }, row.module),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt)
 	])
 );
@@ -53,9 +50,6 @@ const HeaderRow = () => (
 			CheckboxCol({ class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'id', label: 'ID' }),
 			HeaderCol({ key: 'name', label: 'Name' }),
-			HeaderCol({ key: 'slug', label: 'Slug' }),
-			HeaderCol({ key: 'description', label: 'Description' }),
-			HeaderCol({ key: 'module', label: 'Module' }),
 			HeaderCol({ key: 'createdAt', label: 'Created At', class: 'hidden md:table-cell' })
 		])
 	])
