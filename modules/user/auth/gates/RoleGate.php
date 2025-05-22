@@ -12,17 +12,7 @@ use Proto\Auth\Gates\Gate;
  */
 class RoleGate extends Gate
 {
-	/**
-	 * This will check if the user has access to the organization.
-	 *
-	 * @param mixed $organizationId
-	 * @param object $role
-	 * @return bool
-	 */
-	protected function canAccessOrg(?int $organizationId, object $role): bool
-	{
-		return !isset($organizationId) || ($role->organizationId === $organizationId);
-	}
+	use OrganizationTrait;
 
 	/**
 	 * Checks if the user has the specified role.

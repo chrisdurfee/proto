@@ -12,13 +12,16 @@ use Proto\Auth\Gates\Gate;
  */
 class PermissionGate extends Gate
 {
+	use OrganizationTrait;
+
 	/**
 	 * Checks if the user has the specified permission.
 	 *
 	 * @param string $permission The permission to check.
+	 * @param int|null $organizationId The organization ID to check against.
 	 * @return bool True if the user has the permission, otherwise false.
 	 */
-	public function hasPermission(string $permission): bool
+	public function hasPermission(string $permission, ?int $organizationId = null): bool
 	{
 		$user = $this->get('user');
 		if ($user === null)
@@ -29,6 +32,11 @@ class PermissionGate extends Gate
 		$roles = $user->roles ?? [];
 		foreach ($roles as $role)
 		{
+			if (!$this->canAccessOrg($organizationId, $role))
+			{
+				continue;
+			}
+
 			$permissions = $role->permissions ?? [];
 			foreach ($permissions as $perm)
 			{
@@ -45,11 +53,12 @@ class PermissionGate extends Gate
 	 * Checks if the user has the specified permission.
 	 *
 	 * @param string $permission The permission name to check.
+	 * @param int|null $organizationId The organization ID to check against.
 	 * @return bool True if the user has the permission, otherwise false.
 	 */
-	public static function has(string $permission): bool
+	public static function has(string $permission, ?int $organizationId = null): bool
 	{
 		$instance = new self();
-		return $instance->hasPermission($permission);
+		return $instance->hasPermission($permission, $organizationId);
 	}
 }
