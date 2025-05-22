@@ -1,15 +1,49 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Auth\Policies;
 
+use Modules\User\Auth\Gates\OrganizationGate;
 use Proto\Http\Router\Request;
+use Proto\Controllers\Controller;
 
 /**
  * OrganizationPolicy
  *
  * Governs access to organization resources.
+ *
+ * @package Modules\User\Auth\Policies
  */
 class OrganizationPolicy extends Policy
 {
+	/**
+	 * This will set up the organization-based access control gate.
+	 *
+	 * @param ?Controller $controller
+	 * @param OrganizationGate $organizationGate
+	 */
+	public function __construct(
+		?Controller $controller = null,
+		protected OrganizationGate $organizationGate = new OrganizationGate()
+	)
+	{
+		parent::__construct($controller);
+	}
+
+	/**
+	 * Check if the current user can access a specific organization.
+	 *
+	 * @param mixed $orgId The organization ID to check against.
+	 * @return bool True if the current user has access to the organization, otherwise false.
+	 */
+	public function canAccessOrganization(mixed $orgId): bool
+	{
+		if ($this->isAdmin())
+		{
+			return true;
+		}
+
+		return $this->organizationGate->canAccess($orgId);
+	}
+
 	/**
 	 * Default fallback for methods without an explicit policy.
 	 *
@@ -45,7 +79,7 @@ class OrganizationPolicy extends Policy
 			return false;
 		}
 
-		return $this->canAccess('organization.view');
+		return $this->can($id, 'organization.view');
 	}
 
 	/**
@@ -62,12 +96,18 @@ class OrganizationPolicy extends Policy
 	/**
 	 * Shared logic for editing an organization.
 	 *
-	 * @param mixed $data
+	 * @param mixed $orgId
+	 * @param string $permission
 	 * @return bool
 	 */
-	protected function canEdit(mixed $data): bool
+	protected function can(mixed $orgId, string $permission): bool
 	{
-		return $this->canAccess('organization.edit');
+		if (!$this->canAccess($permission))
+		{
+			return false;
+		}
+
+		return $this->canAccessOrganization($orgId);
 	}
 
 	/**
@@ -84,7 +124,7 @@ class OrganizationPolicy extends Policy
 			return false;
 		}
 
-		return $this->canEdit((object) ['id' => $id]);
+		return $this->can($id, 'organization.edit');
 	}
 
 	/**
@@ -101,7 +141,7 @@ class OrganizationPolicy extends Policy
 			return false;
 		}
 
-		return $this->canAccess('organization.delete');
+		return $this->can($id, 'organization.delete');
 	}
 
 	/**
