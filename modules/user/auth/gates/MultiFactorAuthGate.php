@@ -55,7 +55,7 @@ class MultiFactorAuthGate extends Gate
 	 */
 	protected function createCode(): string
 	{
-		$code = random_int(0, 999999999);
+		$code =  random_int(0, 999999999);
 		return str_pad((string) $code, self::AUTH_CODE_LENGTH, '0', STR_PAD_LEFT);
 	}
 
