@@ -397,6 +397,22 @@ abstract class Query extends Template
 	}
 
 	/**
+	 * This will add a JSON condition to the WHERE clause.
+	 *
+	 * @param string $columnName
+	 * @param array|object $value
+	 * @param mixed $path
+	 * @return Query
+	 */
+	public function whereJson(string $columnName, array|object $value, ?string $path = '$'): self
+	{
+		$encodedValue = json_encode($value);
+		$condition = "JSON_CONTAINS({$columnName}, '{$encodedValue}', '{$path}')";
+		$this->conditions[] = $condition;
+		return $this;
+	}
+
+	/**
 	 * Adds ORDER BY clauses to the query.
 	 *
 	 * @param mixed ...$columns One or more columns for ordering, each as a string or an array.
@@ -436,7 +452,7 @@ abstract class Query extends Template
 	public function in(string $columnName, array $fields): self
 	{
 		$placeholders = implode(',', array_fill(0, count($fields), '?'));
-		$condition    = "{$columnName} IN ({$placeholders})";
+		$condition = "{$columnName} IN ({$placeholders})";
 		$this->conditions[] = $condition;
 		return $this;
 	}
