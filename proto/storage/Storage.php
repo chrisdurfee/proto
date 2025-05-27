@@ -782,7 +782,7 @@ class Storage implements StorageInterface
 	 * @param mixed $filter Filter criteria.
 	 * @return void
 	 */
-	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], $filter = null)
+	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], mixed $filter = null): void
 	{
 		// Implement modifier logic if needed.
 	}
@@ -823,9 +823,9 @@ class Storage implements StorageInterface
 	 * @param int|null $offset Offset.
 	 * @param int|null $count Limit count.
 	 * @param array|null $modifiers Modifiers.
-	 * @return array|bool
+	 * @return array
 	 */
-	public function all($filter = null, $offset = null, $count = null, ?array $modifiers = null)
+	public function all($filter = null, $offset = null, $count = null, ?array $modifiers = null): array
 	{
 		$params = [];
 		return $this->where($filter, $params, $modifiers)

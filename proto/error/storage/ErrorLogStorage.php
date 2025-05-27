@@ -30,10 +30,10 @@ class ErrorLogStorage extends Storage
 	 * @param array $where
 	 * @param array|null $modifiers
 	 * @param array $params
-	 * @param array $filter
+	 * @param mixed $filter
 	 * @return void
 	 */
-	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], $filter = null): void
+	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], mixed $filter = null): void
 	{
 		$custom = $modifiers['custom'] ?? '';
 		if ($custom)

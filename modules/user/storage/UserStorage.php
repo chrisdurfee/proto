@@ -120,7 +120,7 @@ class UserStorage extends Storage
 	 * @param string $username
 	 * @return int|bool True is successful false on error. -1 if username is taken.
 	 */
-	protected function updateUsername(int $id, string $username)
+	protected function updateUsername(int $id, string $username): bool|int
 	{
 		$taken = $this->isUsernameTaken($username);
 		if ($taken === true)

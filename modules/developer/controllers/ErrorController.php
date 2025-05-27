@@ -30,6 +30,7 @@ class ErrorController extends Controller
 
 		return $this->updateResolved($id, $resolved);
 	}
+
 	/**
 	 * This will update model item resolved status.
 	 *
