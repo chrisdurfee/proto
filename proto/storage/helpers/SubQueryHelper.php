@@ -91,12 +91,11 @@ class SubQueryHelper
 	{
 		$jsonObjectMap = [];
 		$alias = $aggregationTargetJoin->getAlias();
-
 		$directFields = FieldHelper::formatFields($aggregationTargetJoin->getFields(), $isSnakeCase, $alias);
 		foreach ($directFields as $field)
 		{
 			// Use alias.field_name as value, field_name as key
-			$key = preg_replace('/^.*\./', '', $field);
+			$key = self::removeTablePrefix($field);
 			$jsonObjectMap[$key] = $field;
 		}
 
@@ -118,7 +117,7 @@ class SubQueryHelper
 				$nestedAlias = $nextAggregationTarget->getAs() ?? $nextAggregationTarget->getTableName();
 
 				// Remove potential alias prefix if table name was used
-				$nestedAlias = preg_replace('/^.*\./', '', $nestedAlias);
+				$nestedAlias = self::removeTablePrefix($nestedAlias);
 				$nestedAlias = $isSnakeCase ? Strings::snakeCase($nestedAlias) : $nestedAlias;
 
 				// Add the raw SQL string as the value for the nested key
@@ -191,7 +190,7 @@ class SubQueryHelper
 			$bridgeFields = FieldHelper::formatFields($bridgeJoin->getFields(), $isSnakeCase, $bridgeJoin->getAlias());
 			foreach ($bridgeFields as $field)
 			{
-				$key = preg_replace('/^.*\./', '', $field);
+				$key = self::removeTablePrefix($field);
 				$jsonObjectMap[$key] = $field;
 			}
 		}
@@ -275,11 +274,10 @@ class SubQueryHelper
 		{
 			return null;
 		}
-
 		// Determine the final alias for this subquery in the main query's SELECT list
 		$aggregationTargetJoin = $initialMultipleJoin->getMultipleJoin();
 		$asAlias = $aggregationTargetJoin->getAs() ?? $aggregationTargetJoin->getTableName();
-		$asAlias = preg_replace('/^.*\./', '', $asAlias);
+		$asAlias = self::removeTablePrefix($asAlias);
 		$asAlias = $isSnakeCase ? Strings::snakeCase($asAlias) : $asAlias;
 
 		// Return the subquery wrapped in parentheses with its final alias
@@ -350,5 +348,16 @@ class SubQueryHelper
 
 		// Construct the condition suitable for the WHERE clause of the subquery
 		return "{$left} {$operator} {$right}";
+	}
+
+	/**
+	 * Removes the table prefix from a field or alias (everything before the last dot).
+	 *
+	 * @param string $fieldName The field name or alias that may contain a table prefix.
+	 * @return string The field name without the table prefix.
+	 */
+	protected static function removeTablePrefix(string $fieldName): string
+	{
+		return preg_replace('/^.*\./', '', $fieldName);
 	}
 }
