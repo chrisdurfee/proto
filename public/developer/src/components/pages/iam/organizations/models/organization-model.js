@@ -8,7 +8,7 @@ import { Model } from "@base-framework/base";
  * @type {typeof Model}
  */
 export const OrganizationModel = Model.extend({
-	url: '/api/user/organizations',
+	url: '/api/user/organization',
 
 	xhr: {
 
