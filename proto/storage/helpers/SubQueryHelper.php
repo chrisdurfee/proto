@@ -16,38 +16,64 @@ use Proto\Utils\Strings;
 class SubQueryHelper
 {
 	/**
-	 * Generates a subquery join definition for a ModelJoin marked as 'multiple'.
-	 * This is used to create a subquery that aggregates related records into JSON.
+	 * Build a join‐able subquery definition for a ModelJoin marked multiple.
 	 *
-	 * @param ModelJoin $multipleJoin The join object representing the multiple relationship.
-	 * @param callable $builderCb Callback to get a query builder instance.
-	 * @param bool $isSnakeCase Indicates whether to use snake_case for field names.
-	 * @return array|null The join definition array or null if invalid.
+	 * @param ModelJoin $join The “multiple” join.
+	 * @param callable $builderCb fn($table, $alias): QueryHandler.
+	 * @param bool $isSnakeCase
+	 * @return array|null
 	 */
 	public static function getSubQueryJoinDefinition(
-		ModelJoin $multipleJoin,
+		ModelJoin $join,
 		callable $builderCb,
 		bool $isSnakeCase = false
 	): ?array
 	{
-		$subQuerySql = self::setupSubQuery($multipleJoin, $builderCb, $isSnakeCase);
-		if ($subQuerySql === null)
+		$aggTarget = $join->getMultipleJoin();
+		if (! $aggTarget)
 		{
 			return null;
 		}
 
-		$table = $multipleJoin->getTableName();
-		$alias = $multipleJoin->getAlias();
+		$jsonMap = self::buildJsonObjectStructure(
+			$aggTarget,
+			$builderCb,
+			$isSnakeCase
+		);
 
-		$on = $multipleJoin->getOn();
+		$jsonColumn = $aggTarget->getAs() ?? $aggTarget->getTableName();
+		if ($isSnakeCase)
+		{
+			$jsonColumn = Strings::snakeCase($jsonColumn);
+		}
+
+		[$jsonSql] = self::getJsonAggSql($jsonColumn, $jsonMap);
+
+		$onClause  = $join->getOn()[0];
+		$keyColumn = $onClause[count($onClause) - 1];
+
+		$innerJoins = [];
+		self::collectJoinsForLevel($join, $innerJoins);
+
+		$subQuery = $builderCb(
+			$join->getTableName(),
+			$join->getAlias()
+		)
+			->select(
+				[ $keyColumn ],
+				[ $jsonSql, $jsonColumn ]
+			)
+			->joins($innerJoins)
+			->groupBy($keyColumn);
 
 		return [
-			'table' => "({$subQuerySql})",
-			'alias' => $alias,
-			'type' => $multipleJoin->getType(),
-			'on' => $on,
+			'table' => "({$subQuery})",
+			'alias' => $join->getAlias(),
+			'type' => $join->getType(),
+			'on' => $join->getOn(),
 			'fields' => [
-				[ 'json_' . $alias ]
+				[ $keyColumn ],
+				[ "{$jsonColumn}", $jsonColumn ]
 			]
 		];
 	}

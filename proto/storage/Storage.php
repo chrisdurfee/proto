@@ -511,11 +511,11 @@ class Storage implements StorageInterface
 				};
 
 				// Call the main entry point of the refactored SubQueryHelper
-				$subQuerySql = SubQueryHelper::setupSubQuery($join, $builderCallback, $isSnakeCase);
-				if ($subQuerySql !== null)
-				{
-					$cols[] = [$subQuerySql]; // Wrap in array if QueryBuilder expects this for raw SQL
-				}
+				// $subQuerySql = SubQueryHelper::setupSubQuery($join, $builderCallback, $isSnakeCase);
+				// if ($subQuerySql !== null)
+				// {
+				// 	$cols[] = [$subQuerySql]; // Wrap in array if QueryBuilder expects this for raw SQL
+				// }
 			}
 		}
 	}
@@ -546,13 +546,16 @@ class Storage implements StorageInterface
 
 	/**
 	 * Map join definitions to an array suitable for the main QueryBuilder's ->joins() method.
-	 * Excludes joins that were handled by generating a subquery via getJoinCols.
+	 * Now supports turning a 'multiple' ModelJoin into a subquery-join.
 	 *
-	 * @param array|null $joins Join definitions from the model.
-	 * @param bool $allowFields Whether to include field lists (usually false now for main query).
+	 * @param array|null $joins
+	 * @param bool $allowFields
 	 * @return array
 	 */
-	protected function getMappedJoins(?array $joins = null, bool $allowFields = true): array
+	protected function getMappedJoins(
+		?array $joins = null,
+		bool $allowFields = true
+	): array
 	{
 		if (empty($joins))
 		{
@@ -560,23 +563,48 @@ class Storage implements StorageInterface
 		}
 
 		$isSnakeCase = $this->model->isSnakeCase();
-		$mapped = [];
+		$mapped      = [];
+
+		// 1) subquery‐joins for all multiple ModelJoins
 		foreach ($joins as $join)
 		{
-			/** @var ModelJoin $join */
+			if (! $join->isMultiple())
+			{
+				continue;
+			}
+
+			$def = SubQueryHelper::getSubQueryJoinDefinition(
+				$join,
+				fn($table, $alias) => $this->builder($table, $alias),
+				$isSnakeCase
+			);
+
+			if ($def !== null)
+			{
+				$mapped[] = $def;
+			}
+		}
+
+		// 2) normal joins
+		foreach ($joins as $join)
+		{
 			if ($this->isJoinHandledBySubquery($join, $joins))
 			{
 				continue;
 			}
 
-			// Add regular, non-aggregated joins to the main query
 			$mapped[] = [
 				'table' => $join->getTableName(),
 				'alias' => $join->getAlias(),
 				'type' => $join->getType(),
 				'on' => $join->getOn(),
 				'using' => $join->getUsing(),
-				'fields' => ($allowFields && !$join->isMultiple()) ? FieldHelper::formatFields($join->getFields(), $isSnakeCase) : null
+				'fields' => ($allowFields && !$join->isMultiple())
+					? FieldHelper::formatFields(
+						$join->getFields(),
+						$isSnakeCase
+					)
+					: null
 			];
 		}
 
