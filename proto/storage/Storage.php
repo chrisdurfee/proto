@@ -552,7 +552,7 @@ class Storage implements StorageInterface
 	 * @param bool $allowFields Whether to include field lists (usually false now for main query).
 	 * @return array
 	 */
-	protected function getMappedJoins(?array $joins = null, bool $allowFields = true): array // Return type changed to array
+	protected function getMappedJoins(?array $joins = null, bool $allowFields = true): array
 	{
 		if (empty($joins))
 		{

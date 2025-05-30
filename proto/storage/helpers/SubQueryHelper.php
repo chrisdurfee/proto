@@ -16,6 +16,43 @@ use Proto\Utils\Strings;
 class SubQueryHelper
 {
 	/**
+	 * Generates a subquery join definition for a ModelJoin marked as 'multiple'.
+	 * This is used to create a subquery that aggregates related records into JSON.
+	 *
+	 * @param ModelJoin $multipleJoin The join object representing the multiple relationship.
+	 * @param callable $builderCb Callback to get a query builder instance.
+	 * @param bool $isSnakeCase Indicates whether to use snake_case for field names.
+	 * @return array|null The join definition array or null if invalid.
+	 */
+	public static function getSubQueryJoinDefinition(
+		ModelJoin $multipleJoin,
+		callable $builderCb,
+		bool $isSnakeCase = false
+	): ?array
+	{
+		$subQuerySql = self::setupSubQuery($multipleJoin, $builderCb, $isSnakeCase);
+		if ($subQuerySql === null)
+		{
+			return null;
+		}
+
+		$table = $multipleJoin->getTableName();
+		$alias = $multipleJoin->getAlias();
+
+		$on = $multipleJoin->getOn();
+
+		return [
+			'table' => "({$subQuerySql})",
+			'alias' => $alias,
+			'type' => $multipleJoin->getType(),
+			'on' => $on,
+			'fields' => [
+				[ 'json_' . $alias ]
+			]
+		];
+	}
+
+	/**
 	 * Builds the SELECT part (JSON aggregation) for a given level of nesting.
 	 * Recursively calls setupSubQueryForLevel for nested aggregations.
 	 *
