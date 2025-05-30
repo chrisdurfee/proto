@@ -5,6 +5,7 @@ use Modules\User\Auth\Gates\UserGate;
 use Modules\User\Auth\Gates\RoleGate;
 use Modules\User\Auth\Gates\ResourceGate;
 use Modules\User\Auth\Gates\PermissionGate;
+use Modules\User\Auth\Gates\OrganizationGate;
 use Proto\Module\Module;
 
 /**
@@ -38,5 +39,6 @@ class UserModule extends Module
 		$auth->role = new RoleGate();
 		$auth->resource = new ResourceGate();
 		$auth->permission = new PermissionGate();
+		$auth->organization = new OrganizationGate();
 	}
 }
