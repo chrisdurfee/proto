@@ -485,42 +485,6 @@ class Storage implements StorageInterface
 	}
 
 	/**
-	 * Append join columns (potentially as subqueries) to model fields.
-	 *
-	 * @param array $joins Join definitions from the model.
-	 * @param array &$cols Column list to append to.
-	 * @param bool $isSnakeCase Snake case flag.
-	 * @return void
-	 */
-	protected function getJoinCols(array $joins, array &$cols, bool $isSnakeCase): void
-	{
-		foreach ($joins as $join)
-		{
-			/** @var ModelJoin $join */
-			if (!$join->isMultiple())
-			{
-				continue;
-			}
-
-			$aggregationTarget = $join->getMultipleJoin();
-			if ($aggregationTarget && (count($aggregationTarget->getFields()) > 0 || $aggregationTarget->getMultipleJoin() !== null))
-			{
-				$builderCallback = function($table, $alias): QueryHandler
-				{
-					return $this->builder($table, $alias);
-				};
-
-				// Call the main entry point of the refactored SubQueryHelper
-				// $subQuerySql = SubQueryHelper::setupSubQuery($join, $builderCallback, $isSnakeCase);
-				// if ($subQuerySql !== null)
-				// {
-				// 	$cols[] = [$subQuerySql]; // Wrap in array if QueryBuilder expects this for raw SQL
-				// }
-			}
-		}
-	}
-
-	/**
 	  * Retrieve model fields AND generate subquery columns.
 	  *
 	  * @param array $joins Join definitions.
@@ -537,9 +501,6 @@ class Storage implements StorageInterface
 			// Format field ensures alias.field_name or just field_name if no alias
 			$cols[] = FieldHelper::formatField($field, $isSnakeCase);
 		}
-
-		// Append subquery columns generated from 'multiple' joins
-		$this->getJoinCols($joins, $cols, $isSnakeCase);
 
 		return $cols;
 	}
@@ -775,7 +736,7 @@ class Storage implements StorageInterface
 	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
-	public function getRows($filter = null, $offset = null, $limit = null, ?array $modifiers = null): object
+	public function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
 	{
 		$params = [];
 		$where = static::getWhere($params, $filter, $modifiers);
@@ -838,7 +799,7 @@ class Storage implements StorageInterface
 	 * @param array|null $modifiers Modifiers.
 	 * @return AdapterProxy
 	 */
-	public function where($filter, array &$params, ?array $modifiers = null): AdapterProxy
+	public function where(mixed $filter, array &$params, ?array $modifiers = null): AdapterProxy
 	{
 		$where = static::getWhere($params, $filter, $modifiers);
 		return $this->select()->where(...$where);
@@ -853,7 +814,7 @@ class Storage implements StorageInterface
 	 * @param array|null $modifiers Modifiers.
 	 * @return array
 	 */
-	public function all($filter = null, $offset = null, $count = null, ?array $modifiers = null): array
+	public function all(mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null): array
 	{
 		$params = [];
 		return $this->where($filter, $params, $modifiers)
