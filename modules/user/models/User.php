@@ -90,9 +90,6 @@ class User extends Model
 				);
 
 		OrganizationUser::bridge($builder)
-			->fields(
-				'organizationId'
-			)
 			->many(Organization::class)
 			->on(['organizationId', 'id'])
 			->fields(
