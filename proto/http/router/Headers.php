@@ -11,9 +11,22 @@ namespace Proto\Http\Router;
 class Headers
 {
 	/**
-	 * This will convert the methods array to a string.
+	 * Default headers definition.
 	 *
-	 * @param array $methods
+	 * @var array<string,string|null>
+	 */
+	protected static array $defaultHeaders =
+	[
+		'Access-Control-Allow-Origin' => '*',
+		'Access-Control-Allow-Headers' => '*',
+		'Access-Control-Allow-Methods' => null, // placeholder
+		'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0'
+	];
+
+	/**
+	 * Convert the methods array to a comma-separated string.
+	 *
+	 * @param array<string> $methods
 	 * @return string
 	 */
 	protected static function convertMethodsToString(array $methods): string
@@ -22,16 +35,41 @@ class Headers
 	}
 
 	/**
-	 * Sets up response headers.
+	 * Prepare the headers array for a given set of allowed methods.
 	 *
-     * @param array<string> $methods Allowed HTTP methods.
+	 * @param array<string> $methods
+	 * @return array<string,string>
+	 */
+	protected static function prepare(array $methods): array
+	{
+		$headers = self::$defaultHeaders;
+		$headers['Access-Control-Allow-Methods'] = self::convertMethodsToString($methods);
+		return $headers;
+	}
+
+	/**
+	 * Render (send) all headers in the given array.
+	 *
+	 * @param array<string,string> $headers
+	 * @return void
+	 */
+	public static function render(array $headers): void
+	{
+		foreach ($headers as $name => $value)
+		{
+			header("{$name}: {$value}");
+		}
+	}
+
+	/**
+	 * Public entry point: set up and send all standard headers.
+	 *
+	 * @param array<string> $methods Allowed HTTP methods.
 	 * @return void
 	 */
 	public static function set(array $methods): void
 	{
-		header('Access-Control-Allow-Origin: *');
-		header('Access-Control-Allow-Headers: *');
-		header('Access-Control-Allow-Methods: ' . self::convertMethodsToString($methods));
-		header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+		$headers = self::prepare($methods);
+		self::render($headers);
 	}
 }
