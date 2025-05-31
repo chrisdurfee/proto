@@ -215,11 +215,9 @@ class UserStorage extends Storage
 			->where(...$where)
 			->limit($offset, $limit);
 
-		$params[] = '2';
-		$sql->where('ou.organization_id = ?');
+		//$sql->whereJoin('organizations', ["id" => 2], $params);
 
 		$this->setOrderBy($sql, $modifiers);
-		$sql->debug();
 
 		$rows = $sql->fetch($params);
 		return (object)[ 'rows' => $rows];

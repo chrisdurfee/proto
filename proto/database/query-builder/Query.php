@@ -416,15 +416,28 @@ abstract class Query extends Template
 	 * This will add a JSON condition to the WHERE clause for a join.
 	 *
 	 * @param string $columnName
-	 * @param mixed $id
-	 * @param string $property
+	 * @param mixed $value
+	 * @param array $params
 	 * @param mixed $path
 	 * @return Query
 	 */
-	public function whereJoin(string $columnName, mixed $id, string $property = 'id', ?string $path = '$'): self
+	public function whereJoin(
+		string $columnName,
+		mixed $value,
+		array &$params,
+		?string $path = '$'
+	): self
 	{
-		$value = (object)[$property => $id];
-		return $this->whereJson($columnName, $value, $path);
+		/**
+		 * This will create the JSON condition for a join.
+		 */
+		$encodedValue = json_encode((object)$value);
+		$params[] = $encodedValue;
+
+		// Use a placeholder for the JSON value in the condition
+		$condition = "JSON_CONTAINS({$columnName}, ?, '{$path}')";
+		$this->conditions[] = $condition;
+		return $this;
 	}
 
 	/**

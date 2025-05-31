@@ -156,4 +156,24 @@ class AdapterProxy
 		$this->sql->limit(1);
 		return $this->db->first((string) $this->sql, $params);
 	}
+
+	/**
+	 * Add a JSON condition to the WHERE clause for a join, binding $params by reference.
+	 *
+	 * @param string $columnName The JSON column (e.g. "ou.organizations").
+	 * @param mixed $value The value to encode (will become {"id":…} or similar).
+	 * @param array<string> & $params The binding array that gets appended.
+	 * @param string $path The JSON path, default '$'.
+	 * @return self
+	 */
+	public function whereJoin(
+		string $columnName,
+		mixed $value,
+		array &$params,
+		string $path = '$'
+	): self
+	{
+		$this->sql->whereJoin($columnName, $value, $params, $path);
+		return $this;
+	}
 }
