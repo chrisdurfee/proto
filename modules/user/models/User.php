@@ -99,9 +99,9 @@ class User extends Model
 
 		NotificationPreference::one($builder)
 			->fields(
-				'allowEmail',
-				'allowSms',
-				'allowPush'
+				[['IF(allow_email = 0, 0, 1)'], 'allowEmail'],
+				[['IF(allow_sms = 0, 0, 1)'], 'allowSms'],
+				[['IF(allow_push = 0, 0, 1)'], 'allowPush']
 			);
 	}
 
