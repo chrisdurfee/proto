@@ -56,26 +56,6 @@ class SubQueryHelper
 		$onClause = $join->getOn()[0];
 		$keyColumn = $onClause[count($onClause) - 1];
 
-		/**
-		 * We also want to include the fields from the join.
-		 */
-		$fields = $join->getFields();
-		foreach ($fields as $key => $field)
-		{
-			$field = self::removeTablePrefix($field);
-			if ($isSnakeCase)
-			{
-				$field = Strings::snakeCase($field);
-			}
-			$fields[$key] = $field;
-		}
-
-		$allFields = array_merge(
-			$fields,
-			[ [ $keyColumn ] ],
-			[ [ $jsonSql, $jsonColumn ] ]
-		);
-
 		$innerJoins = [];
 		self::collectJoinsForLevel($join, $innerJoins);
 
@@ -83,7 +63,10 @@ class SubQueryHelper
 			$join->getTableName(),
 			$join->getAlias()
 		)
-			->select(...$allFields)
+			->select(
+				[ $keyColumn ],
+				[ $jsonSql, $jsonColumn ]
+			)
 			->joins($innerJoins)
 			->groupBy($keyColumn);
 
