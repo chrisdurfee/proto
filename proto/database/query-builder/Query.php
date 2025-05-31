@@ -417,12 +417,13 @@ abstract class Query extends Template
 	 *
 	 * @param string $columnName
 	 * @param mixed $id
+	 * @param string $property
 	 * @param mixed $path
 	 * @return Query
 	 */
-	public function whereJoin(string $columnName, mixed $id, ?string $path = '$'): self
+	public function whereJoin(string $columnName, mixed $id, string $property = 'id', ?string $path = '$'): self
 	{
-		$value = (object)['id' => $id];
+		$value = (object)[$property => $id];
 		return $this->whereJson($columnName, $value, $path);
 	}
 
