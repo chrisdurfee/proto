@@ -49,8 +49,32 @@ class SubQueryHelper
 
 		[$jsonSql] = self::getJsonAggSql($jsonColumn, $jsonMap);
 
+		/**
+		 * The on clause needs to be added to the subquery
+		 * to ensure the join works correctly.
+		 */
 		$onClause = $join->getOn()[0];
 		$keyColumn = $onClause[count($onClause) - 1];
+
+		/**
+		 * We also want to include the fields from the join.
+		 */
+		$fields = $join->getFields();
+		foreach ($fields as $key => $field)
+		{
+			$field = self::removeTablePrefix($field);
+			if ($isSnakeCase)
+			{
+				$field = Strings::snakeCase($field);
+			}
+			$fields[$key] = $field;
+		}
+
+		$allFields = array_merge(
+			$fields,
+			[ [ $keyColumn ] ],
+			[ [ $jsonSql, $jsonColumn ] ]
+		);
 
 		$innerJoins = [];
 		self::collectJoinsForLevel($join, $innerJoins);
@@ -59,10 +83,7 @@ class SubQueryHelper
 			$join->getTableName(),
 			$join->getAlias()
 		)
-			->select(
-				[ $keyColumn ],
-				[ $jsonSql, $jsonColumn ]
-			)
+			->select(...$allFields)
 			->joins($innerJoins)
 			->groupBy($keyColumn);
 

@@ -197,4 +197,31 @@ class UserStorage extends Storage
 
 		return $userId;
 	}
+
+	/**
+	 * Retrieve rows by filter, limit, and modifiers.
+	 *
+	 * @param array|object|null $filter Filter criteria.
+	 * @param int|null $offset Offset.
+	 * @param int|null $limit Limit count.
+	 * @param array|null $modifiers Modifiers.
+	 * @return object
+	 */
+	public function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
+	{
+		$params = [];
+		$where = static::getWhere($params, $filter, $modifiers);
+		$sql = $this->select()
+			->where(...$where)
+			->limit($offset, $limit);
+
+		$params[] = '2';
+		$sql->where('ou.organization_id = ?');
+
+		$this->setOrderBy($sql, $modifiers);
+		$sql->debug();
+
+		$rows = $sql->fetch($params);
+		return (object)[ 'rows' => $rows];
+	}
 }

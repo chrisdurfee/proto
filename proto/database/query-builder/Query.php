@@ -413,6 +413,20 @@ abstract class Query extends Template
 	}
 
 	/**
+	 * This will add a JSON condition to the WHERE clause for a join.
+	 *
+	 * @param string $columnName
+	 * @param mixed $id
+	 * @param mixed $path
+	 * @return Query
+	 */
+	public function whereJoin(string $columnName, mixed $id, ?string $path = '$'): self
+	{
+		$value = (object)['id' => $id];
+		return $this->whereJson($columnName, $value, $path);
+	}
+
+	/**
 	 * Adds ORDER BY clauses to the query.
 	 *
 	 * @param mixed ...$columns One or more columns for ordering, each as a string or an array.
