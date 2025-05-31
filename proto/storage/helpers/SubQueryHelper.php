@@ -49,7 +49,7 @@ class SubQueryHelper
 
 		[$jsonSql] = self::getJsonAggSql($jsonColumn, $jsonMap);
 
-		$onClause  = $join->getOn()[0];
+		$onClause = $join->getOn()[0];
 		$keyColumn = $onClause[count($onClause) - 1];
 
 		$innerJoins = [];
