@@ -310,6 +310,17 @@ class Data
 	}
 
 	/**
+	 * Returns a **read-only** wrapper around the current data snapshot.
+	 * Any attempt to modify properties on this object will throw a RuntimeException.
+	 *
+	 * @return ReadOnlyObject
+	 */
+	public function getReadOnlyData(): ReadOnlyObject
+	{
+		return new ReadOnlyObject($this->getData());
+	}
+
+	/**
 	 * Maps data keys for storage using the mapper strategy.
 	 * If snake_case mapping is enabled, keys will be converted accordingly.
 	 *
