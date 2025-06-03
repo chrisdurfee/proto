@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\User\Storage\Multifactor;
+namespace Modules\Auth\Storage\Multifactor;
 
 use Proto\Storage\Storage;
 
@@ -8,7 +8,7 @@ use Proto\Storage\Storage;
  *
  * This will handle the storage for the user authenticated devices.
  *
- * @package Modules\User\Storage\Multifactor
+ * @package Modules\Auth\Storage\Multifactor
  */
 class UserAuthedDeviceStorage extends Storage
 {

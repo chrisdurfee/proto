@@ -1,14 +1,14 @@
 <?php declare(strict_types=1);
-namespace Modules\User\Controllers;
+namespace Modules\Auth\Controllers;
 
+use Modules\User\Gateway\Gateway;
 use Modules\User\Models\User;
-use Modules\User\Models\LoginLog;
-use Modules\User\Controllers\LoginAttemptController;
-use Modules\User\Controllers\UserStatus;
-use Modules\User\Services\Auth\MultiFactorAuthService;
-use Modules\User\Controllers\Multifactor\MultiFactorHelper;
-use Modules\User\Services\Password\PasswordService;
-use Modules\User\Services\User\NewUserService;
+use Modules\Auth\Models\LoginLog;
+use Modules\Auth\Controllers\LoginAttemptController;
+use Modules\Auth\Controllers\UserStatus;
+use Modules\Auth\Services\Auth\MultiFactorAuthService;
+use Modules\Auth\Controllers\Multifactor\MultiFactorHelper;
+use Modules\Auth\Services\Password\PasswordService;
 use Proto\Controllers\Controller;
 use Proto\Http\Router\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
@@ -18,7 +18,7 @@ use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
  *
  * Handles user login, logout, registration, MFA flows, and CSRF token.
  *
- * @package Modules\User\Controllers
+ * @package Modules\Auth\Controllers
  */
 class AuthController extends Controller
 {
@@ -30,20 +30,24 @@ class AuthController extends Controller
 	const MAX_ATTEMPTS = 10;
 
 	/**
+	 * @var Gateway
+	 */
+	protected Gateway $user;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param string|null $modelClass
 	 * @param MultiFactorAuthService $mfaService
 	 * @param PasswordService $pwService
 	 * @return void
 	 */
 	public function __construct(
-		protected ?string $modelClass = User::class,
 		protected MultiFactorAuthService $mfaService = new MultiFactorAuthService(),
 		protected PasswordService $pwService = new PasswordService(),
 	)
 	{
 		parent::__construct();
+		$this->user = modules()->user();
 	}
 
 	/**
@@ -201,7 +205,7 @@ class AuthController extends Controller
 			return $this->error('The user is not authenticated.', HttpStatus::UNAUTHORIZED->value);
 		}
 
-		$user = $this->modelClass::get($userId);
+		$user = $this->user->get($userId);
 		if (!$user)
 		{
 			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
@@ -227,8 +231,7 @@ class AuthController extends Controller
 			return $this->error('The data is invalid for registration.', HttpStatus::BAD_REQUEST->value);
 		}
 
-		$service = new NewUserService();
-		$user = $service->createUser($data);
+		$user = $this->user->register($data);
 		if (!$user)
 		{
 			return $this->error('The registration has failed.', HttpStatus::BAD_REQUEST->value);
@@ -258,7 +261,7 @@ class AuthController extends Controller
 	 */
 	protected function authenticate(string $username, string $password, string $ipAddress): int
 	{
-		$userId = $this->modelClass::authenticate($username, $password);
+		$userId = $this->user->authenticate($username, $password);
 		if ($userId < 0)
 		{
 			LoginAttemptController::create((object)[
@@ -279,8 +282,7 @@ class AuthController extends Controller
 	 */
 	protected function updateStatus(User $user, string $status): bool
 	{
-		$user->status = $status;
-		$success = $user->updateStatus();
+		$success = $this->user->updateStatus($user->id, $status);
 		if (!$success)
 		{
 			return false;
@@ -331,7 +333,7 @@ class AuthController extends Controller
 	 */
 	protected function getUserId(mixed $userId): ?User
 	{
-		return $this->modelClass::get($userId);
+		return modules()->user()->get($userId);
 	}
 
 	/**
@@ -348,8 +350,7 @@ class AuthController extends Controller
 			return $this->error('The email is missing.', HttpStatus::BAD_REQUEST->value);
 		}
 
-		$model = new $this->modelClass();
-		$user = $model->getByEmail($email);
+		$user = $this->user->getByEmail($email);
 		if (!$user)
 		{
 			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);

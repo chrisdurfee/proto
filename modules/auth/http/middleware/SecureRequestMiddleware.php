@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
-namespace Modules\User\Http\Middleware;
+namespace Modules\Auth\Http\Middleware;
 
 use Proto\Http\Router\Request;
-use Modules\User\Auth\Gates\SecureRequestGate;
+use Modules\Auth\Auth\Gates\SecureRequestGate;
 use Proto\Http\Router\Response;
 use Proto\Utils\Format\JsonFormat;
 
@@ -11,7 +11,7 @@ use Proto\Utils\Format\JsonFormat;
  *
  * Middleware to secure requests by validating the request id to a user id
  *
- * @package Proto\Http\Middleware
+ * @package Modules\Auth\Http\Middleware
  */
 class SecureRequestMiddleware
 {
@@ -24,16 +24,16 @@ class SecureRequestMiddleware
 	 */
 	public function handle(Request $request, callable $next): mixed
 	{
-        $gate = new SecureRequestGate();
+		$gate = new SecureRequestGate();
 		if ($gate->isValid($request->input('requestId'), $request->userId()) === false)
-        {
-            self::exitWithResponse();
-        }
+		{
+			self::exitWithResponse();
+		}
 
 		return $next($request);
 	}
 
-    /**
+	/**
 	 * This will exit the application with a 403 response.
 	 *
 	 * @return void

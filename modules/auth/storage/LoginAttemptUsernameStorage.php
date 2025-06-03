@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\User\Storage;
+namespace Modules\Auth\Storage;
 
 use Proto\Storage\Storage;
 
@@ -8,7 +8,7 @@ use Proto\Storage\Storage;
  *
  * This will handle the login attempt username storage.
  *
- * @package Modules\User\Storage
+ * @package Modules\Auth\Storage
  */
 class LoginAttemptUsernameStorage extends Storage
 {
