@@ -449,6 +449,55 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+     * Define a many-to-many (BelongsToMany) relationship.
+     *
+     * @param string $related Related model class (e.g. Role::class).
+     * @param string|null $pivotTable Pivot table name (defaults to alphabetical join of both tables).
+     * @param string|null $foreignPivot FK on pivot for this model (defaults to snake-case this model + "_id").
+     * @param string|null $relatedPivot FK on pivot for the related model (defaults to snake-case related model + "_id").
+     * @param string|null $parentKey PK on this model (defaults to this model's key).
+     * @param string|null $relatedKey PK on related model (defaults to related model's key).
+     * @return Relations\BelongsToMany
+     */
+    public function belongsToMany(
+        string $related,
+        ?string $pivotTable = null,
+        ?string $foreignPivot = null,
+        ?string $relatedPivot = null,
+        ?string $parentKey = null,
+        ?string $relatedKey = null
+    ): Relations\BelongsToMany
+	{
+        // 1) Determine default pivot table name if none given:
+        //    alphabetical order of table names, e.g. "role_user"
+        if ($pivotTable === null)
+		{
+            $tables = [
+                (new static())->getTableName(),
+                (new $related())->getTableName()
+            ];
+            sort($tables, SORT_STRING);
+            $pivotTable = implode('_', $tables);
+        }
+
+        // 2) Determine FKs on pivot if none given
+        $parentKey = $parentKey ?? $this->getIdKeyName();
+        $foreignPivot = $foreignPivot ?? (Strings::snakeCase(static::getIdClassName()) . '_id');
+        $relatedKey = $relatedKey ?? (new $related())->getIdKeyName();
+        $relatedPivot = $relatedPivot ?? (Strings::snakeCase((new $related())::getIdClassName()) . '_id');
+
+        return new Relations\BelongsToMany(
+            $related,
+            $pivotTable,
+            $foreignPivot,
+            $relatedPivot,
+            $parentKey,
+            $relatedKey,
+            $this
+        );
+    }
+
+	/**
 	 * Call a method on a given callable.
 	 *
 	 * @param array $callable Callable to execute.

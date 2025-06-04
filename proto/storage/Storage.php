@@ -62,13 +62,15 @@ class Storage extends TableStorage
 	/**
 	 * Create a query builder for the model table.
 	 *
+	 * @param string|null $tableName Optional table name.
 	 * @param string|null $alias Optional table alias.
 	 * @return QueryHandler
 	 */
-	public function table(?string $alias = null): QueryHandler
+	public function table(?string $tableName = null, ?string $alias = null): QueryHandler
 	{
+		$tableName = $tableName ?? $this->tableName;
 		$alias = $alias ?? $this->alias;
-		return $this->db->table($this->tableName, $alias);
+		return $this->db->table($tableName, $alias);
 	}
 
 	/**

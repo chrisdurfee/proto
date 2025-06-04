@@ -215,10 +215,10 @@ abstract class Query extends Template
 			return $this;
 		}
 
-		$type      = isset($join['type']) ? strtoupper($join['type']) : 'INNER JOIN';
-		$tableSql  = $this->getJoinTableName($join);
+		$type = isset($join['type']) ? strtoupper($join['type']) : 'INNER JOIN';
+		$tableSql = $this->getJoinTableName($join);
 		$tableAlias = empty($join['alias']) ? '' : 'AS ' . $join['alias'];
-		$alias     = $join['alias'] ?? $tableSql;
+		$alias = $join['alias'] ?? $tableSql;
 
 		$on = isset($join['using'])
 			? ' ' . $join['using']
