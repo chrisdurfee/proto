@@ -90,6 +90,64 @@ class TableStorage implements StorageInterface
 	}
 
 	/**
+	 * Insert data into any table.
+	 *
+	 * @param string $tableName
+	 * @param object $data Data object with keys matching column names.
+	 * @return bool
+	 */
+	public function insertInto(string $tableName, object $data): bool
+	{
+		$objectVars = get_object_vars($data);
+		return $this->table($tableName)
+			->insert()
+			->fields(array_keys($objectVars))
+			->values(array_fill(0, count($objectVars), '?'))
+			->execute(array_values($objectVars));
+	}
+
+	/**
+	 * Update rows in any table by conditions.
+	 *
+	 * @param string $tableName
+	 * @param array $data Associative array column => newValue.
+	 * @param string[] $whereClauses Array of "column = ?" strings.
+	 * @param array $params Parameters matching placeholders (appended after data values).
+	 * @return bool
+	 */
+	public function updateTable(string $tableName, array $data, array $whereClauses, array $params): bool
+	{
+		$cols = [];
+		$values = [];
+		foreach ($data as $column => $value)
+		{
+			$cols[] = "`$column` = ?";
+			$values[] = $value;
+		}
+
+		return $this->table($tableName)
+			->update(...$cols)
+			->where(...$whereClauses)
+			->execute([...$values, ...$params]);
+	}
+
+	/**
+	 * Delete rows from any table by conditions.
+	 *
+	 * @param string $tableName
+	 * @param string[] $whereClauses Array of "column = ?" strings.
+	 * @param array $params Parameters matching placeholders.
+	 * @return bool
+	 */
+	public function deleteFrom(string $tableName, array $whereClauses, array $params): bool
+	{
+		return $this->table($tableName)
+			->delete()
+			->where($whereClauses)
+			->execute($params);
+	}
+
+	/**
 	 * Set the last error encountered.
 	 *
 	 * @param \Throwable $error The exception/error object.
@@ -156,6 +214,18 @@ class TableStorage implements StorageInterface
 	public function transaction(string|object $sql, array $params = []): bool
 	{
 		return $this->db->transaction((string)$sql, $params);
+	}
+
+	/**
+	 * Create a query builder for the model table.
+	 *
+	 * @param string|null $tableName Optional table name.
+	 * @param string|null $alias Optional table alias.
+	 * @return QueryHandler
+	 */
+	public function table(?string $tableName = null, ?string $alias = null): QueryHandler
+	{
+		return $this->db->table($tableName, $alias);
 	}
 
 	/**

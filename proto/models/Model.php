@@ -10,6 +10,7 @@ use Proto\Support\Collection;
 use Proto\Utils\Strings;
 use Proto\Models\Joins\JoinBuilder;
 use Proto\Models\Joins\ModelJoin;
+use Proto\Database\QueryBuilder\QueryHandler;
 
 /**
  * Class Model
@@ -675,6 +676,18 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		return $this->storageWrapper
 			?? ($this->storageWrapper = new StorageWrapper($this->storage));
+	}
+
+	/**
+	 * This will get a new table instance for the model.
+	 *
+	 * @param mixed $tableName
+	 * @param mixed $alias
+	 * @return QueryHandler
+	 */
+	public function getTable(?string $tableName = null, ?string $alias = null): QueryHandler
+	{
+		return $this->storage->table($tableName ?? static::$tableName, $alias ?? static::$alias);
 	}
 
 	/**
