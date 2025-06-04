@@ -474,7 +474,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$relatedModel = new $related();
 
 		// 1) Determine default pivot table name if none given:
-		// defaults to parent -> child class name
 		if ($pivotTable === null)
 		{
 			$tables = [
