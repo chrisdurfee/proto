@@ -295,7 +295,7 @@ $model->key = $value;
 
 // Batch set properties
 $model->set((object)[
-	'key'  => $value,
+	'key' => $value,
 	'name' => $name
 ]);`
 				),
@@ -311,6 +311,22 @@ $model->add();
 $result = Example::create((object)[
 	'name' => 'save'
 ]);`
+				)
+			]),
+
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Model Data'),
+				P({ class: 'text-muted-foreground' },
+					`The model data is stored in a nested structure, allowing for complex relationships and easy access to related data. If a user just wants the data without the model wrapper, they can use the data methods to return plain arrays or objects.`
+				),
+				CodeBlock(
+`
+// get the data  as a plain object
+$data = $model->getData();
+
+// read only data object
+$data = $model->getReadOnlyData();
+`
 				)
 			]),
 

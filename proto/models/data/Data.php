@@ -191,6 +191,18 @@ class Data
 	}
 
 	/**
+	 * Adds a join field to the data object.
+	 *
+	 * @param string $key Field name.
+	 * @return void
+	 */
+	public function addJoinField(string $key): void
+	{
+		$key = Strings::camelCase($key);
+		$this->nestedDataHelper->addKey($key);
+	}
+
+	/**
 	 * Checks if a field exists in the data object.
 	 *
 	 * @param string $key Field name.
