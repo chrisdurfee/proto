@@ -172,6 +172,7 @@ class Data
 			if ($depth < 2)
 			{
 				$this->setDataField($key, []);
+				$this->joinFields[] = $key;
 			}
 			return;
 		}
@@ -194,12 +195,24 @@ class Data
 	 * Adds a join field to the data object.
 	 *
 	 * @param string $key Field name.
+	 * @param mixed $value Field value (optional).
 	 * @return void
 	 */
-	public function addJoinField(string $key): void
+	public function addJoinField(string $key, mixed $value = null): void
 	{
 		$key = Strings::camelCase($key);
 		$this->nestedDataHelper->addKey($key);
+
+		// Ensure this key is treated as a joinField (so map() will skip it).
+		if (!in_array($key, $this->joinFields, true))
+		{
+			$this->joinFields[] = $key;
+		}
+
+		if ($value !== null)
+		{
+			$this->setDataField($key, $value);
+		}
 	}
 
 	/**
@@ -211,7 +224,8 @@ class Data
 	public function has(string $key): bool
 	{
 		$key = Strings::camelCase($key);
-		return property_exists($this->data, $key) && !in_array($key, $this->fieldBlacklist, true);
+		return property_exists($this->data, $key)
+			&& !in_array($key, $this->fieldBlacklist, true);
 	}
 
 	/**

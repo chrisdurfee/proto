@@ -151,7 +151,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function getIdKeyName(): string
 	{
-		return $this->isSnakeCase === true ? Strings::snakeCase(static::$idKeyName) : static::$idKeyName;
+		return ($this->isSnakeCase === true)
+			? Strings::snakeCase(static::$idKeyName)
+			: static::$idKeyName;
 	}
 
 	/**
@@ -182,11 +184,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			$this->isSnakeCase
 		);
 
-		// Set the model class name for joins.
 		$modelClassName = static::class;
 		$builder->setForeignKeyByModel($modelClassName);
 
-		// Call the joins method.
 		$callback = static::class . '::joins';
 		\call_user_func($callback, $builder);
 		return $joins;
@@ -247,7 +247,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected function setupJoins(): void
 	{
 		$joins = $this->getModelJoins();
-		if (count($joins) < 1)
+		if (\count($joins) < 1)
 		{
 			return;
 		}
@@ -333,26 +333,119 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
-	 * Magic setter for model properties.
+	 * Magic setter for model properties or relations.
 	 *
-	 * @param string $key Property name.
-	 * @param mixed $value Property value.
+	 * If a relation name matches, we store it in $loadedRelations instead of $data.
+	 *
+	 * @param string $key Property or relation name.
+	 * @param mixed $value Value to assign.
 	 * @return void
 	 */
 	public function __set(string $key, mixed $value): void
 	{
-		$this->set($key,$value);
+		if ($this->isRelationMethod($key))
+		{
+			$this->loadedRelations[$key] = $value;
+			return;
+		}
+
+		// Otherwise treat as normal data field
+		$this->set($key, $value);
 	}
 
 	/**
-	 * Magic getter for model properties.
+	 * Magic getter for model properties or lazy relations.
 	 *
-	 * @param string $key Property name.
+	 * 1. If $data has the key, return it.
+	 * 2. Elseif a relationship method exists, load it now and stash into $data.
+	 * 3. Otherwise, return null.
+	 *
+	 * @param string $key Property or relation name.
 	 * @return mixed
 	 */
 	public function __get(string $key): mixed
 	{
-		return $this->data->get($key);
+		$camel = Strings::camelCase($key);
+
+		// 1) If the mapper has it as a field, return it.
+		if ($this->data->has($camel))
+		{
+			return $this->data->get($camel);
+		}
+
+		// 2) If a relationship method exists, call it and load results.
+		if ($this->isRelationMethod($key))
+		{
+			$relation = $this->$key();
+			$value = $relation->getResults();
+			$this->data->addJoinField($key, $value);
+			return $value;
+		}
+
+		// 3) Not found—return null.
+		return null;
+	}
+
+	/**
+	 * Determine if a given key corresponds to a relationship method.
+	 *
+	 * @param string $key Method name.
+	 * @return bool True if the method exists and returns a Relation.
+	 */
+	protected function isRelationMethod(string $key): bool
+	{
+		if (!method_exists($this, $key))
+		{
+			return false;
+		}
+
+		$rf = new \ReflectionMethod($this, $key);
+		return $rf->isPublic() && $rf->getNumberOfParameters() === 0;
+	}
+
+	/**
+	 * Define a one-to-many (HasMany) relationship.
+	 *
+	 * @param string $related Related model class.
+	 * @param string|null $foreignKey FK on related table (defaults to snake-case this model + "_id").
+	 * @param string|null $localKey PK on this model (defaults to this model's key).
+	 * @return Relations\HasMany
+	 */
+	public function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): Relations\HasMany
+	{
+		$localKey = $localKey ?? $this->getIdKeyName();
+		$foreignKey = $foreignKey ?? Strings::snakeCase(static::getIdClassName()) . '_id';
+		return new Relations\HasMany($related, $foreignKey, $localKey, $this);
+	}
+
+	/**
+	 * Define a one-to-one (HasOne) relationship.
+	 *
+	 * @param string $related Related model class.
+	 * @param string|null $foreignKey FK on related table (defaults to snake-case this model + "_id").
+	 * @param string|null $localKey PK on this model (defaults to this model's key).
+	 * @return Relations\HasOne
+	 */
+	public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): Relations\HasOne
+	{
+		$localKey = $localKey ?? $this->getIdKeyName();
+		$foreignKey = $foreignKey ?? Strings::snakeCase(static::getIdClassName()) . '_id';
+		return new Relations\HasOne($related, $foreignKey, $localKey, $this);
+	}
+
+	/**
+	 * Define an inverse one-to-many/one-to-one (BelongsTo) relationship.
+	 *
+	 * @param string $related Related model class.
+	 * @param string|null $foreignKey FK on this table (defaults to snake-case related model + "_id").
+	 * @param string|null $ownerKey PK on related model (defaults to related model's key).
+	 * @return Relations\BelongsTo
+	 */
+	public function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null): Relations\BelongsTo
+	{
+		$ownerKey = $ownerKey ?? (new $related())->getIdKeyName();
+		$foreignKey = $foreignKey ?? Strings::snakeCase((new $related())::getIdClassName()) . '_id';
+		return new Relations\BelongsTo($related, $foreignKey, $ownerKey, $this);
 	}
 
 	/**
@@ -456,7 +549,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			return false;
 		}
 
-		return in_array($key, static::$fields);
+		return in_array($key, static::$fields, true);
 	}
 
 	/**
@@ -531,7 +624,8 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function storage(): StorageWrapper
 	{
-		return $this->storageWrapper ?? ($this->storageWrapper = new StorageWrapper($this->storage));
+		return $this->storageWrapper
+			?? ($this->storageWrapper = new StorageWrapper($this->storage));
 	}
 
 	/**

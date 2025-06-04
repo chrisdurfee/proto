@@ -160,45 +160,35 @@ protected static function format(?object $data): ?object
 				)
 			]),
 
-			// Model Joins and Join Builder
+			// Model Joins: Original (Join Builder) vs. New (Lazy Relationships)
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Model Joins'),
+
+				// Intro paragraph
 				P({ class: 'text-muted-foreground' },
-					`Models can join data from other tables. Override the joins method to define joins.
-					The joins method receives a JoinBuilder object that can be used to build one-to-one, one-to-many,
-					or many-to-many relationships.`
+					`Proto supports two different ways to relate models:`
+				),
+				P({ class: 'text-muted-foreground' },
+					`1. **Eager Joins** using the JoinBuilder (original style). You explicitly define table joins in the \`joins()\` method.` +
+					`\n2. **Lazy Relationships**, inspired by Laravel, where you declare methods like \`hasMany\`, \`belongsTo\`, or \`hasOne\`.`
+				),
+
+				// Subsection: Eager Joins (JoinBuilder)
+				H4({ class: 'text-base font-semibold mt-6' }, 'Eager Joins (JoinBuilder)'),
+				P({ class: 'text-muted-foreground' },
+					`Override the \`joins()\` method in your model to define SQL joins. The JoinBuilder API allows one-to-one, one-to-many, and many-to-many relationships.`
 				),
 				CodeBlock(
 `protected static function joins($builder): void
 {
-	// model joins
+	// Example: One-to-one join to Role
+	Role::one($builder)                // JoinBuilder, default left join
+		->on(['id', 'userId'])        // parent column, child column (camelCase)
+		->fields('role');             // fields to pull from the joined table
 
-	// this will join the model to the parent model
-	Role::one($builder) // builder, join type
-		->on(['id', 'userId']) // parent column, child column use camel caps
-		->fields('role'); // fields to pull form the join table use camel caps
-
-	/**
-	 * Default On
-	 *
-	 * The join will receive a default on of ["id", "{className}Id"]
-	 * that can be overriden.
-	 */
-	Role::one($builder, 'inner') // builder, join type
-		->fields('role'); // fields to pull form the join table use camel caps
-
-	Permission:many($builder) builder, join type
-		->on('c.id = p.permissionId') // raw sql string
-		->fields('name'); // fields to pull form the join table use camel caps
-
-	/**
-	 * This will create a bridge table join for the user_roles table
-	 * and the roles table.
-	 *
-	 * The bridge join uses the default on of ["id", "{className}Id"]
-	 */
-	UserRole::bridge($builder)
-		->many(Role::class)
+	// Example: Many-to-many through a bridge table (user_roles → roles)
+	UserRole::bridge($builder)        // specify bridge model
+		->many(Role::class)           // join from bridge to Role
 		->on(['roleId', 'id'])
 		->fields(
 			'id',
@@ -208,51 +198,122 @@ protected static function format(?object $data): ?object
 			'permissions'
 		);
 
-	/**
-	 * This will create a bridge table join for the user_roles table
-	 * and the roles table.
-	 */
-	UserRole::bridge($builder)
-		->many(Role::class)
-		->on(['roleId', 'id'])
-		->fields(
-			'id',
-			'name',
-			'slug',
-			'description'
-		)
-
-		/**
-		 * This will create a bridge table join from the role to role_permissions table
-		 * and the role_permissions to the permissions table.
-		 */
-		->bridge(RolePermission::class)
-			->on(['id', 'roleId'])
-			->many(Permission::class)
-			->on(['permissionId', 'id'])
-			->fields(
-				'id',
-				'name',
-				'slug',
-				'description',
-				'module'
-			);
-
-	// table joins
-
-	// this will join the model to the table
-	$builder->left('role', 'r') // table name, alias
-		->on(['id', 'userId']) // parent column, child column use camel caps
-		->fields(
-			'role',
-			['id', 'roleId'] // This will create an alias for the field id
-		); // fields to pull form the join table use camel caps
-
-	// this will join the model to the table
-	$builder->right('permission', 'p') // table name, alias
-		->on(['id', 'permissionId']) // parent column, child column use camel caps
-		->fields('name'); // fields to pull form the join table use camel caps
+	// You can also join raw tables:
+	$builder->left('permission', 'p')
+		->on(['id', 'permissionId'])
+		->fields('name');
 }`
+				),
+
+				// Subsection: Lazy Relationships (hasMany / belongsTo / hasOne)
+				H4({ class: 'text-base font-semibold mt-6' }, 'Lazy Relationships (hasMany, belongsTo, hasOne)'),
+				P({ class: 'text-muted-foreground' },
+					`Instead of defining SQL joins upfront, you can declare relationship methods in your model:
+					\`hasMany\` for one-to-many, \`hasOne\` for one-to-one, and \`belongsTo\` for inverse relations.
+					When you access \`$model->relationName\`, Proto will automatically issue a separate query to load the related data.`
+				),
+				P({ class: 'text-muted-foreground' },
+					`Below are example models for \`User\`, \`Post\`, and \`Profile\`, demonstrating both styles:`
+				),
+
+				// Code example: User model (with both JoinBuilder and Lazy Relationship)
+				CodeBlock(
+`class User extends Model
+{
+	protected static ?string $tableName = 'users';
+	protected static array $fields = ['id', 'name', 'email'];
+
+	/**
+	 * Eager join example: join user → role
+	 */
+	protected static function joins($builder): void
+	{
+		Role::one($builder)
+			->on(['id', 'userId'])
+			->fields('role');
+	}
+
+	/**
+	 * Lazy one-to-many: User → Posts
+	 */
+	public function posts(): \\Proto\\Models\\Relations\\HasMany
+	{
+		return $this->hasMany(Post::class);
+	}
+
+	/**
+	 * Lazy one-to-one: User → Profile
+	 */
+	public function profile(): \\Proto\\Models\\Relations\\HasOne
+	{
+		return $this->hasOne(Profile::class);
+	}
+}`
+				),
+
+				// Code example: Post model
+				CodeBlock(
+`class Post extends Model
+{
+	protected static ?string $tableName = 'posts';
+	protected static array $fields = ['id', 'user_id', 'title', 'body'];
+
+	/**
+	 * Eager join example: join post → category
+	 */
+	protected static function joins($builder): void
+	{
+		Category::one($builder)
+			->on(['categoryId', 'id'])
+			->fields('name');
+	}
+
+	/**
+	 * Lazy inverse: Post → User
+	 */
+	public function user(): \\Proto\\Models\\Relations\\BelongsTo
+	{
+		return $this->belongsTo(User::class);
+	}
+}`
+				),
+
+				// Code example: Profile model
+				CodeBlock(
+`class Profile extends Model
+{
+	protected static ?string $tableName = 'profiles';
+	protected static array $fields = ['id', 'user_id', 'bio', 'twitter_handle'];
+
+	/**
+	 * Lazy inverse: Profile → User
+	 */
+	public function user(): \\Proto\\Models\\Relations\\BelongsTo
+	{
+		return $this->belongsTo(User::class);
+	}
+}`
+				),
+
+				P({ class: 'text-muted-foreground' },
+					`**Usage examples:**`
+				),
+				CodeBlock(
+`// Eagerly fetch users with roles in a single query:
+$userWithRoles = User::get(1);
+
+// Lazily load posts for a user:
+$user = User::get(1);
+// Issues: SELECT * FROM posts WHERE user_id = 1
+$allPosts = $user->posts;
+
+// Lazily load profile for a user:
+$profile = $user->profile;
+
+// Inverse lazy load from post to its author:
+$post = Post::get(5);
+// Issues: SELECT * FROM users WHERE id = $post->user_id
+$author = $post->user;`
 				)
 			]),
 
@@ -314,19 +375,18 @@ $result = Example::create((object)[
 				)
 			]),
 
+			// Model Data
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Model Data'),
 				P({ class: 'text-muted-foreground' },
 					`The model data is stored in a nested structure, allowing for complex relationships and easy access to related data. If a user just wants the data without the model wrapper, they can use the data methods to return plain arrays or objects.`
 				),
 				CodeBlock(
-`
-// get the data  as a plain object
+`// Get the data as a plain object
 $data = $model->getData();
 
-// read only data object
-$data = $model->getReadOnlyData();
-`
+// Read-only data object
+$dataReadonly = $model->getReadOnlyData();`
 				)
 			]),
 
