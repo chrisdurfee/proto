@@ -1,31 +1,30 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
-use Modules\User\Auth\Policies\UserRolePolicy;
 use Proto\Controllers\ResourceController as Controller;
-use Modules\User\Models\UserRole;
+use Modules\User\Models\PermissionRole;
 use Proto\Http\Router\Request;
 
 /**
- * UserRoleController
+ * PermissionRoleController
  *
- * This controller handles user role management.
+ * This controller handles CRUD operations for the PermissionRole model.
  *
  * @package Modules\User\Controllers
  */
-class UserRoleController extends Controller
+class PermissionRoleController extends Controller
 {
 	/**
 	 * @var string|null $policy
 	 */
-	protected ?string $policy = UserRolePolicy::class;
+	protected ?string $policy = PermissionRole::class;
 
 	/**
 	 * Initializes the model class.
 	 *
 	 * @param string|null $modelClass The model class reference using ::class.
 	 */
-	public function __construct(protected ?string $modelClass = UserRole::class)
+	public function __construct(protected ?string $modelClass = PermissionRole::class)
 	{
 		parent::__construct();
 	}
@@ -33,19 +32,19 @@ class UserRoleController extends Controller
 	/**
 	 * Deletes model data.
 	 *
-	 * @param Request $request The request object.
+	 * @param int|object $data The model ID or object.
 	 * @return object The response.
 	 */
 	public function delete(Request $request): object
 	{
 		$data = $this->getRequestItem($request);
-		if (empty($data) || empty($data->userId) || empty($data->roleId))
+		if (empty($data) || empty($data->roleId) || empty($data->permissionId))
 		{
 			return $this->error('No item provided.');
 		}
 
 		return $this->response(
-			$this->model()->deleteUserRole($data->userId, $data->roleId)
+			$this->model()->deleteRolePermission($data->roleId, $data->permissionId)
 		);
 	}
 }

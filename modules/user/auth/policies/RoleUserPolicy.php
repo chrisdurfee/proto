@@ -4,13 +4,13 @@ namespace Modules\User\Auth\Policies;
 use Proto\Http\Router\Request;
 
 /**
- * Class UserRolePolicy
+ * Class RoleUserPolicy
  *
- * Policy that governs access control for managing user roles.
+ * Policy that governs access control for managing role-user relationships.
  *
  * @package Modules\User\Auth\Policies
  */
-class UserRolePolicy extends Policy
+class RoleUserPolicy extends Policy
 {
 	/**
 	 * Default policy for methods that don't have an explicit policy method.

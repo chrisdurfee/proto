@@ -76,10 +76,10 @@ class User extends Model
 			)
 
 			/**
-			 * This will create a bridge table join from the role to role_permissions table
-			 * and the role_permissions to the permissions table.
+			 * This will create a bridge table join from the role to permission_roles table
+			 * and the permission_roles to the permissions table.
 			 */
-			->bridge(RolePermission::class)
+			->bridge(PermissionRole::class)
 				->on(['id', 'roleId'])
 				->many(Permission::class)
 				->on(['permissionId', 'id'])
