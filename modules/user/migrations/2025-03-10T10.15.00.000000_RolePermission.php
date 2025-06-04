@@ -3,7 +3,7 @@
 use Proto\Database\Migrations\Migration;
 
 /**
- * Migration for the role_permissions pivot table.
+ * Migration for the permission_roles pivot table.
  */
 class RolePermission extends Migration
 {
@@ -19,7 +19,7 @@ class RolePermission extends Migration
      */
     public function up(): void
     {
-        $this->create('role_permissions', function($table)
+        $this->create('permission_roles', function($table)
         {
             $table->id();
             $table->int('role_id', 20);
@@ -45,6 +45,6 @@ class RolePermission extends Migration
      */
     public function down(): void
     {
-        $this->drop('role_permissions');
+        $this->drop('permission_roles');
     }
 }

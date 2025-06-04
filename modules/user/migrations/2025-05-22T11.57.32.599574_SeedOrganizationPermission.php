@@ -85,12 +85,12 @@ class SeedOrganizationPermission extends Migration
                 [$slug]
             )->id;
 
-            $this->insert('role_permissions', [
+            $this->insert('permission_roles', [
                 'role_id' => $adminRoleId,
                 'permission_id' => $permId,
             ]);
 
-            $this->insert('role_permissions', [
+            $this->insert('permission_roles', [
                 'role_id' => $partnerAdminRoleId,
                 'permission_id' => $permId,
             ]);

@@ -4,23 +4,23 @@ namespace Modules\User\Models;
 use Proto\Models\Model;
 
 /**
- * UserRole
+ * RoleUser
  *
- * This is the model class for the pivot table "user_roles".
+ * This is the model class for the pivot table "role_users".
  *
  * @package Modules\User\Models
  */
-class UserRole extends Model
+class RoleUser extends Model
 {
 	/**
 	 * @var string|null $tableName
 	 */
-	protected static ?string $tableName = 'user_roles';
+	protected static ?string $tableName = 'role_users';
 
 	/**
 	 * @var string|null $alias
 	 */
-	protected static ?string $alias = 'ur';
+	protected static ?string $alias = 'ru';
 
 	/**
 	 * @var array $fields

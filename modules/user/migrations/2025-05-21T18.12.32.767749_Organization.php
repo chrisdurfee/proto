@@ -31,7 +31,7 @@ class Organization extends Migration
 		});
 
 		// ── Create pivot table for users ↔ organizations
-		$this->create('organization_user', function($table)
+		$this->create('organization_users', function($table)
 		{
 			$table->id();
 			$table->timestamps();
@@ -60,7 +60,7 @@ class Organization extends Migration
 	 */
 	public function down(): void
 	{
-		$this->drop('organization_user');
+		$this->drop('organization_users');
 		$this->drop('organizations');
 	}
 }

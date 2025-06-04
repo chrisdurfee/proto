@@ -145,7 +145,7 @@ class SeedRolesAndPermissions extends Migration
         $allPermissions = $this->fetch('SELECT id FROM permissions');
         foreach ($allPermissions as $permission)
         {
-            $this->insert('role_permissions', [
+            $this->insert('permission_roles', [
                 'role_id' => $managerRoleId,
                 'permission_id' => $permission->id,
             ]);
@@ -155,7 +155,7 @@ class SeedRolesAndPermissions extends Migration
         $editorPermissions = $this->fetch('SELECT id FROM permissions WHERE slug LIKE "%.view" OR slug LIKE "%.edit"');
         foreach ($editorPermissions as $permission)
         {
-            $this->insert('role_permissions', [
+            $this->insert('permission_roles', [
                 'role_id' => $editorRoleId,
                 'permission_id' => $permission->id,
             ]);

@@ -3,6 +3,7 @@ namespace Proto\Models\Relations;
 
 use Proto\Database\QueryBuilder\Select;
 use Proto\Models\Model;
+use Proto\Utils\Strings;
 
 /**
  * Class BelongsToMany
@@ -133,13 +134,17 @@ class BelongsToMany
 	{
 		$parentId = $this->getParentId();
 		$toInsert = $this->prepareAttachRows($ids, $extra, $parentId);
+		$isSnake = $this->parent->isSnakeCase();
 
 		foreach ($toInsert as $row)
 		{
+			$data = $isSnake
+				? $this->snakeCaseKeys($row)
+				: $row;
+
 			$this->parent
 				->storage()
-				->table($this->pivotTable)
-				->insert((object)$row);
+				->insertInto($this->pivotTable, (object)$data);
 		}
 	}
 
@@ -152,19 +157,25 @@ class BelongsToMany
 	public function detach($ids): void
 	{
 		$parentId = $this->getParentId();
-		$table = $this->parent
-			->storage()
-			->table($this->pivotTable);
+		$isSnake = $this->parent->isSnakeCase();
 
 		foreach ((array)$ids as $rid)
 		{
-			$table
-				->delete()
-				->where([
+			$whereClauses = $isSnake
+				? [
+					Strings::snakeCase($this->foreignPivot) . ' = ?',
+					Strings::snakeCase($this->relatedPivot) . ' = ?'
+				]
+				: [
 					"{$this->foreignPivot} = ?",
 					"{$this->relatedPivot} = ?"
-				])
-				->execute([$parentId, $rid]);
+				];
+
+			$params = [$parentId, $rid];
+
+			$this->parent
+				->storage()
+				->deleteFrom($this->pivotTable, $whereClauses, $params);
 		}
 	}
 
@@ -272,7 +283,7 @@ class BelongsToMany
 				}
 				else
 				{
-					// Associative: [2 => ['meta'=>'x'], 5 => ['meta'=>'y']]
+					// Associative: [2 => ['meta' => 'x'], 5 => ['meta' => 'y']]
 					$rows[] = [
 						$this->foreignPivot => $parentId,
 						$this->relatedPivot => $key,
@@ -292,6 +303,24 @@ class BelongsToMany
 		}
 
 		return $rows;
+	}
+
+	/**
+	 * Convert array keys to snake_case.
+	 *
+	 * @param array $data
+	 * @return array
+	 */
+	protected function snakeCaseKeys(array $data): array
+	{
+		$result = [];
+
+		foreach ($data as $key => $value)
+		{
+			$result[Strings::snakeCase($key)] = $value;
+		}
+
+		return $result;
 	}
 
 	/**

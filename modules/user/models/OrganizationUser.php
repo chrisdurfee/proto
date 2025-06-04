@@ -15,7 +15,7 @@ class OrganizationUser extends Model
 	/**
 	 * @var string|null $tableName
 	 */
-	protected static ?string $tableName = 'organization_user';
+	protected static ?string $tableName = 'organization_users';
 
 	/**
 	 * @var string|null $alias

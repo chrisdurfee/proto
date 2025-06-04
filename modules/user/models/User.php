@@ -63,7 +63,7 @@ class User extends Model
 		 * This will create a bridge table join for the user_roles table
 		 * and the roles table.
 		 */
-		UserRole::bridge($builder)
+		RoleUser::bridge($builder)
 			->fields(
 				'organizationId'
 			)

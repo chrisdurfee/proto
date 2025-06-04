@@ -19,7 +19,7 @@ class UserRole extends Migration
 	 */
 	public function up(): void
 	{
-		$this->create('user_roles', function($table)
+		$this->create('role_users', function($table)
 		{
 			$table->id();
 			$table->int('user_id', 20);
@@ -48,6 +48,6 @@ class UserRole extends Migration
 	 */
 	public function down(): void
 	{
-		$this->drop('user_roles');
+		$this->drop('role_users');
 	}
 }
