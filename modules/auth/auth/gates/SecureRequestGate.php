@@ -55,14 +55,12 @@ class SecureRequestGate extends Gate
 		return $result ? $model : null;
 	}
 
-	/**
-	 * This will update the request status.
-	 *
-	 * @param string $requestId
-	 * @param int $userId
-	 * @return bool
-	 */
-	public function updateRequest(): bool
+       /**
+        * This will update the current request status based on `$this->requestId`.
+        *
+        * @return bool
+        */
+       public function updateRequest(): bool
 	{
 		if ($this->requestId === null)
 		{
