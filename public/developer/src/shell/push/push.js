@@ -211,7 +211,7 @@ export class Push
 	 */
 	request(option, subscription)
 	{
-		// TODO: change this to the correct user id proprety if not "id"
+               // TODO: change this to the correct user id property if not "id"
 		// and set correct params for your API
 		// @ts-ignore
 		const userId = app.data.user.id;
