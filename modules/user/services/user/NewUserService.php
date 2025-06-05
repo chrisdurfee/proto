@@ -2,7 +2,7 @@
 namespace Modules\User\Services\User;
 
 use Modules\User\Models\User;
-use Modules\User\Models\UserRole;
+use Modules\User\Models\RoleUser;
 use Modules\User\Models\Role;
 use Modules\User\Models\EmailVerification;
 use Proto\Dispatch\Dispatcher;
@@ -107,7 +107,7 @@ class NewUserService
 			return false;
 		}
 
-		$model = new UserRole((object)[
+		$model = new RoleUser((object)[
 			'userId' => $user->id,
 			'roleId' => $role->id
 		]);
