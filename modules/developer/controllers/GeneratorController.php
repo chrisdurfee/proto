@@ -17,13 +17,13 @@ class GeneratorController extends Controller
 {
 	/**
 	 * Initializes the Generator service.
-     *
-     * @param Generator|null $generator The generator service instance.
+	 *
+	 * @param Generator|null $generator The generator service instance.
 	 * @return void
 	 */
 	public function __construct(
-        protected ?Generator $generator = new Generator()
-    )
+		protected ?Generator $generator = new Generator()
+	)
 	{
 		parent::__construct();
 	}

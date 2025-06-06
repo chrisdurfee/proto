@@ -3,7 +3,6 @@ namespace Modules\Developer\Controllers;
 
 use Proto\Http\Router\Request;
 use Proto\Dispatch\Email\Template;
-use Proto\Dispatch\Dispatcher;
 
 /**
  * PushController
@@ -39,10 +38,10 @@ class PushController extends Controller
 	public function test(Request $req): object
 	{
 		$userId = $req->input('userId') ?? null;
-        if ($userId === null)
-        {
-            return $this->error('User ID is required');
-        }
+		if ($userId === null)
+		{
+			return $this->error('User ID is required');
+		}
 
 		$settings = (object)[
 			'template' => 'Modules\\Developer\\Push\\Test\\TestPush',

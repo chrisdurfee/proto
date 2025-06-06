@@ -17,12 +17,12 @@ class MigrationController extends Controller
 	/**
 	 * Initializes the migration guide service.
 	 *
-     * @param Guide|null $service Migration guide service instance.
+	 * @param Guide|null $service Migration guide service instance.
 	 * @return void
 	 */
 	public function __construct(
-        protected ?Guide $service = new Guide()
-    )
+		protected ?Guide $service = new Guide()
+	)
 	{
 		parent::__construct();
 	}
@@ -34,10 +34,10 @@ class MigrationController extends Controller
 	 * @return object Response object.
 	 */
 	public function apply(Request $req): object
-    {
-        $direction = $req->input('direction');
-        return $this->update($direction);
-    }
+	{
+		$direction = $req->input('direction');
+		return $this->update($direction);
+	}
 
 	/**
 	 * Updates migrations based on the provided direction.
