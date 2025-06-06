@@ -42,13 +42,8 @@ class RoleUser extends Model
 	 */
 	protected static function joins(object $builder): void
 	{
-		Role::one($builder)
-			->on(['roleId', 'id'])
-			->fields(
-				'name',
-				'slug',
-				'description'
-			);
+		$builder
+			->one(Role::class, fields: ['id', 'name', 'slug']);
 	}
 
 	/**

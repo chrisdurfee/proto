@@ -60,49 +60,21 @@ class User extends Model
 	protected static function joins(object $builder): void
 	{
 		/**
-		 * This will create a bridge table join for the user_roles table
-		 * and the roles table.
+		 * This will join the user roles and permissions.
 		 */
-		RoleUser::bridge($builder)
-			->fields(
-				'organizationId'
-			)
-			->many(Role::class)
-			->on(['roleId', 'id'])
-			->fields(
-				'id',
-				'name',
-				'slug'
-			)
+		$builder
+			->belongsToMany(Role::class, pivotFields: ['organizationId'])
+			->belongsToMany(Permission::class);
 
-			/**
-			 * This will create a bridge table join from the role to permission_roles table
-			 * and the permission_roles to the permissions table.
-			 */
-			->bridge(PermissionRole::class)
-				->on(['id', 'roleId'])
-				->many(Permission::class)
-				->on(['permissionId', 'id'])
-				->fields(
-					'id',
-					'name',
-					'slug'
-				);
+		$builder
+			->belongsToMany(Organization::class, ['id', 'name']);
 
-		OrganizationUser::bridge($builder)
-			->many(Organization::class)
-			->on(['organizationId', 'id'])
-			->fields(
-				'id',
-				'name'
-			);
-
-		NotificationPreference::one($builder)
-			->fields(
+		$builder
+			->one(NotificationPreference::class, fields: [
 				[['IF(allow_email = 0, 0, 1)'], 'allowEmail'],
 				[['IF(allow_sms = 0, 0, 1)'], 'allowSms'],
 				[['IF(allow_push = 0, 0, 1)'], 'allowPush']
-			);
+			]);
 	}
 
 	/**

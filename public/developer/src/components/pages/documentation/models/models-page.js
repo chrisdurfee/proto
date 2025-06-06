@@ -90,7 +90,7 @@ export const ModelsPage = () =>
 				),
 				P(
 					{ class: "text-muted-foreground" },
-					`Set $tableName to the exact name of the database table and $alias to a short alias for query building.`
+					`Set \`$tableName\` to the exact name of the database table and \`$alias\` to a short alias for query building.`
 				)
 			]),
 
@@ -145,8 +145,8 @@ $result = static::$storageType::methodName();`
 				P(
 					{ class: "text-muted-foreground" },
 					`Models can augment or format fields before inserting or after retrieving data.
-					The augment method allows you to modify data before it's stored,
-					while the format method converts data before it's returned via the API.`
+					The \`augment\` method allows you to modify data before it's stored,
+					while the \`format\` method converts data before it's returned via the API.`
 				),
 				CodeBlock(
 `protected static function augment(mixed $data = null): mixed
@@ -219,6 +219,53 @@ protected static function format(?object $data): ?object
 }`
 				),
 
+				// Subsection: JoinBuilder – belongsToMany chaining
+				H4({ class: "text-base font-semibold mt-6" }, "JoinBuilder: belongsToMany (Chaining)"),
+				P(
+					{ class: "text-muted-foreground" },
+					`If you've added a new \`belongsToMany\` builder method, you can chain multiple many-to-many joins in a single \`joins()\` definition. Below is how the \`User\` model might look when using chained \`belongsToMany\` calls:`
+				),
+				CodeBlock(
+`protected static function joins($builder): void
+{
+	/**
+	 * Join user_roles → roles → permissions:
+	 * 1) belongsToMany(Role::class, pivotFields: ['organizationId'])
+	 *    • This pulls columns from user_roles (e.g. organizationId) as pivotFields.
+	 * 2) belongsToMany(Permission::class)
+	 *    • Automatically joins permissions via permission_roles.
+	 */
+	$builder
+		->belongsToMany(Role::class, pivotFields: ['organizationId'])
+		->belongsToMany(Permission::class);
+
+	/**
+	 * Join organizations via organization_users:
+	 * 1) belongsToMany(Organization::class, ['id', 'name'])
+	 *    • Specify which Organization fields to pull.
+	 */
+	$builder
+		->belongsToMany(Organization::class, ['id', 'name']);
+}`
+				),
+				P(
+					{ class: "text-muted-foreground" },
+					`Here's what happens step by step in that chained \`belongsToMany\` sequence:`
+				),
+				P(
+					{ class: "text-muted-foreground" },
+					`1. \`$builder->belongsToMany(Role::class, pivotFields: ['organizationId'])\`
+				    • Joins \`user_roles\` as the pivot table.
+				    • Pulls the \`organizationId\` column from \`user_roles\` (if available).
+				    • Joins \`roles\` on \`role_id\` → \`id\`.
+
+				  2. \`->belongsToMany(Permission::class)\`
+				    • Automatically infers pivot table \`permission_roles\`.
+				    • Joins \`permissions\` on \`permission_id\` → \`id\`.
+
+				  3. These two calls appear in the same \`joins()\` chain, so Proto knows to nest the permissions join under the roles join.`
+				),
+
 				// Subsection: Lazy Relationships (hasMany / belongsTo / hasOne / belongsToMany)
 				H4({ class: "text-base font-semibold mt-6" }, "Lazy Relationships (hasMany, belongsTo, hasOne, belongsToMany)"),
 				P(
@@ -229,7 +276,7 @@ protected static function format(?object $data): ?object
 				),
 				P(
 					{ class: "text-muted-foreground" },
-					`Below are example models for \`User\`, \`Post\`, \`Profile\`, and \`Role\`, demonstrating both styles and how to use attach/toggle/detach/sync for many-to-many.`
+					`Below are example models for \`User\`, \`Post\`, \`Profile\`, and \`Role\`, demonstrating both styles and how to use \`attach/toggle/detach/sync\` for many-to-many.`
 				),
 
 				// Code example: User model (with both JoinBuilder and Lazy Relationship including belongsToMany)
@@ -273,7 +320,6 @@ protected static function format(?object $data): ?object
 		// related model, pivot table, foreign pivot, related pivot, parent key, related key, parent instance
 		return $this->belongsToMany(
 			Role::class,
-
 			// optional override pivot table and keys
 			'user_roles',
 			'user_id',
@@ -299,7 +345,6 @@ protected static function format(?object $data): ?object
 	{
 		return $this->belongsToMany(
 			User::class,
-
 			// optional override pivot table and keys
 			'user_roles',
 			'role_id',

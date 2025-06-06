@@ -151,6 +151,16 @@ class ModelJoin
 	}
 
 	/**
+	 * Get the join builder instance.
+	 *
+	 * @return JoinBuilder
+	 */
+	public function getBuilder(): JoinBuilder
+	{
+		return $this->builder;
+	}
+
+	/**
 	 * Mark the join as representing a multiple relationship target,
 	 * optionally setting up a subsequent join definition.
 	 *
@@ -323,7 +333,6 @@ class ModelJoin
 
 	/**
 	 * Define a bridge table join (typically for many-to-many through).
-	 * Note: Calls static method on the provided model class.
 	 *
 	 * @param string $modelClass The final target model class.
 	 * @param string $type Join type for the bridge connection.
@@ -331,10 +340,7 @@ class ModelJoin
 	 */
 	public function bridge(string $modelClass, string $type = 'left'): ModelJoin
 	{
-		$builder = $this->join($modelClass);
-		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
-		$this->setMultipleJoin($modelJoin);
-		return $modelJoin;
+		return $this->many($modelClass, $type);
 	}
 
 	/**
@@ -351,6 +357,36 @@ class ModelJoin
 		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 		$this->setMultipleJoin($modelJoin);
 		return $modelJoin;
+	}
+
+	/**
+	 * Define a 'belongs-to-many' relationship join originating from this join's context.
+	 *
+	 * @param string $related
+	 * @param array $relatedFields
+	 * @param array $pivotFields
+	 * @return ModelJoin
+	 */
+	public function belongsToMany(string $related, array $relatedFields = [], array $pivotFields = []): ModelJoin
+	{
+		$builder = $this->builder->link($this->tableName, $this->alias);
+
+		$pivotJoin = BelongsToHelper::setupChildPivotJoin(
+			$builder,
+			$related,
+			$pivotFields
+		);
+
+		$builder->setForeignKeyByModel($related);
+		$this->setMultipleJoin($pivotJoin);
+
+		$finalJoin = BelongsToHelper::createFinalJoin(
+			$pivotJoin,
+			$related,
+			$relatedFields
+		);
+
+		return $finalJoin;
 	}
 
 	/**
@@ -379,7 +415,7 @@ class ModelJoin
 	 * @param string $type The desired join type ('left', 'right', etc.).
 	 * @return ModelJoin
 	 */
-	protected function createChildModelJoin(JoinBuilder $builder, string $modelClassName, string $type = 'left'): ModelJoin
+	public function createChildModelJoin(JoinBuilder $builder, string $modelClassName, string $type = 'left'): ModelJoin
 	{
 		$join = $builder->createJoin($modelClassName::table(), $modelClassName::alias());
 
@@ -392,7 +428,6 @@ class ModelJoin
 
 		return $join;
 	}
-
 
 	/**
 	 * Add fields to be selected from this join.

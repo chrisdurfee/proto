@@ -43,20 +43,14 @@ class Role extends Model
 	 */
 	protected static function joins(object $builder): void
 	{
-		/**
-		 * This will create a bridge table join for the permission_roles table
-		 * and the permissions table.
-		 */
-		PermissionRole::bridge($builder)
-			->many(Permission::class)
-			->on(['permissionId', 'id'])
-			->fields(
+		$builder
+			->belongsToMany(Permission::class, [
 				'id',
 				'name',
 				'slug',
 				'description',
 				'module'
-			);
+			]);
 	}
 
 	/**

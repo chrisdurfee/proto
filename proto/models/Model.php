@@ -104,7 +104,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @var bool
 	 */
-	protected bool $isSnakeCase = true;
+	protected static bool $isSnakeCase = true;
 
 	/**
 	 * Model constructor.
@@ -150,11 +150,21 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @return string
 	 */
-	public function getIdKeyName(): string
+	public static function idKeyName(): string
 	{
-		return ($this->isSnakeCase === true)
+		return (static::$isSnakeCase === true)
 			? Strings::snakeCase(static::$idKeyName)
 			: static::$idKeyName;
+	}
+
+	/**
+	 * Get the identifier key name.
+	 *
+	 * @return string
+	 */
+	public function getIdKeyName(): string
+	{
+		return static::idKeyName();
 	}
 
 	/**
@@ -182,7 +192,8 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			$joins,
 			static::$tableName,
 			$alias,
-			$this->isSnakeCase
+			static::$isSnakeCase,
+			static::class
 		);
 
 		$modelClassName = static::class;
@@ -261,9 +272,19 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @return bool
 	 */
+	public function areColumnsSnakeCase(): bool
+	{
+		return static::$isSnakeCase;
+	}
+
+	/**
+	 * Check if model data is snake_case.
+	 *
+	 * @return bool
+	 */
 	public function isSnakeCase(): bool
 	{
-		return $this->isSnakeCase;
+		return static::$isSnakeCase;
 	}
 
 	/**
@@ -277,7 +298,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			static::$fields,
 			$this->compiledJoins,
 			static::$fieldsBlacklist,
-			$this->isSnakeCase
+			static::$isSnakeCase
 		);
 	}
 
@@ -405,6 +426,17 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+	 * Get the foreign key name for relationships.
+	 *
+	 * @param mixed $foreignKey
+	 * @return string
+	 */
+	protected function getForeignKeyName(?string $foreignKey = null): string
+	{
+		return $foreignKey ?? Strings::snakeCase(static::getIdClassName()) . '_id';
+	}
+
+	/**
 	 * Define a one-to-many (HasMany) relationship.
 	 *
 	 * @param string $related Related model class.
@@ -415,7 +447,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): Relations\HasMany
 	{
 		$localKey = $localKey ?? $this->getIdKeyName();
-		$foreignKey = $foreignKey ?? Strings::snakeCase(static::getIdClassName()) . '_id';
+		$foreignKey = $this->getForeignKeyName($foreignKey);
 		return new Relations\HasMany($related, $foreignKey, $localKey, $this);
 	}
 
@@ -430,7 +462,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): Relations\HasOne
 	{
 		$localKey = $localKey ?? $this->getIdKeyName();
-		$foreignKey = $foreignKey ?? Strings::snakeCase(static::getIdClassName()) . '_id';
+		$foreignKey = $this->getForeignKeyName($foreignKey);
 		return new Relations\HasOne($related, $foreignKey, $localKey, $this);
 	}
 
@@ -445,7 +477,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null): Relations\BelongsTo
 	{
 		$ownerKey = $ownerKey ?? (new $related())->getIdKeyName();
-		$foreignKey = $foreignKey ?? Strings::snakeCase((new $related())::getIdClassName()) . '_id';
+		$foreignKey = $this->getForeignKeyName($foreignKey);
 		return new Relations\BelongsTo($related, $foreignKey, $ownerKey, $this);
 	}
 
@@ -471,7 +503,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$foreignClass = Strings::snakeCase(static::getIdClassName());
 		$relatedClass = Strings::snakeCase($related::getIdClassName());
-		$relatedModel = new $related();
 
 		// 1) Determine default pivot table name if none given:
 		if ($pivotTable === null)
@@ -489,7 +520,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$parentKey = $parentKey ?? $this->getIdKeyName();
 		$foreignPivot = $foreignPivot ?? ($foreignClass . '_id');
 
-		$relatedKey = $relatedKey ?? $relatedModel->getIdKeyName();
+		$relatedKey = $relatedKey ?? $related::idKeyName();
 		$relatedPivot = $relatedPivot ?? ($relatedClass . '_id');
 
 		return new Relations\BelongsToMany(
@@ -605,6 +636,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		}
 
 		return in_array($key, static::$fields, true);
+	}
+
+	/**
+	 * Get the list of model fields.
+	 *
+	 * @return array
+	 */
+	public static function fields(): array
+	{
+		return static::$fields;
 	}
 
 	/**

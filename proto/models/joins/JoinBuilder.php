@@ -24,12 +24,14 @@ class JoinBuilder
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @param bool $isSnakeCase Indicates snake_case usage.
+	 * @param string|null $ownerModelClass Optional owner model class for context.
 	 */
 	public function __construct(
 		protected array &$joins,
 		protected string|array $tableName,
 		protected ?string $alias = null,
-		protected bool $isSnakeCase = true
+		protected bool $isSnakeCase = true,
+		protected ?string $ownerModelClass = null
 	)
 	{
 	}
@@ -57,6 +59,16 @@ class JoinBuilder
 	private function getModelForeignKey(string $modelClass): string
 	{
 		return $modelClass::getIdClassName();
+	}
+
+	/**
+	 * Gets the owner model class for the join.
+	 *
+	 * @return string|null
+	 */
+	public function getOwnerModelClass(): ?string
+	{
+		return $this->ownerModelClass;
 	}
 
 	/**
@@ -96,6 +108,7 @@ class JoinBuilder
 	{
 		$foreignKey = $this->getModelForeignKey($modelClass);
 		$this->setForeignKey($foreignKey);
+		$this->ownerModelClass = $modelClass;
 	}
 
 	/**
@@ -273,11 +286,19 @@ class JoinBuilder
 	 *
 	 * @param string $modelName The related model class name.
 	 * @param string $type Join type (default is 'left').
+	 * @param array $fields Optional fields to select from the related model.
 	 * @return ModelJoin
 	 */
-	public function one(string $modelName, string $type = 'left'): ModelJoin
+	public function one(string $modelName, string $type = 'left', array $fields = []): ModelJoin
 	{
-		return $this->createModelJoin($modelName, $type, false);
+		$join = $this->createModelJoin($modelName, $type, false);
+
+		if (count($fields))
+		{
+			$join->fields(...$fields);
+		}
+
+		return $join;
 	}
 
 	/**
@@ -285,11 +306,19 @@ class JoinBuilder
 	 *
 	 * @param string $modelName The related model class name.
 	 * @param string $type Join type (default is 'left').
+	 * @param array $fields Optional fields to select from the related model.
 	 * @return ModelJoin
 	 */
-	public function many(string $modelName, string $type = 'left'): ModelJoin
+	public function many(string $modelName, string $type = 'left', array $fields = []): ModelJoin
 	{
-		return $this->createModelJoin($modelName, $type, true);
+		$join = $this->createModelJoin($modelName, $type, true);
+
+		if (count($fields))
+		{
+			$join->fields(...$fields);
+		}
+
+		return $join;
 	}
 
 	/**
@@ -302,7 +331,7 @@ class JoinBuilder
 	 */
 	public function link(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
-		return new JoinBuilder($this->joins, $tableName, $alias, $this->isSnakeCase);
+		return new JoinBuilder($this->joins, $tableName, $alias, $this->isSnakeCase, $this->ownerModelClass);
 	}
 
 	/**
@@ -316,6 +345,27 @@ class JoinBuilder
 	public function create(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
 		$joins = [];
-		return new JoinBuilder($joins, $tableName, $alias, $this->isSnakeCase);
+		return new JoinBuilder($joins, $tableName, $alias, $this->isSnakeCase, $this->ownerModelClass);
+	}
+
+	/**
+	 * Creates a new join for a belongs-to-many relationship.
+	 *
+	 * This is typically used for many-to-many relationships where the pivot table
+	 * is required to link two models.
+	 *
+	 * @param string $related The related model class name.
+	 * @param array $relatedFields Fields to select from the related model.
+	 * @param array $pivotFields Fields to select from the pivot table.
+	 * @return ModelJoin
+	 */
+	public function belongsToMany(string $related, array $relatedFields = [], array $pivotFields = []): ModelJoin
+	{
+		return BelongsToHelper::createBelongsToMany(
+			$this,
+			$related,
+			$relatedFields,
+			$pivotFields
+		);
 	}
 }
