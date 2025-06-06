@@ -31,4 +31,16 @@ class Organization extends Model
 		'updatedAt',
 		'name'
 	];
+
+	/**
+	 * Define joins for the Role model.
+	 *
+	 * @param object $builder The query builder object
+	 * @return void
+	 */
+	protected static function joins(object $builder): void
+	{
+		$builder
+			->belongsToMany(User::class);
+	}
 }

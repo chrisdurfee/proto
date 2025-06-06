@@ -33,7 +33,7 @@ class SecureRequest extends Model
 		'status'
 	];
 
-    /**
+	/**
 	 * @var string $storageType
 	 */
 	protected static string $storageType = SecureRequestStorage::class;

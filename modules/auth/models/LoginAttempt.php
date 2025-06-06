@@ -39,7 +39,7 @@ class LoginAttempt extends Model
 	 */
 	protected static function joins(object $builder): void
 	{
-		$builder->left('login_attempt_usernames', 'lu')
+		LoginAttemptUsername::one($builder)
 			->on(['usernameId', 'id'])
 			->fields('username');
 	}

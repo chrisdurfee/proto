@@ -12,7 +12,7 @@ use Proto\Storage\Storage;
  */
 class EmailVerificationStorage extends Storage
 {
-    /**
+	/**
 	 * This will create a request ID.
 	 *
 	 * @return string
@@ -43,7 +43,7 @@ class EmailVerificationStorage extends Storage
 			->first($params);
 	}
 
-    /**
+	/**
 	 * This will add a new password request.
 	 *
 	 * @return bool
@@ -56,7 +56,7 @@ class EmailVerificationStorage extends Storage
 		return parent::add();
 	}
 
-    /**
+	/**
 	 * This will get the update status.
 	 *
 	 * @return object
