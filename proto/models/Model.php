@@ -107,6 +107,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected static bool $isSnakeCase = true;
 
 	/**
+	 * The belongs to many eager loaded relations.
+	 *
+	 * @var array
+	 */
+	protected array $relations = [];
+
+	/**
 	 * Model constructor.
 	 *
 	 * @param object|null $data Data object to initialize the model.
@@ -193,7 +200,8 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			static::$tableName,
 			$alias,
 			static::$isSnakeCase,
-			static::class
+			static::class,
+			$this
 		);
 
 		$modelClassName = static::class;
@@ -249,6 +257,57 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public static function one(JoinBuilder $builder, string $type = 'left'): ModelJoin
 	{
 		return $builder->one(static::class, $type);
+	}
+
+	/**
+	 * Adds a relation to the model.
+	 *
+	 * @param string $key
+	 * @param string $relation
+	 * @return void
+	 */
+	public function addRelation(string $key, string $relation): void
+	{
+		$this->relations[$key] = $relation;
+	}
+
+	/**
+	 * Checks if a relation exists for the given key.
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	protected function isRelation(string $key): bool
+	{
+		return isset($this->relations[$key]);
+	}
+
+	/**
+	 * Retrieves the relation for the given key.
+	 *
+	 * @param string $key
+	 * @return string|null
+	 */
+	protected function getRelation(string $key): ?string
+	{
+		return $this->relations[$key] ?? null;
+	}
+
+	/**
+	 * This will call the relation for the given key.
+	 *
+	 * @param string $key
+	 * @return Relations\BelongsToMany|null
+	 */
+	protected function callRelation(string $key): ?Relations\BelongsToMany
+	{
+		$relation = $this->getRelation($key);
+		if (!$relation)
+		{
+			return null;
+		}
+
+		return $this->belongsToMany($relation);
 	}
 
 	/**
@@ -588,6 +647,11 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function __call(string $method, array $arguments): mixed
 	{
+		if ($this->isRelation($method))
+		{
+			return $this->callRelation($method);
+		}
+
 		$callable = [$this->storage, $method];
 		return $this->wrapMethodCall($callable, $arguments);
 	}

@@ -2,6 +2,7 @@
 namespace Proto\Models\Joins;
 
 use Proto\Utils\Strings;
+use Proto\Models\Model;
 
 /**
  * Class JoinBuilder
@@ -31,7 +32,8 @@ class JoinBuilder
 		protected string|array $tableName,
 		protected ?string $alias = null,
 		protected bool $isSnakeCase = true,
-		protected ?string $ownerModelClass = null
+		protected ?string $ownerModelClass = null,
+		protected ?Model $parentModel = null
 	)
 	{
 	}
@@ -331,7 +333,14 @@ class JoinBuilder
 	 */
 	public function link(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
-		return new JoinBuilder($this->joins, $tableName, $alias, $this->isSnakeCase, $this->ownerModelClass);
+		return new JoinBuilder(
+			$this->joins,
+			$tableName,
+			$alias,
+			$this->isSnakeCase,
+			$this->ownerModelClass,
+			$this->parentModel
+		);
 	}
 
 	/**
@@ -345,7 +354,14 @@ class JoinBuilder
 	public function create(string|array $tableName, ?string $alias = null): JoinBuilder
 	{
 		$joins = [];
-		return new JoinBuilder($joins, $tableName, $alias, $this->isSnakeCase, $this->ownerModelClass);
+		return new JoinBuilder(
+			$joins,
+			$tableName,
+			$alias,
+			$this->isSnakeCase,
+			$this->ownerModelClass,
+			$this->parentModel
+		);
 	}
 
 	/**
@@ -361,6 +377,12 @@ class JoinBuilder
 	 */
 	public function belongsToMany(string $related, array $relatedFields = [], array $pivotFields = []): ModelJoin
 	{
+		if (isset($this->parentModel))
+		{
+			$key = BelongsToHelper::inferOtherBase($related) . 's';
+			$this->parentModel->addRelation($key, $related);
+		}
+
 		return BelongsToHelper::createBelongsToMany(
 			$this,
 			$related,
