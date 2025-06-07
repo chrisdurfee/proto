@@ -113,21 +113,50 @@ class UserController extends ResourceController
 		 * This will get the user roles.
 		 */
 		$model = $this->modelClass::get($userId);
+		if ($model === null)
+		{
+			return $this->error('User not found.');
+		}
+
+		return $this->response([
+			'rows' => $model->roles
+		]);
+	}
+
+	/**
+	 * This will get the user roles.
+	 *
+	 * @param Request $request
+	 * @return object
+	 */
+	public function debugRoles(
+		Request $request
+	): object
+	{
+		$userId = $request->params()->userId ?? null;
+		if ($userId === null)
+		{
+			return $this->error('Invalid user ID.');
+		}
+
+		/**
+		 * This will get the user roles.
+		 */
+		$model = $this->modelClass::get($userId);
+		if ($model === null)
+		{
+			return $this->error('User not found.');
+		}
+
 		$roles = $model->roles();
 		echo '<pre>';
 		//var_dump($roles->attach(19));
 		//var_dump($roles->detach(19));
 		//var_dump($roles->sync([19]));
 		//var_dump($roles->toggle([19, 18]));
-		var_dump($roles->getResults());
-
-		if ($roles === null)
-		{
-			return $this->error('Failed to retrieve user roles.');
-		}
 
 		return $this->response([
-			'rows' => $model->roles
+			'rows' => $roles->getResults()
 		]);
 	}
 }

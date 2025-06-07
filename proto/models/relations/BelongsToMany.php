@@ -2,7 +2,6 @@
 namespace Proto\Models\Relations;
 
 use Proto\Database\QueryBuilder\AdapterProxy;
-use Proto\Database\QueryBuilder\Select;
 use Proto\Models\Model;
 use Proto\Utils\Strings;
 

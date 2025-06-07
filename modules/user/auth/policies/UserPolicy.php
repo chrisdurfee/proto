@@ -136,6 +136,23 @@ class UserPolicy extends Policy
 	}
 
 	/**
+	 * Determines if the user can get roles for a user.
+	 *
+	 * @param Request $request
+	 * @return bool
+	 */
+	public function getRoles(Request $request): bool
+	{
+		$id = $request->params()->userId ?? null;
+		if ($id === null)
+		{
+			return false;
+		}
+
+		return $this->canEdit((object) ['id' => $id]);
+	}
+
+	/**
 	 * Determines if the user can delete a user.
 	 *
 	 * @param Request $request The request object.
