@@ -143,7 +143,7 @@ class TableStorage implements StorageInterface
 	{
 		return $this->table($tableName)
 			->delete()
-			->where($whereClauses)
+			->where(...$whereClauses)
 			->execute($params);
 	}
 

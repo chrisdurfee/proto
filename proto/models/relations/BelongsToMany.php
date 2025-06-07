@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Models\Relations;
 
+use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Database\QueryBuilder\Select;
 use Proto\Models\Model;
 use Proto\Utils\Strings;
@@ -96,31 +97,29 @@ class BelongsToMany
 	/**
 	 * Get all related model instances for this parent.
 	 *
-	 * @return Model[]
+	 * @return object[]
 	 */
 	public function getResults(): array
 	{
 		$query = $this->buildBaseQuery();
 		$parentId = $this->getParentId();
-		$on = "{$this->pivotTable}.{$this->relatedPivot} = r.{$this->relatedKey}";
+		$on = "p.{$this->relatedPivot} = r.{$this->relatedKey}";
 
 		$joinDef = [
 			'table' => $this->pivotTable,
 			'alias' => 'p',
-			'type' => 'inner',
+			'type' => 'inner JOIN',
 			'on' => [$on],
 			'fields' => null
 		];
 
 		$rows = $query
-			->join([$joinDef])
+			->join($joinDef)
 			->where("p.{$this->foreignPivot} = ?")
 			->fetch([$parentId]);
 
-		return array_map(
-			fn(object $row): Model => new ($this->related)($row),
-			$rows
-		);
+		$instance = new $this->related();
+		return $instance->convertRows($rows);
 	}
 
 	/**
@@ -128,37 +127,46 @@ class BelongsToMany
 	 *
 	 * @param int|int[]|array<int,array> $ids Single ID, array of IDs, or [id => extraData].
 	 * @param array $extra Additional pivot data when attaching a single ID.
-	 * @return void
+	 * @return bool
 	 */
-	public function attach($ids, array $extra = []): void
+	public function attach($ids, array $extra = []): bool
 	{
 		$parentId = $this->getParentId();
 		$toInsert = $this->prepareAttachRows($ids, $extra, $parentId);
 		$isSnake = $this->parent->isSnakeCase();
 
+		$success = true;
 		foreach ($toInsert as $row)
 		{
 			$data = $isSnake
 				? $this->snakeCaseKeys($row)
 				: $row;
 
-			$this->parent
-				->storage()
+			$result = $this->parent
+				->storage
 				->insertInto($this->pivotTable, (object)$data);
+
+			if (!$result)
+			{
+				$success = false;
+				break; // stop on first failure
+			}
 		}
+		return $success;
 	}
 
 	/**
 	 * Detach one or more related IDs from this parent.
 	 *
 	 * @param int|int[] $ids Single ID or array of IDs.
-	 * @return void
+	 * @return bool
 	 */
-	public function detach($ids): void
+	public function detach($ids): bool
 	{
 		$parentId = $this->getParentId();
 		$isSnake = $this->parent->isSnakeCase();
 
+		$success = true;
 		foreach ((array)$ids as $rid)
 		{
 			$whereClauses = $isSnake
@@ -173,18 +181,26 @@ class BelongsToMany
 
 			$params = [$parentId, $rid];
 
-			$this->parent
-				->storage()
+			$result = $this->parent
+				->storage
 				->deleteFrom($this->pivotTable, $whereClauses, $params);
+
+			if (!$result)
+			{
+				$success = false;
+				break; // stop on first failure
+			}
 		}
+		return $success;
 	}
 
 	/**
 	 * Sync pivot so that exactly the given IDs remain attached.
 	 *
 	 * @param int[] $ids
+	 * @return bool
 	 */
-	public function sync(array $ids): void
+	public function sync(array $ids): bool
 	{
 		$current = array_map(
 			fn(Model $m): int => $m->{$this->relatedKey},
@@ -195,21 +211,31 @@ class BelongsToMany
 		$toAttach = array_diff($ids, $current);
 		if ($toDetach !== [])
 		{
-			$this->detach(array_values($toDetach));
+			$result = $this->detach(array_values($toDetach));
+			if (!$result)
+			{
+				return false;
+			}
 		}
 
 		if ($toAttach !== [])
 		{
-			$this->attach(array_values($toAttach));
+			$result = $this->attach(array_values($toAttach));
+			if (!$result)
+			{
+				return false;
+			}
 		}
+		return true;
 	}
 
 	/**
 	 * Toggle given IDs on the pivot (attach if missing, detach if present).
 	 *
 	 * @param int[] $ids
+	 * @return bool
 	 */
-	public function toggle(array $ids): void
+	public function toggle(array $ids): bool
 	{
 		$current = array_map(
 			fn(Model $m): int => $m->{$this->relatedKey},
@@ -233,27 +259,36 @@ class BelongsToMany
 
 		if ($detach !== [])
 		{
-			$this->detach($detach);
+			$result = $this->detach($detach);
+			if (!$result)
+			{
+				return false;
+			}
 		}
 
 		if ($attach !== [])
 		{
-			$this->attach($attach);
+			$result = $this->attach($attach);
+			if (!$result)
+			{
+				return false;
+			}
 		}
+		return true;
 	}
 
 	/**
 	 * Build the base query for selecting related rows.
 	 *
-	 * @return Select
+	 * @return AdapterProxy
 	 */
-	protected function buildBaseQuery(): Select
+	protected function buildBaseQuery(): AdapterProxy
 	{
 		$relatedTable = ($this->related)::table();
 		return $this->parent
-			->storage()
+			->storage
 			->table($relatedTable, 'r')
-			->select('r.*');
+			->select(['r.*']);
 	}
 
 	/**

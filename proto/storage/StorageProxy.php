@@ -13,7 +13,7 @@ use Proto\Models\ModelInterface;
  *
  * @package Proto\Storage
  */
-class StorageProxy extends EventProxy
+class StorageProxy extends EventProxy implements StorageInterface
 {
 	/**
 	 * Sets up the storage proxy.

@@ -412,18 +412,6 @@ $user = User::get(1);
 //         WHERE p.user_id = 1
 $userRoles = $user->roles;
 
-// Attach a role to a user:
-$user->roles->attach(3);
-
-// Detach a role from a user:
-$user->roles->detach(3);
-
-// Sync roles on a user (existing roles will be removed if not in array):
-$user->roles->sync([2, 4, 5]);
-
-// Toggle roles on a user (attach missing, detach present):
-$user->roles->toggle([2, 6]);
-
 // Lazily load posts for a user:
 $allPosts = $user->posts;
 
@@ -435,6 +423,28 @@ $post = Post::get(5);
 // Issues: SELECT * FROM users WHERE id = $post->user_id
 $author = $post->user;`
 				)
+			]),
+
+			Section({ class: "space-y-4 mt-12" }, [
+				P({ class: "text-muted-foreground" }, `Both styles can be used together in a single model, allowing you to mix and match as needed. For example, you might use JoinBuilder for eager joins and lazy relationships for simpler ones. Eager and lazy belongs to many relationships can also be used to attach, detach, sync, or toggle related records.`),
+				P({ class: "text-muted-foreground" }, `Belongs to many examples:`),
+				CodeBlock(
+`// Belongs to many helper methods can be used to manage relationships:
+$user = User::get(1);
+
+// Attach a role to a user:
+$user->roles()->attach(3);
+
+// Detach a role from a user:
+$user->roles()->detach(3);
+
+// Sync roles on a user (existing roles will be removed if not in array):
+$user->roles()->sync([2, 4, 5]);
+
+// Toggle roles on a user (attach missing, detach present):
+$user->roles()->toggle([2, 6]);
+	`
+				),
 			]),
 
 			// Storage Type and Proxy
