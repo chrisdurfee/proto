@@ -63,8 +63,8 @@ class User extends Model
 		 * This will join the user roles and permissions.
 		 */
 		$builder
-			->belongsToMany(Role::class, pivotFields: ['organizationId'])
-			->belongsToMany(Permission::class);
+			->belongsToMany(Role::class, ['id', 'name', 'slug'], pivotFields: ['organizationId'])
+			->belongsToMany(Permission::class, ['id', 'name', 'slug', 'module']);
 
 		$builder
 			->belongsToMany(Organization::class, ['id', 'name']);

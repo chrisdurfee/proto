@@ -25,6 +25,7 @@ class Role extends Migration
 			$table->varchar('name', 100);
 			$table->varchar('slug', 100);
 			$table->text('description')->nullable();
+			$table->enum('resource', 'global', 'organization', 'group')->default("'global'");
 			$table->createdAt();
 			$table->updatedAt();
 

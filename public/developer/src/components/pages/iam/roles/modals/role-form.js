@@ -1,4 +1,4 @@
-import { Fieldset, Input, Textarea } from "@base-framework/ui/atoms";
+import { Fieldset, Input, Select, Textarea } from "@base-framework/ui/atoms";
 import { FormField } from "@base-framework/ui/molecules";
 import { RolePermissionFieldset } from "./role-permission-fieldset.js";
 
@@ -26,6 +26,19 @@ export const RoleForm = ({ isEditing, role }) => ([
 			{ name: "description", label: "Description", description: "A brief description of the role." },
 			[
 				Textarea({ placeholder: "A short description...", rows: 3, bind: "description" })
+			]
+		),
+		new FormField(
+			{ name: "resource", label: "Resource", description: "Defines the scope of the role." },
+			[
+				Select({
+					bind: "resource",
+					options: [
+						{ value: "global", label: "Global" },
+						{ value: "organization", label: "Organization" },
+						{ value: "group", label: "Group" }
+					]
+				})
 			]
 		)
 	]),

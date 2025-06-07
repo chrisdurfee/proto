@@ -31,6 +31,7 @@ class Role extends Model
 		'name',
 		'slug',
 		'description',
+		'resource',
 		'createdAt',
 		'updatedAt'
 	];
