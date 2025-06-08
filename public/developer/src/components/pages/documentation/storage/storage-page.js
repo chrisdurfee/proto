@@ -280,8 +280,6 @@ $this->find(function($sql, &$params) {
 				CodeBlock(
 `public function deleteRole(int $userId, int $roleId): bool
 {
-	if ($userId === null) return false;
-
 	$sql = $this->table()
 		->delete()
 		->where('user_id = ?', 'role_id = ?');
