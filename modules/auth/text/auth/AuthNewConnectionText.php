@@ -13,12 +13,12 @@ use Common\Text\Text;
 class AuthNewConnectionText extends Text
 {
 	/**
-     * This should be overriden to return the message body.
-     *
-     * @abstract
-     * @return string
-     */
-    protected function setupBody(): string
+	 * This should be overriden to return the message body.
+	 *
+	 * @abstract
+	 * @return string
+	 */
+	protected function setupBody(): string
 	{
 		return <<<EOT
 There has been a new multi-factor authorized connection added to your account.

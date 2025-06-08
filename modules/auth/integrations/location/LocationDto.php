@@ -32,7 +32,7 @@ class LocationDto
 		public readonly ?string $postal,
 		public readonly ?float $latitude,
 		public readonly ?float $longitude,
-        public readonly ?string $position = null,
+		public readonly ?string $position = null,
 		public readonly ?string $timezone
 	)
 	{
@@ -60,7 +60,7 @@ class LocationDto
 			$data->postal ?? null,
 			isset($data->latitude) ? (float)$data->latitude : null,
 			isset($data->longitude) ? (float)$data->longitude : null,
-            isset($data->latitude, $data->longitude) ? $data->latitude . ' ' . $data->longitude : null,
+			isset($data->latitude, $data->longitude) ? $data->latitude . ' ' . $data->longitude : null,
 			$data->timezone ?? null
 		);
 	}

@@ -51,14 +51,14 @@ class UserAuthedDevice extends Model
 	protected static function joins(object $builder): void
 	{
 		UserAuthedConnection::many($builder)
-            ->on(['id', 'deviceId'])
-            ->fields('ipAddress')
+			->on(['id', 'deviceId'])
+			->fields('ipAddress')
 
 			/**
 			 * This will define the relationship between the authenticated connection
 			 * and its location.
 			 */
-            ->one(UserAuthedLocation::class)
+			->one(UserAuthedLocation::class)
 				->on(['locationId', 'id'])
 				->fields(
 					'city',

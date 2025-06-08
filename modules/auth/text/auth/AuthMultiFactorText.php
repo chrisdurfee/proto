@@ -13,12 +13,12 @@ use Common\Text\Text;
 class AuthMultiFactorText extends Text
 {
 	/**
-     * This should be overriden to return the message body.
-     *
-     * @abstract
-     * @return string
-     */
-    protected function setupBody(): string
+	 * This should be overriden to return the message body.
+	 *
+	 * @abstract
+	 * @return string
+	 */
+	protected function setupBody(): string
 	{
 		$code = $this->get('code');
 

@@ -34,15 +34,15 @@ class SecureRequestGateway
 		return $this->gate->create($userId);
 	}
 
-    /**
-     * Checks if the request is valid.
-     *
-     * @param string $requestId The request ID
-     * @param int $userId The user ID
-     * @return bool True if valid, false otherwise
-     */
-    public function isValid(string $requestId, int $userId): bool
-    {
-        return $this->gate->isValid($requestId, $userId);
-    }
+	/**
+	 * Checks if the request is valid.
+	 *
+	 * @param string $requestId The request ID
+	 * @param int $userId The user ID
+	 * @return bool True if valid, false otherwise
+	 */
+	public function isValid(string $requestId, int $userId): bool
+	{
+		return $this->gate->isValid($requestId, $userId);
+	}
 }

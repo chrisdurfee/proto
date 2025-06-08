@@ -63,13 +63,13 @@ class UserAuthedConnectionController extends Controller
 	 * @return bool True if permitted, false otherwise.
 	 */
 	public function isPermitted(
-        mixed $userId,
-        string $guid,
-        string $ipAddress
-    ): bool
-    {
-        return $this->model()->isAuthed($userId, $guid, $ipAddress);
-    }
+		mixed $userId,
+		string $guid,
+		string $ipAddress
+	): bool
+	{
+		return $this->model()->isAuthed($userId, $guid, $ipAddress);
+	}
 
 	/**
 	 * This will add or update the device for the user.
@@ -91,10 +91,10 @@ class UserAuthedConnectionController extends Controller
 	 * @return LocationDto|null
 	 */
 	protected function getLocation(string $ipAddress): ?LocationDto
-    {
-        $api = new IpApi();
-        return $api->getLocation($ipAddress);
-    }
+	{
+		$api = new IpApi();
+		return $api->getLocation($ipAddress);
+	}
 
 	/**
 	 * This will add or update the location for the user.
@@ -104,11 +104,11 @@ class UserAuthedConnectionController extends Controller
 	 */
 	protected function setupLocation(string $ipAddress): ?int
 	{
-        $result = $this->getLocation($ipAddress);
-        if (empty($result))
-        {
-            return null;
-        }
+		$result = $this->getLocation($ipAddress);
+		if (empty($result))
+		{
+			return null;
+		}
 
 		$model = new UserAuthedLocation($result);
 		$result = $model->setup();

@@ -105,7 +105,7 @@ class MultiFactorAuthService
 	public function addNewConnection(User $user, object $device, string $ipAddress): object
 	{
 		$connection = ConnectionDto::create($device, $user->id, $ipAddress);
-        return $this->authConnection($connection);
+		return $this->authConnection($connection);
 	}
 
 	/**
