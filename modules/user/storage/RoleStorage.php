@@ -12,7 +12,7 @@ use Proto\Storage\Storage;
  */
 class RoleStorage extends Storage
 {
-    /**
+	/**
 	 * This will get a role by name.
 	 *
 	 * @param string $name
@@ -34,25 +34,25 @@ class RoleStorage extends Storage
 			->first($params);
 	}
 
-    /**
-     * This will get a role by slug.
-     *
-     * @param string $slug
-     * @return object|null
-     */
-    public function getBySlug(string $slug): ?object
-    {
-        if (!$slug)
-        {
-            return null;
-        }
+	/**
+	 * This will get a role by slug.
+	 *
+	 * @param string $slug
+	 * @return object|null
+	 */
+	public function getBySlug(string $slug): ?object
+	{
+		if (!$slug)
+		{
+			return null;
+		}
 
-        $params = ['slug' => $slug];
+		$params = ['slug' => $slug];
 
-        return $this->select()
-            ->where(
-                'slug = ?'
-            )
-            ->first($params);
-    }
+		return $this->select()
+			->where(
+				'slug = ?'
+			)
+			->first($params);
+	}
 }

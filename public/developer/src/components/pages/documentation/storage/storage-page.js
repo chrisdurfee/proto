@@ -6,19 +6,15 @@ import { DocPage } from "../../doc-page.js";
 /**
  * CodeBlock
  *
- * Creates a code block with copy-to-clipboard functionality.
- *
- * @param {object} props
- * @param {object} children
- * @returns {object}
+ * Adds copy-to-clipboard and visual formatting.
  */
-const CodeBlock = Atom((props, children) => (
+const CodeBlock = Atom((props, children) =>
 	Pre(
 		{
 			...props,
 			class: `flex p-4 max-h-[650px] max-w-[1024px] overflow-x-auto
-					 rounded-lg border bg-muted whitespace-break-spaces
-					 break-all cursor-pointer mt-4 ${props.class}`
+				rounded-lg border bg-muted whitespace-break-spaces
+				break-all cursor-pointer mt-4 ${props.class}`
 		},
 		[
 			Code(
@@ -26,7 +22,6 @@ const CodeBlock = Atom((props, children) => (
 					class: 'font-mono flex-auto text-sm text-wrap',
 					click: () => {
 						navigator.clipboard.writeText(children[0].textContent);
-						// @ts-ignore
 						app.notify({
 							title: "Code copied",
 							description: "The code has been copied to your clipboard.",
@@ -38,17 +33,8 @@ const CodeBlock = Atom((props, children) => (
 			)
 		]
 	)
-));
+);
 
-/**
- * StoragePage
- *
- * This page explains how Proto's storage system works. Storage is used to get and set data
- * in the database, interface with query builders and database adapters, and provide built-in CRUD
- * methods to models.
- *
- * @returns {DocPage}
- */
 export const StoragePage = () =>
 	DocPage(
 		{
@@ -56,254 +42,252 @@ export const StoragePage = () =>
 			description: 'Learn how to use Proto\'s storage system to interact with your database via query builders and adapters.'
 		},
 		[
-			// Overview
+
+			// OVERVIEW
 			Section({ class: 'space-y-4' }, [
 				H4({ class: 'text-lg font-bold' }, 'Overview'),
 				P({ class: 'text-muted-foreground' },
-					`Storage is an object used to get and set data in a database table. It provides access to
-					query builders, database adapters, and built-in CRUD methods inherited by child storage classes.`
+					`Storage is an object used to get and set data to the database table. It can access its parent model and inherits all built-in CRUD methods from the base class. You don't need to manually write basic methods in most child storage classes.`
 				)
 			]),
 
-			// Naming
+			// NAMING
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Naming'),
 				P({ class: 'text-muted-foreground' },
-					`The storage class should always be singular and followed by "Storage". For example:`
+					`Storage classes should be singular and end with "Storage".`
 				),
+				H4({ class: 'font-semibold' }, 'Example: Naming a Storage Class'),
 				CodeBlock(
-`<?php
-namespace Proto\\Storage;
-use Proto\\Database\\QueryBuilder\\QueryHandler;
+`<?php declare(strict_types=1);
+namespace Common\\Storage;
+use Proto\\Storage\\Storage;
 
 class ExampleStorage extends Storage
 {
-    // Inherits CRUD methods from the parent Storage class.
+	// inherits CRUD methods
 }`
 				)
 			]),
 
-			// Connection Property
+			// CONNECTION PROPERTY
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Connection Property'),
 				P({ class: 'text-muted-foreground' },
-					`Set the $connection property to the database handle defined in your common/Config .env file.`
+					`Define a custom database connection if this storage should use a different DB from the default.`
 				),
-				CodeBlock(
-`// In a storage class
-protected string $connection = 'default';`
-				)
+				H4({ class: 'font-semibold' }, 'Set a Custom Connection'),
+				CodeBlock(`protected string $connection = 'default';`)
 			]),
 
-			// Database Adapter
+			// DATABASE ADAPTER
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Database Adapter'),
 				P({ class: 'text-muted-foreground' },
-					`The storage object uses a database adapter to interact with the database.
-					An instance of Proto\\Database\\Database is used to create an adapter
-					(such as the Mysqli adapter) which provides built-in methods including:`
+					`The storage layer uses a database adapter (usually Mysqli) for executing SQL operations.`
 				),
-				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
-					Li("select()"),
-					Li("insert()"),
-					Li("update()"),
-					Li("delete()"),
-					Li("execute()"),
-					Li("query()"),
-					Li("autoCommit()"),
-					Li("beginTransaction()"),
-					Li("transaction()"),
-					Li("commit()"),
-					Li("rollback()"),
-					Li("fetch()")
+				H4({ class: 'font-semibold' }, 'Adapter Methods'),
+				Ul({ class: 'list-disc pl-6 text-muted-foreground' }, [
+					Li("select(), insert(), update(), delete()"),
+					Li("execute(), query(), fetch()"),
+					Li("beginTransaction(), commit(), rollback(), transaction()")
 				]),
-				P({ class: 'text-muted-foreground' },
-					`For example, in a storage method you might write:`
-				),
-				CodeBlock(
-`$result = $this->db->fetch('SELECT * FROM example');`
-				)
+				H4({ class: 'font-semibold' }, 'Example: Fetch Rows Using Adapter'),
+				CodeBlock(`$rows = $this->db->fetch('SELECT * FROM example');`)
 			]),
 
-			// Query Builder
+			// QUERY BUILDER
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Query Builder'),
 				P({ class: 'text-muted-foreground' },
-					`The query builder simplifies SQL queries with a fluent interface. It supports methods such as:`
+					`Storage gives access to a fluent query builder to compose SQL easily.`
 				),
-				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
-					Li("select()"),
-					Li("insert()"),
-					Li("update()"),
-					Li("delete()"),
-					Li("join()"),
-					Li("leftJoin()"),
-					Li("rightJoin()"),
-					Li("union()"),
-					Li("where()"),
-					Li("orderBy()"),
-					Li("groupBy()"),
-					Li("limit()")
+				H4({ class: 'font-semibold' }, 'Available Builder Methods'),
+				Ul({ class: 'list-disc pl-6 text-muted-foreground' }, [
+					Li("select(), insert(), update(), delete()"),
+					Li("join(), leftJoin(), rightJoin(), outerJoin(), union()"),
+					Li("where(), in(), orderBy(), groupBy(), having(), distinct(), limit()")
 				]),
-				P({ class: 'text-muted-foreground' },
-					`For example, you can create a select query as follows:`
-				),
+				H4({ class: 'font-semibold' }, 'Example: Simple Select Query'),
 				CodeBlock(
 `$sql = $this->table()
-    ->select()
-    ->where("name = 'example'");
+	->select()
+	->where("status = 'active'");
+
 $rows = $this->fetch($sql);`
 				)
 			]),
 
-			// Debugging
+			// DEBUGGING
 			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Debugging'),
+				H4({ class: 'text-lg font-bold' }, 'Debugging Queries'),
 				P({ class: 'text-muted-foreground' },
-					`Casting the query builder to a string will render the SQL query. Alternatively, use the debug()
-					method to output the query wrapped in a preformatted block:`
+					`Use casting or debug() to inspect the generated SQL.`
 				),
+				H4({ class: 'font-semibold' }, 'Example: Debugging'),
 				CodeBlock(
-`// Debug the query:
-echo $sql; // or
+`echo $sql;
 $sql->debug();`
 				)
 			]),
 
-			// Helper Methods
+			// HELPER METHODS
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Helper Methods'),
 				P({ class: 'text-muted-foreground' },
-					`The storage layer provides several helper methods to build queries:
-					`
+					`Common shortcuts available on all storage classes.`
 				),
-				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
-					Li("table() - sets up a query builder for the model table"),
-					Li("builder('table', 'alias') - creates a new query builder for any table"),
-					Li("select() - creates a select query for the model table with default columns"),
-					Li("where() - adds filters to the query")
-				])
-			]),
-
-			// Example Queries
-			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Example Queries'),
-				P({ class: 'text-muted-foreground' },
-					`Below are examples of custom queries written within a storage class:`
-				),
+				Ul({ class: 'list-disc pl-6 text-muted-foreground' }, [
+					Li("table() - model's query builder"),
+					Li("builder(table, alias) - custom table builder"),
+					Li("select() - selects default columns"),
+					Li("where() - creates filtered queries")
+				]),
+				H4({ class: 'font-semibold' }, 'Example: Table vs. Builder'),
 				CodeBlock(
-`// Custom Select Example:
-public function checkRequest(string $requestId, int $userId): bool
-{
-    $sql = $this->table()
-        ->select('id')
-        ->where(
-            ["user_id", "?"],         // Parameterized equality
-            "request_id = ?",          // Raw SQL with placeholder
-            "status = 'pending'",      // Raw SQL condition
-            ["created_at", "<=", "DATE_ADD(created_at, INTERVAL 1 DAY)"] // Custom comparison
-        )
-        ->limit(1);
-    $rows = $this->fetch($sql, [$userId, $requestId]);
-    return (count($rows) > 0);
-}
-
-// Custom Update Example:
-public function updateStatusByRequest(string $requestId, string $status = 'complete'): bool
-{
-    $sql = $this->table()
-        ->update("status = ?")
-        ->where("request_id = ?");
-    return $this->execute($sql, [$status, $requestId]);
-`
-				),
-				CodeBlock(
-`// Custom Update with Join Example:
-public function updateAccessedAt(string $userId, string $guid, string $ipAddress): bool
-{
-    $dateTime = date('Y-m-d H:i:s');
-    $sql = $this->table()
-        ->update("{$this->alias}.accessed_at = '{$dateTime}'")
-        ->join(function($joins) {
-            $joins->left('user_authed_devices', 'ud')
-                  ->on("{$this->alias}.device_id = ud.id");
-        })
-        ->where("{$this->alias}.ip_address = ?", "ud.user_id = ?", "ud.guid = ?");
-    return $this->execute($sql, [$ipAddress, $userId, $guid]);
-}`
-				),
-				CodeBlock(
-`// Select with Union Example:
-protected function getByOptionInnerQuery()
-{
-    return $this->table()
-        ->select(['id', 'callsId'], ["NULL as calendarId"], ['scheduled', 'callStart'], ['id', 'created'])
-        ->join(function($joins) {
-            $joins->left('list_options', 'lo')
-                  ->on("{$this->alias}.type_id = lo.option_number");
-        })
-        ->where("{$this->alias}.client_id = ?", "lo.list_id = ?", "lo.option_number = ?", "{$this->alias}.status IN (?)")
-        ->union(
-            $this->builder('calendar', 'cal')
-                 ->select(["NULL as callsId"], ['id', 'calendarId'], ['start', 'callStart'], ['id', 'created'])
-                 ->where('cal.client_id = ?', 'cal.type = ?', 'cal.deleted = 0')
-        );
-}`
-				),
-				CodeBlock(
-`// Custom Delete Example:
-public function deleteRole(int $userId, int $roleId): bool
-{
-    if ($userId === null) {
-        return false;
-    }
-    $sql = $this->table()
-        ->delete()
-        ->where('user_id = ?', 'role_id = ?');
-    return $this->db->execute($sql, [$userId, $roleId]);
-}`
+`$sql = $this->table()->select()->where("name = 'John'");
+$sql = $this->builder('other_table', 'o')->select()->where("o.active = 1");`
 				)
 			]),
 
-			// Filter Arrays and Ad-hoc Queries
+			// FILTER ARRAYS
 			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Filter Arrays and Ad-hoc Queries'),
+				H4({ class: 'text-lg font-bold' }, 'Filter Arrays'),
 				P({ class: 'text-muted-foreground' },
-					`To simplify query construction, the storage layer accepts filter arrays that follow the same patterns as the query builder.
-					Examples include:`
+					`Filters simplify conditions and are used in methods like getBy(), where(), all().`
 				),
-				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
-					Li("Raw SQL: \"a.id = '1'\""),
-					Li("Manual parameter binding: [\"a.created_at BETWEEN ? AND ?\", ['2021-02-02', '2021-02-28']]"),
-					Li("Automatic equality binding: ['a.id', \$user->id]"),
-					Li("Custom operator condition: ['a.id', '>', \$user->id]")
+				H4({ class: 'font-semibold' }, 'Supported Filter Formats'),
+				Ul({ class: 'list-disc pl-6 text-muted-foreground' }, [
+					Li(`Raw SQL: "a.id = '1'"`),
+					Li(`Manual bind: ["created_at BETWEEN ? AND ?", [date1, date2]]`),
+					Li(`Auto-bind: ["a.id", $user->id]`),
+					Li(`Operator: ["a.id", ">", $user->id]`)
 				]),
+				H4({ class: 'font-semibold' }, 'Example: Applying Filters'),
 				CodeBlock(
 `$filter = [
-    "a.id = '1'",
-    ["a.created_at BETWEEN ? AND ?", ['2021-02-02', '2021-02-28']],
-    ['a.id', $user->id],
-    ['a.id', '>', $user->id]
+	"a.id = '1'",
+	["a.created_at BETWEEN ? AND ?", ['2021-02-02', '2021-02-28']],
+	['a.id', $user->id],
+	['a.id', '>', $user->id]
 ];
 
-$sql = $this->getBy($filter); // Retrieve one result
-$sql = $this->where($filter); // Retrieve many results
-$result = $this->fetch($sql, $params);
+$sql = $this->getBy($filter);   // one
+$sql = $this->where($filter);   // many
+$result = $this->fetch($sql, $params);`
+				)
+			]),
 
-// Using ad-hoc queries with findAll and find:
-$this->findAll(function($sql, &$params) {
-    $params[] = 'active';
-    $sql->where('status = ?')
-        ->orderBy('status DESC')
-        ->groupBy('user_id');
+			// FIND & FINDALL
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Find and FindAll'),
+				P({ class: 'text-muted-foreground' },
+					`Find allows dynamic queries without creating a custom storage method.`
+				),
+				H4({ class: 'font-semibold' }, 'Examples: Find/FindAll'),
+				CodeBlock(
+`$this->findAll(function($sql, &$params) {
+	$params[] = 'active';
+	$sql->where('status = ?')->orderBy('status DESC')->groupBy('user_id');
 });
 
 $this->find(function($sql, &$params) {
-    $params[] = 'active';
-    $sql->where('status = ?')
-        ->limit(1);
-});
-`
+	$params[] = 'active';
+	$sql->where('status = ?')->limit(1);
+});`
+				)
+			]),
+
+			// EXAMPLES
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Example Queries'),
+
+				H4({ class: 'font-semibold' }, 'Custom Select with Conditions'),
+				CodeBlock(
+`public function checkRequest(string $requestId, int $userId): bool
+{
+	$sql = $this->table()
+		->select('id')
+		->where(
+			["user_id", "?"], // Equality comparison with param bind placeholder
+			"request_id = ?", // raw sql with placeholder
+			"status = 'pending'", //raw sql
+			["created_at", "<=", "DATE_ADD(created_at, INTERVAL 1 DAY)"] // Custom comparison operator
+		)
+		->limit(1);
+
+		$rows = $this->fetch($sql, [$userId, $requestId]);
+	return (count($rows) > 0);
+}`
+				),
+
+				H4({ class: 'font-semibold' }, 'Custom Update Query'),
+				CodeBlock(
+`public function updateStatusByRequest(string $requestId, string $status = 'complete'): bool
+{
+	$sql = $this->table()
+		->update("status = ?")
+		->where("request_id = ?");
+
+	return $this->execute($sql, [$status, $requestId]);
+}`
+				),
+
+				H4({ class: 'font-semibold' }, 'Custom Update with Join'),
+				CodeBlock(
+`public function updateAccessedAt(string $userId, string $guid, string $ipAddress): bool
+{
+	$dateTime = date('Y-m-d H:i:s');
+	$sql = $this->table()
+		->update("{$this->alias}.accessed_at = '{$dateTime}'")
+		->join(function($joins) {
+			$joins
+				->left('user_authed_devices', 'ud')
+				->on("{$this->alias}.device_id = ud.id");
+		})
+		->where("{$this->alias}.ip_address = ?", "ud.user_id = ?", "ud.guid = ?");
+
+	return $this->execute($sql, [$ipAddress, $userId, $guid]);
+}`
+				),
+
+				H4({ class: 'font-semibold' }, 'Select with Union'),
+				CodeBlock(
+`protected function getByOptionInnerQuery()
+{
+  	return $this->table()
+		->select(['id', 'callsId'], ["NULL as calendarId"], ['scheduled', 'callStart'], ['id', 'created'])
+		->join(function($joins) {
+			$joins
+				->left('list_options', 'lo')
+				->on("{$this->alias}.type_id = lo.option_number");
+		})
+		->where(
+			"{$this->alias}.client_id = ?",
+			"lo.list_id = ?",
+			"lo.option_number = ?",
+			"{$this->alias}.status IN (?)"
+		)
+		->union(
+			$this->builder('calendar', 'cal')
+			->select(["NULL as callsId"], ['id', 'calendarId'], ['start', 'callStart'], ['id', 'created'])
+			->where('cal.client_id = ?', 'cal.type = ?', 'cal.deleted = 0')
+		);
+}`
+				),
+
+				H4({ class: 'font-semibold' }, 'Delete with Conditions'),
+				CodeBlock(
+`public function deleteRole(int $userId, int $roleId): bool
+{
+	if ($userId === null) return false;
+
+	$sql = $this->table()
+		->delete()
+		->where('user_id = ?', 'role_id = ?');
+
+	return $this->db->execute($sql, [$userId, $roleId]);
+}`
 				)
 			])
 		]

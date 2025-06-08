@@ -9,6 +9,8 @@ use Proto\Dispatch\Dispatcher;
 /**
  * WebPushUserController
  *
+ * This controller handles web push notifications for users.
+ *
  * @package Modules\User\Controllers
  */
 class WebPushUserController extends Controller
@@ -38,7 +40,7 @@ class WebPushUserController extends Controller
 		$preference = $preferenceClass::getBy([
 			['user_id', $userId]
 		]);
-		return $preference?->allowPush ?? true;
+		return (bool)($preference?->allowPush ?? true);
 	}
 
 	/**
