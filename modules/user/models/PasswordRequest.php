@@ -3,6 +3,7 @@ namespace Modules\User\Models;
 
 use Modules\User\Storage\PasswordRequestStorage;
 use Proto\Models\Model;
+use Proto\Models\Relations;
 
 /**
  * PasswordRequest
@@ -39,4 +40,14 @@ class PasswordRequest extends Model
 	 * @var string $storageType
 	 */
 	protected static string $storageType = PasswordRequestStorage::class;
+
+	/**
+	 * This will get the user.
+	 *
+	 * @return Relations\BelongsTo
+	 */
+	public function user(): Relations\BelongsTo
+	{
+		return $this->belongsTo(User::class);
+	}
 }

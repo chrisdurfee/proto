@@ -2,6 +2,7 @@
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
+use Proto\Models\Relations;
 
 /**
  * Permission
@@ -43,12 +44,22 @@ class Permission extends Model
 	 */
 	protected static function joins(object $builder): void
 	{
-		$builder
-			->belongsToMany(Role::class, [
-				'id',
-				'name',
-				'slug',
-				'description'
-			]);
+		// $builder
+		// 	->belongsToMany(Role::class, [
+		// 		'id',
+		// 		'name',
+		// 		'slug',
+		// 		'description'
+		// 	]);
+	}
+
+	/**
+	 * Retrieve the roles associated with this permission.
+	 *
+	 * @return Relations\BelongsToMany
+	 */
+	public function roles(): Relations\BelongsToMany
+	{
+		return $this->belongsToMany(Role::class);
 	}
 }

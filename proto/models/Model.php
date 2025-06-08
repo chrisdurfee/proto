@@ -535,7 +535,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null): Relations\BelongsTo
 	{
-		$ownerKey = $ownerKey ?? (new $related())->getIdKeyName();
+		$ownerKey = $ownerKey ?? $related::idKeyName();
 		$foreignKey = $this->getForeignKeyName($foreignKey);
 		return new Relations\BelongsTo($related, $foreignKey, $ownerKey, $this);
 	}
