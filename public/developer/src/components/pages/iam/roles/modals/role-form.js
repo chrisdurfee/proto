@@ -36,7 +36,8 @@ export const RoleForm = ({ isEditing, role }) => ([
 					options: [
 						{ value: "global", label: "Global" },
 						{ value: "organization", label: "Organization" },
-						{ value: "group", label: "Group" }
+						{ value: "group", label: "Group" },
+						{ value: 'team', label: "Team" },
 					]
 				})
 			]
