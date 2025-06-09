@@ -36,9 +36,9 @@ class DomainMiddleware
 
 
 		return (
-			!in_array($originHost,  $allowed, true)
-		 && !in_array($refererHost, $allowed, true)
-		 && !in_array($hostHeader,  $allowed, true)
+			in_array($originHost,  $allowed, true)
+		 || in_array($refererHost, $allowed, true)
+		 || in_array($hostHeader,  $allowed, true)
 		);
 	}
 
