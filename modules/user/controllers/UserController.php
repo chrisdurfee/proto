@@ -112,7 +112,7 @@ class UserController extends ResourceController
 		/**
 		 * This will get the user roles.
 		 */
-		$model = $this->modelClass::get($userId);
+		$model = $this->model::get($userId);
 		if ($model === null)
 		{
 			return $this->error('User not found.');
@@ -142,7 +142,7 @@ class UserController extends ResourceController
 		/**
 		 * This will get the user roles.
 		 */
-		$model = $this->modelClass::get($userId);
+		$model = $this->model::get($userId);
 		if ($model === null)
 		{
 			return $this->error('User not found.');

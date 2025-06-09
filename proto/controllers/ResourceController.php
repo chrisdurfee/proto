@@ -3,6 +3,7 @@ namespace Proto\Controllers;
 
 use Proto\Http\Router\Request;
 use Proto\Utils\Format\JsonFormat;
+use Proto\Api\Validator;
 
 /**
  * ResourceController
@@ -15,6 +16,13 @@ use Proto\Utils\Format\JsonFormat;
 abstract class ResourceController extends Controller
 {
 	use ModelTrait;
+
+	/**
+	 * The item key used in requests.
+	 *
+	 * @var string
+	 */
+	protected string $item = 'item';
 
 	/**
 	 * Initializes the resource controller.
@@ -35,8 +43,81 @@ abstract class ResourceController extends Controller
 	 */
 	public function getRequestItem(Request $request): object
 	{
-		return $request->json('item') ?? (object) $request->all();
+		return $request->json($this->item) ?? (object) $request->all();
 	}
+
+	/**
+	 * Validates the request data.
+	 *
+	 * This method can be overridden in subclasses to provide specific validation logic.
+	 *
+	 * @return array An array of validation errors, if any.
+	 */
+	protected function validate(): array
+	{
+		return [];
+	}
+
+	/**
+	 * Validates the item data using the defined validation rules.
+	 *
+	 * @param object $item The item to validate.
+	 * @param bool $isUpdating Whether the request is for updating an existing item.
+	 * @return object The response object.
+	 */
+	public function validateItem(object $item, bool $isUpdating = false): bool
+	{
+		$rules = $this->validate();
+		if (count($rules) < 1)
+		{
+			return true;
+		}
+
+		if ($isUpdating && !isset($item->id))
+		{
+			$idKeyName = $this->model::idKeyName();
+			$rules[] = "{$idKeyName}|required";
+		}
+
+		return $this->validateRules($item, $rules);
+	}
+
+	/**
+	 * Validates the request data.
+	 *
+	 * @param object|array $data The data to validate.
+	 * @param array $rules The validation rules to apply.
+	 * @return bool True if validation passes, false otherwise.
+	 */
+	protected function validateRules(object|array $data, array $rules = []): bool
+	{
+		if (count($rules) < 1)
+		{
+			return true;
+		}
+
+		$validator = Validator::create($data, $rules);
+		if (!$validator->isValid())
+		{
+			$this->errorValidating($validator);
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Handles validation errors by encoding the error message and rendering it as JSON.
+	 *
+	 * @param object $validator The validator object containing the error message.
+	 * @return void
+	 */
+	protected function errorValidating(object $validator): void
+    {
+		$error = $this->error($validator->getMessage());
+        JsonFormat::encodeAndRender($error);
+        die;
+    }
 
 	/**
 	 * Sets up model data.
@@ -202,7 +283,7 @@ abstract class ResourceController extends Controller
 			return $this->error('The ID is required.');
 		}
 
-		return $this->response(['row' => $this->modelClass::get($id)]);
+		return $this->response(['row' => $this->model::get($id)]);
 	}
 
 	/**
@@ -239,7 +320,7 @@ abstract class ResourceController extends Controller
 		$search = $request->input('search');
 		$custom = $request->input('custom');
 
-		$result = $this->modelClass::all($filter, $offset, $limit, [
+		$result = $this->model::all($filter, $offset, $limit, [
 			'search' => $search,
 			'custom' => $custom
 		]);
@@ -260,7 +341,7 @@ abstract class ResourceController extends Controller
 			return $this->error('No search term provided.');
 		}
 
-		return $this->response(['rows' => $this->modelClass::search($search)]);
+		return $this->response(['rows' => $this->model::search($search)]);
 	}
 
 	/**
@@ -271,6 +352,6 @@ abstract class ResourceController extends Controller
 	 */
 	public function count(Request $request): object
 	{
-		return $this->response($this->modelClass::count());
+		return $this->response($this->model::count());
 	}
 }

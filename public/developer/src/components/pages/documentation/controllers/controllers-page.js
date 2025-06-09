@@ -1,4 +1,4 @@
-import { Code, H4, P, Pre, Section } from "@base-framework/atoms";
+import { Code, H4, Li, P, Pre, Section, Ul } from "@base-framework/atoms";
 import { Atom } from "@base-framework/base";
 import { Icons } from "@base-framework/ui/icons";
 import { DocPage } from "../../doc-page.js";
@@ -122,8 +122,8 @@ class ExampleController extends ModelController
 {
     // Retrieve a user by name using the model
     $result = $this->model()->getBy(['name' => $name]);
-
-    if ($result === false) {
+    if ($result === false)
+	{
         return $this->error('No user was found');
     }
 
@@ -201,6 +201,138 @@ class UserController extends ResourceController
 				CodeBlock(
 `// Bypass response wrapping
 $result = static::$controllerType::methodName();`
+				)
+			]),
+
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Request Item'),
+				P({ class: 'text-muted-foreground' },
+					`The request item property sets the key name that will be used to get the item value from the request params. By default, the item is set to "item." This property can be overridden to set a custom key name to get the requested item.`
+				),
+				CodeBlock(
+`// in a resource controller
+protected string $item = 'example';`
+				)
+			]),
+
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Get Request Item'),
+				P({ class: 'text-muted-foreground' },
+					`This will get the requested item and decode the value. It will also clean the value.`
+				),
+				CodeBlock(
+`// in a resource controller
+public function addUser(Request $request): object
+{
+    $user = $this->getRequestItem($request);
+    // do something with the user
+}`
+				)
+			]),
+
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Validation & Sanitize'),
+				P({ class: 'text-muted-foreground' },
+					`The validator class can validate and sanitize data. The validator accepts an object to validate and the validation settings to document how to validate the data. The validator will validate and sanitize the data by specified data type.`
+				),
+				CodeBlock(
+`$item = (object)[
+    'id' => 1,
+    'name' => 'name'
+];
+
+$validator = Validator::create($item, [
+    'id' => 'int|required',
+    'name' => 'string'
+]);
+
+if ($validator->isValid() === false)
+{
+    echo $validator->getMessage();
+}`
+				),
+				P({ class: 'text-muted-foreground' },
+					`The validator will sanitize and validate the data by specified data type. The supported data types include:`
+				),
+
+				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
+					Li('int'),
+					Li("float"),
+					Li('string'),
+					Li('email'),
+					Li('ip'),
+					Li('phone'),
+					Li("mac"),
+					Li("bool"),
+					Li("url"),
+					Li("domain")
+				]),
+				P({ class: 'text-muted-foreground' },
+					`Fields marked as required will be required to submit the requested item.`
+				),
+				CodeBlock(
+`[
+    'id' => 'int|required'
+]`
+				),
+				P({ class: 'text-muted-foreground' },
+					`A limit can be set to limit the length of a string. The limit can be set by using the :number rule.`
+				),
+				CodeBlock(
+`[
+    'name' => 'string:255|required'
+]`
+				),
+
+				H4({ class: 'text-lg font-bold' }, 'Validate Method'),
+				P({ class: 'text-muted-foreground' },
+					`The validate method can be used to set the validating settings for adding and updating a row. The model "id" field is automatically set to "int" and "required" for the update method. The validate method can be overridden to set custom validation settings.`
+				),
+				CodeBlock(
+`/**
+ * Validates the request data.
+ *
+ * This method can be overridden in subclasses to provide specific validation logic.
+ *
+ * @return array An array of validation errors, if any.
+ */
+protected function validate(): array
+{
+	return [
+		'id' => 'int|required',
+		'name' => 'string:255|required',
+		'email' => 'email|required',
+		'phone' => 'phone',
+		'status' => 'int'
+	];
+}`
+				),
+
+				H4({ class: 'text-lg font-bold' }, 'Custom Validation'),
+				P({ class: 'text-muted-foreground' },
+					`The validateRules method can access a data object and an array or rules to validate the data.`
+				),
+				CodeBlock(
+`/**
+ * Validates the request data.
+ *
+ * This method can be overridden in subclasses to provide specific validation logic.
+ *
+ * @return array An array of validation errors, if any.
+ */
+public function addData(Request $request): array
+{
+	$data = $this->getRequestItem($request);
+	$this->validateRules($data, [
+		'id' => 'int|required',
+		'name' => 'string:255|required',
+		'email' => 'email|required',
+		'phone' => 'phone',
+		'status' => 'int'
+	]);
+
+	// do something with the data
+}`
 				)
 			]),
 

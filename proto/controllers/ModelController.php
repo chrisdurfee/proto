@@ -158,7 +158,7 @@ abstract class ModelController extends Controller
 	 */
 	public function get(mixed $id): object
 	{
-		return $this->response(['row' => $this->modelClass::get($id)]);
+		return $this->response(['row' => $this->model::get($id)]);
 	}
 
 	/**
@@ -172,7 +172,7 @@ abstract class ModelController extends Controller
 	 */
 	public function all(mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null): object
 	{
-		$result = $this->modelClass::all($filter, $offset, $count, $modifiers);
+		$result = $this->model::all($filter, $offset, $count, $modifiers);
 		return $this->response($result);
 	}
 
@@ -184,7 +184,7 @@ abstract class ModelController extends Controller
 	 */
 	public function search(mixed $search): object
 	{
-		return $this->response(['rows' => $this->modelClass::search($search)]);
+		return $this->response(['rows' => $this->model::search($search)]);
 	}
 
 	/**
@@ -194,6 +194,6 @@ abstract class ModelController extends Controller
 	 */
 	public function count(): object
 	{
-		return $this->response($this->modelClass::count());
+		return $this->response($this->model::count());
 	}
 }

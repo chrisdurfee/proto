@@ -21,11 +21,11 @@ class EmailVerificationGate extends Gate
 	/**
 	 * This will setup the model class.
 	 *
-	 * @param string $modelClass by using the magic constant ::class
+	 * @param string $model by using the magic constant ::class
 	 * @return void
 	 */
 	public function __construct(
-		protected string $modelClass = EmailVerification::class
+		protected string $model = EmailVerification::class
 	)
 	{
 		parent::__construct();
@@ -38,7 +38,7 @@ class EmailVerificationGate extends Gate
 	 */
 	public function getRequest(string $requestId, int $userId): ?object
 	{
-		return ($this->modelClass::getByRequest($requestId, $userId));
+		return ($this->model::getByRequest($requestId, $userId));
 	}
 
 	/**
@@ -55,7 +55,7 @@ class EmailVerificationGate extends Gate
 			return false;
 		}
 
-		$modelClass = $this->modelClass;
+		$modelClass = $this->model;
 		return (new $modelClass((object)[
 			'id' => $this->requestId,
 			'status' => 'complete'

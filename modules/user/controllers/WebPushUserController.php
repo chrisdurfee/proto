@@ -63,7 +63,7 @@ class WebPushUserController extends Controller
 			return null;
 		}
 
-		$model = new ($this->modelClass)();
+		$model = $this->model();
 		$subscriptions = $model->getByUser($userId);
 		if (!isset($subscriptions))
 		{

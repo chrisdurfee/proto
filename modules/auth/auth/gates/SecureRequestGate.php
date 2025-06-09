@@ -21,11 +21,11 @@ class SecureRequestGate extends Gate
 	/**
 	 * This will setup the model class.
 	 *
-	 * @param string $modelClass by using the magic constant ::class
+	 * @param string $model by using the magic constant ::class
 	 * @return void
 	 */
 	public function __construct(
-		protected string $modelClass = SecureRequest::class
+		protected string $model = SecureRequest::class
 	)
 	{
 		parent::__construct();
@@ -38,7 +38,7 @@ class SecureRequestGate extends Gate
 	 */
 	public function getRequest(string $requestId, int $userId): ?object
 	{
-		return ($this->modelClass::getByRequest($requestId, $userId));
+		return ($this->model::getByRequest($requestId, $userId));
 	}
 
 	/**
@@ -48,7 +48,7 @@ class SecureRequestGate extends Gate
 	 */
 	public function create(int $userId): ?SecureRequest
 	{
-		$model = new $this->modelClass((object)[
+		$model = new $this->model((object)[
 			'userId' => $userId
 		]);
 		$result = $model->add();
@@ -67,7 +67,7 @@ class SecureRequestGate extends Gate
 			return false;
 		}
 
-		$modelClass = $this->modelClass;
+		$modelClass = $this->model;
 		return (new $modelClass((object)[
 			'id' => $this->requestId,
 			'status' => 'complete'

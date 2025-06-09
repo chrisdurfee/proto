@@ -11,9 +11,9 @@ namespace Proto\Controllers;
 trait ModelTrait
 {
 	/**
-	 * @var string|null $modelClass The model class reference using ::class.
+	 * @var string|null $model The model class reference using ::class.
 	 */
-	protected ?string $modelClass = null;
+	protected ?string $model = null;
 
 	/**
 	 * Retrieves the model class name.
@@ -22,7 +22,7 @@ trait ModelTrait
 	 */
 	protected function getModelClass(): ?string
 	{
-		return $this->modelClass;
+		return $this->model;
 	}
 
 	/**
@@ -32,9 +32,9 @@ trait ModelTrait
 	 */
 	protected function setModelClass(): void
 	{
-		if ($this->modelClass === null)
+		if ($this->model === null)
 		{
-			$this->modelClass = $this->getModelClass();
+			$this->model = $this->getModelClass();
 		}
 	}
 
@@ -46,7 +46,7 @@ trait ModelTrait
 	 */
 	protected function model(?object $data = null): ?object
 	{
-		return $this->modelClass ? new ($this->modelClass)($data) : null;
+		return $this->model ? new ($this->model)($data) : null;
 	}
 
 	/**
