@@ -53,7 +53,7 @@ export const HttpPage = () =>
 	DocPage(
 		{
 			title: 'HTTP System',
-			description: 'Learn how to work with the current HTTP request using Proto’s request utilities.'
+			description: 'Learn how to work with the current HTTP request using Proto\'s request utilities.'
 		},
 		[
 			// Introduction
@@ -79,16 +79,19 @@ export const HttpPage = () =>
 				Ul({ class: 'list-disc pl-6 space-y-1 text-muted-foreground' }, [
 					Li("path() - Returns the current request path."),
 					Li("fullUrl() - Returns the full request URL, including query parameters."),
-					Li("ip() - Retrieves the client’s IP address."),
-					Li("method() - Returns the request’s HTTP method (GET, POST, etc.)."),
+					Li("fullUrlWithScheme() - Returns the full request URL, including query parameters and the scheme."),
+					Li("ip() - Retrieves the client\'s IP address."),
+					Li("method() - Returns the request\'s HTTP method (GET, POST, etc.)."),
 					Li("isMethod() - Checks if the request method matches a given string."),
 					Li("headers() - Returns all headers as an array or dictionary."),
 					Li("header() - Retrieves a specific header by name."),
 					Li("userAgent() - Returns the User-Agent header."),
+					Li("mac() - Returns the MAC address of the client."),
 					Li("input() - Gets a query or post parameter by key."),
 					Li("getInt() - Retrieves an integer parameter."),
 					Li("getBool() - Retrieves a boolean parameter."),
 					Li("json() - Returns the request body parsed as JSON (if applicable)."),
+					Li("sanitized() - Retrieves the sanitized request input."),
 					Li("raw() - Retrieves the raw request body as a string."),
 					Li("decodeUrl() - Decodes a URL-encoded string."),
 					Li("has() - Checks if a given input parameter is present."),
@@ -104,7 +107,7 @@ export const HttpPage = () =>
 				H4({ class: 'text-lg font-bold' }, 'Example Usage'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Here’s a quick example showing how you might use some of these methods to
+					`Here\'s a quick example showing how you might use some of these methods to
 					read the current path, query parameters, and headers in a controller:`
 				),
 				CodeBlock(
@@ -113,27 +116,35 @@ export const HttpPage = () =>
 namespace Modules\\Example\\Controllers;
 
 use Proto\\Http\\Request;
+use Proto\\Controllers\\ResourceController;
 
-class ExampleController
+class ExampleController extends ResourceController
 {
-	public function showDetails(): void
+	/**
+	 * Show details of the current request.
+	 *
+	 * @param Request $request
+	 * @return void
+	 */
+	public function showDetails(Request $request): void
 	{
 		// Get the current request path
-		$path = Request::path();
+		$path = $request->path();
 
 		// Check if the request method is POST
-		if (Request::isMethod('POST')) {
+		if ($request->isMethod('POST'))
+		{
 			// Get a form field value
-			$username = Request::input('username');
+			$username = $request->input('username');
 			// Retrieve an integer parameter
-			$age = Request::getInt('age', 0);
+			$age = $request->getInt('age', 0);
 		}
 
 		// Get the client IP
-		$clientIp = Request::ip();
+		$clientIp = $request->ip();
 
 		// Get a specific header
-		$authHeader = Request::header('Authorization');
+		$authHeader = $request->header('Authorization');
 
 		// ...
 	}
@@ -141,7 +152,7 @@ class ExampleController
 				),
 				P(
 					{ class: 'text-muted-foreground' },
-					`By using these static methods, you can conveniently gather all the data
+					`By using these methods, you can conveniently gather all the data
 					you need from the request object without manual parsing or third-party libraries.`
 				)
 			])

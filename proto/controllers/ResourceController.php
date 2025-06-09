@@ -133,6 +133,11 @@ abstract class ResourceController extends Controller
 			return $this->error('No item provided.');
 		}
 
+		if (!$this->validateItem($data, false))
+		{
+			return $this->error('Invalid item data.');
+		}
+
 		$model = $this->model($data);
 		return $model->setup()
 			? $this->response(['id' => $model->id])
@@ -153,6 +158,11 @@ abstract class ResourceController extends Controller
 			return $this->error('No item provided.');
 		}
 
+		if (!$this->validateItem($data, false))
+		{
+			return $this->error('Invalid item data.');
+		}
+
 		$model = $this->model($data);
 		return $model->add()
 			? $this->response(['id' => $model->id])
@@ -171,6 +181,11 @@ abstract class ResourceController extends Controller
 		if (empty($data))
 		{
 			return $this->error('No item provided.');
+		}
+
+		if (!$this->validateItem($data, false))
+		{
+			return $this->error('Invalid item data.');
 		}
 
 		$model = $this->model($data);
