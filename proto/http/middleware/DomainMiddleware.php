@@ -15,13 +15,12 @@ use Proto\Utils\Format\JsonFormat;
 class DomainMiddleware
 {
 	/**
-	 * Handles the request by checking the origin.
+	 * Checks if the request's origin or referer is allowed.
 	 *
-	 * @param Request $request The incoming request.
-	 * @param callable $next The next middleware handler.
-	 * @return mixed The processed request.
+	 * @param Request $request
+	 * @return bool
 	 */
-	public function handle(Request $request, callable $next): mixed
+	protected function isSupportedDomain(Request $request): bool
 	{
 		$allowed = (array)env('urls');
 
@@ -36,11 +35,23 @@ class DomainMiddleware
 			: null;
 
 
-		if (
+		return (
 			!in_array($originHost,  $allowed, true)
 		 && !in_array($refererHost, $allowed, true)
 		 && !in_array($hostHeader,  $allowed, true)
-		)
+		);
+	}
+
+	/**
+	 * Handles the request by checking the origin.
+	 *
+	 * @param Request $request The incoming request.
+	 * @param callable $next The next middleware handler.
+	 * @return mixed The processed request.
+	 */
+	public function handle(Request $request, callable $next): mixed
+	{
+		if (!$this->isSupportedDomain($request))
 		{
 			$FORBIDDEN_CODE = 403;
 			$this->error('Domain not allowed', $FORBIDDEN_CODE);
