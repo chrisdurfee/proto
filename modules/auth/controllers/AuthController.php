@@ -242,6 +242,9 @@ class AuthController extends Controller
 			return $this->error('The user is not enabled.', HttpStatus::FORBIDDEN->value);
 		}
 
+		// refresh session ID to prevent fixation
+		session()->refreshId();
+
 		return $this->permit($user);
 	}
 

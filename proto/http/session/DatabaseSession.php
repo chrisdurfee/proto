@@ -82,6 +82,21 @@ class DatabaseSession extends Adapter
 	}
 
 	/**
+	 * Refreshes the session ID for security.
+	 *
+	 * @return string
+	 */
+	public function refreshId(): string
+	{
+		$old = static::$token ?? $this->getToken();
+		$new = Token::create();
+		static::$token = $new;
+
+		$this->model->refreshId($old, $new);
+		return $new;
+	}
+
+	/**
 	 * Initializes the UserSession model.
 	 *
 	 * @return void

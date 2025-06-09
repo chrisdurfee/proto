@@ -48,6 +48,20 @@ class FileSession extends Adapter
 	}
 
 	/**
+	 * Refreshes the session ID for security.
+	 *
+	 * @return string
+	 */
+	public function refreshId(): string
+	{
+		if (session_status() === PHP_SESSION_ACTIVE)
+		{
+			session_regenerate_id(true);
+		}
+		return session_id();
+	}
+
+	/**
 	 * Checks if the session is started.
 	 *
 	 * @return bool

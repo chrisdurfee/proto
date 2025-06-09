@@ -138,12 +138,7 @@ class Cookie
 	 */
 	public static function remove(string $name): void
 	{
-		setcookie($name, '', [
-			'expires' => time() - 604800, // 1 week in the past
-			'path' => '/',
-			'secure' => true,
-			'httponly' => true,
-			'samesite' => 'Strict'
-		]);
+		$opts = (new static($name, '', 1))->getOptions();
+    	setcookie($name, '', $opts);
 	}
 }

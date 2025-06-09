@@ -96,6 +96,16 @@ class Session
 	}
 
 	/**
+	 * Refreshes the session ID.
+	 *
+	 * @return string
+	 */
+	public static function refreshId(): mixed
+	{
+		return static::getInstance()->refreshId();
+	}
+
+	/**
 	 * Retrieves a session value by key.
 	 *
 	 * @param string $key

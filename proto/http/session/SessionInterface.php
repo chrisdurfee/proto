@@ -25,6 +25,13 @@ interface SessionInterface
 	public static function getId(): string;
 
 	/**
+	 * Refresh the session ID.
+	 *
+	 * @return string
+	 */
+	public function refreshId(): string;
+
+	/**
 	 * Sets a session value.
 	 *
 	 * @param string $key

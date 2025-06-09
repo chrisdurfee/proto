@@ -53,7 +53,7 @@ class Token
 	 */
 	protected static function normalizeLength(int $length): int
 	{
-		return min($length, self::MAX_SIZE) / 2; // Bin2Hex doubles the size
+		return intdiv(min($length, self::MAX_SIZE), 2); // Bin2Hex doubles the size
 	}
 
 	/**

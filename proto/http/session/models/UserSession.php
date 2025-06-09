@@ -30,4 +30,21 @@ class UserSession extends Model
 		'access',
 		'data'
 	];
+
+	/**
+	 * Swap out the primary‐key value.
+	 *
+	 * @param string $oldId
+	 * @param mixed $newId
+	 * @return bool
+	 */
+	public function refreshId(string $oldId, $newId): bool
+	{
+		$dateTime = date('Y-m-d H:i:s');
+		return $this->storage()
+					->table('user_sessions', 'us')
+					->update('id = ?', 'updated_at = ?')
+					->where('id = ?')
+					->execute([$newId, $dateTime, $oldId]);
+	}
 }
