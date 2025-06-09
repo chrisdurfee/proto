@@ -3,7 +3,6 @@
 namespace Proto\Http;
 
 use Proto\Utils\Filter\Validate;
-use Proto\Utils\Filter\Input;
 
 /**
  * Class PublicIp
