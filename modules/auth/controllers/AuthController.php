@@ -218,6 +218,62 @@ class AuthController extends Controller
 	}
 
 	/**
+	 * Resume a user session.
+	 *
+	 * @return object
+	 */
+	public function resume(): object
+	{
+		$session = getSession('user');
+		$userId = $session->id ?? null;
+		if (!$userId)
+		{
+			return $this->error('The user is not authenticated.', HttpStatus::UNAUTHORIZED->value);
+		}
+
+		$user = $this->user->get($userId);
+		if (!$user)
+		{
+			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
+		}
+
+		if ($user->enabled === 0)
+		{
+			return $this->error('The user is not enabled.', HttpStatus::FORBIDDEN->value);
+		}
+
+		return $this->permit($user);
+	}
+
+	/**
+	 * Pulse the user session to keep it alive.
+	 *
+	 * @return object
+	 */
+	public function pulse(): object
+	{
+		$session = getSession('user');
+		$userId = $session->id ?? null;
+		if (!$userId)
+		{
+			return $this->error('The user is not authenticated.', HttpStatus::UNAUTHORIZED->value);
+		}
+
+		$user = $this->user->get($userId);
+		if (!$user)
+		{
+			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
+		}
+
+		if ($user->enabled === 0)
+		{
+			return $this->error('The user is not enabled.', HttpStatus::FORBIDDEN->value);
+		}
+
+		return $this->permit($user);
+	}
+
+	/**
 	 * Register a new user.
 	 *
 	 * @param Request $req

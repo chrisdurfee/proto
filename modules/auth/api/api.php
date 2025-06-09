@@ -23,6 +23,8 @@ router()
 		// standard login / logout / register
 		$router->post('login', [$controller, 'login']);
 		$router->post('logout', [$controller, 'logout']);
+		$router->post('resume', [$controller, 'resume']);
+		$router->post('pulse', [$controller, 'pulse']);
 		$router->post('register', [$controller, 'register']);
 
 		// MFA: send & verify one‑time codes
