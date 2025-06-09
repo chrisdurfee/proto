@@ -3,6 +3,7 @@ namespace Modules\Auth\Api;
 
 use Modules\Auth\Controllers\AuthController;
 use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
+use Proto\Http\Middleware\DomainMiddleware;
 use Proto\Http\Middleware\ThrottleMiddleware;
 use Proto\Http\Router\Router;
 
@@ -37,5 +38,7 @@ router()
 		$router->post('password/reset', [$controller, 'resetPassword']);
 
 		// CSRF token (no body, safe to GET)
-		$router->get('csrf-token', [$controller, 'getToken']);
+		$router->get('csrf-token', [$controller, 'getToken'], [
+			DomainMiddleware::class
+		]);
 	});
