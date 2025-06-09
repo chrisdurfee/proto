@@ -28,7 +28,9 @@ class UserSession extends Model
 	protected static array $fields = [
 		'id',
 		'access',
-		'data'
+		'data',
+		'createdAt',
+		'updatedAt'
 	];
 
 	/**
