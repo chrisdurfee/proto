@@ -42,6 +42,9 @@ class ExampleModule extends Module
 		/**
 		 * This will add an event for when a ticket is added.
 		 */
-		$this->event('Ticket:add', fn($ticket): void => var_dump($ticket));
+		$this->event('Ticket:add', function($ticket): void
+		{
+			var_dump($ticket);
+		});
 	}
 }

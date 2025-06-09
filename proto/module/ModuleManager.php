@@ -7,7 +7,7 @@ use Proto\Utils\Strings;
  * @var Modules $modules This will load the modules class to add the
  * modules to the global scope.
  */
-$modules = new Modules();
+new Modules();
 
 /**
  * ModuleManager class

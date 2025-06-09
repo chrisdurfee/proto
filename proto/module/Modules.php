@@ -76,7 +76,7 @@ namespace
 	/**
 	 * @var Modules $modules
 	 */
-	$modules = new Modules();
+	$GLOBALS['modules'] = new Modules();
 
 	/**
 	 * This will return the modules instance.
@@ -85,8 +85,7 @@ namespace
 	 */
 	function modules(): Modules
 	{
-		global $modules;
-		return $modules;
+		return $GLOBALS['modules'];
 	}
 
 	/**
@@ -98,7 +97,6 @@ namespace
 	 */
 	function registerModule(string $key, callable $factory): void
 	{
-		global $modules;
-		$modules->registerModule($key, $factory);
+		$GLOBALS['modules']->registerModule($key, $factory);
 	}
 }

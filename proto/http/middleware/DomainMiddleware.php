@@ -23,7 +23,7 @@ class DomainMiddleware
 	 */
 	public function handle(Request $request, callable $next): mixed
 	{
-		$allowed = explode(',', env('urls'));
+		$allowed = (array)env('urls');
 
 		$originHeader = $request->header('origin')  ?? '';
 		$refererHeader = $request->header('referer') ?? '';
