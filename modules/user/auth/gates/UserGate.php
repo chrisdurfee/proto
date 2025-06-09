@@ -40,4 +40,15 @@ class UserGate extends Gate
 		$instance = new self();
 		return $instance->isUser($userId);
 	}
+
+	/**
+	 * This will check if the user is an admin.
+	 *
+	 * @return bool
+	 */
+	public function isAdmin(): bool
+	{
+		$gate = new RoleGate();
+		return $gate->isAdmin();
+	}
 }

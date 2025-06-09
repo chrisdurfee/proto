@@ -15,6 +15,22 @@ class RoleGate extends Gate
 	use OrganizationTrait;
 
 	/**
+	 * Checks if the user is an admin.
+	 *
+	 * @return bool True if the user is an admin, otherwise false.
+	 */
+	public function isAdmin(): bool
+	{
+		$user = $this->get('user');
+		if (!$user)
+		{
+			return false;
+		}
+
+		return $this->hasRole('admin');
+	}
+
+	/**
 	 * Checks if the user has the specified role.
 	 *
 	 * @param string $roleSlug The role to check.
