@@ -100,7 +100,7 @@ class AuthController extends Controller
 	 */
 	protected function permit(User $user): object
 	{
-		$this->updateStatus($user, UserStatus::ONLINE->value);
+		$this->updateUserStatus($user, UserStatus::ONLINE->value);
 		$this->setSessionUser($user);
 
 		return $this->response([
@@ -211,7 +211,7 @@ class AuthController extends Controller
 			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
 		}
 
-		$this->updateStatus($user->id, UserStatus::OFFLINE->value);
+		$this->updateUserStatus($user->id, UserStatus::OFFLINE->value);
 		session()->destroy();
 
 		return $this->response(['message' => 'The user has been logged out successfully.']);
@@ -339,7 +339,7 @@ class AuthController extends Controller
 	 * @param string $status
 	 * @return bool
 	 */
-	protected function updateStatus(User $user, string $status): bool
+	protected function updateUserStatus(User $user, string $status): bool
 	{
 		$success = $this->user->updateStatus($user->id, $status);
 		if (!$success)

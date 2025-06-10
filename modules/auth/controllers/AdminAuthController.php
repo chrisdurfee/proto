@@ -21,13 +21,13 @@ class AdminAuthController extends AuthController
 	 */
 	protected function permit(User $user): object
 	{
-        $this->updateStatus($user, UserStatus::ONLINE->value);
+		$this->updateUserStatus($user, UserStatus::ONLINE->value);
 		$this->setSessionUser($user);
 
-        if (auth()->user->isAdmin() === false)
-        {
-            return $this->error('Access denied. Admin privileges required.', HttpStatus::FORBIDDEN->value);
-        }
+		if (auth()->user->isAdmin() === false)
+		{
+			return $this->error('Access denied. Admin privileges required.', HttpStatus::FORBIDDEN->value);
+		}
 
 		return $this->response([
 			'allowAccess' => true,
