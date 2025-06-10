@@ -60,22 +60,20 @@ class ControllerHelper
 		 * This will set up a caching policy for the controller.
 		 */
 		$controller = static::setCachingPolicy($controller);
-		// TODO: Remove this to require authentication for all controllers.
-		return $controller;
 
-		// /**
-		//  * This will check if the controller has a policy defined.
-		//  */
-		// $policy = $controller->getPolicy();
-		// if (!isset($policy))
-		// {
-		// 	return $controller;
-		// }
+		/**
+		 * This will check if the controller has a policy defined.
+		 */
+		$policy = $controller->getPolicy();
+		if (!isset($policy))
+		{
+			return $controller;
+		}
 
-		// /**
-		//  * This will create a policy proxy to auth the actions
-		//  * before calling the methods.
-		//  */
-		// return new PolicyProxy($controller, new $policy($controller));
+		/**
+		 * This will create a policy proxy to auth the actions
+		 * before calling the methods.
+		 */
+		return new PolicyProxy($controller, new $policy($controller));
 	}
 }
