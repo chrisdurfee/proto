@@ -24,10 +24,10 @@ class UserController extends ResourceController
 	/**
 	 * This will setup the model class.
 	 *
-	 * @param string|null $modelClass by using the magic constant ::class
+	 * @param string|null $model by using the magic constant ::class
 	 */
 	public function __construct(
-		protected ?string $modelClass = User::class
+		protected ?string $model = User::class
 	)
 	{
 		parent::__construct();

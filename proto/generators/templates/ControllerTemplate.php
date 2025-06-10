@@ -34,9 +34,9 @@ class ControllerTemplate extends ClassTemplate
 /**
 	 * Initializes the model class.
 	 *
-	 * @param string|null \$modelClass The model class reference using ::class.
+	 * @param string|null \$model The model class reference using ::class.
 	 */
-	public function __construct(protected ?string \$modelClass = {$className}::class)
+	public function __construct(protected ?string \$model = {$className}::class)
 	{
 		parent::__construct();
 	}

@@ -156,7 +156,7 @@ use Proto\\Http\\Router\\Request;
 class UserController extends ResourceController
 {
 	public function __construct(
-		protected ?string $modelClass = User::class
+		protected ?string $model = User::class
 	)
 	{
 		parent::__construct();
@@ -332,6 +332,37 @@ public function addData(Request $request): array
 	]);
 
 	// do something with the data
+}`
+				)
+			]),
+
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Resource Id Parameter'),
+				P({ class: 'text-muted-foreground' },
+					`The resource controller provides a method to get the resource ID from the request.`
+				),
+				CodeBlock(
+`/**
+ * Updates model item status.
+ *
+ * @param Request $request The request object.
+ * @return object The response.
+ */
+public function updateStatus(Request $request): object
+{
+	$id = $this->getResourceId($request);
+	$status = $request->input('status') ?? null;
+	if ($id === null || $status === null)
+	{
+		return $this->error('The ID and status are required.');
+	}
+
+	return $this->response(
+		$this->model((object) [
+			'id' => $id,
+			'status' => $status
+		])->updateStatus()
+	);
 }`
 				)
 			]),

@@ -98,7 +98,8 @@ export const HttpPage = () =>
 					Li("all() - Returns all input data (query, post, etc.) as an object."),
 					Li("body() - Retrieves the body content in the most suitable format."),
 					Li("file() - Retrieves a single uploaded file by name."),
-					Li("files() - Returns all uploaded files.")
+					Li("files() - Returns all uploaded files."),
+					Li("params() - This is added by the router. This will return the parameters defined in the route."),
 				])
 			]),
 

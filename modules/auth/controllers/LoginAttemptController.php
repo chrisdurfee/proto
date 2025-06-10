@@ -15,9 +15,9 @@ class LoginAttemptController extends Controller
 	/**
 	 * Initializes the model class.
 	 *
-	 * @param string|null $modelClass The model class reference using ::class.
+	 * @param string|null $model The model class reference using ::class.
 	 */
-	public function __construct(protected ?string $modelClass = LoginAttempt::class)
+	public function __construct(protected ?string $model = LoginAttempt::class)
 	{
 		parent::__construct();
 	}

@@ -20,9 +20,9 @@ class PermissionController extends Controller
 	/**
 	 * Initializes the model class.
 	 *
-	 * @param string|null $modelClass The model class reference using ::class.
+	 * @param string|null $model The model class reference using ::class.
 	 */
-	public function __construct(protected ?string $modelClass = Permission::class)
+	public function __construct(protected ?string $model = Permission::class)
 	{
 		parent::__construct();
 	}

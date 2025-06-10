@@ -67,8 +67,8 @@ class SecureRequestGate extends Gate
 			return false;
 		}
 
-		$modelClass = $this->model;
-		return (new $modelClass((object)[
+		$model = $this->model;
+		return (new $model((object)[
 			'id' => $this->requestId,
 			'status' => 'complete'
 		]))->updateStatus();

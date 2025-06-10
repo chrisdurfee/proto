@@ -109,10 +109,10 @@ abstract class ResourceController extends Controller
 	/**
 	 * Handles validation errors by encoding the error message and rendering it as JSON.
 	 *
-	 * @param object $validator The validator object containing the error message.
+	 * @param Validator $validator The validator object containing the error message.
 	 * @return void
 	 */
-	protected function errorValidating(object $validator): void
+	protected function errorValidating(Validator $validator): void
     {
 		$error = $this->error($validator->getMessage());
         JsonFormat::encodeAndRender($error);
