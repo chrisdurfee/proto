@@ -88,7 +88,7 @@ abstract class ChatHandler implements ChatInterface
 	protected function setTemperature(): void
 	{
 		if (isset($this->settings->temperature))
-        {
+		{
 			$this->temperature = $this->settings->temperature;
 		}
 	}
@@ -101,7 +101,7 @@ abstract class ChatHandler implements ChatInterface
 	protected function setMaxTokens(): void
 	{
 		if (isset($this->settings->maxTokens))
-        {
+		{
 			$this->maxTokens = $this->settings->maxTokens;
 		}
 	}
@@ -114,7 +114,7 @@ abstract class ChatHandler implements ChatInterface
 	protected function setFrequency(): void
 	{
 		if (isset($this->settings->frequencyPenalty))
-        {
+		{
 			$this->frequencyPenalty = $this->settings->frequencyPenalty;
 		}
 	}
@@ -127,7 +127,7 @@ abstract class ChatHandler implements ChatInterface
 	protected function setPresence(): void
 	{
 		if (isset($this->settings->presencePenalty))
-        {
+		{
 			$this->presencePenalty = $this->settings->presencePenalty;
 		}
 	}
