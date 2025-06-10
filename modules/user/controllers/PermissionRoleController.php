@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
+use Modules\User\Auth\Policies\PermissionPolicy;
 use Proto\Controllers\ResourceController as Controller;
 use Modules\User\Models\PermissionRole;
 use Proto\Http\Router\Request;
@@ -17,7 +18,7 @@ class PermissionRoleController extends Controller
 	/**
 	 * @var string|null $policy
 	 */
-	protected ?string $policy = PermissionRole::class;
+	protected ?string $policy = PermissionPolicy::class;
 
 	/**
 	 * Initializes the model class.
