@@ -167,7 +167,7 @@ class ExampleModule extends Module
 `"modules": [
     "Example\\ExampleModule",
     "Product\\ProductModule",
-    "Users\\UsersModule"
+    "User\\UserModule"
 ]`
 				)
 			])
