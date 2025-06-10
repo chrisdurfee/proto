@@ -3,7 +3,7 @@ namespace Proto\Cache\Policies;
 
 use Proto\Cache\Cache;
 use Proto\Utils\Format\JsonFormat;
-use Proto\Controllers\ResourceController;
+use Proto\Controllers\Controller;
 
 /**
  * Policy
@@ -24,11 +24,11 @@ abstract class Policy implements CachePolicyInterface
 	/**
 	 * Creates a cache policy instance.
 	 *
-	 * @param ResourceController $controller The controller instance.
+	 * @param Controller $controller The controller instance.
 	 * @return void
 	 */
 	public function __construct(
-		protected ResourceController $controller
+		protected Controller $controller
 	)
 	{
 	}
