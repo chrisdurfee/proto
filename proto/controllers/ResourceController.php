@@ -243,6 +243,11 @@ abstract class ResourceController extends Controller
 			return $this->error('No item provided.');
 		}
 
+		if (!$this->validateItem($data, true))
+		{
+			return $this->error('Invalid item data.');
+		}
+
 		$data->id = $data->id ?? $this->getResourceId($request);
 		return $this->response(
 			$this->model($data)->update()
