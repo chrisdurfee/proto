@@ -1,5 +1,5 @@
 {
-	"name": "proto.framework/proto",
+	"name": "protoframework/proto",
 	"description": "The Proto Framework - A modular monolith framework for PHP.",
 	"keywords": ["proto", "framework", "modular", "monolith", "php"],
 	"type": "project",
