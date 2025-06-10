@@ -4,6 +4,7 @@ namespace Proto\Controllers;
 use Proto\Http\Router\Request;
 use Proto\Utils\Format\JsonFormat;
 use Proto\Api\Validator;
+use Proto\Models\Model;
 
 /**
  * ResourceController
@@ -139,9 +140,33 @@ abstract class ResourceController extends Controller
 		}
 
 		$model = $this->model($data);
+		$this->getAddUserData($model);
+		$this->getUpdateUserData($model);
+
 		return $model->setup()
 			? $this->response(['id' => $model->id])
 			: $this->error('Unable to add the item.');
+	}
+
+	/**
+	 * Adds user data to the model.
+	 *
+	 * This method sets the `createdBy` and `authorId` fields to the current user's ID if they are not already set.
+	 *
+	 * @param Model $model The model instance to which user data will be added.
+	 * @return void
+	 */
+	protected function getAddUserData(Model $model): void
+	{
+		if ($model->has('createdBy') && !is_numeric($model->createdBy))
+		{
+			$model->createdBy = session()->user->id ?? null;
+		}
+
+		if ($model->has('authorId') && !is_numeric($model->authorId))
+		{
+			$model->authorId = session()->user->id ?? null;
+		}
 	}
 
 	/**
@@ -164,9 +189,27 @@ abstract class ResourceController extends Controller
 		}
 
 		$model = $this->model($data);
+		$this->getAddUserData($model);
+
 		return $model->add()
 			? $this->response(['id' => $model->id])
 			: $this->error('Unable to add the item.');
+	}
+
+	/**
+	 * Adds user data to the model for updates.
+	 *
+	 * This method sets the `updatedBy` field to the current user's ID if it is not already set.
+	 *
+	 * @param Model $model The model instance to which user data will be added.
+	 * @return void
+	 */
+	protected function getUpdateUserData(Model $model): void
+	{
+		if ($model->has('updatedBy') && !is_numeric($model->updatedBy))
+		{
+			$model->updatedBy = session()->user->id ?? null;
+		}
 	}
 
 	/**
@@ -189,6 +232,9 @@ abstract class ResourceController extends Controller
 		}
 
 		$model = $this->model($data);
+		$this->getAddUserData($model);
+		$this->getUpdateUserData($model);
+
 		return $model->merge()
 			? $this->response(['id' => $model->id])
 			: $this->error('Unable to merge the item.');
@@ -221,11 +267,15 @@ abstract class ResourceController extends Controller
 			return $this->error('The ID and status are required.');
 		}
 
+		$model = $this->model((object) [
+			'id' => $id,
+			'status' => $status
+		]);
+
+		$this->getUpdateUserData($model);
+
 		return $this->response(
-			$this->model((object) [
-				'id' => $id,
-				'status' => $status
-			])->updateStatus()
+			$model->updateStatus()
 		);
 	}
 
@@ -249,8 +299,11 @@ abstract class ResourceController extends Controller
 		}
 
 		$data->id = $data->id ?? $this->getResourceId($request);
+		$model = $this->model($data);
+		$this->getUpdateUserData($model);
+
 		return $this->response(
-			$this->model($data)->update()
+			$model->update()
 		);
 	}
 
@@ -284,8 +337,14 @@ abstract class ResourceController extends Controller
 			return $this->error('No item provided.');
 		}
 
+		$model = $this->model((object) ['id' => $id]);
+		if ($model->has('deletedBy') && !is_numeric($model->deletedBy))
+		{
+			$model->deletedBy = session()->user->id ?? null;
+		}
+
 		return $this->response(
-			$this->model((object) ['id' => $id])->delete()
+			$model->delete()
 		);
 	}
 

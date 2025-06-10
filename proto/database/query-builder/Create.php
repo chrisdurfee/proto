@@ -151,6 +151,82 @@ class Create extends Blueprint
 	}
 
 	/**
+	 * Adds a created_by int field and foreign key to the users table.
+	 *
+	 * @param int $length The length of the created_by field.
+	 * @return CreateField
+	 */
+	public function createdBy(int $length = 30): CreateField
+	{
+		$field = $this->createField('created_by');
+		$field->int($length)->nullable();
+
+		$this->foreign('created_by')
+				  ->references('id')
+				  ->on('users')
+				  ->onDelete('cascade');
+
+		return $field;
+	}
+
+	/**
+	 * Adds a updated_by int field and foreign key to the users table.
+	 *
+	 * @param int $length The length of the updated_by field.
+	 * @return CreateField
+	 */
+	public function updatedBy(int $length = 30): CreateField
+	{
+		$field = $this->createField('updated_by');
+		$field->int($length)->nullable();
+
+		$this->foreign('updated_by')
+				  ->references('id')
+				  ->on('users')
+				  ->onDelete('cascade');
+
+		return $field;
+	}
+
+	/**
+	 * Adds a deleted_by int field and foreign key to the users table.
+	 *
+	 * @param int $length The length of the deleted_by field.
+	 * @return CreateField
+	 */
+	public function deletedBy(int $length = 30): CreateField
+	{
+		$field = $this->createField('deleted_by');
+		$field->int($length)->nullable();
+
+		$this->foreign('deleted_by')
+				  ->references('id')
+				  ->on('users')
+				  ->onDelete('cascade');
+
+		return $field;
+	}
+
+	/**
+	 * Adds a author_id int field and foreign key to the users table.
+	 *
+	 * @param int $length The length of the author_id field.
+	 * @return CreateField
+	 */
+	public function authorId(int $length = 30): CreateField
+	{
+		$field = $this->createField('author_id');
+		$field->int($length)->nullable();
+
+		$this->foreign('author_id')
+				  ->references('id')
+				  ->on('users')
+				  ->onDelete('cascade');
+
+		return $field;
+	}
+
+	/**
 	 * Adds the timestamp fields.
 	 *
 	 * @return void

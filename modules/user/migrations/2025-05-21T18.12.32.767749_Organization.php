@@ -44,14 +44,14 @@ class Organization extends Migration
 
 			// FKs
 			$table->foreign('user_id')
-				  ->references('id')
-				  ->on('users')
-				  ->onDelete('cascade');
+				->references('id')
+				->on('users')
+				->onDelete('cascade');
 
 			$table->foreign('organization_id')
-				  ->references('id')
-				  ->on('organizations')
-				  ->onDelete('cascade');
+				->references('id')
+				->on('organizations')
+				->onDelete('cascade');
 		});
 	}
 

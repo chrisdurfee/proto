@@ -34,6 +34,20 @@ class UserController extends ResourceController
 	}
 
 	/**
+	 * This will return the validation rules for the model.
+	 *
+	 * @return array<string, string>
+	 */
+	protected function validate(): array
+	{
+		return [
+			'firstName' => 'string:255|required',
+			'lastName' => 'string:255|required',
+			'email' => 'email:255|required'
+		];
+	}
+
+	/**
 	 * Adds a model entry.
 	 *
 	 * @param Request $request The request object.

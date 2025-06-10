@@ -32,6 +32,8 @@ namespace Proto
 
 		/**
 		 * Initializes settings and environment configuration.
+		 *
+		 * @return void
 		 */
 		protected function __construct()
 		{

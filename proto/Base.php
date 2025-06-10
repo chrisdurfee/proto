@@ -23,6 +23,8 @@ class Base
 
 	/**
 	 * Initializes the system and services.
+	 *
+	 * @return void
 	 */
 	public function __construct()
 	{
