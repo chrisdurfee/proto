@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Cache\Policies;
 
+use Proto\Controllers\Controller;
+
 /**
  * PolicyProxy
  *
@@ -13,13 +15,13 @@ class PolicyProxy
 	/**
 	 * Initializes the proxy with the controller and policy objects.
 	 *
-	 * @param object $controller The controller instance.
-	 * @param object $policy The policy instance.
+	 * @param Controller $controller The controller instance.
+	 * @param Policy $policy The policy instance.
 	 */
 	public function __construct(
-        protected object $controller,
-        protected object $policy
-    )
+		protected Controller $controller,
+		protected Policy $policy
+	)
 	{
 	}
 

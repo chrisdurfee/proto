@@ -177,7 +177,7 @@ class ModelPolicy extends Policy
 	 */
 	protected function isSearching(?string $search = null): bool
 	{
-		return !empty($modifiers['search']);
+		return !empty($search);
 	}
 
 	/**

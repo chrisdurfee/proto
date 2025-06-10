@@ -36,7 +36,7 @@ class MigrationController extends Controller
 	public function apply(Request $req): object
 	{
 		$direction = $req->input('direction');
-		return $this->update($direction);
+		return $this->updateMigrations($direction);
 	}
 
 	/**
@@ -49,7 +49,7 @@ class MigrationController extends Controller
 	 * @param string $direction Direction of migration execution.
 	 * @return object Response object.
 	 */
-	public function update(string $direction): object
+	public function updateMigrations(string $direction): object
 	{
 		$result = false;
 
