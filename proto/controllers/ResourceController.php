@@ -310,16 +310,28 @@ abstract class ResourceController extends Controller
 			return $this->error('The ID and status are required.');
 		}
 
-		$model = $this->model((object) [
+		return $this->updateItemStatus((object) [
 			'id' => $id,
 			'status' => $status
 		]);
+	}
 
+	/**
+	 * Updates the status of a model item.
+	 *
+	 * This method initializes the model with the provided data and adds user data for updates.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return Model The initialized model instance.
+	 */
+	protected function updateItemStatus(object $data): Model
+	{
+		$model = $this->model($data);
 		$this->getUpdateUserData($model);
 
-		return $this->response(
-			$model->updateStatus()
-		);
+		return $model->updateStatus()
+			? $this->response(['id' => $model->id])
+			: $this->error('Unable to update the item status.');
 	}
 
 	/**
