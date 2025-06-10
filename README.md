@@ -221,6 +221,5 @@ Proto is open-source software licensed under the MIT License.
 
 For questions or support, please reach out via:
 
-- Email: support@protoframework.com
 - GitHub Issues: [Proto Issues](https://github.com/chrisdurfee/proto/issues)
 - Community Chat: (Coming soon)
