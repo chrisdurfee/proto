@@ -12,7 +12,9 @@ import { RoleTable } from "./table/role-table.js";
 export const RolePage = () =>
 {
 	const data = new RoleModel({
-		filter: 'all'
+		filter: {
+
+		}
 	});
 
 	/**

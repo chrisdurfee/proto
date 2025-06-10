@@ -12,7 +12,9 @@ import { PermissionTable } from "./table/permission-table.js";
 export const PermissionPage = () =>
 {
 	const data = new PermissionModel({
-		filter: 'all'
+		filter: {
+
+		}
 	});
 
 	/**

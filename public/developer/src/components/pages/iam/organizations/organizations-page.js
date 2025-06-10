@@ -12,7 +12,9 @@ import { OrganizationTable } from "./table/organization-table.js";
 export const OrganizationsPage = () =>
 {
 	const data = new OrganizationModel({
-		filter: 'all'
+		filter: {
+
+		}
 	});
 
 	/**

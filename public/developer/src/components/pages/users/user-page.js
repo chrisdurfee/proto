@@ -12,7 +12,9 @@ import { UserTable } from "./table/user-table.js";
 export const UserPage = () =>
 {
 	const data = new UserModel({
-		filter: 'all'
+		filter: {
+			status: 'all'
+		}
 	});
 
 	/**
