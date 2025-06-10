@@ -44,9 +44,42 @@ class UserSession extends Model
 	{
 		$dateTime = date('Y-m-d H:i:s');
 		return $this->storage()
-					->table('user_sessions', 'us')
+					->table()
 					->update('id = ?', 'updated_at = ?')
 					->where('id = ?')
 					->execute([$newId, $dateTime, $oldId]);
+	}
+
+	/**
+	 * Retrieves the IDs of expired sessions.
+	 *
+	 * This method fetches session IDs that have not been updated in the last 6 months.
+	 *
+	 * @return array
+	 */
+	public function getExpiredSessions(): array
+	{
+		$expirationDate = date('Y-m-d H:i:s', strtotime("-6 months"));
+		return $this->storage()
+					->table()
+					->select('id')
+					->where('updated_at < ?')
+					->fetch([$expirationDate]);
+	}
+
+	/**
+	 * Retrieves the IDs of empty sessions.
+	 *
+	 * This method fetches session IDs that have no associated data.
+	 *
+	 * @return array
+	 */
+	public function getEmptySessions(): array
+	{
+		return $this->storage()
+					->table()
+					->select('id')
+					->where('data IS NULL')
+					->fetch();
 	}
 }
