@@ -139,6 +139,19 @@ abstract class ResourceController extends Controller
 			return $this->error('Invalid item data.');
 		}
 
+		return $this->setupItem($data);
+	}
+
+	/**
+	 * Sets up a model item.
+	 *
+	 * This method initializes the model with the provided data and adds user data for creation and updates.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return Model The initialized model instance.
+	 */
+	protected function setupItem(object $data): Model
+	{
 		$model = $this->model($data);
 		$this->getAddUserData($model);
 		$this->getUpdateUserData($model);
@@ -191,6 +204,23 @@ abstract class ResourceController extends Controller
 		$model = $this->model($data);
 		$this->getAddUserData($model);
 
+		return $this->addItem($data);
+	}
+
+	/**
+	 * Adds a model item.
+	 *
+	 * This method initializes the model with the provided data and adds user data for creation and updates.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return Model The initialized model instance.
+	 */
+	protected function addItem(object $data): Model
+	{
+		$model = $this->model($data);
+		$this->getAddUserData($model);
+		$this->getUpdateUserData($model);
+
 		return $model->add()
 			? $this->response(['id' => $model->id])
 			: $this->error('Unable to add the item.');
@@ -231,6 +261,19 @@ abstract class ResourceController extends Controller
 			return $this->error('Invalid item data.');
 		}
 
+		return $this->mergeItem($data);
+	}
+
+	/**
+	 * Merges a model item.
+	 *
+	 * This method initializes the model with the provided data and adds user data for creation and updates.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return Model The initialized model instance.
+	 */
+	protected function mergeItem(object $data): Model
+	{
 		$model = $this->model($data);
 		$this->getAddUserData($model);
 		$this->getUpdateUserData($model);
@@ -299,12 +342,25 @@ abstract class ResourceController extends Controller
 		}
 
 		$data->id = $data->id ?? $this->getResourceId($request);
+		return $this->updateItem($data);
+	}
+
+	/**
+	 * Updates a model item.
+	 *
+	 * This method initializes the model with the provided data and adds user data for updates.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return Model The initialized model instance.
+	 */
+	protected function updateItem(object $data): Model
+	{
 		$model = $this->model($data);
 		$this->getUpdateUserData($model);
 
-		return $this->response(
-			$model->update()
-		);
+		return $model->update()
+			? $this->response(['id' => $model->id])
+			: $this->error('Unable to update the item.');
 	}
 
 	/**
@@ -331,21 +387,28 @@ abstract class ResourceController extends Controller
 			return $this->error('The ID is required.');
 		}
 
-		$data = $this->getRequestItem($request);
-		if (empty($data))
-		{
-			return $this->error('No item provided.');
-		}
+		return $this->deleteItem((object) ['id' => $id]);
+	}
 
-		$model = $this->model((object) ['id' => $id]);
+	/**
+	 * Deletes a model item.
+	 *
+	 * This method initializes the model with the provided data and adds user data for deletion.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return Model The initialized model instance.
+	 */
+	protected function deleteItem(object $data): Model
+	{
+		$model = $this->model($data);
 		if ($model->has('deletedBy') && !is_numeric($model->deletedBy))
 		{
 			$model->deletedBy = session()->user->id ?? null;
 		}
 
-		return $this->response(
-			$model->delete()
-		);
+		return $model->delete()
+			? $this->response(['id' => $model->id])
+			: $this->error('Unable to delete the item.');
 	}
 
 	/**
