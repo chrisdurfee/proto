@@ -17,7 +17,7 @@ export const Configs =
 	 */
 	router:
 	{
-		baseUrl: '/',
+		baseUrl: '/developer/',
 		title: 'Developer'
 	},
 
