@@ -55,7 +55,6 @@ class ControllerHelper
 		{
 			$controller = new $controller();
 		}
-		return $controller;
 
 		/**
 		 * This will set up a caching policy for the controller.
