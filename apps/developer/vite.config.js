@@ -25,7 +25,7 @@ export default defineConfig({
 		}
 	},
 	build: {
-		outDir: path.resolve(__dirname, '../../proto/public/developer'),
+		outDir: path.resolve(__dirname, '../../public/developer'),
     	emptyOutDir: true
 	}
 });
