@@ -201,7 +201,7 @@ or start your PHP server.
 ![Error Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/error-page.png)
 ![Error Modal](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/error-modal.png)
 ![Documentation Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/documentation-page.png)
-![Users Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/users-page.png)
+![Users Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/user-page.png)
 ![IAM Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/iam-page.png)
 ![IAM Modal](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/iam-modal.png)
 ![Email Page](https://raw.githubusercontent.com/chrisdurfee/proto/refs/heads/main/public/images/product/email-page.png)
