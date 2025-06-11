@@ -1,15 +1,7 @@
 RewriteEngine on
 
-<FilesMatch ".(js|css|svg)$">
-	FileETag None
-	Header unset ETag
-	Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
-	Header set Pragma "no-cache"
-	Header set Expires "Wed, 08 Jan 1975 05:00:00 GMT"
-</FilesMatch>
-
 #main dashboard
 RewriteBase /
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([^?]*)$ /index.html [NC,L,QSA]
+RewriteRule ^([^?]*)$ /developer/index.html [NC,L,QSA]
