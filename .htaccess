@@ -101,7 +101,7 @@ AddType application/font-woff2 .woff2
 
 # Deny access to sensitive directories
 <IfModule mod_alias.c>
-    RedirectMatch 403 /(common|proto|tests|vendor|\.git|apache|k8s|node_modules)/
+    RedirectMatch 403 /(common|proto|tests|vendor|apps|\.git|apache|k8s|node_modules)/
 </IfModule>
 
 # URL rewriting rules for your app
