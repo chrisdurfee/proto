@@ -10,6 +10,7 @@ _notes/
 node_modules/
 *.code-workspace
 public/api/cookie.txt
+public/developer
 Dockerfile
 docker-compose.yaml
 error.log
