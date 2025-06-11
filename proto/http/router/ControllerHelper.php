@@ -56,6 +56,13 @@ class ControllerHelper
 			$controller = new $controller();
 		}
 
+		// TODO: This is here to allow dev to test the system without
+		// having to set up policies and caching.
+		if ( env('env') === 'dev')
+		{
+			return $controller;
+		}
+
 		/**
 		 * This will set up a caching policy for the controller.
 		 */

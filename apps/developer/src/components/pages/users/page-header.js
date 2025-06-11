@@ -50,13 +50,13 @@ const Dropdown = () => (
 			const val = item.value;
 			if (val === 'all')
 			{
-				data.filter = '';
+				data.filter = {};
 				list.refresh();
 				return;
 			}
 
 			const lowerVal = val.toLowerCase();
-			data.filter = lowerVal;
+			data.filter.status = lowerVal;
 			list.refresh();
 		},
 		items: [
