@@ -99,6 +99,11 @@ class ModelPolicy extends Policy
 		}
 
 		$this->deleteAll();
+
+		/**
+		 * @SuppressWarnings PHP0406
+		 * @SuppressWarnings PHP0423
+		 */
 		return $this->controller->updateStatus($request);
 	}
 
