@@ -19,12 +19,13 @@ export default defineConfig({
 			'/api': {
 				target: 'https://proto.local',
 				changeOrigin: true,
-				secure: false
+				secure: false,
+				rewrite: (p) => p.replace(/^\/api/, ''),
 			}
 		}
 	},
 	build: {
-		outDir: path.resolve(__dirname, '../../public/developer'),
-		emptyOutDir: true
+		outDir: path.resolve(__dirname, '../../proto/public/developer'),
+    	emptyOutDir: true
 	}
 });
