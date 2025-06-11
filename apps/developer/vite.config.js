@@ -22,5 +22,9 @@ export default defineConfig({
 				secure: false
 			}
 		}
+	},
+	build: {
+		outDir: path.resolve(__dirname, '../../public/developer'),
+		emptyOutDir: true
 	}
 });
