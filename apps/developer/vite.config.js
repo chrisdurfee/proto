@@ -19,8 +19,7 @@ export default defineConfig({
 			'/api': {
 				target: 'https://proto.local',
 				changeOrigin: true,
-				secure: false,
-				rewrite: (p) => p.replace(/^\/api/, ''),
+				secure: false
 			}
 		}
 	},
