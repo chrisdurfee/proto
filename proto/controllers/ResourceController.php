@@ -148,9 +148,9 @@ abstract class ResourceController extends Controller
 	 * This method initializes the model with the provided data and adds user data for creation and updates.
 	 *
 	 * @param object $data The data to set up the model with.
-	 * @return Model The initialized model instance.
+	 * @return Response The response object.
 	 */
-	protected function setupItem(object $data): Model
+	protected function setupItem(object $data): Response
 	{
 		$model = $this->model($data);
 		$this->getAddUserData($model);
@@ -213,9 +213,9 @@ abstract class ResourceController extends Controller
 	 * This method initializes the model with the provided data and adds user data for creation and updates.
 	 *
 	 * @param object $data The data to set up the model with.
-	 * @return Model The initialized model instance.
+	 * @return Response The response object.
 	 */
-	protected function addItem(object $data): Model
+	protected function addItem(object $data): Response
 	{
 		$model = $this->model($data);
 		$this->getAddUserData($model);
@@ -270,9 +270,9 @@ abstract class ResourceController extends Controller
 	 * This method initializes the model with the provided data and adds user data for creation and updates.
 	 *
 	 * @param object $data The data to set up the model with.
-	 * @return Model The initialized model instance.
+	 * @return Response The response object.
 	 */
-	protected function mergeItem(object $data): Model
+	protected function mergeItem(object $data): Response
 	{
 		$model = $this->model($data);
 		$this->getAddUserData($model);
@@ -322,9 +322,9 @@ abstract class ResourceController extends Controller
 	 * This method initializes the model with the provided data and adds user data for updates.
 	 *
 	 * @param object $data The data to set up the model with.
-	 * @return Model The initialized model instance.
+	 * @return Response The response object.
 	 */
-	protected function updateItemStatus(object $data): Model
+	protected function updateItemStatus(object $data): Response
 	{
 		$model = $this->model($data);
 		$this->getUpdateUserData($model);
@@ -363,9 +363,9 @@ abstract class ResourceController extends Controller
 	 * This method initializes the model with the provided data and adds user data for updates.
 	 *
 	 * @param object $data The data to set up the model with.
-	 * @return Model The initialized model instance.
+	 * @return Response The response object.
 	 */
-	protected function updateItem(object $data): Model
+	protected function updateItem(object $data): Response
 	{
 		$model = $this->model($data);
 		$this->getUpdateUserData($model);
@@ -408,9 +408,9 @@ abstract class ResourceController extends Controller
 	 * This method initializes the model with the provided data and adds user data for deletion.
 	 *
 	 * @param object $data The data to set up the model with.
-	 * @return Model The initialized model instance.
+	 * @return Response The response object.
 	 */
-	protected function deleteItem(object $data): Model
+	protected function deleteItem(object $data): Response
 	{
 		$model = $this->model($data);
 		if ($model->has('deletedBy') && !is_numeric($model->deletedBy))

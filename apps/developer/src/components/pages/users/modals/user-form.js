@@ -1,4 +1,4 @@
-import { Fieldset, Input, TelInput } from "@base-framework/ui/atoms";
+import { Fieldset, Input, Select, TelInput } from "@base-framework/ui/atoms";
 import { FormField } from "@base-framework/ui/molecules";
 import { UserRoleFieldset } from "./user-role-fieldset.js";
 import { validate } from "./validate.js";
@@ -112,6 +112,30 @@ const UserFieldset = (isEditing) => (
 );
 
 /**
+ * This will create the access fieldset.
+ *
+ * @param {boolean} isEditing - Whether the user is being edited or not.
+ * @returns {object}
+ */
+const AccessFieldset = (isEditing) => (
+    Fieldset({ legend: "Access Information" }, [
+
+		new FormField(
+			{ name: "enable", label: "Enabled", description: "Allow access to the platform." },
+			[
+				Select({
+					bind: "enabled",
+					options: [
+						{ value: 0, label: "No" },
+						{ value: 1, label: "Yes" },
+					]
+				})
+			]
+		)
+	])
+);
+
+/**
  * UserForm
  *
  * Returns an array of form fields for creating or editing a User.
@@ -122,6 +146,7 @@ const UserFieldset = (isEditing) => (
 export const UserForm = ({ isEditing, user }) => ([
 	(!isEditing) && AuthFieldset(),
 	UserFieldset(isEditing),
+	isEditing && AccessFieldset(isEditing),
 	(isEditing) && new UserRoleFieldset({
 		user
 	})
