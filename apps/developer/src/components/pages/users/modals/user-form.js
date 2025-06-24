@@ -131,6 +131,20 @@ const AccessFieldset = (isEditing) => (
 					]
 				})
 			]
+		),
+		new FormField(
+			{ name: "status", label: "Status", description: "Sets the user's status." },
+			[
+				Select({
+					bind: "status",
+					options: [
+						{ value: "online", label: "Online" },
+						{ value: "offline", label: "Offline" },
+						{ value: "busy", label: "Busy" },
+						{ value: "away", label: "Away" }
+					]
+				})
+			]
 		)
 	])
 );
