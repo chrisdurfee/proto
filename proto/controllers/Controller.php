@@ -45,7 +45,7 @@ abstract class Controller extends Base implements ControllerInterface
 		$response->setData([
 			'code' => $statusCode,
 		]);
-		return $response->display();
+		return $response->format();
 	}
 
 	/**
@@ -64,6 +64,6 @@ abstract class Controller extends Base implements ControllerInterface
 
 		$response = new Response();
 		$response->setData($result);
-		return $response->display();
+		return $response->format();
 	}
 }

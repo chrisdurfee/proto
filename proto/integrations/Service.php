@@ -40,7 +40,7 @@ abstract class Service
 		$response = new Response();
 		$response->error($message);
 		$response->setData($data);
-		return $response->display();
+		return $response->format();
 	}
 
 	/**
@@ -61,7 +61,7 @@ abstract class Service
 
 		$response = new Response();
 		$response->setData($result);
-		return $response->display();
+		return $response->format();
 	}
 
 	/**

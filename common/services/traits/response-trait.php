@@ -22,7 +22,7 @@ trait ResponseTrait
 	{
 		$response = new Response();
 		$response->error($message);
-		return $response->display();
+		return $response->format();
 	}
 
 	/**
@@ -42,6 +42,6 @@ trait ResponseTrait
 
 		$response = new Response();
 		$response->setData($result);
-		return $response->display();
+		return $response->format();
 	}
 }

@@ -81,7 +81,7 @@ class Response
 	 */
 	public static function errorResponse(string $message = ''): object
 	{
-		return (new static())->error($message)->display();
+		return (new static())->error($message)->format();
 	}
 
 	/**
@@ -89,7 +89,7 @@ class Response
 	 *
 	 * @return object The formatted response.
 	 */
-	public function display(): object
+	public function format(): object
 	{
 		$response = $this->data ?? (object) [];
 		$response->success = $this->success;

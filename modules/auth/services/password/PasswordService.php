@@ -60,7 +60,7 @@ class PasswordService
 	{
 		$response = new Response();
 		$response->error($message);
-		return $response->display();
+		return $response->format();
 	}
 
 	/**
