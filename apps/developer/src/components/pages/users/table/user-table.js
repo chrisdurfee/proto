@@ -66,7 +66,7 @@ const UserRoles = (row) => (
 * @return {object}
 */
 export const UserRow = (row, onSelect) => (
-	Tr({ class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer', click: (e, parent) => Modal(row, parent)  }, [
+	Tr({ class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer'  }, [
 		Td({ class: 'p-4 hidden md:table-cell' }, [
 			new Checkbox({
 				checked: row.selected,

@@ -1,4 +1,5 @@
 import { Div } from "@base-framework/atoms";
+import { Model } from "@base-framework/base";
 import { BlankPage } from "@base-framework/ui/pages";
 import { UserModel } from "./models/user-model.js";
 import { PageHeader } from "./page-header.js";
@@ -7,10 +8,13 @@ import { UserTable } from "./table/user-table.js";
 /**
  * This will create the user page.
  *
- * @returns {object}
+ * @returns {BlankPage}
  */
 export const UserPage = () =>
 {
+	/**
+	 * @type {Model} data
+	 */
 	const data = new UserModel({
 		filter: {
 
@@ -18,7 +22,7 @@ export const UserPage = () =>
 	});
 
 	/**
-	 * @type {object}
+	 * @type {object} Props
 	 */
 	const Props =
 	{
@@ -38,6 +42,7 @@ export const UserPage = () =>
 			}
 		}
 	};
+
 	return new BlankPage(Props, [
 		Div({ class: 'grid grid-cols-1' }, [
 			Div({ class: 'flex flex-auto flex-col p-6 pt-0 space-y-6 md:space-y-12 md:pt-6 lg:p-8 w-full mx-auto' }, [

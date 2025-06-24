@@ -43,6 +43,7 @@ export const Routes = () => [
 	/**
 	 * Users routes
 	 */
+	DynamicRoute('/users/:userId*', () => import('../components/pages/users/user/user-page.js'), 'User'),
 	DynamicRoute('/users*', () => import('../components/pages/users/user-page.js'), 'Users'),
 
 	/**
