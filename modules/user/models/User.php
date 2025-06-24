@@ -2,6 +2,7 @@
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
+use Proto\Models\Relations;
 use Modules\User\Storage\UserStorage;
 
 /**
@@ -109,6 +110,16 @@ class User extends Model
 				[['IF(allow_sms = 0, 0, 1)'], 'allowSms'],
 				[['IF(allow_push = 0, 0, 1)'], 'allowPush']
 			]);
+	}
+
+	/**
+	 * This will get the user addresses.
+	 *
+	 * @return Relations\HasMany
+	 */
+	public function addresses(): Relations\HasMany
+	{
+		return $this->hasMany(UserAddress::class, 'userId', 'id');
 	}
 
 	/**

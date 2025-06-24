@@ -31,11 +31,11 @@ class UserAddress extends Migration
 			$table->varchar('state', 100)->nullable();
 			$table->varchar('postal_code', 20)->nullable();
 			$table->varchar('country', 100)->nullable();
-			$table->boolean('is_primary')->default(false);
+			$table->boolean('is_primary')->default(0);
 
 			// Indexes
 			$table->index('user_id')->fields('user_id');
-			$table->unique('user_primary_unique')->fields('user_id','is_primary');
+			$table->index('user_primary')->fields('user_id','is_primary');
 
 			// FKs
 			$table->foreign('user_id')
