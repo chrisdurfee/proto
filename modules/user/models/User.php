@@ -34,9 +34,9 @@ class User extends Model
 		'id',
 		'uuid',
 		'username',
+		'password',
 		'email',
 		'emailVerifiedAt',
-		'password',
 		'multiFactorEnabled',
 		'lastPasswordChangeAt',
 
@@ -56,16 +56,10 @@ class User extends Model
 		'currency',
 		'country',
 
-		// Audit & soft‐delete
-		'createdAt',
-		'createdBy',
-		'updatedAt',
-		'updatedBy',
-		'deletedAt',
-
 		// Preferences & flags
 		'status',
 		'enabled',
+		'emailVerifiedAt',
 		'marketingOptIn',
 		'acceptedTermsAt',
 		'trialMode',
@@ -73,7 +67,13 @@ class User extends Model
 
 		// Session & activity
 		'lastLoginAt',
-		'lastLoginIp'
+
+		// Audit & soft‐delete
+		'createdAt',
+		'createdBy',
+		'updatedAt',
+		'updatedBy',
+		'deletedAt'
 	];
 
 	/**
