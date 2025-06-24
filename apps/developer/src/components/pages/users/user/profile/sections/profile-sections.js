@@ -43,14 +43,14 @@ export const OrgDetailsSection = () =>
 			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" }, [
 				// Employee ID
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Employee ID"),
-					P({ class: "font-medium text-foreground" }, "EMP-000123")
+					P({ class: "text-sm text-muted-foreground" }, "User ID"),
+					P({ class: "font-medium text-foreground" }, "[[user.id]]")
 				]),
 
-				// Date Started
+				// Date Created
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Date Started"),
-					P({ class: "font-medium text-foreground" }, "Jan. 1, 2020")
+					P({ class: "text-sm text-muted-foreground" }, "Date Created"),
+					P({ class: "font-medium text-foreground" }, "[[user.createdAt]]")
 				]),
 
 				// Time-to-Hire
@@ -83,9 +83,9 @@ export const OrgDetailsSection = () =>
 					P({ class: "font-medium text-foreground" }, "Jordan Smith")
 				]),
 
-				// Office / Time Zone
+				// Time Zone
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Office / Time Zone"),
+					P({ class: "text-sm text-muted-foreground" }, "Time Zone"),
 					P({ class: "font-medium text-foreground" }, "Dubai / GST")
 				])
 			])

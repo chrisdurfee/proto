@@ -26,20 +26,54 @@ class User extends Model
 	/**
 	 * @var array $fields
 	 */
+	/**
+	 * @var array<string> $fields
+	 */
 	protected static array $fields = [
+		// Identity & login
 		'id',
+		'uuid',
 		'username',
 		'email',
+		'emailVerifiedAt',
 		'password',
+		'multiFactorEnabled',
+		'lastPasswordChangeAt',
+
+		// Profile
 		'firstName',
 		'lastName',
+		'displayName',
 		'image',
-		'status',
-		'emailVerifiedAt',
-		'enabled',
+		'coverImageUrl',
+		'bio',
+		'dob',
+		'gender',
+
+		// Contact & locale
+		'timezone',
+		'language',
+		'currency',
+		'country',
+
+		// Audit & soft‐delete
 		'createdAt',
+		'createdBy',
 		'updatedAt',
-		'deletedAt'
+		'updatedBy',
+		'deletedAt',
+
+		// Preferences & flags
+		'status',
+		'enabled',
+		'marketingOptIn',
+		'acceptedTermsAt',
+		'trialMode',
+		'trialDaysLeft',
+
+		// Session & activity
+		'lastLoginAt',
+		'lastLoginIp'
 	];
 
 	/**

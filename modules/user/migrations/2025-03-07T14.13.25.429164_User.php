@@ -1,4 +1,5 @@
 <?php declare(strict_types=1);
+namespace Modules\User\Models;
 
 use Proto\Database\Migrations\Migration;
 
@@ -21,26 +22,56 @@ class User extends Migration
 	{
 		$this->create('users', function($table)
 		{
+			// Primary key
 			$table->id();
+
+			// Identity & login
+			$table->uuid();
 			$table->varchar('username', 100);
-			$table->varchar('email', 255)->nullable();
 			$table->varchar('password', 255);
+			$table->varchar('email', 255)->nullable();
+			$table->varchar('mobile', 14)->nullable();
+			$table->tinyInteger('multi_factor_enabled')->default(0);
+			$table->timestamp('last_password_change_at')->nullable();
+
+			// Profile
 			$table->varchar('first_name', 100)->nullable();
 			$table->varchar('last_name', 100)->nullable();
-			$table->varchar('mobile', 14)->nullable();
+			$table->varchar('display_name', 150)->nullable();
 			$table->varchar('image', 255)->nullable();
-			$table->enum('status', 'online', 'offline', 'busy', 'away')->default("'offline'");
-			$table->timestamp('email_verified_at')->nullable();
+			$table->varchar('cover_image_url', 255)->nullable();
+			$table->text('bio')->nullable();
+			$table->date('dob')->nullable();
+			$table->enum('gender', 'male','female','other','prefer_not_say')->nullable();
+
+			// Locale
+			$table->varchar('timezone', 50)->nullable();
+			$table->varchar('language', 10)->nullable();
+			$table->varchar('currency', 3)->nullable();
+			$table->varchar('country', 100)->nullable();
+
+			// Status & flags
+			$table->enum('status', 'active','inactive','pending')->default("'active'");
 			$table->tinyInteger('enabled')->default(1);
+			$table->timestamp('email_verified_at')->nullable();
+			$table->tinyInteger('marketing_opt_in')->default(0);
+			$table->timestamp('accepted_terms_at')->nullable();
+			$table->tinyInteger('trial_mode')->default(0);
+			$table->integer('trial_days_left', 3)->default(0);
+
+			// Session & activity
+			$table->timestamp('last_login_at')->nullable();
+
+			// Audit & soft‐delete
 			$table->createdAt();
+			$table->integer('created_by', 30)->nullable();
 			$table->updatedAt();
+			$table->integer('updated_by', 30)->nullable();
 			$table->deletedAt();
 
-			// Indexes for commonly searched columns
-			$table->index('username')->fields('username', 'password', 'id');
-			$table->index('email')->fields('email', 'password', 'id');
-			$table->index('first_name')->fields('first_name', 'last_name');
-			$table->index('last_name')->fields('last_name', 'first_name');
+			// Indexes for quick lookups
+			$table->index('username')->fields('username');
+			$table->index('email')->fields('email');
 			$table->index('status')->fields('status');
 			$table->index('created_at')->fields('created_at');
 			$table->index('updated_at')->fields('updated_at');

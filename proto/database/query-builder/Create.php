@@ -108,6 +108,23 @@ class Create extends Blueprint
 	}
 
 	/**
+	 * Creates a UUID field.
+	 *
+	 * @param int $length The length of the uuid field.
+	 * @return CreateField
+	 */
+	public function uuid(int $length = 36): CreateField
+	{
+		$field = $this->createField('uuid');
+		$field->varchar($length)->default("UUID()");
+
+		$this->unique('users_uuid_unique')
+    		->fields('uuid');
+
+		return $field;
+	}
+
+	/**
 	 * Adds a datetime field.
 	 *
 	 * @param string $name The name of the datetime field.
