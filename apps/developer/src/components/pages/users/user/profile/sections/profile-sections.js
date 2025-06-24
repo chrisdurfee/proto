@@ -53,40 +53,40 @@ export const OrgDetailsSection = () =>
 					P({ class: "font-medium text-foreground" }, "[[user.createdAt]]")
 				]),
 
-				// Time-to-Hire
+				// Birth Date
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Time-to-Hire"),
-					P({ class: "font-medium text-foreground" }, "45 days")
+					P({ class: "text-sm text-muted-foreground" }, "Birth Date"),
+					P({ class: "font-medium text-foreground" }, "[[user.dob]]")
 				]),
 
-				// Years at Company
+				// Accepted Terms
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Years at Company"),
-					P({ class: "font-medium text-foreground" }, "3 years")
+					P({ class: "text-sm text-muted-foreground" }, "Accepted Terms"),
+					P({ class: "font-medium text-foreground" }, "[[user.acceptedTermsAt]]")
 				]),
 
-				// Last Promotion Date
+				// Last Login
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Last Promotion Date"),
-					P({ class: "font-medium text-foreground" }, "Jun. 15, 2022")
+					P({ class: "text-sm text-muted-foreground" }, "Last Login"),
+					P({ class: "font-medium text-foreground" }, "[[user.lastLoginAt]]")
 				]),
 
-				// Department
+				// Language
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Department"),
-					P({ class: "font-medium text-foreground" }, "Engineering")
+					P({ class: "text-sm text-muted-foreground" }, "Language"),
+					P({ class: "font-medium text-foreground" }, "[[user.language]]")
 				]),
 
-				// Reporting Manager
+				// Country
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Reporting Manager"),
-					P({ class: "font-medium text-foreground" }, "Jordan Smith")
+					P({ class: "text-sm text-muted-foreground" }, "Country"),
+					P({ class: "font-medium text-foreground" }, "[[user.country]]")
 				]),
 
 				// Time Zone
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Time Zone"),
-					P({ class: "font-medium text-foreground" }, "Dubai / GST")
+					P({ class: "font-medium text-foreground" }, "[[user.timezone]]")
 				])
 			])
 		])
@@ -103,26 +103,25 @@ export const OrgDetailsSection = () =>
  * @returns {object}
  */
 export const PersonalDetailsSection = () =>
-	ProfileSection({ title: "Personal Details" }, [
+	ProfileSection({ title: "Account Details" }, [
 		Div([
 			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" }, [
-				// Work Style
+				// Trial mode
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Work Style"),
-					P({ class: "font-medium text-foreground" }, "Hybrid")
+					P({ class: "text-sm text-muted-foreground" }, "Trial Mode"),
+					P({ class: "font-medium text-foreground" }, "[[user.trialMode]] ([[user.trialDaysLeft]] days left)")
 				]),
 
-				// Emergency Contact
+				// Marketing
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Emergency Contact"),
-					P({ class: "font-medium text-foreground" }, "Alex Doe"),
-					P({ class: "text-sm text-muted-foreground" }, "(555) 123-4567")
+					P({ class: "text-sm text-muted-foreground" }, "Allows Marketing"),
+					P({ class: "font-medium text-foreground" }, "[[user.marketingOptIn]]"),
 				]),
 
-				// Birthday
+				// Email Verified
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Birthday"),
-					P({ class: "font-medium text-foreground" }, "Jun. 7th")
+					P({ class: "text-sm text-muted-foreground" }, "Email Verified"),
+					P({ class: "font-medium text-foreground" }, "[[user.emailVerifiedAt]]")
 				])
 			])
 		])
