@@ -163,12 +163,12 @@ export const ScheduleSection = () => {
  * Simple header + paragraph, no card.
  *
  * @param {object} props
- * @param {string} props.about - User about text.
+ * @param {string} props.bio - User bio text.
  * @returns {object}
  */
-export const AboutSection = ({ about }) =>
-	ProfileSection({ title: "About"}, [
-		P({ class: "text-base text-muted-foreground" }, about)
+export const AboutSection = ({ bio }) =>
+	ProfileSection({ title: "Bio"}, [
+		P({ class: "text-base text-muted-foreground" }, bio)
 	]);
 
 /**
