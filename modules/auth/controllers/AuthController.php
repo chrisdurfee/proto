@@ -102,11 +102,24 @@ class AuthController extends Controller
 	{
 		$this->updateUserStatus($user, UserStatus::ONLINE->value);
 		$this->setSessionUser($user);
+		$this->setLastLogin($user);
 
 		return $this->response([
 			'allowAccess' => true,
 			'user' => $user->getData()
 		]);
+	}
+
+	/**
+	 * This will set the last login time for the user.
+	 *
+	 * @param User $user
+	 * @return bool
+	 */
+	protected function setLastLogin(User $user): bool
+	{
+		$user->lastLoginAt = date('Y-m-d H:i:s');
+		return modules()->user()->update($user->getData());
 	}
 
 	/**

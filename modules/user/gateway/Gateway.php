@@ -25,6 +25,17 @@ class Gateway
 	}
 
 	/**
+	 * This will add the user.
+	 *
+	 * @return bool
+	 */
+	public function update(object $settings): bool
+	{
+		$model = new User($settings);
+		return $model->update();
+	}
+
+	/**
 	 * This will get the user by ID.
 	 *
 	 * @param mixed $id
