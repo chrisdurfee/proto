@@ -57,14 +57,6 @@ export const UserHeader = ({ user }) => (
 				Tooltip({ content: 'Message' }, [
 					Button({ variant: 'icon', icon: Icons.chat.text, label: 'Message' })
 				]),
-				Tooltip({ content: '1-1 Meeting' }, [
-					Button({
-						variant: 'icon',
-						icon: Icons.calendar.default,
-						label: '1-1 Meeting',
-						href: `/directory/user/${user.id}/1-1`
-					})
-				]),
 				Tooltip({ content: 'More' }, [
 					Button({ variant: 'icon', icon: Icons.ellipsis.vertical, label: 'More' })
 				])

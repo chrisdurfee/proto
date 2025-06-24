@@ -36,10 +36,10 @@ export const ProfilePage = () => (
 					]),
 					Div({ class: 'flex flex-row space-x-2' }, [
 						Div({ class: 'hidden lg:inline-flex' }, [
-							Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.pencil.square, click: UserModal }, 'Edit'),
+							Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.pencil.square, click: () => UserModal({ item: user }) }, 'Edit'),
 						]),
 						Div({ class: 'flex lg:hidden mr-4' }, [
-							Tooltip({ content: 'Edit', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.pencil.square, click: UserModal }))
+							Tooltip({ content: 'Edit', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.pencil.square, click: () => UserModal({ item: user }) }))
 						])
 					])
 				]),
