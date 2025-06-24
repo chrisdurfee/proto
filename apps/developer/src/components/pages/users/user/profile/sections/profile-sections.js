@@ -95,11 +95,6 @@ export const OrgDetailsSection = () =>
 /**
  * PersonalDetailsSection
  *
- * User-specific personal fields:
- * – Work Style
- * – Emergency Contact
- * – Birthday
- *
  * @returns {object}
  */
 export const PersonalDetailsSection = () =>
