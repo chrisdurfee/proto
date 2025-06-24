@@ -69,6 +69,9 @@ class User extends Migration
 			$table->integer('updated_by', 30)->nullable();
 			$table->deletedAt();
 
+			// Additional fields
+			$table->integer('followers', 30)->default(0);
+
 			// Indexes for quick lookups
 			$table->index('username')->fields('username');
 			$table->index('email')->fields('email');

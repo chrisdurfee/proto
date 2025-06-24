@@ -74,7 +74,10 @@ class User extends Model
 		'createdBy',
 		'updatedAt',
 		'updatedBy',
-		'deletedAt'
+		'deletedAt',
+
+		// social
+		'followers'
 	];
 
 	/**
