@@ -119,7 +119,7 @@ class User extends Model
 	 */
 	public function addresses(): Relations\HasMany
 	{
-		return $this->hasMany(UserAddress::class, 'userId', 'id');
+		return $this->hasMany(UserAddress::class);
 	}
 
 	/**
