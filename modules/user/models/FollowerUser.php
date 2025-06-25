@@ -42,6 +42,10 @@ class FollowerUser extends Model
 	protected static function joins(object $builder): void
 	{
 		$builder
-			->one(User::class, fields: ['id', 'displayName', 'image']);
+			->one(
+				User::class,
+				fields: ['id', 'displayName', 'image']
+			)
+			->on(['followerUserId', 'id']);
 	}
 }

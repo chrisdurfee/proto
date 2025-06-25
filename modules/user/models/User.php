@@ -126,6 +126,21 @@ class User extends Model
 	}
 
 	/**
+	 * This will get the user followers.
+	 *
+	 * @return Relations\BelongsToMany
+	 */
+	public function followers(): \Proto\Models\Relations\BelongsToMany
+	{
+		return $this->belongsToMany(
+			User::class,
+			'follower_users',
+			'user_id',
+			'follower_user_id'
+		);
+	}
+
+	/**
 	 * @var string $storageType
 	 */
 	protected static string $storageType = UserStorage::class;
