@@ -1,4 +1,4 @@
-import { Div, H1 } from "@base-framework/atoms";
+import { A, Div, H1 } from "@base-framework/atoms";
 import { Avatar, Tooltip } from "@base-framework/ui";
 import { Button } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
@@ -49,10 +49,14 @@ export const UserHeader = ({ user }) => (
 		Div({ class: 'flex flex-auto items-center justify-center' }, [
 			Div({ class: 'flex space-x-4 mt-4' }, [
 				Tooltip({ content: 'Email' }, [
-					Button({ variant: 'icon', icon: Icons.envelope.default, label: 'Email' })
+					A({ href: `mailto:[[user.email]]`, class: 'text-muted-foreground', 'data-cancel-route': true }, [
+						Button({ variant: 'icon', icon: Icons.envelope.default, label: 'Email' })
+					])
 				]),
 				Tooltip({ content: 'Call' }, [
-					Button({ variant: 'icon', icon: Icons.phone.default, label: 'Call' })
+					A({ href: `tel:[[user.mobile]]`, class: 'text-muted-foreground', 'data-cancel-route': true }, [
+						Button({ variant: 'icon', icon: Icons.phone.default, label: 'Call' })
+					])
 				]),
 				Tooltip({ content: 'Message' }, [
 					Button({ variant: 'icon', icon: Icons.chat.text, label: 'Message' })
