@@ -50,12 +50,12 @@ export const UserHeader = ({ user }) => (
 			Div({ class: 'flex space-x-4 mt-4' }, [
 				Tooltip({ content: 'Email' }, [
 					A({ href: `mailto:[[user.email]]`, class: 'text-muted-foreground', 'data-cancel-route': true }, [
-						Button({ variant: 'icon', icon: Icons.envelope.default, label: 'Email' })
+						Button({ variant: 'icon', icon: Icons.envelope.default, label: 'Email', disabled: '[[user.email]]' })
 					])
 				]),
 				Tooltip({ content: 'Call' }, [
 					A({ href: `tel:[[user.mobile]]`, class: 'text-muted-foreground', 'data-cancel-route': true }, [
-						Button({ variant: 'icon', icon: Icons.phone.default, label: 'Call' })
+						Button({ variant: 'icon', icon: Icons.phone.default, label: 'Call', disabled: '[[user.mobile]]' })
 					])
 				]),
 				Tooltip({ content: 'Message' }, [
