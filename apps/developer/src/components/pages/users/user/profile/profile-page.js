@@ -8,6 +8,56 @@ import { UserContent } from "./user-content.js";
 import UserHeader from "./user-header.js";
 
 /**
+ * This will create a permission modal.
+ *
+ * @param {object} context
+ * @returns {object}
+ */
+const Modal = (context) => (
+	UserModal({
+		item: context.data.user,
+		onSubmit: (data) =>
+		{
+			context.data.user = data.get();
+		}
+	})
+);
+
+/**
+ * Creates the page header for the profile page.
+ *
+ * @param {object} props
+ *  @param {object} props.user - The user data.
+ *  @param {object} props.context - The context object.
+ * @returns {object}
+ */
+const PageHeader = ({ context }) => (
+	Div({ class: 'flex flex-row justify-between gap-4' }, [
+		Div({ class: 'flex flex-col' }, [
+			H1({ class: 'text-2xl md:text-2xl font-bold tracking-tight' }, 'Profile'),
+		]),
+		Div({ class: 'flex flex-row space-x-2' }, [
+			Div({ class: 'hidden lg:inline-flex' }, [
+				Button({
+					variant: 'withIcon',
+					class: 'text-muted-foreground outline',
+					icon: Icons.pencil.square,
+					click: () => Modal(context)
+				}, 'Edit'),
+			]),
+			Div({ class: 'flex lg:hidden mr-4' }, [
+				Tooltip({ content: 'Edit', position: 'left' }, Button({
+					variant: 'icon',
+					class: 'outline',
+					icon: Icons.pencil.square,
+					click: () => Modal(context)
+				}))
+			])
+		])
+	])
+);
+
+/**
  * ProfilePage
  *
  * Profile page for displaying user information.
@@ -30,19 +80,10 @@ export const ProfilePage = () => (
 			}
 
 			return Div({ class: 'md:p-6 md:pt-0 2xl:mx-auto w-full 2xl:max-w-[1600px]' }, [
-				Div({ class: 'flex flex-row justify-between gap-4' }, [
-					Div({ class: 'flex flex-col' }, [
-						H1({ class: 'text-2xl md:text-2xl font-bold tracking-tight' }, 'Profile'),
-					]),
-					Div({ class: 'flex flex-row space-x-2' }, [
-						Div({ class: 'hidden lg:inline-flex' }, [
-							Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.pencil.square, click: () => UserModal({ item: user }) }, 'Edit'),
-						]),
-						Div({ class: 'flex lg:hidden mr-4' }, [
-							Tooltip({ content: 'Edit', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.pencil.square, click: () => UserModal({ item: user }) }))
-						])
-					])
-				]),
+				PageHeader({
+					user,
+					context
+				}),
 				Div({ class: 'flex flex-auto flex-col lg:flex-row lg:space-x-8'}, [
 					Div({ class: 'w-full lg:w-1/3' }, [
 						UserHeader({ user })
