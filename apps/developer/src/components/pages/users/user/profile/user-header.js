@@ -32,19 +32,19 @@ export const UserHeader = ({ user }) => (
 
 		// User Name
 		Div({ class: "text-sm text-muted-foreground flex gap-1 flex-col truncate items-center justify-center" }, [
-			H1({ class: "text-3xl font-bold text-foreground truncate mt-4" }, `${user.firstName} ${user.lastName}`),
+			H1({ class: "text-3xl font-bold text-foreground truncate mt-4 capitalize" }, `[[user.firstName]] [[user.lastName]]`),
 		]),
 
 		// User Metadata
 		Div({ class: "text-sm text-muted-foreground flex gap-1 flex-col truncate items-center justify-center" }, [
-			Div({ class: 'text-xl' }, user.role),
-			Div(user.location),
+			Div({ class: 'text-xl capitalize' }, '[[user.displayName]]'),
+			Div({ class: 'uppercase' }, '[[user.country]]'),
 		]),
 
 		// phone and email
 		Div({ class: 'text-sm text-muted-foreground gap-1 flex-col truncate items-center justify-center mt-4 hidden md:flex' }, [
-			Div(user.email),
-			Div(user.phone || '—'),
+			Div('[[user.email]]'),
+			Div('[[user.mobile]]'),
 		]),
 		Div({ class: 'flex flex-auto items-center justify-center' }, [
 			Div({ class: 'flex space-x-4 mt-4' }, [

@@ -88,43 +88,12 @@ const UserFieldset = (isEditing) => (
 			]
 		),
 		new FormField(
-			{ name: "lastName", label: "Last Name", description: "Enter the user's last name." },
-			[
-				Input({
-					type: "text",
-					placeholder: "Doe",
-					required: true,
-					bind: "lastName"
-				})
-			]
-		),
-		new FormField(
 			{ name: "displayName", label: "Display Name", description: "Enter the user's display name." },
 			[
 				Input({
 					placeholder: "e.g. John Doe",
 					required: true,
 					bind: "displayName"
-				})
-			]
-		),
-		new FormField(
-			{ name: "mobile", label: "Mobile", description: "Enter the user's mobile number." },
-			[
-				TelInput({
-					placeholder: "e.g. +1234567890",
-					required: false,
-					bind: "mobile"
-				})
-			]
-		),
-		new FormField(
-			{ name: "bio", label: "Bio", description: "Enter the user's bio." },
-			[
-				Textarea({
-					placeholder: "Tell us about yourself...",
-					required: true,
-					bind: "bio"
 				})
 			]
 		),
@@ -151,6 +120,48 @@ const UserFieldset = (isEditing) => (
 					]
 				})
 			]
+		),
+		new FormField(
+			{ name: "bio", label: "Bio", description: "Enter the user's bio." },
+			[
+				Textarea({
+					placeholder: "Tell us about yourself...",
+					bind: "bio"
+				})
+			]
+		)
+	])
+);
+
+/**
+ * This will create the contact fieldset.
+ *
+ * @param {boolean} isEditing - Whether the user is being edited or not.
+ * @returns {object}
+ */
+const ContactFieldset = (isEditing) => (
+    Fieldset({ legend: "Contact Information" }, [
+
+		new FormField(
+			{ name: "email", label: "Email", description: "Enter the user's email address." },
+			[
+				Input({
+					type: "email",
+					placeholder: "e.g. john@example.com",
+					required: true,
+					bind: "email"
+				})
+			]
+		),
+		new FormField(
+			{ name: "mobile", label: "Mobile", description: "Enter the user's mobile number." },
+			[
+				TelInput({
+					placeholder: "e.g. +1234567890",
+					required: false,
+					bind: "mobile"
+				})
+			]
 		)
 	])
 );
@@ -164,17 +175,6 @@ const UserFieldset = (isEditing) => (
 const LocationFieldset = (isEditing) => (
     Fieldset({ legend: "Location Information" }, [
 
-		new FormField(
-			{ name: "address", label: "Address", description: "Enter the user's address." },
-			[
-				Input({
-					type: "text",
-					placeholder: "123 Main St",
-					required: true,
-					bind: "address"
-				})
-			]
-		),
 		new FormField(
 			{ name: "timezone", label: "Timezone", description: "Select the user's timezone." },
 			[
@@ -311,6 +311,7 @@ const AccessFieldset = (isEditing) => (
 export const UserForm = ({ isEditing, user }) => ([
 	(!isEditing) && AuthFieldset(),
 	UserFieldset(isEditing),
+	ContactFieldset(isEditing),
 	LocationFieldset(isEditing),
 	isEditing && AccessFieldset(isEditing),
 	(isEditing) && new UserRoleFieldset({
