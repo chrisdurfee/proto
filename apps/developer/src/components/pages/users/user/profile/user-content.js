@@ -1,5 +1,5 @@
 import { Div, H2, Header, P } from "@base-framework/atoms";
-import { AboutSection, OrgDetailsSection, PersonalDetailsSection, RoleSection, ScheduleSection } from "./sections/profile-sections.js";
+import { AboutSection, AppDetailsSection, LocaleDetailsSection, OrgDetailsSection, PersonalDetailsSection, RoleSection, ScheduleSection } from "./sections/profile-sections.js";
 
 /**
  * This will create the card header.
@@ -27,6 +27,8 @@ export const UserContent = ({ user }) => (
 	Div({ class: "space-y-12 mt-6 md:px-6" }, [
 		AboutSection(user),
 		OrgDetailsSection(),
+		LocaleDetailsSection(),
+		AppDetailsSection(),
 		PersonalDetailsSection(),
 		ScheduleSection(),
 		RoleSection({ roles: user.roles || [] })

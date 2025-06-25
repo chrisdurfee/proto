@@ -37,7 +37,6 @@ class User extends Model
 		'username',
 		'password',
 		'email',
-		'emailVerifiedAt',
 		'multiFactorEnabled',
 		'lastPasswordChangeAt',
 

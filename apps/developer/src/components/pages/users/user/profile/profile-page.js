@@ -2,10 +2,10 @@ import { Div, H1, On } from "@base-framework/atoms";
 import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { Page } from "@base-framework/ui/pages";
-import { UserModal } from "../../../modals/user-modal.js";
-import UserSkeleton from "../../user-skeleton.js";
-import { UserContent } from "../user-content.js";
-import UserHeader from "../user-header.js";
+import { UserModal } from "../../modals/user-modal.js";
+import UserSkeleton from "../user-skeleton.js";
+import { UserContent } from "./user-content.js";
+import UserHeader from "./user-header.js";
 
 /**
  * ProfilePage

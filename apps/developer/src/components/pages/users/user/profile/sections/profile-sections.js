@@ -38,56 +38,135 @@ export const ProfileSection = Atom((props, children) => (
  * @returns {object}
  */
 export const OrgDetailsSection = () =>
-	ProfileSection({ title: "Organization Details" }, [
+	ProfileSection({ title: "User Details" }, [
 		Card({ class: "p-6", margin: "m-0", hover: true }, [
 			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" }, [
-				// Employee ID
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "User ID"),
 					P({ class: "font-medium text-foreground" }, "[[user.id]]")
 				]),
 
-				// Date Created
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "UUID"),
+					P({ class: "font-medium text-foreground truncate" }, "[[user.uuid]]")
+				]),
+
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Date Created"),
 					P({ class: "font-medium text-foreground" }, "[[user.createdAt]]")
 				]),
 
-				// Birth Date
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Birth Date"),
 					P({ class: "font-medium text-foreground" }, "[[user.dob]]")
 				]),
 
-				// Accepted Terms
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Accepted Terms"),
-					P({ class: "font-medium text-foreground" }, "[[user.acceptedTermsAt]]")
+					P({ class: "text-sm text-muted-foreground" }, "Gender"),
+					P({ class: "font-medium text-foreground capitalize" }, "[[user.gender]]")
 				]),
 
-				// Last Login
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Last Login"),
-					P({ class: "font-medium text-foreground" }, "[[user.lastLoginAt]]")
+					P({ class: "text-sm text-muted-foreground" }, "Allows Email"),
+					P({ class: "font-medium text-foreground" }, "[[user.allowEmail]]")
 				]),
 
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Allows Sms"),
+					P({ class: "font-medium text-foreground" }, "[[user.allowSms]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Allows Push"),
+					P({ class: "font-medium text-foreground" }, "[[user.allowPush]]")
+				])
+			])
+		])
+	]);
+
+/**
+ * LocaleDetailsSection
+ *
+ * @returns {object}
+ */
+export const LocaleDetailsSection = () =>
+	ProfileSection({ title: "Locale Details" }, [
+		Card({ class: "p-6", margin: "m-0", hover: true }, [
+			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" }, [
 				// Language
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Language"),
-					P({ class: "font-medium text-foreground" }, "[[user.language]]")
+					P({ class: "font-medium text-foreground capitalize" }, "[[user.language]]")
 				]),
 
 				// Country
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Country"),
-					P({ class: "font-medium text-foreground" }, "[[user.country]]")
+					P({ class: "font-medium text-foreground uppercase" }, "[[user.country]]")
 				]),
 
 				// Time Zone
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Time Zone"),
-					P({ class: "font-medium text-foreground" }, "[[user.timezone]]")
+					P({ class: "font-medium text-foreground uppercase" }, "[[user.timezone]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Currency"),
+					P({ class: "font-medium text-foreground uppercase" }, "[[user.currency]]")
 				])
+			])
+		])
+	]);
+
+/**
+ * AppDetailsSection
+ *
+ * @returns {object}
+ */
+export const AppDetailsSection = () =>
+	ProfileSection({ title: "Account Details" }, [
+		Card({ class: "p-6", margin: "m-0", hover: true }, [
+			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" }, [
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Accepted Terms"),
+					P({ class: "font-medium text-foreground" }, "[[user.acceptedTermsAt]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Last Login"),
+					P({ class: "font-medium text-foreground" }, "[[user.lastLoginAt]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Enabled"),
+					P({ class: "font-medium text-foreground" }, "[[user.enabled]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Email Verified"),
+					P({ class: "font-medium text-foreground" }, "[[user.emailVerifiedAt]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Allows Marketing"),
+					P({ class: "font-medium text-foreground" }, "[[user.marketingOptIn]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Last Updated"),
+					P({ class: "font-medium text-foreground" }, "[[user.updatedAt]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Follower Count"),
+					P({ class: "font-medium text-foreground" }, "[[user.followerCount]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Password Changed"),
+					P({ class: "font-medium text-foreground" }, "[[user.lastPasswordChangeAt]]")
+				]),
 			])
 		])
 	]);
@@ -98,25 +177,19 @@ export const OrgDetailsSection = () =>
  * @returns {object}
  */
 export const PersonalDetailsSection = () =>
-	ProfileSection({ title: "Account Details" }, [
+	ProfileSection({ title: "Trial Details" }, [
 		Div([
 			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" }, [
 				// Trial mode
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Trial Mode"),
-					P({ class: "font-medium text-foreground" }, "[[user.trialMode]] ([[user.trialDaysLeft]] days left)")
+					P({ class: "font-medium text-foreground" }, "[[user.trialMode]]")
 				]),
 
 				// Marketing
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Allows Marketing"),
-					P({ class: "font-medium text-foreground" }, "[[user.marketingOptIn]]"),
-				]),
-
-				// Email Verified
-				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Email Verified"),
-					P({ class: "font-medium text-foreground" }, "[[user.emailVerifiedAt]]")
+					P({ class: "text-sm text-muted-foreground" }, "Days Remaining"),
+					P({ class: "font-medium text-foreground" }, "[[user.trialDaysLeft]] days left"),
 				])
 			])
 		])
@@ -130,7 +203,8 @@ export const PersonalDetailsSection = () =>
  *
  * @returns {object}
  */
-export const ScheduleSection = () => {
+export const ScheduleSection = () =>
+{
 	const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 	return ProfileSection({ title: "Schedule" }, [
 		Card({ class: '', margin: 'm-0' }, [

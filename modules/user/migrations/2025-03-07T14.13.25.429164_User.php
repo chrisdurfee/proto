@@ -73,8 +73,11 @@ class User extends Migration
 			$table->integer('follower_count', 30)->default(0);
 
 			// Indexes for quick lookups
-			$table->index('username')->fields('username');
-			$table->index('email')->fields('email');
+			$table->index('first_name')->fields('first_name', 'last_name', 'status');
+			$table->index('last_name')->fields('last_name', 'first_name', 'status');
+			$table->index('username')->fields('username', 'password', 'id');
+			$table->index('email')->fields('email', 'password', 'id');
+			$table->index('mobile')->fields('mobile');
 			$table->index('status')->fields('status');
 			$table->index('created_at')->fields('created_at');
 			$table->index('updated_at')->fields('updated_at');
