@@ -70,7 +70,7 @@ class User extends Migration
 			$table->deletedAt();
 
 			// Additional fields
-			$table->integer('followers', 30)->default(0);
+			$table->integer('follower_count', 30)->default(0);
 
 			// Indexes for quick lookups
 			$table->index('username')->fields('username');

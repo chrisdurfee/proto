@@ -77,7 +77,7 @@ class User extends Model
 		'deletedAt',
 
 		// social
-		'followers'
+		'followerCount'
 	];
 
 	/**
