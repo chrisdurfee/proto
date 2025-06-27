@@ -38,7 +38,7 @@ export const UserPage = () =>
 		{
 			if (this.list)
 			{
-				this.list.refresh();
+				//this.list.refresh();
 			}
 		}
 	};

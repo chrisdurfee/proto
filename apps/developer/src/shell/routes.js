@@ -13,7 +13,7 @@ const DynamicRoute = (uri, callBack, title, persist = false) =>
 		uri,
 		import: callBack,
 		title,
-		persist
+		persist: true
 	};
 };
 
