@@ -28,7 +28,6 @@ const Modal = (item, parent) => (
 		item,
 		onClose: (data) =>
 		{
-			console.log(parent)
 			parent.list.refresh();
 		}
 	})

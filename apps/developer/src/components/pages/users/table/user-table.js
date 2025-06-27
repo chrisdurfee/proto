@@ -74,14 +74,24 @@ export const UserRow = (row, onSelect) => (
 				onChange: () => onSelect(row)
 			})
 		]),
-		Td({ class: 'p-4 hidden md:table-cell' }, String(row.id)),
+		Td({ class: 'p-4 hidden md:table-cell' }, [
+			A({ href: `users/${row.id}`, class: 'text-muted-foreground' }, String(row.id))
+		]),
 		Td({ class: 'p-4' }, [
 			UserAvatar(row)
 		]),
-		Td({ class: 'p-4 max-w-[200px] truncate' }, row.email),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
-		Td({ class: 'p-4 hidden md:table-cell' }, row.emailVerifiedAt || '-'),
-		Td({ class: 'p-4 flex flex-wrap gap-2' }, UserRoles(row))
+		Td({ class: 'p-4 max-w-[200px] truncate' }, [
+			A({ href: `mailto:${row.email}`, class: 'text-muted-foreground', 'data-cancel-route': true }, row.email)
+		]),
+		Td({ class: 'p-4 hidden md:table-cell' }, [
+			A({ href: `users/${row.id}`, class: 'text-muted-foreground' }, row.createdAt)
+		]),
+		Td({ class: 'p-4 hidden md:table-cell' }, [
+			A({ href: `users/${row.id}`, class: 'text-muted-foreground' }, row.emailVerifiedAt || '-')
+		]),
+		Td({ class: 'p-4 flex flex-wrap gap-2' }, [
+			A({ href: `users/${row.id}`, class: 'text-muted-foreground' }, UserRoles(row))
+		])
 	])
 );
 

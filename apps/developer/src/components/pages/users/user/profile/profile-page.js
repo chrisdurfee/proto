@@ -27,8 +27,8 @@ const Modal = (context) => (
  * Creates the page header for the profile page.
  *
  * @param {object} props
- *  @param {object} props.user - The user data.
- *  @param {object} props.context - The context object.
+ * @param {object} props.user - The user data.
+ * @param {object} props.context - The context object.
  * @returns {object}
  */
 const PageHeader = ({ context }) => (
