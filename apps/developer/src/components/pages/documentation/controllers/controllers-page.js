@@ -176,7 +176,7 @@ class UserController extends ResourceController
 			return $this->error('Username is already taken.');
 		}
 
-		return parent::add($request);
+		return $this->addItem($data);
 	}
 }`
 				)
