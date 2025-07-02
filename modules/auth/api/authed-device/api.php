@@ -15,8 +15,8 @@ router()
 	->middleware(([
 		CrossSiteProtectionMiddleware::class
 	]))
-	->group('auth/authed-devices', function(Router $router)
+	->group('auth', function(Router $router)
 	{
 		$controller = new UserAuthedDeviceController();
-		$router->get(':userId', [$controller, 'all']);
+		$router->get(':userId/authed-device', [$controller, 'all']);
 	});

@@ -1,6 +1,7 @@
 import { Div, P, Td, Tr } from "@base-framework/atoms";
 import { Badge, Card } from "@base-framework/ui/atoms";
 import { DataTable, DynamicDataTable } from "@base-framework/ui/organisms";
+import { UserAuthedDeviceModel } from "../../../models/user-authed-device-model.js";
 import { ProfileSection } from "./profile-section.js";
 
 /**
@@ -260,14 +261,17 @@ export const RoleSection = ({ roles }) =>
 /**
  * AuthedDeviceSection
  *
- * @param {object} props
+ * @param {object} user
  * @returns {object}
  */
-export const AuthedDeviceSection = (props) =>
+export const AuthedDeviceSection = (user) =>
 	ProfileSection({ title: "Authed Devices" }, [
 		Div({ class: "overflow-x-auto" },
 			DynamicDataTable({
 				key: 'id',
+				data: new UserAuthedDeviceModel({
+					userId: user.id
+				}),
 				headers: [
 					{ label: 'Platform', key: 'platform' },
 					{ label: 'Brand', key: 'brand' },
