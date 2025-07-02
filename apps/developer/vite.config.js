@@ -24,7 +24,7 @@ export default defineConfig({
 		}
 	},
 	build: {
-		outDir: path.resolve(__dirname, '../../public/developer'),
+		outDir: path.resolve(__dirname, '../../public/crm'),
 		emptyOutDir: true
 	}
 });

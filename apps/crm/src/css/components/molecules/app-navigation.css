@@ -1,0 +1,76 @@
+.app-nav-container.ignoreHover,
+.app-nav-container.ignoreHover * {
+	pointer-events: none !important;
+}
+
+@media (max-width: 640px) {
+
+	.app-nav-container {
+		height: calc(56px + env(safe-area-inset-bottom));
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+}
+
+@media (min-width: 641px) {
+
+	.app-container {
+		padding-left: env(safe-area-inset-left);
+		padding-right: env(safe-area-inset-right);
+	}
+
+	.app-nav-container {
+		width: calc(64px + env(safe-area-inset-left));
+		padding-left: env(safe-area-inset-left);
+	}
+}
+
+.app-nav-container:hover .navigation .option.sub>*:before,
+.app-nav-container.pinned .navigation .option.sub>*:before {
+	opacity: 1;
+}
+
+.app-nav-container:not(.ignoreHover):hover .main-navigation,
+.app-nav-container.pinned .main-navigation {
+	transition: width .2s ease-in-out;
+}
+
+/**
+ * This will remove the shadow when the navigation is pinned
+ */
+.app-nav-container:not(.ignoreHover):not(.pinned):hover {
+	@apply shadow-lg;
+}
+
+.app-nav-container:hover .navigation li.option.sub>.active {
+	@apply bg-accent;
+}
+
+.app-nav-container .navigation:not(.sub) .option .label {
+	opacity: 0;
+}
+
+.app-nav-container:hover .navigation:not(.sub) .option .label {
+	opacity: 1;
+	transition: opacity .3s ease-in;
+}
+
+.app-nav-container .navigation-group h4 {
+	opacity: 0;
+	transition: opacity .2s ease-in;
+}
+
+.app-nav-container .navigation .child-group .sub {
+	margin-left: 0;
+}
+
+.app-nav-container:hover .navigation-group h4 {
+	opacity: .6;
+}
+
+.app-nav-container .navigation.sub.active~.active-panel-container:after {
+	opacity: 1;
+}
+
+.app-nav-container .navigation .option.sub>*:before {
+	opacity: 0;
+}

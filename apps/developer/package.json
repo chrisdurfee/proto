@@ -1,7 +1,7 @@
 {
-	"name": "team",
+	"name": "developer",
 	"version": "0.1.0",
-	"description": "This is an app that documents team information.",
+	"description": "This is the developer app for proto.",
 	"main": "/dist/main.js",
 	"type": "module",
 	"scripts": {
@@ -19,13 +19,6 @@
 	],
 	"author": "Chris Durfee",
 	"license": "ISC",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/chrisdurfee/team.git"
-	},
-	"bugs": {
-		"url": "https://github.com/chrisdurfee/team/issues"
-	},
 	"devDependencies": {
 		"autoprefixer": "^10.4.20",
 		"esbuild": "^0.25.0",
@@ -44,6 +37,5 @@
 	"files": [
 		"package.json",
 		"readme.md"
-	],
-	"homepage": "https://github.com/chrisdurfee/team#readme"
+	]
 }

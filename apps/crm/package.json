@@ -1,0 +1,50 @@
+{
+	"name": "@base-framework/next-app-shell",
+	"version": "0.1.2",
+	"description": "This is an example app that uses the base framework.",
+	"main": "/dist/main.js",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build && tsc",
+		"preview": "vite preview",
+		"type-check": "tsc --noEmit",
+		"predeploy": "&& cp ./404.html ./build"
+	},
+	"keywords": [
+		"JavaScript",
+		"Framework",
+		"Base",
+		"ES6"
+	],
+	"author": "Chris Durfee",
+	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/chrisdurfee/next-app-shell.git"
+	},
+	"bugs": {
+		"url": "https://github.com/chrisdurfee/next-app-shell/issues"
+	},
+	"devDependencies": {
+		"autoprefixer": "^10.4.20",
+		"esbuild": "^0.25.0",
+		"postcss": "^8.5.3",
+		"tailwindcss": "^3.4.13"
+	},
+	"dependencies": {
+		"@base-framework/atoms": "^1.0.41",
+		"@base-framework/base": "^3.0.295",
+		"@base-framework/organisms": "^1.0.69",
+		"@base-framework/ui": "^1.0.54",
+		"d3": "^7.9.0",
+		"tailwindcss-animate": "^1.0.7",
+		"typescript": "^5.7.3",
+		"vite": "^6.1.1"
+	},
+	"files": [
+		"package.json",
+		"readme.md"
+	],
+	"homepage": "https://github.com/chrisdurfee/next-app-shell#readme"
+}

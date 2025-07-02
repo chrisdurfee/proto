@@ -1,0 +1,77 @@
+{
+	"compilerOptions": {
+		"allowJs": true, // Allows TypeScript to process JS files
+		"checkJs": true, // Enables type checking for JS files, based on your JSDoc comments
+		"strictPropertyInitialization": false, // Disables strict checking of property initialization in classes
+		"strictNullChecks": false, // When true, 'null' and 'undefined' are only assignable to 'any' and their respective types
+		"noImplicitThis": false, // Allows 'this' to be of type 'any'
+		"strict": false,
+		"noImplicitAny": false,
+		"emitDeclarationOnly": true, // Instructs the compiler to only emit `.d.ts` declaration files
+		"declaration": true, // Enables generation of declaration files
+		"declarationDir": "./dist/types",
+		"outDir": "./dist",
+		"noEmit": false, // Ensures that files are emitted
+		"esModuleInterop": true,
+		"module": "ESNext", // Specifies the module system, adjust according to your project's module system
+		"target": "ESNext", // Set the target ECMAScript version according to your project's needs
+		"baseUrl": "./",
+		"skipLibCheck": true,  // Add this to avoid checking node_modules
+		"paths": {
+			"@base-framework/base": [
+				"node_modules/@base-framework/base/dist/types/base.d.ts",
+				"node_modules/@base-framework/base/dist/base.js"
+			],
+			"@base-framework/atoms": [
+				"node_modules/@base-framework/atoms/dist/types/atoms.d.ts",
+				"node_modules/@base-framework/atoms/dist/atoms.js"
+			],
+			"@base-framework/organisms": [
+				"node_modules/@base-framework/organisms/dist/types/organisms.d.ts",
+				"node_modules/@base-framework/organisms/dist/organisms.js"
+			],
+			"@base-framework/ui": [
+				"node_modules/@base-framework/ui/dist/types/ui.d.ts",
+				"node_modules/@base-framework/ui/dist/index.es.js"
+			],
+			"@base-framework/ui/atoms": [
+				"node_modules/@base-framework/ui/dist/components/types/atoms.d.ts",
+				"node_modules/@base-framework/ui/dist/atoms.es.js"
+			],
+			"@base-framework/ui/icons": [
+				"node_modules/@base-framework/ui/dist/components/types/icons.d.ts",
+				"node_modules/@base-framework/ui/dist/icons.es.js"
+			],
+			"@base-framework/ui/molecules": [
+				"node_modules/@base-framework/ui/dist/components/types/molecules.d.ts",
+				"node_modules/@base-framework/ui/dist/molecules.es.js"
+			],
+			"@base-framework/ui/organisms": [
+				"node_modules/@base-framework/ui/dist/components/types/organisms.d.ts",
+				"node_modules/@base-framework/ui/dist/organisms.es.js"
+			],
+			"@base-framework/ui/pages": [
+				"node_modules/@base-framework/ui/dist/components/types/pages.d.ts",
+				"node_modules/@base-framework/ui/dist/pages.es.js"
+			],
+			"@base-framework/ui/templates": [
+				"node_modules/@base-framework/ui/dist/components/types/templates.d.ts",
+				"node_modules/@base-framework/ui/dist/templates.es.js"
+			],
+			"@base-framework/ui/utils": [
+				"node_modules/@base-framework/ui/dist/components/types/utils.d.ts",
+				"node_modules/@base-framework/ui/dist/utils.es.js"
+			],
+			"d3": [
+				"node_modules/d3/dist/d3.js"
+			]
+		}
+	},
+	"include": [
+		"src/**/*",
+		"globals.d.ts"
+	],
+	"exclude": [
+		"node_modules/**/*"
+	]
+}

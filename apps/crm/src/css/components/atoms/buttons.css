@@ -1,0 +1,124 @@
+button.primary,
+.bttn.primary,
+a.primary {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2;
+}
+
+button.secondary,
+.bttn.secondary,
+a.secondary {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2;
+}
+
+button.destructive,
+.bttn.destructive,
+a.destructive {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2;
+}
+
+button.warning,
+.bttn.warning,
+a.warning {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-warning text-warning-foreground hover:bg-warning/90 h-10 px-4 py-2;
+}
+
+button.outline,
+.btth.outline,
+a.outline {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2;
+}
+
+button.ghost,
+.bttn.ghost,
+a.ghost {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2;
+}
+
+.button.link,
+.bttn.link,
+a.link {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-primary underline-offset-4 hover:underline h-10 px-4 py-2;
+}
+
+button.icon,
+.bttn.icon,
+a.icon {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10;
+}
+button.icon.primary,
+.bttn.icon.primary,
+a.icon.primary {
+    @apply bg-primary text-primary-foreground p-0 hover:bg-primary/90;
+}
+.bttn.icon.secondary,
+a.icon.secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+}
+.bttn.icon.destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+}
+.bttn.icon.warning,
+a.icon.warning {
+    @apply bg-warning text-warning-foreground hover:bg-warning/90;
+}
+
+button.icon.outline,
+.bttn.icon.outline,
+a.icon.outline {
+    @apply inline-flex items-center justify-center p-0 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10;
+}
+
+button.with-icon,
+.bttn.with-icon,
+a.with-icon {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2;
+}
+
+button.with-icon.secondary,
+.bttn.with-icon.secondary,
+a.with-icon.secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+}
+
+button.with-icon.destructive,
+.bttn.with-icon.destructive,
+a.with-icon.destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+}
+
+button.with-icon.warning,
+.bttn.with-icon.warning,
+a.with-icon.warning {
+    @apply bg-warning text-warning-foreground hover:bg-warning/90;
+}
+
+button.with-icon.outline,
+.bttn.with-icon.outline,
+a.with-icon.outline {
+    @apply inline-flex items-center justify-center gap-2 p-0 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2;
+}
+
+button.with-icon.ghost,
+.bttn.with-icon.ghost,
+a.with-icon.ghost {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2;
+}
+
+button.with-icon.link,
+.bttn.with-icon.link,
+a.with-icon.link {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 text-primary underline-offset-4 hover:underline h-10 px-4 py-2;
+}
+
+button.with-icon i,
+.bttn.with-icon i,
+a.with-icon i {
+    width: 1rem;
+    height: 1rem;
+}
+
+button svg path,
+.bttn svg path,
+a svg path {
+    fill: inherit;
+}

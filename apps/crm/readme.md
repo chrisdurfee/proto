@@ -1,8 +1,8 @@
-# Proto Developer App
+# Proto CRM App
 
 ## Framework Overview
 
-This is the developer app for Proto. It provides a set of tools and components for building applications on the Proto framework.
+This is a CRM application built using the Base Framework. It provides a set of features and functionalities tailored for customer relationship management.
 
 ## Layouts
 
@@ -26,7 +26,7 @@ To begin using the developer app, follow these steps:
 
 1. Navigate to the project directory:
 ```bash
-cd ./apps/developer
+cd ./apps/crm
 ```
 
 2. Install dependencies (ensure Node.js is installed):
