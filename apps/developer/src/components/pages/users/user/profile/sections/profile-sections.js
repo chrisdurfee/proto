@@ -278,7 +278,7 @@ export const AuthedDeviceSection = (user) =>
 					{ label: 'Version', key: 'version' }
 				],
 				rows: [],
-				limit: 50,
+				limit: 3,
 				rowItem: (device) => Tr({ class: "items-center px-4 py-2 hover:bg-muted/50" }, [
 					Td({ class: "p-4" }, P(device.platform)),
 					Td({ class: "p-4 text-muted-foreground" }, P(device.brand)),
