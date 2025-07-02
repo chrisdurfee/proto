@@ -156,6 +156,53 @@ class ExampleModule extends Module
 				)
 			]),
 
+			// Registering Gates
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Registering Gates'),
+				P({ class: 'text-muted-foreground' },
+					`Modules can register gates to control access to their functionality globally using the auth() helper. Gates are defined in the module's
+					authorization layer and can be used to restrict access to certain actions or resources.`
+				),
+				CodeBlock(
+`<?php declare(strict_types=1);
+namespace Modules\\User;
+
+use Modules\\User\\Auth\\Gates\\UserGate;
+use Proto\\Module\\Module;
+
+/**
+ * UserModule
+ *
+ * This module handles user-related functionality.
+ *
+ * @package Modules\\User
+ */
+class UserModule extends Module
+{
+	/**
+	 * This will activate the module.
+	 *
+	 * @return void
+	 */
+	public function activate(): void
+	{
+		$this->setAutGates();
+	}
+
+	/**
+	 * This will set the authentication gates.
+	 *
+	 * @return void
+	 */
+	private function setAutGates(): void
+	{
+		$auth = auth();
+		$auth->user = new UserGate();
+	}
+}`
+				)
+			]),
+
 			// Module Registration
 			Section({ class: 'space-y-4 mt-12' }, [
 				H4({ class: 'text-lg font-bold' }, 'Module Registration'),
@@ -170,7 +217,45 @@ class ExampleModule extends Module
     "User\\UserModule"
 ]`
 				)
-			])
+			]),
+
+			Section({ class: 'space-y-4 mt-12' }, [
+				H4({ class: 'text-lg font-bold' }, 'Accessing a Module'),
+				P({ class: 'text-muted-foreground' },
+					`To access a module's functionality, you can use the modules() helper function. Use the modules() global function and call the module name in camelCase.
+					For example:`
+				),
+				CodeBlock(
+`
+// In another module anywhere. Usually in a controller
+modules()->example()->add();
+
+// To use versioned methods:
+modules()->example()->v1()->add();
+modules()->example()->v2()->add();
+`
+				),
+				P({ class: 'text-muted-foreground' },
+					`This is an example controller for the Auth module that calls the User module.`
+				),
+				CodeBlock(
+`
+class AuthController
+{
+	/**
+	 * Create a new user.
+	 *
+	 * @return object
+	 */
+    public function create(): object
+    {
+		// Call the user module to add a new user.
+        return modules()->user()->add();
+    }
+}
+`
+				)
+			]),
 		]
 	);
 
