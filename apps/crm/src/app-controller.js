@@ -56,8 +56,16 @@ export class AppController
 	 */
 	setData()
 	{
+		/**
+		 * This will set the user data to save to the local storage
+		 * and resume the user session.
+		 */
+		const user = new UserData();
+		user.setKey("user");
+		user.resume();
+
 		this.data = {
-			user: new UserData()
+			user
 		};
 	}
 
