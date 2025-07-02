@@ -10,7 +10,7 @@ import { UserTable } from "./table/user-table.js";
  *
  * @returns {BlankPage}
  */
-export const UserPage = () =>
+export const UsersPage = () =>
 {
 	/**
 	 * @type {Model} data
@@ -57,4 +57,4 @@ export const UserPage = () =>
 	]);
 };
 
-export default UserPage;
+export default UsersPage;

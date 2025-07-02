@@ -1,26 +1,7 @@
-import { Div, H2, Header, P } from "@base-framework/atoms";
-import { Atom } from "@base-framework/base";
+import { Div, P, Td, Tr } from "@base-framework/atoms";
 import { Badge, Card } from "@base-framework/ui/atoms";
-
-/**
- * ProfileSection
- *
- * Generic section with a title and description, used for various profile sections.
- * @param {object} props
- * @param {string} props.title - Section title.
- * @param {string} props.description - Section description.
- * @param {Array} children - Child components to render within the section.
- * @returns {object}
- */
-export const ProfileSection = Atom((props, children) => (
-	Div({ class: "space-y-6" }, [
-		Header({ class: "flex flex-col space-y-2" }, [
-			H2({ class: "text-xl font-semibold" }, props.title),
-			props.description && P({ class: "text-sm text-muted-foreground" }, props.description)
-		]),
-		...children
-	])
-))
+import { DataTable, DynamicDataTable } from "@base-framework/ui/organisms";
+import { ProfileSection } from "./profile-section.js";
 
 /**
  * OrgDetailsSection
@@ -274,4 +255,58 @@ export const RoleSection = ({ roles }) =>
 		Div({ class: "space-y-4" }, [
 			Div({ class: "flex flex-wrap gap-2" }, roles.map(role => Badge({ variant: "outline" }, role.name)))
 		])
+	]);
+
+/**
+ * AuthedDeviceSection
+ *
+ * @param {object} props
+ * @returns {object}
+ */
+export const AuthedDeviceSection = (props) =>
+	ProfileSection({ title: "Authed Devices" }, [
+		Div({ class: "overflow-x-auto" },
+			DynamicDataTable({
+				key: 'id',
+				headers: [
+					{ label: 'Platform', key: 'platform' },
+					{ label: 'Brand', key: 'brand' },
+					{ label: 'Version', key: 'version' }
+				],
+				rows: [],
+				limit: 50,
+				rowItem: (device) => Tr({ class: "items-center px-4 py-2 hover:bg-muted/50" }, [
+					Td({ class: "p-4" }, P(device.platform)),
+					Td({ class: "p-4 text-muted-foreground" }, P(device.brand)),
+					Td({ class: "p-4" }, Badge({ variant: "primary" }, device.version))
+				])
+			})
+		)
+	]);
+
+/**
+ * OrganizationSection
+ *
+ * @param {object} props
+ * @param {Array} props.organizations - Array of organization objects with name, role, and status.
+ * @returns {object}
+ */
+export const OrganizationSection = ({ organizations }) =>
+	ProfileSection({ title: "Organizations" }, [
+		Div({ class: "overflow-x-auto" },
+			new DataTable({
+				key: 'id',
+				headers: [
+					{ label: 'ID', key: 'id' },
+					{ label: 'Name', key: 'name' },
+					{ label: 'Status', key: 'status' }
+				],
+				rows: organizations,
+				rowItem: (org) => Tr({ class: "items-center px-4 py-2 hover:bg-muted/50" }, [
+					Td({ class: "p-4" }, String(org.id)),
+					Td({ class: "p-4 text-muted-foreground" }, P(org.name)),
+					Td({ class: "p-4" }, Badge({ variant: "primary" }, 'Active'))
+				])
+			})
+		)
 	]);
