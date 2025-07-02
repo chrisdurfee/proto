@@ -294,7 +294,7 @@ if ($validator->isValid() === false)
  *
  * This method can be overridden in subclasses to provide specific validation logic.
  *
- * @return array An array of validation errors, if any.
+ * @return array An array of validation rules.
  */
 protected function validate(): array
 {
@@ -318,9 +318,9 @@ protected function validate(): array
  *
  * This method can be overridden in subclasses to provide specific validation logic.
  *
- * @return array An array of validation errors, if any.
+ * @return void
  */
-public function addData(Request $request): array
+public function addData(Request $request): void
 {
 	$data = $this->getRequestItem($request);
 	$this->validateRules($data, [
