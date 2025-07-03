@@ -15,8 +15,17 @@ use Proto\Http\Router\Router;
  */
 router()
 	->middleware(([
-		CrossSiteProtectionMiddleware::class,
-		ThrottleMiddleware::class,
+		CrossSiteProtectionMiddleware::class
+	]))
+	->post('auth/pulse', [AuthController::class, 'pulse'])
+	->post('auth/register', [AuthController::class, 'register'])
+	->get('auth/csrf-token', [AuthController::class, 'getToken'], [
+		DomainMiddleware::class
+	]);
+
+router()
+	->middleware(([
+		ThrottleMiddleware::class
 	]))
 	->group('auth', function(Router $router)
 	{
@@ -25,8 +34,6 @@ router()
 		$router->post('login', [$controller, 'login']);
 		$router->post('logout', [$controller, 'logout']);
 		$router->post('resume', [$controller, 'resume']);
-		$router->post('pulse', [$controller, 'pulse']);
-		$router->post('register', [$controller, 'register']);
 
 		// MFA: send & verify one‑time codes
 		$router->post('mfa/code', [$controller, 'getAuthCode']);
@@ -36,9 +43,4 @@ router()
 		$router->post('password/request', [$controller, 'requestPasswordReset']);
 		$router->post('password/verify', [$controller, 'validatePasswordRequest']);
 		$router->post('password/reset', [$controller, 'resetPassword']);
-
-		// CSRF token (no body, safe to GET)
-		$router->get('csrf-token', [$controller, 'getToken'], [
-			DomainMiddleware::class
-		]);
 	});

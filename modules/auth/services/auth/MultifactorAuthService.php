@@ -131,7 +131,7 @@ class MultiFactorAuthService
 	 */
 	protected function dispatchCode(User $user, string $type, string $code): object
 	{
-		var_dump($code);
+		var_dump($code); // TODO Remove
 		return $type === 'sms'
 			? $this->textCode($user, $code)
 			: $this->emailCode($user, $code);

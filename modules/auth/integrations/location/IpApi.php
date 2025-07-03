@@ -26,6 +26,7 @@ class IpApi extends RestService
 	public function getLocation(string $ipAddress): ?LocationDto
 	{
 		$result = $this->fetch('GET', $ipAddress . '/json');
+		var_dump($result);
 		return ($result && !isset($result->error)) ? LocationDto::create($result) : null;
 	}
 }
