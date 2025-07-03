@@ -20,7 +20,7 @@ const update = (data) =>
 			app.notify({
 				type: "destructive",
 				title: "Error",
-				description: "An error occurred while updating the password.",
+				description: "An error occurred while updating the credentials.",
 				icon: Icons.shield
 			});
 			return;
