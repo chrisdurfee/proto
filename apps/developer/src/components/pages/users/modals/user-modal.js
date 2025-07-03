@@ -71,9 +71,10 @@ const update = (data) =>
  *
  * @param {object} data - The user data.
  * @param {function} closeCallback - The callback function to close the modal.
+ * @param {function} onSubmit - The callback function to handle form submission.
  * @returns {function}
  */
-const HeaderOptions = (data, closeCallback) =>
+const HeaderOptions = (data, closeCallback, onSubmit) =>
 {
 	return () => [
 		UseParent((parent) => (
@@ -93,7 +94,8 @@ const HeaderOptions = (data, closeCallback) =>
 
 						ChangePasswordModal({
 							item: data.get(),
-							onClose: closeCallback
+							onClose: closeCallback,
+							onSubmit
 						});
 					}
 				}
@@ -125,7 +127,7 @@ export const UserModal = (props = {}) =>
 		description: isEditing ? 'Update user details.' : 'Create a new user.',
 		size: 'md',
 		type: 'right',
-		headerOptions: isEditing ? HeaderOptions(data, closeCallback) : () => [],
+		headerOptions: isEditing ? HeaderOptions(data, closeCallback, props.onSubmit) : () => [],
 		onClose: closeCallback,
 		onSubmit: ({ data }) =>
 		{

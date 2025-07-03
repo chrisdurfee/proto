@@ -143,7 +143,7 @@ class UserStorage extends Storage
 	 * @param string $username
 	 * @return int|bool True is successful false on error. -1 if username is taken.
 	 */
-	protected function updateUsername(string $username): bool|int
+	public function updateUsername(string $username): bool|int
 	{
 		$id = $this->model->id ?? null;
 		if ($id === null)

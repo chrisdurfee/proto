@@ -24,8 +24,8 @@ class PasswordUpdateService
 	public function updateCredentials(object $data): object
 	{
 		$response = (object)[
-			'username' => null,
-			'password' => null
+			'username' => 'unchanged',
+			'password' => 'unchanged'
 		];
 
 		$userId = $data->id ?? null;
@@ -44,13 +44,24 @@ class PasswordUpdateService
 		{
 			if ($data->username !== $user->username)
 			{
-				$response->username = $this->updateUsername($user, $data->username);
+				$result = $this->updateUsername($user, $data->username);
+				if ($result === -1)
+				{
+					$response->username = 'taken';
+				}
+
+				$response->username = ($result)? 'updated' : 'failed';
+			}
+			else
+			{
+				$response->username = 'same';
 			}
 		}
 
 		if (!empty($data->password))
 		{
-			$response->password = $this->updatePassword($user, $data->password);
+			$result = $this->updatePassword($user, $data->password);
+			$response->password = ($result)? 'updated' : 'failed';
 		}
 
 		return $response;

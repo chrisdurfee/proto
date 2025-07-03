@@ -34,7 +34,6 @@ const Props =
 	 */
 	afterSetup()
 	{
-		const route = this.route;
 		const data = this.context.data;
 		data.id = this.route.userId;
 		data.xhr.get('', (response) =>
@@ -57,8 +56,9 @@ const Props =
 	 */
 	beforeDestroy()
 	{
-		this.context.data.delete();
-		this.context.data.loaded = false;
+		const data = this.context.data;
+		data.delete();
+		data.loaded = false;
 	}
 };
 

@@ -144,7 +144,8 @@ class UserController extends ResourceController
 			'password' => $password
 		];
 
-		return $service->updateCredentials($data);
+		$result = $service->updateCredentials($data);
+		return $this->response($result);
 	}
 
 	/**

@@ -26,10 +26,43 @@ const update = (data) =>
 			return;
 		}
 
+		if (response.username === 'taken')
+		{
+			app.notify({
+				type: "destructive",
+				title: "Username Taken",
+				description: "The username is already taken. Please choose a different one.",
+				icon: Icons.shield
+			});
+			return;
+		}
+
+		if (response.username === 'failed')
+		{
+			app.notify({
+				type: "destructive",
+				title: "Username Failed",
+				description: "The username update failed. Please try again.",
+				icon: Icons.shield
+			});
+			return;
+		}
+
+		if (response.password === 'failed')
+		{
+			app.notify({
+				type: "destructive",
+				title: "Password Failed",
+				description: "The password update failed. Please try again.",
+				icon: Icons.shield
+			});
+			return;
+		}
+
 		app.notify({
 			type: "success",
-			title: "Password Updated",
-			description: "The password has been updated.",
+			title: "Credentials Updated",
+			description: "The credentials have been updated.",
 			icon: Icons.check
 		});
 	});
@@ -84,6 +117,11 @@ export const ChangePasswordModal = (props = {}) =>
 			}
 
             update(data);
+
+			if (props.onSubmit)
+			{
+				props.onSubmit(data);
+			}
 		}
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
