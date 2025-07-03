@@ -18,8 +18,8 @@ class DeviceDto
 	 * @param string|null $brand Device brand
 	 * @param string|null $vendor Device vendor
 	 * @param string|null $version Device version
-	 * @param bool|null $touch Touch support
-	 * @param bool|null $mobile Mobile browser
+	 * @param int|null $touch Touch support
+	 * @param int|null $mobile Mobile browser
 	 */
 	public function __construct(
 		public readonly int $userId,
@@ -29,8 +29,8 @@ class DeviceDto
 		public readonly ?string $brand,
 		public readonly ?string $vendor,
 		public readonly ?string $version,
-		public readonly ?bool $touch,
-		public readonly ?bool $mobile
+		public readonly ?int $touch,
+		public readonly ?int $mobile
 	) {
 	}
 
@@ -52,8 +52,8 @@ class DeviceDto
 			$device->brand ?? null,
 			$device->vendor ?? null,
 			$device->version ?? null,
-			isset($device->touch) ? (bool) $device->touch : null,
-			isset($device->mobile) ? (bool) $device->mobile : null
+			isset($device->touch) ? (int) $device->touch : null,
+			isset($device->mobile) ? (int) $device->mobile : null
 		);
 	}
 }

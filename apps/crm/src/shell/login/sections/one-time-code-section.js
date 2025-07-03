@@ -1,6 +1,7 @@
 import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Button, Input } from "@base-framework/ui/atoms";
+import { Icons } from '@base-framework/ui/icons';
 import { Form } from '@base-framework/ui/molecules';
 import { AuthModel } from '../../../../../common/models/auth-model.js';
 
@@ -24,15 +25,26 @@ const OneTimeCodeHeader = Atom(({ title, description }) => (
 /**
  * Requests a verification code for the selected multi-factor authentication option.
  *
- * @param {object} option - The selected multi-factor authentication option.
+ * @param {object} code - The selected multi-factor authentication option.
  */
-const verifyCode = (option) =>
+const verifyAuthCode = (code) =>
 {
 	const model = new AuthModel({
-		type: option.type
+		code
 	});
 
-	model.xhr.getAuthCode();
+	model.xhr.verifyAuthCode('', (response) =>
+	{
+		if (!response || response.success !== true)
+		{
+			app.notify({
+				title: 'Invalid Code',
+				description: response.message ?? 'Please enter a valid code.',
+				icon: Icons.warning,
+				type: 'destructive'
+			});
+		}
+	});
 };
 
 /**
@@ -48,13 +60,14 @@ const OneTimeCodeForm = () => (
 		submit: (e, parent) =>
 		{
 			e.preventDefault();
-			// Handle submission logic (e.g., verify the one-time code)
-			console.log('One-time code submitted');
+
+			verifyAuthCode(parent.code.value)
 		},
 		role: 'form'
 	}, [
 		Div({ class: 'grid gap-4' }, [
 			Input({
+				cache: 'code',
 				type: 'text',
 				placeholder: 'Enter your code',
 				required: true,

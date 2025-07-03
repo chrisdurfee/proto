@@ -86,21 +86,22 @@ class AuthController extends Controller
 		if ($user->multiFactorEnabled == true)
 		{
 			$device = $req->json('device');
-			return $this->multiFactor($user, $device);
+			return $this->multiFactor($user, $device, $req->ip());
 		}
 
-		return $this->permit($user);
+		return $this->permit($user, $req->ip());
 	}
 
 	/**
 	 * This will permit a user access to sign in.
 	 *
 	 * @param User $user
+	 * @param string $ip
 	 * @return object
 	 */
-	protected function permit(User $user): object
+	protected function permit(User $user, string $ip): object
 	{
-		$this->updateUserStatus($user, UserStatus::ONLINE->value);
+		$this->updateUserStatus($user, UserStatus::ONLINE->value, $ip);
 		$this->setSessionUser($user);
 		$this->setLastLogin($user);
 
@@ -127,15 +128,16 @@ class AuthController extends Controller
 	 *
 	 * @param User $user
 	 * @param object|null $device
+	 * @param string $ip
 	 * @return object
 	 */
-	protected function multiFactor(User $user, ?object $device): object
+	protected function multiFactor(User $user, ?object $device, string $ip): object
 	{
 		$this->mfaService->setResources($user, $device);
 
 		if (MultiFactorHelper::isDeviceAuthorized($user, $device))
 		{
-			return $this->permit($user);
+			return $this->permit($user, $ip);
 		}
 
 		$options = MultiFactorHelper::getMultiFactorOptions($user);
@@ -199,17 +201,19 @@ class AuthController extends Controller
 			return $this->error('Invalid authentication code. Too many attempts.', HttpStatus::TOO_MANY_REQUESTS->value);
 		}
 
-		$this->mfaService->addNewConnection($user, $device, $req->ip());
+		$ipAddress = $req->ip();
+		$this->mfaService->addNewConnection($user, $device, $ipAddress);
 
-		return $this->permit($user);
+		return $this->permit($user, $ipAddress);
 	}
 
 	/**
 	 * Logout the current user.
 	 *
+	 * @param Request $req
 	 * @return object
 	 */
-	public function logout(): object
+	public function logout(Request $req): object
 	{
 		$session = getSession('user');
 		$userId = $session->id ?? null;
@@ -224,7 +228,7 @@ class AuthController extends Controller
 			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
 		}
 
-		$this->updateUserStatus($user->id, UserStatus::OFFLINE->value);
+		$this->updateUserStatus($user->id, UserStatus::OFFLINE->value, $req->ip());
 		session()->destroy();
 
 		return $this->response(['message' => 'The user has been logged out successfully.']);
@@ -233,9 +237,10 @@ class AuthController extends Controller
 	/**
 	 * Resume a user session.
 	 *
+	 * @param Request $req
 	 * @return object
 	 */
-	public function resume(): object
+	public function resume(Request $req): object
 	{
 		$session = getSession('user');
 		$userId = $session->id ?? null;
@@ -258,15 +263,16 @@ class AuthController extends Controller
 		// refresh session ID to prevent fixation
 		session()->refreshId();
 
-		return $this->permit($user);
+		return $this->permit($user, $req->ip());
 	}
 
 	/**
 	 * Pulse the user session to keep it alive.
 	 *
+	 * @param Request $req
 	 * @return object
 	 */
-	public function pulse(): object
+	public function pulse(Request $req): object
 	{
 		$session = getSession('user');
 		$userId = $session->id ?? null;
@@ -286,7 +292,7 @@ class AuthController extends Controller
 			return $this->error('The user is not enabled.', HttpStatus::FORBIDDEN->value);
 		}
 
-		return $this->permit($user);
+		return $this->permit($user, $req->ip());
 	}
 
 	/**
@@ -309,7 +315,7 @@ class AuthController extends Controller
 			return $this->error('The registration has failed.', HttpStatus::BAD_REQUEST->value);
 		}
 
-		return $this->permit($user);
+		return $this->permit($user, $req->ip());
 	}
 
 	/**
@@ -350,9 +356,10 @@ class AuthController extends Controller
 	 *
 	 * @param User $user
 	 * @param string $status
+	 * @param string $ip
 	 * @return bool
 	 */
-	protected function updateUserStatus(User $user, string $status): bool
+	protected function updateUserStatus(User $user, string $status, string $ip): bool
 	{
 		$success = $this->user->updateStatus($user->id, $status);
 		if (!$success)
@@ -360,7 +367,7 @@ class AuthController extends Controller
 			return false;
 		}
 
-		return $this->updateLoginStatus($user->id, $status);
+		return $this->updateLoginStatus($user->id, $status, $ip);
 	}
 
 	/**
@@ -368,9 +375,10 @@ class AuthController extends Controller
 	 *
 	 * @param int|string $userId
 	 * @param string $status
+	 * @param string $ip
 	 * @return bool
 	 */
-	protected function updateLoginStatus(int|string $userId, string $status): bool
+	protected function updateLoginStatus(int|string $userId, string $status, string $ip): bool
 	{
 		if ($status !== UserStatus::ONLINE->value && $status !== UserStatus::OFFLINE->value)
 		{
@@ -381,7 +389,8 @@ class AuthController extends Controller
 		return LoginLog::create((object)[
 			'dateTimeSetup' => date('Y-m-d H:i:s'),
 			'userId' => $userId,
-			'direction' => $direction
+			'direction' => $direction,
+			'ip' => $ip
 		]);
 	}
 
