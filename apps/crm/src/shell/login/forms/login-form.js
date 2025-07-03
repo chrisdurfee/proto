@@ -1,5 +1,7 @@
-import { Div, Form, Span } from '@base-framework/atoms';
+import { Div, Span } from '@base-framework/atoms';
 import { Button, Input } from "@base-framework/ui/atoms";
+import { Icons } from '@base-framework/ui/icons';
+import { Form } from '@base-framework/ui/molecules';
 import { Panel } from '@base-framework/ui/organisms';
 import { STEPS } from '../steps.js';
 
@@ -71,12 +73,39 @@ const SignInWIthGoogleButton = () => (
 );
 
 /**
+ * This will create the submit handler for the form.
+ *
+ * @returns {void}
+ */
+const submit = (e, parent) =>
+{
+	parent.state.loading = true;
+	parent.data.xhr.login('', (response) =>
+	{
+		parent.state.loading = false;
+		if (!response || !response.success)
+		{
+			app.notify({
+				title: 'Error!',
+				description: response.message ?? 'Something went wrong. Please try again later.',
+				icon: Icons.warning,
+				type: 'destructive',
+				duration: 'infinite'
+			});
+			return;
+		}
+
+		app.signIn();
+	});
+};
+
+/**
  * This will create the login form.
  *
  * @returns {Panel}
  */
 export const LoginForm = () => (
-	Form({ class: 'flex flex-col p-6 pt-0', submit: () => app.signIn(), role: 'form' }, [
+	Form({ class: 'flex flex-col p-6 pt-0', submit, role: 'form' }, [
 		Div({ class: 'grid gap-4' }, [
 			CredentialsContainer(),
 			SignInButton(),

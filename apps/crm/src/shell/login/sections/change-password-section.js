@@ -1,7 +1,8 @@
-import { Div, Form, H1, Header, P, Section } from '@base-framework/atoms';
+import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Button, Input } from "@base-framework/ui/atoms";
 import { Icons } from '@base-framework/ui/icons';
+import { Form } from '@base-framework/ui/molecules';
 import { Configs } from 'src/configs.js';
 import { PasswordValidator } from '../utils/password-validator.js';
 

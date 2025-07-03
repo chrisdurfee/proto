@@ -1,8 +1,8 @@
 import { Div, H1, Header, OnState, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Panel } from '@base-framework/ui';
+import { AuthModel } from '../../models/auth-model.js';
 import { LoginForm } from '../forms/login-form.js';
-import { AuthModel } from '../models/auth-model.js';
 
 /**
  * This will create a header for the documentation.

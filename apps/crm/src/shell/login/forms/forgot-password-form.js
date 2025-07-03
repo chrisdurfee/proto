@@ -1,5 +1,6 @@
-import { Div, Form } from '@base-framework/atoms';
+import { Div } from '@base-framework/atoms';
 import { Button, EmailInput } from "@base-framework/ui/atoms";
+import { Form } from '@base-framework/ui/molecules';
 import { STEPS } from '../steps';
 
 /**

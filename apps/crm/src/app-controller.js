@@ -1,7 +1,9 @@
 import { Builder, router } from "@base-framework/base";
 import { Configs } from "./configs.js";
+import { getCsrfToken } from "./csrf-token.js";
 import { setupServiceWorker } from "./service.js";
 import { AppShell } from "./shell/app-shell.js";
+import { AuthModel } from "./shell/models/auth-model.js";
 import { UserData } from "./shell/models/user-data.js";
 import { setHtmlThemeBySettings } from "./theme.js";
 
@@ -43,6 +45,7 @@ export class AppController
 		this.setupService();
 		this.setupRouter();
 		this.setData();
+		this.getCsrfToken();
 
 		// TODO: remove this if you are setting up the sign in
 		this.setUserData();
@@ -65,7 +68,8 @@ export class AppController
 		user.resume();
 
 		this.data = {
-			user
+			user,
+			auth: new AuthModel()
 		};
 	}
 
@@ -96,6 +100,17 @@ export class AppController
 		 */
 		const { baseUrl, title } = Configs.router;
 		router.setup(baseUrl, title);
+	}
+
+	/**
+	 * This will get the CSRF token.
+	 *
+	 * @returns {void}
+	 */
+	getCsrfToken()
+	{
+		// @ts-ignore
+		getCsrfToken(this.data.auth);
 	}
 
 	/**

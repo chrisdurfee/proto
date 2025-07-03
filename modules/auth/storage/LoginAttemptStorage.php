@@ -28,7 +28,7 @@ class LoginAttemptStorage extends Storage
 			->join(function($joins)
 			{
 				$joins->left('login_attempt_usernames', 'lu')
-					->on('a.username_id = la.id')
+					->on("{$this->alias}.username_id = lu.id")
 					->fields(
 						'username'
 					);

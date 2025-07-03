@@ -1,5 +1,5 @@
-import { Encode, Model } from "@base-framework/base";
-import { Env } from "../../env.js";
+import { Data, Encode, Model } from "@base-framework/base";
+import { Env } from "../env.js";
 
 /**
  * This will create an id.
@@ -38,11 +38,18 @@ const GUID = createGuid();
 const getDeviceId = () =>
 {
 	const KEY_NAME = 'device-id';
-	let id = app.storage.get(KEY_NAME);
+    const data = new Data();
+    data.setKey(KEY_NAME);
+    data.resume();
+
+    // @ts-ignore
+	let id = data.id ?? null;
 	if (id === null)
 	{
 		id = createGuid();
-		app.storage.set(KEY_NAME, id);
+        // @ts-ignore
+		data.id = id;
+        data.store();
 	}
 	return id;
 };

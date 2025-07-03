@@ -1,6 +1,7 @@
-import { Div, Form, H1, Header, P, Section } from '@base-framework/atoms';
+import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Button, Input } from "@base-framework/ui/atoms";
+import { Form } from '@base-framework/ui/molecules';
 
 /**
  * OneTimeCodeHeader
