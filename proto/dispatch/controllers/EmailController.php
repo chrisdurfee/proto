@@ -34,8 +34,7 @@ class EmailController extends Controller
 	 */
 	protected static function getEmailDefaults(object $settings): object
 	{
-		$config = self::getConfig();
-		$email = $config->get('email');
+		$email = env('email');
 
 		return (object)[
 			'to' => $settings->to,
@@ -57,11 +56,12 @@ class EmailController extends Controller
 	public static function enqueue(object $settings, ?object $data = null): object
 	{
 		$template = self::createEmail($settings->template, $data);
+		$email = env('email');
 
 		return (object)[
 			'recipient' => $settings->to,
-			'from' => $settings->from ?? null,
-			'fromName' => $settings->fromName ?? null,
+			'from' => $settings->from ?? $email->default,
+			'fromName' => $settings->fromName ?? $email->fromName,
 			'subject' => $settings->subject,
 			'message' => (string) $template,
 			'unsubscribeUrl' => $settings->unsubscribeUrl ?? '',

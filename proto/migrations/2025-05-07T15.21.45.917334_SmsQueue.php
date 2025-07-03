@@ -25,12 +25,12 @@ class SmsQueue extends Migration
 		{
 			$table->id();
 			$table->timestamps();
-			$table->varchar('agent_id', 255);
-			$table->varchar('dispatch_id', 255);
-			$table->varchar('recipient', 255);
+			$table->varchar('agent_id', 255)->nullable();
+			$table->varchar('dispatch_id', 255)->nullable();
+			$table->varchar('recipient', 255)->nullable();
 			$table->varchar('session', 255)->nullable();
-			$table->text('message');
-			$table->text('attachments');
+			$table->text('message')->nullable();
+			$table->text('attachments')->nullable();
 			$table->tinyInteger('priority', 1)->default(0);
 			$table->enum('status', 'pending', 'sending', 'sent', 'error')->default('"pending"');
 

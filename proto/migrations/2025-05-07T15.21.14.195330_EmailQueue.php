@@ -25,15 +25,15 @@ class EmailQueue extends Migration
 		{
 			$table->id();
 			$table->timestamps();
-			$table->varchar('agent_id', 255);
-			$table->varchar('dispatch_id', 255);
+			$table->varchar('agent_id', 255)->nullable();
+			$table->varchar('dispatch_id', 255)->nullable();
 			$table->varchar('recipient', 255);
 			$table->varchar('from', 255);
-			$table->varchar('from_name', 255);
-			$table->varchar('subject', 255);
+			$table->varchar('from_name', 255)->nullable();
+			$table->varchar('subject', 255)->nullable();
 			$table->text('message');
-			$table->varchar('unsubscribe_url', 512);
-			$table->text('attachments');
+			$table->varchar('unsubscribe_url', 512)->nullable();
+			$table->text('attachments')->nullable();
 			$table->tinyInteger('priority', 1)->default(0);
 			$table->enum('status', 'pending', 'sending', 'sent', 'error')->default('"pending"');
 
