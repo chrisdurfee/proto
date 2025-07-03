@@ -31,11 +31,11 @@ class UserAuthedDeviceStorage extends Storage
 	/**
 	 * This will update the accessed at time.
 	 *
-	 * @param string $userId
+	 * @param mixed $userId
 	 * @param string $guid
 	 * @return bool
 	 */
-	public function updateAccessedAt(string $userId, string $guid): bool
+	public function updateAccessedAt(mixed $userId, string $guid): bool
 	{
 		$dateTime = date('Y-m-d H:i:s');
 
