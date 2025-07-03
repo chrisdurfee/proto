@@ -13,7 +13,7 @@ import { validate } from "./validate.js";
  */
 const update = (data) =>
 {
-	data.xhr.update('', (response) =>
+	data.xhr.updateCredentials('', (response) =>
 	{
 		if (!response || response.success === false)
 		{
@@ -58,12 +58,30 @@ export const ChangePasswordModal = (props = {}) =>
 		onClose: (parent) => props.onClose && props.onClose(data, parent),
 		onSubmit: ({ data }) =>
 		{
-			const password = data.password;
-            const confirmPassword = data.confirmPassword;
-            if (!validate(password, confirmPassword))
-            {
-                return;
-            }
+			/**
+			 * Only validate if password is present.
+			 */
+			if (data.password)
+			{
+				const password = data.password;
+				const confirmPassword = data.confirmPassword;
+				if (!validate(password, confirmPassword))
+				{
+					return false;
+				}
+			}
+
+			// Check if either username or password it set
+			if (!data.username && !data.password)
+			{
+				app.notify({
+					type: "warning",
+					title: "Error",
+					description: "Please enter a username or new password.",
+					icon: Icons.shield
+				});
+				return false;
+			}
 
             update(data);
 		}

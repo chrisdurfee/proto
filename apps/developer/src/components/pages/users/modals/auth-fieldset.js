@@ -5,9 +5,10 @@ import { validate } from "./validate.js";
 /**
  * This will create the authentication fieldset.
  *
+ * @param {boolean} required - Whether the fields are required.
  * @returns {object}
  */
-export const AuthFieldset = () => (
+export const AuthFieldset = (required = true) => (
 	Fieldset({ legend: "Authentication" }, [
 
 		new FormField(
@@ -16,8 +17,9 @@ export const AuthFieldset = () => (
 				Input({
 					type: "text",
 					placeholder: "e.g. john_doe",
-					required: true,
-					bind: "username"
+					required,
+					bind: "username",
+					'aria-required': required
 				})
 			]
 		),
@@ -28,11 +30,11 @@ export const AuthFieldset = () => (
 				Input({
 					type: 'password',
 					placeholder: 'New Password',
-					required: true,
+					required,
 					bind: 'password',
 					pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*\\W).{12,}$',
 					title: 'Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.',
-					'aria-required': true
+					'aria-required': required
 				})
 			]
 		),
@@ -43,11 +45,11 @@ export const AuthFieldset = () => (
 				Input({
 					type: 'password',
 					placeholder: 'Confirm New Password',
-					required: true,
+					required,
 					bind: 'confirmPassword',
 					pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*\\W).{12,}$',
 					title: 'Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.',
-					'aria-required': true,
+					'aria-required': required,
 					blur: (e, { parent }) => validate(parent.data.password, parent.data.confirmPassword)
 				})
 			]

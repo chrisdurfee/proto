@@ -1,4 +1,4 @@
-import { Div } from "@base-framework/atoms";
+import { Div, UseParent } from "@base-framework/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { DropdownMenu, Modal } from "@base-framework/ui/molecules";
 import { UserModel } from "../models/user-model.js";
@@ -70,27 +70,35 @@ const update = (data) =>
  * HeaderOptions
  *
  * @param {object} data - The user data.
+ * @param {function} closeCallback - The callback function to close the modal.
  * @returns {function}
  */
-const HeaderOptions = (data) =>
+const HeaderOptions = (data, closeCallback) =>
 {
 	return () => [
-		new DropdownMenu({
-			icon: Icons.ellipsis.vertical,
-			groups: [
-				[
-					{ icon: Icons.locked, label: 'Change Password', value: 'change-password' },
-					{ icon: Icons.trash,  label: 'Delete User', value: 'delete-user' }
-				]
-			],
-			onSelect: (selected) =>
-			{
-				if (selected.value === 'change-password')
+		UseParent((parent) => (
+			new DropdownMenu({
+				icon: Icons.ellipsis.vertical,
+				groups: [
+					[
+						{ icon: Icons.locked, label: 'Change Password', value: 'change-password' },
+						{ icon: Icons.trash,  label: 'Delete User', value: 'delete-user' }
+					]
+				],
+				onSelect: (selected) =>
 				{
-					ChangePasswordModal({ item: data.get() });
+					if (selected.value === 'change-password')
+					{
+						parent.close();
+
+						ChangePasswordModal({
+							item: data.get(),
+							onClose: closeCallback
+						});
+					}
 				}
-			}
-		})
+			})
+		))
 	];
 };
 
@@ -106,20 +114,22 @@ export const UserModal = (props = {}) =>
 {
 	const item = props.item || {};
 	const mode = item.id ? 'edit' : 'add';
+	const isEditing = mode === 'edit';
 	const data = new UserModel(item);
+	const closeCallback = (parent) => props.onClose && props.onClose(data, parent);
 
 	return new Modal({
 		data,
-		title: mode === 'edit' ? 'Edit User' : 'Add User',
-		icon: mode === 'edit' ? Icons.pencil.square : Icons.user.plus,
-		description: mode === 'edit' ? 'Update user details.' : 'Create a new user.',
+		title: isEditing ? 'Edit User' : 'Add User',
+		icon: isEditing ? Icons.pencil.square : Icons.user.plus,
+		description: isEditing ? 'Update user details.' : 'Create a new user.',
 		size: 'md',
 		type: 'right',
-		headerOptions: mode === 'edit' ? HeaderOptions(data) : () => [],
-		onClose: (parent) => props.onClose && props.onClose(data, parent),
+		headerOptions: isEditing ? HeaderOptions(data, closeCallback) : () => [],
+		onClose: closeCallback,
 		onSubmit: ({ data }) =>
 		{
-			if (mode === 'edit')
+			if (isEditing)
 			{
 				update(data);
 
@@ -134,7 +144,7 @@ export const UserModal = (props = {}) =>
 				const confirmPassword = data.confirmPassword;
 				if (!validate(password, confirmPassword))
 				{
-					return;
+					return false;
 				}
 
 				add(data);
@@ -143,7 +153,7 @@ export const UserModal = (props = {}) =>
 	}, [
 		Div({ class: 'flex flex-col lg:p-4 space-y-8' }, [
 			Div({ class: "flex flex-auto flex-col w-full gap-4" }, UserForm({
-				isEditing: mode === 'edit',
+				isEditing,
 				user: data
 			}))
 		])

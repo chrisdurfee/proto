@@ -34,7 +34,7 @@ export const validate = (password = '', confirmPassword = '') =>
 		icon: Icons.shield,
 		title: 'Error',
 		description: 'Password does not meet requirements.',
-		type: 'destructive'
+		type: 'warning'
 	});
 	return false;
 };

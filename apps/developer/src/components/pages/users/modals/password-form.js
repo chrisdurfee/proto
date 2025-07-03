@@ -8,5 +8,5 @@ import { AuthFieldset } from "./auth-fieldset.js";
  * @returns {Array} - Array of form field components.
  */
 export const PasswordForm = () => ([
-	AuthFieldset()
+	AuthFieldset(false)
 ]);
