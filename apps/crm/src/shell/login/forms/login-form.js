@@ -1,7 +1,6 @@
 import { Div, Form, Span } from '@base-framework/atoms';
 import { Button, Input } from "@base-framework/ui/atoms";
 import { Panel } from '@base-framework/ui/organisms';
-import { AuthModel } from '../models/auth-model.js';
 import { STEPS } from '../steps.js';
 
 /**
@@ -77,17 +76,12 @@ const SignInWIthGoogleButton = () => (
  * @returns {Panel}
  */
 export const LoginForm = () => (
-	// @ts-ignore
-	new Panel({
-		data: new AuthModel()
-	}, [
-		Form({ class: 'flex flex-col p-6 pt-0', submit: () => app.signIn(), role: 'form' }, [
-			Div({ class: 'grid gap-4' }, [
-				CredentialsContainer(),
-				SignInButton(),
-				SignInWIthGoogleButton(),
-				SignUpLink(),
-			]),
-		])
+	Form({ class: 'flex flex-col p-6 pt-0', submit: () => app.signIn(), role: 'form' }, [
+		Div({ class: 'grid gap-4' }, [
+			CredentialsContainer(),
+			SignInButton(),
+			SignInWIthGoogleButton(),
+			SignUpLink(),
+		]),
 	])
 );

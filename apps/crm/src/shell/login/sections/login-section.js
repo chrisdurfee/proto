@@ -1,6 +1,8 @@
 import { Div, H1, Header, OnState, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
+import { Panel } from '@base-framework/ui';
 import { LoginForm } from '../forms/login-form.js';
+import { AuthModel } from '../models/auth-model.js';
 
 /**
  * This will create a header for the documentation.
@@ -24,13 +26,7 @@ const LoginHeader = Atom(({ title, description}) => (
  */
 const FormWrapper = Atom((props, children) => (
 	Div({
-		class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm',
-		addState()
-		{
-			return {
-				loading: true
-			};
-		}
+		class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm'
 	}, children)
 ));
 
@@ -44,20 +40,52 @@ const LoadingMessage = () => (
 );
 
 /**
+ * @typedef {object} Props
+ */
+const Props =
+{
+	class: 'flex flex-auto flex-col',
+
+	/**
+	 * Sets the data for the authentication model.
+	 *
+	 * @return {object}
+	 */
+	setData()
+	{
+		return new AuthModel();
+	},
+
+	/**
+	 * Sets up the states for the authentication model.
+	 *
+	 * @return {object}
+	 */
+	setupStates()
+	{
+		return {
+			loading: true
+		};
+	}
+};
+
+/**
  * This will create the login section.
  *
  * @returns {object}
  */
 export const LoginSection = () => (
-	Section({ class: 'flex flex-auto flex-col justify-center items-center' }, [
-		FormWrapper({ class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm' }, [
-			OnState('loading', (state) => (!state)
-				? LoadingMessage()
-				: [
-					LoginHeader({ title: 'Login', description: 'Please enter your credentials to login.' }),
-					LoginForm()
-				]
-			)
+	new Panel(Props, [
+		Section({ class: 'flex flex-auto flex-col justify-center items-center' }, [
+			FormWrapper({ class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm' }, [
+				OnState('loading', (state) => (!state)
+					? LoadingMessage()
+					: Div([
+						LoginHeader({ title: 'Login', description: 'Please enter your credentials to login.' }),
+						LoginForm()
+					])
+				)
+			])
 		])
 	])
 );
