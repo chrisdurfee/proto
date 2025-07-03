@@ -1,4 +1,6 @@
 import { Builder, router } from "@base-framework/base";
+import { getCsrfToken } from "../../common/csrf-token.js";
+import { AuthModel } from "../../common/models/auth-model.js";
 import { Configs } from "./configs.js";
 import { setupServiceWorker } from "./service.js";
 import { AppShell } from "./shell/app-shell.js";
@@ -42,6 +44,7 @@ export class AppController
 		this.setupService();
 		this.setupRouter();
 		this.setData();
+		this.getCsrfToken();
 	}
 
 	/**
@@ -52,7 +55,9 @@ export class AppController
 	 */
 	setData()
 	{
-		this.data = {};
+		this.data = {
+			auth: new AuthModel()
+		};
 	}
 
 	/**
@@ -82,6 +87,17 @@ export class AppController
 		 */
 		const { baseUrl, title } = Configs.router;
 		router.setup(baseUrl, title);
+	}
+
+	/**
+	 * This will get the CSRF token.
+	 *
+	 * @returns {void}
+	 */
+	getCsrfToken()
+	{
+		// @ts-ignore
+		getCsrfToken(this.data.auth);
 	}
 
 	/**

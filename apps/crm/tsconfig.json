@@ -70,7 +70,7 @@
 	"include": [
 		"src/**/*",
 		"globals.d.ts"
-	],
+, "../common/csrf-token.js", "../common/models/auth-model.js"	],
 	"exclude": [
 		"node_modules/**/*"
 	]
