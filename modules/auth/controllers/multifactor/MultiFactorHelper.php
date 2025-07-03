@@ -42,19 +42,21 @@ abstract class MultiFactorHelper
 	{
 		$options = [];
 
-		if (!empty($user->mobile))
+		$mobile = $user->mobile;
+		if (!empty($mobile))
 		{
 			array_push($options, (object)[
 				'type' => 'sms',
-				'value' => Strings::mask($user->mobile)
+				'value' => Strings::mask($mobile)
 			]);
 		}
 
-		if (!empty($user->email))
+		$email = $user->email;
+		if (!empty($email))
 		{
 			array_push($options, (object)[
 				'type' => 'email',
-				'value' => self::maskEmail($user->email)
+				'value' => self::maskEmail($email)
 			]);
 		}
 		return $options;

@@ -21,7 +21,7 @@ class UserAuthedDevice extends Model
 	/**
 	 * @var string|null $alias
 	 */
-	protected static ?string $alias = 'ad';
+	protected static ?string $alias = 'ud';
 
 	/**
 	 * @var array $fields

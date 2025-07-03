@@ -80,7 +80,7 @@ class MultiFactorAuthGate extends Gate
 	 */
 	public function setResources(User $user, object $device): void
 	{
-		$this->setUser($user->getData());
+		$this->setUser($user);
 		$this->setDevice($device);
 	}
 
@@ -92,7 +92,8 @@ class MultiFactorAuthGate extends Gate
 	 */
 	public function setUser(User $user): void
 	{
-		$this->set(self::AUTH_USER, $user);
+		$data = $user->getData();
+		$this->set(self::AUTH_USER, $data);
 	}
 
 	/**
