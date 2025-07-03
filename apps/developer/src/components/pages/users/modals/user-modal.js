@@ -1,7 +1,8 @@
 import { Div } from "@base-framework/atoms";
 import { Icons } from "@base-framework/ui/icons";
-import { Modal } from "@base-framework/ui/molecules";
+import { DropdownMenu, Modal } from "@base-framework/ui/molecules";
 import { UserModel } from "../models/user-model.js";
+import { ChangePasswordModal } from "./change-password-modal.js";
 import { UserForm } from "./user-form.js";
 import { validate } from "./validate.js";
 
@@ -66,6 +67,34 @@ const update = (data) =>
 };
 
 /**
+ * HeaderOptions
+ *
+ * @param {object} data - The user data.
+ * @returns {function}
+ */
+const HeaderOptions = (data) =>
+{
+	return () => [
+		new DropdownMenu({
+			icon: Icons.ellipsis.vertical,
+			groups: [
+				[
+					{ icon: Icons.locked, label: 'Change Password', value: 'change-password' },
+					{ icon: Icons.trash,  label: 'Delete User', value: 'delete-user' }
+				]
+			],
+			onSelect: (selected) =>
+			{
+				if (selected.value === 'change-password')
+				{
+					ChangePasswordModal({ item: data.get() });
+				}
+			}
+		})
+	];
+};
+
+/**
  * UserModal
  *
  * A modal for creating or editing a User using UserModel data.
@@ -86,6 +115,7 @@ export const UserModal = (props = {}) =>
 		description: mode === 'edit' ? 'Update user details.' : 'Create a new user.',
 		size: 'md',
 		type: 'right',
+		headerOptions: mode === 'edit' ? HeaderOptions(data) : () => [],
 		onClose: (parent) => props.onClose && props.onClose(data, parent),
 		onSubmit: ({ data }) =>
 		{

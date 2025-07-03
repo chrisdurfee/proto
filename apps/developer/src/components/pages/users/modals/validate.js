@@ -1,5 +1,5 @@
 import { Icons } from "@base-framework/ui/icons";
-import { PasswordValidator } from "./utils/password-validator.js";
+import { PasswordValidator } from "../../../../../../common/utils/password/password-validator.js";
 
 /**
  * Validates the password and confirm password.
@@ -8,7 +8,7 @@ import { PasswordValidator } from "./utils/password-validator.js";
  * @param {string} confirmPassword - The password to compare against.
  * @returns {boolean}
  */
-export const validate = (password, confirmPassword) =>
+export const validate = (password = '', confirmPassword = '') =>
 {
 	if (password !== confirmPassword)
 	{
@@ -31,6 +31,7 @@ export const validate = (password, confirmPassword) =>
 	}
 
 	app.notify({
+		icon: Icons.shield,
 		title: 'Error',
 		description: 'Password does not meet requirements.',
 		type: 'destructive'
