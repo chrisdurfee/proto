@@ -64,7 +64,7 @@ const Props =
 	setupStates()
 	{
 		return {
-			loading: true
+			loading: false
 		};
 	}
 };
@@ -78,7 +78,7 @@ export const LoginSection = () => (
 	new Panel(Props, [
 		Section({ class: 'flex flex-auto flex-col justify-center items-center' }, [
 			FormWrapper({ class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm' }, [
-				OnState('loading', (state) => (!state)
+				OnState('loading', (state) => (state)
 					? LoadingMessage()
 					: Div([
 						LoginHeader({ title: 'Login', description: 'Please enter your credentials to login.' }),
