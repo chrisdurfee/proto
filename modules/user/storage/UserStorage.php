@@ -92,6 +92,30 @@ class UserStorage extends Storage
 	}
 
 	/**
+	 * This will check if a username is taken.
+	 *
+	 * @param mixed $userId
+	 * @return string|null
+	 */
+	public function getUsername(mixed $userId): ?string
+	{
+		if (!isset($userId))
+		{
+			return null;
+		}
+
+		$params = ['id' => $userId];
+
+		$row = $this->select('username')
+			->where(
+				'id = ?'
+			)
+			->first($params);
+
+		return $row->username ?? null;
+	}
+
+	/**
 	 * This will get a user by email.
 	 *
 	 * @param string $email
@@ -116,12 +140,17 @@ class UserStorage extends Storage
 	/**
 	 * This will update the username for the user.
 	 *
-	 * @param int $id
 	 * @param string $username
 	 * @return int|bool True is successful false on error. -1 if username is taken.
 	 */
-	protected function updateUsername(int $id, string $username): bool|int
+	protected function updateUsername(string $username): bool|int
 	{
+		$id = $this->model->id ?? null;
+		if ($id === null)
+		{
+			return false;
+		}
+
 		$taken = $this->isUsernameTaken($username);
 		if ($taken === true)
 		{

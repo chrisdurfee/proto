@@ -108,6 +108,47 @@ class UserController extends ResourceController
 	}
 
 	/**
+	 * Updates the user credentials.
+	 *
+	 * @param Request $request The request object.
+	 * @return object The response.
+	 */
+	public function updateCredentials(Request $request): object
+	{
+		$response = (object)[
+			'username' => null,
+			'password' => null
+		];
+
+		$userId = $this->getResourceId($request);
+		if (!isset($userId))
+		{
+			return $this->error('Invalid user ID.');
+		}
+
+		$user = (object)[
+			'id' => $userId,
+			'username' => $request->input('username'),
+			'password' => $request->input('password')
+		];
+
+		if (!empty($user->username))
+		{
+			if ($user->username !== User::getUsername($user->id))
+			{
+				$response->username = $this->model($user)::updateUsername($user->username);
+			}
+		}
+
+		if (!empty($user->password))
+		{
+			$response->password = $this->model($user)::updatePassword($user->password);
+		}
+
+		return $response;
+	}
+
+	/**
 	 * This will get the user roles.
 	 *
 	 * @param Request $request

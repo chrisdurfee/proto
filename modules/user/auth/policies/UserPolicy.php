@@ -136,6 +136,23 @@ class UserPolicy extends Policy
 	}
 
 	/**
+	 * Determines if the user can update their credentials.
+	 *
+	 * @param Request $request
+	 * @return bool
+	 */
+	public function updateCredentials(Request $request): bool
+	{
+		$userId = $this->getResourceId($request);
+		if ($userId === null)
+		{
+			return false;
+		}
+
+		return $this->canEdit((object) ['id' => $userId]);
+	}
+
+	/**
 	 * Determines if the user can get roles for a user.
 	 *
 	 * @param Request $request
