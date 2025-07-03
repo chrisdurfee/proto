@@ -28,7 +28,7 @@ export class ModuleRoutes
 			component,
 			title,
 			preventScroll: preventScroll || false,
-			persist: true
+			persist: false
 		};
 	}
 
@@ -82,7 +82,7 @@ export class ModuleRoutes
 			},
 			title,
 			preventScroll,
-			persist: true
+			persist: false
 		};
 	}
 }

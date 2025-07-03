@@ -1,5 +1,7 @@
 import { Div, Form, Span } from '@base-framework/atoms';
 import { Button, Input } from "@base-framework/ui/atoms";
+import { Panel } from '@base-framework/ui/organisms';
+import { AuthModel } from '../models/auth-model.js';
 import { STEPS } from '../steps.js';
 
 /**
@@ -9,7 +11,7 @@ import { STEPS } from '../steps.js';
 const SignUpLink = () => ([
 	Div({ class: '' }, [
 		Span({ class: 'text-sm text-muted-foreground mt-8 mb-0' }, 'Forgot your password? '),
-		Span({ class: 'text-sm font-medium text-primary underline cursor-pointer', click: (e, parent) => parent.showStep(STEPS.FORGOT_PASSWORD) }, 'Reset it'),
+		Span({ class: 'text-sm font-medium text-primary underline cursor-pointer', click: (e, parent) => parent.parent.showStep(STEPS.FORGOT_PASSWORD) }, 'Reset it'),
 	]),
 	// Div({ class: '' }, [
 	// 	Span({ class: 'text-sm text-muted-foreground mt-8 mb-0' }, 'Don\'t have an account? '),
@@ -25,10 +27,24 @@ const SignUpLink = () => ([
 const CredentialsContainer = () => (
 	Div({ class: 'grid gap-4' }, [
 		Div({ class: 'grid gap-4' }, [
-			Input( { type: 'text', placeholder: 'Username', required: true, 'aria-required': true } ),
+			Input({
+				type: 'text',
+				placeholder: 'Username',
+				required: true,
+				bind: "username",
+				'aria-required': true
+			}),
 		]),
 		Div({ class: 'grid gap-4' }, [
-			Input( { type: 'password', placeholder: 'Password', required: true, 'aria-required': true } ),
+			Input({
+				type: 'password',
+				placeholder: 'Password',
+				required: true,
+				bind: 'password',
+				//pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*\\W).{12,}$',
+				title: 'Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.',
+				'aria-required': true
+			}),
 		])
 	])
 );
@@ -58,16 +74,20 @@ const SignInWIthGoogleButton = () => (
 /**
  * This will create the login form.
  *
- * @returns {object}
+ * @returns {Panel}
  */
 export const LoginForm = () => (
 	// @ts-ignore
-	Form({ class: 'flex flex-col p-6 pt-0', submit: () => app.signIn(), role: 'form' }, [
-		Div({ class: 'grid gap-4' }, [
-			CredentialsContainer(),
-			SignInButton(),
-			SignInWIthGoogleButton(),
-			SignUpLink(),
-		]),
+	new Panel({
+		data: new AuthModel()
+	}, [
+		Form({ class: 'flex flex-col p-6 pt-0', submit: () => app.signIn(), role: 'form' }, [
+			Div({ class: 'grid gap-4' }, [
+				CredentialsContainer(),
+				SignInButton(),
+				SignInWIthGoogleButton(),
+				SignUpLink(),
+			]),
+		])
 	])
 );

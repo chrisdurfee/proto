@@ -1,4 +1,5 @@
-import { Model } from "@base-framework/base";
+import { Encode, Model } from "@base-framework/base";
+import { Env } from "../../env.js";
 
 /**
  * This will create an id.
@@ -30,6 +31,48 @@ function createGuid()
 const GUID = createGuid();
 
 /**
+ * This will get the device id from local storage.
+ *
+ * @returns {string}
+ */
+const getDeviceId = () =>
+{
+	const KEY_NAME = 'device-id';
+	let id = app.storage.get(KEY_NAME);
+	if (id === null)
+	{
+		id = createGuid();
+		app.storage.set(KEY_NAME, id);
+	}
+	return id;
+};
+
+/**
+ * This will get the device params.
+ *
+ * @returns {string}
+ */
+const getEnvParams = () =>
+{
+	if (!Env)
+	{
+		return '';
+	}
+
+	const device = Encode.prepareJsonUrl({
+		guid: getDeviceId(),
+		mobile: Env.isMobile,
+		brand: Env.brand,
+		version: Env.version,
+		platform: Env.platform,
+		vendor: Env.vendor,
+		touch: Env.isTouch
+	});
+
+	return device;
+};
+
+/**
  * AuthModel
  *
  * This model is used to handle the authentication.
@@ -50,8 +93,9 @@ export const AuthModel = Model.extend({
 		{
             const data = this.model.get();
 			let params = {
-                username: data.username,
-                password: data.password,
+                username: encodeURI(data.username),
+                password: encodeURIComponent(data.password),
+                device: getEnvParams(),
                 guid: GUID
             };
 
@@ -97,11 +141,123 @@ export const AuthModel = Model.extend({
             return this._post('pulse', params, instanceParams, callBack);
         },
 
+        /**
+         * Get the CSRF token.
+         *
+         * @param {object} instanceParams - The instance parameters.
+         * @param {function} callBack - The callback function.
+         */
         getCsrfToken(instanceParams, callBack)
         {
             let params = "guid=" + GUID;
 
             return this._get('csrf-token', params, instanceParams, callBack);
+        },
+
+        /**
+         * Register a new user.
+         *
+         * @param {object} instanceParams - The instance parameters.
+         * @param {function} callBack - The callback function.
+         */
+        register(instanceParams, callBack)
+        {
+            const data = this.model.get();
+            let params = {
+                ...data,
+                guid: GUID
+            };
+
+            return this._post('register', params, instanceParams, callBack);
+        },
+
+        /**
+         * Get MFA authentication code.
+         *
+         * @param {object} instanceParams - The instance parameters.
+         * @param {function} callBack - The callback function.
+         */
+        getAuthCode(instanceParams, callBack)
+        {
+            const data = this.model.get();
+            let params = {
+                ...data,
+                guid: GUID
+            };
+
+            return this._post('mfa/code', params, instanceParams, callBack);
+        },
+
+        /**
+         * Verify MFA authentication code.
+         *
+         * @param {object} instanceParams - The instance parameters.
+         * @param {function} callBack - The callback function.
+         */
+        verifyAuthCode(instanceParams, callBack)
+        {
+            const data = this.model.get();
+            let params = {
+                code: data.code,
+                guid: GUID
+            };
+
+            return this._post('mfa/verify', params, instanceParams, callBack);
+        },
+
+        /**
+         * Request a password reset.
+         *
+         * @param {object} instanceParams - The instance parameters.
+         * @param {function} callBack - The callback function.
+         */
+        requestPasswordReset(instanceParams, callBack)
+        {
+            const data = this.model.get();
+            let params = {
+                email: data.email,
+                guid: GUID
+            };
+
+            return this._post('password/request', params, instanceParams, callBack);
+        },
+
+        /**
+         * Validate a password reset request.
+         *
+         * @param {object} instanceParams - The instance parameters.
+         * @param {function} callBack - The callback function.
+         */
+        validatePasswordRequest(instanceParams, callBack)
+        {
+            const data = this.model.get();
+            let params = {
+                code: data.code,
+                email: data.email,
+                guid: GUID
+            };
+
+            return this._post('password/verify', params, instanceParams, callBack);
+        },
+
+        /**
+         * Reset a user's password.
+         *
+         * @param {object} instanceParams - The instance parameters.
+         * @param {function} callBack - The callback function.
+         */
+        resetPassword(instanceParams, callBack)
+        {
+            const data = this.model.get();
+            let params = {
+                code: data.code,
+                email: data.email,
+                password: data.password,
+                passwordConfirm: data.passwordConfirm,
+                guid: GUID
+            };
+
+            return this._post('password/reset', params, instanceParams, callBack);
         }
 	}
 });

@@ -59,10 +59,10 @@ export const ForgotPasswordSection = () => (
 		FormWrapper([
 			OnState('showMessage', (state) => (state)
 				? SuccessMessage()
-				: [
+				: Div([
 					PasswordHeader({ title: 'Forgot Password', description: 'Please enter your email address.' }),
 					ForgotPasswordForm(),
-				]
+				])
 			)
 		])
 	])
