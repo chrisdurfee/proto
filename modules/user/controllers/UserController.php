@@ -126,10 +126,22 @@ class UserController extends ResourceController
 			return $this->error('Invalid user ID.');
 		}
 
+		$username = $request->input('username');
+		if ($username === "undefined")
+		{
+			$username = null;
+		}
+
+		$password = $request->input('password');
+		if ($password === "undefined")
+		{
+			$password = null;
+		}
+
 		$data = (object)[
 			'id' => $userId,
-			'username' => $request->input('username'),
-			'password' => $request->input('password')
+			'username' => $username,
+			'password' => $password
 		];
 
 		return $service->updateCredentials($data);
