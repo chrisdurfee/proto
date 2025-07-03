@@ -1,6 +1,7 @@
 import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Button } from "@base-framework/ui/atoms";
+import { AuthModel } from '../../../../../common/models/auth-model.js';
 import { STEPS } from '../steps.js';
 
 /**
@@ -21,6 +22,20 @@ const MultiFactorMethodHeader = Atom(({ title, description }) => (
 ));
 
 /**
+ * Requests a verification code for the selected multi-factor authentication option.
+ *
+ * @param {object} option - The selected multi-factor authentication option.
+ */
+const requestCode = (option) =>
+{
+	const model = new AuthModel({
+		type: option.type
+	});
+
+	model.xhr.getAuthCode();
+};
+
+/**
  * MultiFactorMethodForm
  *
  * Renders the selection form for choosing a multi-factor authentication method.
@@ -28,23 +43,22 @@ const MultiFactorMethodHeader = Atom(({ title, description }) => (
  * @returns {object} A virtual DOM element representing the multi-factor method selection form.
  */
 const MultiFactorMethodForm = () => (
-	Div({ class: 'grid gap-4 p-6' }, [
-		Button({
-			variant: 'outline',
-			click: (e, parent) => {
-				// Save the selected method in parent's state and navigate to the next multi-factor auth step
-				parent.state.selectedMfaMethod = 'email';
-				parent.showStep(STEPS.ONE_TIME_CODE); // navigate to the one-time code step
-			}
-		}, 'Email'),
-		Button({
-			variant: 'outline',
-			click: (e, parent) => {
-				parent.state.selectedMfaMethod = 'text';
-				parent.showStep(STEPS.ONE_TIME_CODE); // navigate to the one-time code step
-			}
-		}, 'Text')
-	])
+	Div({
+		class: 'grid gap-4 p-6',
+		for: ['options', (option) => (
+			Button({
+				variant: 'primary',
+				class: 'capitalize',
+				click: (e, parent) =>
+				{
+					parent.context.data.selectedMfaOption = option;
+					requestCode(option);
+
+					parent.showStep(STEPS.ONE_TIME_CODE);
+				}
+			}, `${option.type === 'sms' ? 'Text' : 'Email'}: ${option.value}`)
+		)]
+	})
 );
 
 /**
@@ -57,8 +71,7 @@ const MultiFactorMethodForm = () => (
 export const MultiFactorMethodSection = () => (
 	Section({ class: 'flex flex-auto flex-col justify-center items-center' }, [
 		Div({
-			class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm',
-			addState: () => ({ selectedMfaMethod: '' })
+			class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm'
 		}, [
 			MultiFactorMethodHeader({
 				title: 'Multi-Factor Authentication',

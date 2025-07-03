@@ -69,7 +69,8 @@ class MultiFactorAuthService
 	 */
 	public function getUser(): ?object
 	{
-		return self::gate()->getUser();
+		$data = self::gate()->getUser();
+		return ($data)? new User($data) : null;
 	}
 
 	/**
@@ -130,6 +131,7 @@ class MultiFactorAuthService
 	 */
 	protected function dispatchCode(User $user, string $type, string $code): object
 	{
+		var_dump($code);
 		return $type === 'sms'
 			? $this->textCode($user, $code)
 			: $this->emailCode($user, $code);

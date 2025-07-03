@@ -2,6 +2,7 @@ import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Button, Input } from "@base-framework/ui/atoms";
 import { Form } from '@base-framework/ui/molecules';
+import { AuthModel } from '../../../../../common/models/auth-model.js';
 
 /**
  * OneTimeCodeHeader
@@ -19,6 +20,20 @@ const OneTimeCodeHeader = Atom(({ title, description }) => (
 		description && P({ class: 'text-base text-muted-foreground py-2 max-w-[700px]' }, description)
 	])
 ));
+
+/**
+ * Requests a verification code for the selected multi-factor authentication option.
+ *
+ * @param {object} option - The selected multi-factor authentication option.
+ */
+const verifyCode = (option) =>
+{
+	const model = new AuthModel({
+		type: option.type
+	});
+
+	model.xhr.getAuthCode();
+};
 
 /**
  * OneTimeCodeForm

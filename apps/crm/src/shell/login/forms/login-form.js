@@ -98,7 +98,22 @@ const submit = (e, parent) =>
 			return;
 		}
 
-		app.signIn();
+		if (response.multiFactor === true)
+		{
+			const page = parent.parent;
+			const data = page.context.data;
+			data.multiFactor = true;
+			data.options = response.options ?? [];
+
+			page.showStep(STEPS.MULTI_FACTOR_METHOD);
+			return;
+		}
+
+		if (response.allowAccess === true)
+		{
+			app.signIn();
+			return;
+		}
 	});
 };
 

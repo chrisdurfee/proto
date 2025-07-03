@@ -188,7 +188,7 @@ export const AuthModel = Model.extend({
         {
             const data = this.model.get();
             let params = {
-                ...data,
+                type: data.type,
                 guid: GUID
             };
 

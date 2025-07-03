@@ -1,3 +1,4 @@
+import { Data } from "@base-framework/base";
 import { FullscreenPage } from "@base-framework/ui/pages";
 import { PageStepContainer } from './page-step-container.js';
 import { STEPS } from './steps.js';
@@ -9,6 +10,23 @@ import { STEPS } from './steps.js';
  */
 const PageProps =
 {
+	/**
+	 * This will set the page context.
+	 *
+	 * @param {object} context
+	 * @returns {object}
+	 */
+	setContext(context)
+	{
+		return {
+			data: new Data({
+				multiFactor: false,
+				selectedMfaOption: null,
+				options: []
+			})
+		};
+	},
+
 	/**
 	 * This will setup the states.
 	 *
