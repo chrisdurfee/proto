@@ -1,4 +1,4 @@
-import { Div, H1, Header, OnState, P, Section } from '@base-framework/atoms';
+import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Panel } from '@base-framework/ui';
 import { AuthModel } from '../../models/auth-model.js';
@@ -29,15 +29,6 @@ const FormWrapper = Atom((props, children) => (
 		class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm'
 	}, children)
 ));
-
-/**
- * This will create a loading message.
- *
- * @returns {object}
- */
-const LoadingMessage = () => (
-	null
-);
 
 /**
  * @typedef {object} Props
@@ -78,13 +69,10 @@ export const LoginSection = () => (
 	new Panel(Props, [
 		Section({ class: 'flex flex-auto flex-col justify-center items-center' }, [
 			FormWrapper({ class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm' }, [
-				OnState('loading', (state) => (state)
-					? LoadingMessage()
-					: Div([
-						LoginHeader({ title: 'Login', description: 'Please enter your credentials to login.' }),
-						LoginForm()
-					])
-				)
+				Div([
+					LoginHeader({ title: 'Login', description: 'Please enter your credentials to login.' }),
+					LoginForm()
+				])
 			])
 		])
 	])

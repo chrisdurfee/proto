@@ -1,4 +1,5 @@
-import { Div, Span } from '@base-framework/atoms';
+import { Div, OnState, Span } from '@base-framework/atoms';
+import { LoadingButton } from '@base-framework/ui';
 import { Button, Input } from "@base-framework/ui/atoms";
 import { Icons } from '@base-framework/ui/icons';
 import { Form } from '@base-framework/ui/molecules';
@@ -57,7 +58,10 @@ const CredentialsContainer = () => (
  */
 const SignInButton = () => (
 	Div({ class: 'grid gap-4' }, [
-		Button({ type: 'submit' }, 'Login')
+		OnState('loading', (state) => (state)
+			? LoadingButton({ disabled: true })
+			: Button({ type: 'submit' }, 'Login')
+		)
 	])
 );
 
@@ -89,8 +93,7 @@ const submit = (e, parent) =>
 				title: 'Error!',
 				description: response.message ?? 'Something went wrong. Please try again later.',
 				icon: Icons.warning,
-				type: 'destructive',
-				duration: 'infinite'
+				type: 'destructive'
 			});
 			return;
 		}
