@@ -13,14 +13,14 @@ use Proto\Dispatch\Storage\Queue\QueueStorage;
 class SmsQueue extends Queue
 {
 	/**
-	 * @var string $tableName
+	 * @var string|null $tableName
 	 */
-	protected static string $tableName = 'sms_queue';
+	protected static ?string $tableName = 'sms_queue';
 
 	/**
-	 * @var string $alias
+	 * @var string|null $alias
 	 */
-	protected static string $alias = 'sq';
+	protected static ?string $alias = 'sq';
 
 	/**
 	 * @var array $fields

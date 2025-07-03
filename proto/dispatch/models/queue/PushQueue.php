@@ -13,14 +13,14 @@ use Proto\Dispatch\Storage\Queue\QueueStorage;
 class PushQueue extends Queue
 {
 	/**
-	 * @var string $tableName
+	 * @var string|null $tableName
 	 */
-	protected static string $tableName = 'web_push_queue';
+	protected static ?string $tableName = 'web_push_queue';
 
 	/**
-	 * @var string $alias
+	 * @var string|null $alias
 	 */
-	protected static string $alias = 'wq';
+	protected static ?string $alias = 'wq';
 
 	/**
 	 * @var array $fields

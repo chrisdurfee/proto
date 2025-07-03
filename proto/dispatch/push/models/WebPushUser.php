@@ -16,9 +16,16 @@ class WebPushUser extends Model
 	/**
 	 * The table name associated with the model.
 	 *
-	 * @var string
+	 * @var string|null $tableName
 	 */
-	protected static string $tableName = 'web_push_users';
+	protected static ?string $tableName = 'web_push_users';
+
+	/**
+	 * The alias associated with the model.
+	 *
+	 * @var string|null $alias
+	 */
+	protected static ?string $alias = 'wpu';
 
 	/**
 	 * The fields associated with the model.

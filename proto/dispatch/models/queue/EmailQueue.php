@@ -13,14 +13,14 @@ use Proto\Dispatch\Storage\Queue\EmailQueueStorage;
 class EmailQueue extends Queue
 {
 	/**
-	 * @var string $tableName
+	 * @var string|null $tableName
 	 */
-	protected static string $tableName = 'email_queue';
+	protected static ?string $tableName = 'email_queue';
 
 	/**
-	 * @var string $alias
+	 * @var string|null $alias
 	 */
-	protected static string $alias = 'eq';
+	protected static ?string $alias = 'eq';
 
 	/**
 	 * @var array $fields
