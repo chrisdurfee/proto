@@ -8,6 +8,7 @@ use Proto\Storage\StorageInterface;
  *
  * This class wraps the storage object and provides methods to interact with it.
  *
+ * @mixin \Proto\Storage\Storage
  * @package Proto\Models
  */
 class StorageWrapper

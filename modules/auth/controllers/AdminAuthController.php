@@ -17,11 +17,12 @@ class AdminAuthController extends AuthController
 	 * This will permit a user access to sign in.
 	 *
 	 * @param User $user
+	 * @param string $ip
 	 * @return object
 	 */
-	protected function permit(User $user): object
+	protected function permit(User $user, string $ip): object
 	{
-		$this->updateUserStatus($user, UserStatus::ONLINE->value);
+		$this->updateUserStatus($user, UserStatus::ONLINE->value, $ip);
 		$this->setSessionUser($user);
 
 		if (auth()->user->isAdmin() === false)

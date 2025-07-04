@@ -112,10 +112,10 @@ class MultiFactorAuthService
 	/**
 	 * Record a newly authenticated connection (IP, device, location).
 	 *
-	 * @param object $connection
+	 * @param ConnectionDto $connection
 	 * @return object Persisted connection model.
 	 */
-	public function authConnection(object $connection): object
+	public function authConnection(ConnectionDto $connection): object
 	{
 		$controller = new UserAuthedConnectionController();
 		return $controller->setup($connection);

@@ -2,7 +2,6 @@ import { Div, OnState, Span } from '@base-framework/atoms';
 import { Button, Input, LoadingButton } from '@base-framework/ui/atoms';
 import { Icons } from '@base-framework/ui/icons';
 import { Form } from '@base-framework/ui/molecules';
-import { Panel } from '@base-framework/ui/organisms';
 import { AuthModel } from '../../../../../common/models/auth-model.js';
 import { STEPS } from '../steps.js';
 
@@ -43,7 +42,7 @@ const CredentialsContainer = () => (
 				placeholder: 'Password',
 				required: true,
 				bind: 'password',
-				//pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*\\W).{12,}$',
+				pattern: '^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*\\W).{12,}$',
 				title: 'Password must be at least 12 characters long and include uppercase, lowercase, number, and special character.',
 				'aria-required': true
 			}),
@@ -134,7 +133,7 @@ const submit = (e, parent) =>
 /**
  * This will create the login form.
  *
- * @returns {Panel}
+ * @returns {object}
  */
 export const LoginForm = () => (
 	Form({ class: 'flex flex-col p-6 pt-0', submit, role: 'form' }, [

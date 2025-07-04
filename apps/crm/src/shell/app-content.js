@@ -1,5 +1,7 @@
 import { Div } from '@base-framework/atoms';
 import { Import } from '@base-framework/base';
+import { Icons } from '@base-framework/ui/icons';
+import { AuthModel } from '../../../common/models/auth-model.js';
 import { openInstallPrompt } from './installation/install.js';
 
 /**
@@ -50,6 +52,40 @@ const MainContent = () => (
 );
 
 /**
+ * This will resume the user session.
+ *
+ * @returns {void}
+ */
+const resumeUserSession = () =>
+{
+	setTimeout(() =>
+	{
+		const model = new AuthModel();
+		model.xhr.resume((response) =>
+		{
+			if (!response && !response.success)
+			{
+				app.notify({
+					title: 'Error!',
+					description: response.message ?? 'Something went wrong. Please try again later.',
+					icon: Icons.warning,
+					type: 'destructive'
+				});
+			}
+
+			if (response.allowAccess === true)
+			{
+				app.setUserData(response.user);
+			}
+			else
+			{
+				app.signOut();
+			}
+		});
+	}, 1000);
+};
+
+/**
  * This will create the app content.
  *
  * @returns {object}
@@ -76,8 +112,18 @@ export const AppContent = () => (
 		 */
 		addState()
 		{
+			/**
+			 * Check if the user is signed in by checking
+			 * if a user has been restored from storage.
+			 */
+			const isSignedIn = (app.data.user?.id != null);
+			if (isSignedIn)
+			{
+				resumeUserSession();
+			}
+
 			return {
-				isSignedIn: (app.data.user?.id != null)
+				isSignedIn: isSignedIn
 			};
 		},
 

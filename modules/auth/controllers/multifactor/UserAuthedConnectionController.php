@@ -135,8 +135,11 @@ class UserAuthedConnectionController extends Controller
 			return $this->error('Unable to setup device');
 		}
 
-		$data->deviceId = $deviceId;
-		$data->locationId = $locationId ?? null;
-		return parent::setup($data);
+		return parent::setup((object)[
+			'deviceId' => $deviceId,
+			'locationId' => $locationId ?? null,
+			'ipAddress' => $data->ipAddress,
+			'accessedAt' => $data->accessedAt
+		]);
 	}
 }

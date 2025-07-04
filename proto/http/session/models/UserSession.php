@@ -43,7 +43,7 @@ class UserSession extends Model
 	public function refreshId(string $oldId, $newId): bool
 	{
 		$dateTime = date('Y-m-d H:i:s');
-		return $this->storage()
+		return $this->storage
 					->table()
 					->update('id = ?', 'updated_at = ?')
 					->where('id = ?')
@@ -60,7 +60,7 @@ class UserSession extends Model
 	public function getExpiredSessions(): array
 	{
 		$expirationDate = date('Y-m-d H:i:s', strtotime("-6 months"));
-		return $this->storage()
+		return $this->storage
 					->table()
 					->select('id')
 					->where('updated_at < ?')
@@ -76,7 +76,7 @@ class UserSession extends Model
 	 */
 	public function getEmptySessions(): array
 	{
-		return $this->storage()
+		return $this->storage
 					->table()
 					->select('id')
 					->where('data IS NULL')
