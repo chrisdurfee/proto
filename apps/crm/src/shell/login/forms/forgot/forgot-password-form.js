@@ -1,8 +1,8 @@
 import { Div, OnState } from '@base-framework/atoms';
 import { Button, EmailInput, LoadingButton } from "@base-framework/ui/atoms";
 import { Form } from '@base-framework/ui/molecules';
-import { AuthModel } from '../../../../../common/models/auth-model.js';
-import { STEPS } from '../steps.js';
+import { STEPS } from '../../steps.js';
+import { requestPasswordReset } from './request-password-reset.js';
 
 /**
  * This will create the email container.
@@ -21,25 +21,6 @@ const EmailContainer = () => (
 		]),
 	])
 );
-
-/**
- * Requests a verification code for the selected multi-factor authentication option.
- *
- * @param {object} parent - The parent component.
- */
-const requestPasswordReset = (parent) =>
-{
-	parent.state.loading = true;
-	const model = new AuthModel({
-		email: parent.email.value
-	});
-
-	model.xhr.requestPasswordReset('', (response) =>
-	{
-		parent.state.loading = false;
-		parent.state.showMessage = true;
-	});
-};
 
 /**
  * This will create the submit button.

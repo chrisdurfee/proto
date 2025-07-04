@@ -1,6 +1,6 @@
 import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
-import { LoginForm } from '../forms/login-form.js';
+import { LoginForm } from '../forms/login/login-form.js';
 
 /**
  * This will create a header for the documentation.

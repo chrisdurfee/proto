@@ -1,9 +1,9 @@
-import { Div, OnState, Span } from '@base-framework/atoms';
-import { Button, Input, LoadingButton } from '@base-framework/ui/atoms';
-import { Icons } from '@base-framework/ui/icons';
+import { Div, Span } from '@base-framework/atoms';
+import { Button, Input } from '@base-framework/ui/atoms';
 import { Form } from '@base-framework/ui/molecules';
-import { AuthModel } from '../../../../../common/models/auth-model.js';
-import { STEPS } from '../steps.js';
+import { STEPS } from '../../steps.js';
+import { SignInButton } from './sign-in-button.js';
+import { submit } from './submit.js';
 
 /**
  * This will create a sign up link.
@@ -51,20 +51,6 @@ const CredentialsContainer = () => (
 );
 
 /**
- * This will create the sign in button.
- *
- * @returns {object}
- */
-const SignInButton = () => (
-	Div({ class: 'grid gap-4' }, [
-		OnState('loading', (state) => (state)
-			? LoadingButton({ disabled: true })
-			: Button({ type: 'submit' }, 'Login')
-		)
-	])
-);
-
-/**
  * This will create the sign in with google button.
  *
  * @returns {object}
@@ -74,61 +60,6 @@ const SignInWIthGoogleButton = () => (
 		Button({ variant: 'outline', 'aria-label': 'Login with Google' }, 'Login with Google')
 	])
 );
-
-/**
- * This will create the submit handler for the form.
- *
- * @returns {void}
- */
-const submit = (e, parent) =>
-{
-	parent.state.loading = true;
-	const data = parent.context.data;
-
-	const model = new AuthModel({
-		username: data.username,
-		password: data.password
-	});
-
-	model.xhr.login('', (response) =>
-	{
-		parent.state.loading = false;
-		if (!response || !response.success)
-		{
-			app.notify({
-				title: 'Error!',
-				description: response.message ?? 'Something went wrong. Please try again later.',
-				icon: Icons.warning,
-				type: 'destructive'
-			});
-			return;
-		}
-
-		if (response.multiFactor === true)
-		{
-			const data = parent.context.data;
-			data.multiFactor = true;
-			data.options = response.options ?? [];
-
-			parent.showStep(STEPS.MULTI_FACTOR_METHOD);
-			return;
-		}
-
-		if (response.allowAccess === true)
-		{
-			app.signIn(response.user);
-		}
-		else
-		{
-			app.notify({
-				title: 'Invalid Credentials',
-				description: response.message ?? 'The provided credentials are incorrect.',
-				icon: Icons.warning,
-				type: 'destructive'
-			});
-		}
-	});
-};
 
 /**
  * This will create the login form.
