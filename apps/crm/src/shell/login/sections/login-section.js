@@ -1,7 +1,5 @@
 import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
-import { Panel } from '@base-framework/ui';
-import { AuthModel } from '../../../../../common/models/auth-model.js';
 import { LoginForm } from '../forms/login-form.js';
 
 /**
@@ -31,48 +29,16 @@ const FormWrapper = Atom((props, children) => (
 ));
 
 /**
- * @typedef {object} Props
- */
-const Props =
-{
-	class: 'flex flex-auto flex-col',
-
-	/**
-	 * Sets the data for the authentication model.
-	 *
-	 * @return {object}
-	 */
-	setData()
-	{
-		return new AuthModel();
-	},
-
-	/**
-	 * Sets up the states for the authentication model.
-	 *
-	 * @return {object}
-	 */
-	setupStates()
-	{
-		return {
-			loading: false
-		};
-	}
-};
-
-/**
  * This will create the login section.
  *
  * @returns {object}
  */
 export const LoginSection = () => (
-	new Panel(Props, [
-		Section({ class: 'flex flex-auto flex-col justify-center items-center' }, [
-			FormWrapper({ class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm' }, [
-				Div([
-					LoginHeader({ title: 'Login', description: 'Please enter your credentials to login.' }),
-					LoginForm()
-				])
+	Section({ class: 'flex flex-auto flex-col justify-center items-center' }, [
+		FormWrapper({ class: 'rounded-xl sm:border sm:shadow-lg bg-card text-card-foreground shadow w-full mx-auto max-w-sm' }, [
+			Div([
+				LoginHeader({ title: 'Login', description: 'Please enter your credentials to login.' }),
+				LoginForm()
 			])
 		])
 	])

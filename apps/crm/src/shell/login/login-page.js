@@ -35,6 +35,7 @@ const PageProps =
 	setupStates()
 	{
 		return {
+			loading: false,
 			step: STEPS.LOGIN
 		};
 	},

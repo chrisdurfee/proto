@@ -1,9 +1,9 @@
 import { Div, OnState, Span } from '@base-framework/atoms';
-import { LoadingButton } from '@base-framework/ui';
-import { Button, Input } from "@base-framework/ui/atoms";
+import { Button, Input, LoadingButton } from '@base-framework/ui/atoms';
 import { Icons } from '@base-framework/ui/icons';
 import { Form } from '@base-framework/ui/molecules';
 import { Panel } from '@base-framework/ui/organisms';
+import { AuthModel } from '../../../../../common/models/auth-model.js';
 import { STEPS } from '../steps.js';
 
 /**
@@ -13,7 +13,7 @@ import { STEPS } from '../steps.js';
 const SignUpLink = () => ([
 	Div({ class: '' }, [
 		Span({ class: 'text-sm text-muted-foreground mt-8 mb-0' }, 'Forgot your password? '),
-		Span({ class: 'text-sm font-medium text-primary underline cursor-pointer', click: (e, parent) => parent.parent.showStep(STEPS.FORGOT_PASSWORD) }, 'Reset it'),
+		Span({ class: 'text-sm font-medium text-primary underline cursor-pointer', click: (e, parent) => parent.showStep(STEPS.FORGOT_PASSWORD) }, 'Reset it'),
 	]),
 	// Div({ class: '' }, [
 	// 	Span({ class: 'text-sm text-muted-foreground mt-8 mb-0' }, 'Don\'t have an account? '),
@@ -84,7 +84,14 @@ const SignInWIthGoogleButton = () => (
 const submit = (e, parent) =>
 {
 	parent.state.loading = true;
-	parent.data.xhr.login('', (response) =>
+	const data = parent.context.data;
+
+	const model = new AuthModel({
+		username: data.username,
+		password: data.password
+	});
+
+	model.xhr.login('', (response) =>
 	{
 		parent.state.loading = false;
 		if (!response || !response.success)
@@ -100,12 +107,11 @@ const submit = (e, parent) =>
 
 		if (response.multiFactor === true)
 		{
-			const page = parent.parent;
-			const data = page.context.data;
+			const data = parent.context.data;
 			data.multiFactor = true;
 			data.options = response.options ?? [];
 
-			page.showStep(STEPS.MULTI_FACTOR_METHOD);
+			parent.showStep(STEPS.MULTI_FACTOR_METHOD);
 			return;
 		}
 

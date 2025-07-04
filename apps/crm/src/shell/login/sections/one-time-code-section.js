@@ -1,6 +1,6 @@
-import { Div, H1, Header, P, Section } from '@base-framework/atoms';
+import { Div, H1, Header, OnState, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
-import { Button, Input } from "@base-framework/ui/atoms";
+import { Button, Input, LoadingButton } from "@base-framework/ui/atoms";
 import { Icons } from '@base-framework/ui/icons';
 import { Form } from '@base-framework/ui/molecules';
 import { AuthModel } from '../../../../../common/models/auth-model.js';
@@ -26,23 +26,27 @@ const OneTimeCodeHeader = Atom(({ title, description }) => (
  * Requests a verification code for the selected multi-factor authentication option.
  *
  * @param {object} code - The selected multi-factor authentication option.
+ * @param {object} parent - The parent component.
  */
-const verifyAuthCode = (code) =>
+const verifyAuthCode = (code, parent) =>
 {
+	parent.state.loading = true;
 	const model = new AuthModel({
 		code
 	});
 
 	model.xhr.verifyAuthCode('', (response) =>
 	{
+		parent.state.loading = false;
 		if (!response || response.success !== true)
 		{
 			app.notify({
 				title: 'Invalid Code',
-				description: response.message ?? 'Please enter a valid code.',
+				description: response.message ?? 'The provided code is incorrect.',
 				icon: Icons.warning,
 				type: 'destructive'
 			});
+			return;
 		}
 
 		if (response.allowAccess === true)
@@ -75,7 +79,7 @@ const OneTimeCodeForm = () => (
 		{
 			e.preventDefault();
 
-			verifyAuthCode(parent.code.value)
+			verifyAuthCode(parent.code.value, parent)
 		},
 		role: 'form'
 	}, [
@@ -87,7 +91,10 @@ const OneTimeCodeForm = () => (
 				required: true,
 				'aria-required': true
 			}),
-			Button({ type: 'submit' }, 'Verify Code')
+			OnState('loading', (state) => (state)
+				? LoadingButton({ disabled: true })
+				: Button({ type: 'submit' }, 'Verify Code')
+			)
 		])
 	])
 );
