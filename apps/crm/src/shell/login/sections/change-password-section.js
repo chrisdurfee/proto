@@ -3,7 +3,8 @@ import { Atom } from '@base-framework/base';
 import { Button, Input } from "@base-framework/ui/atoms";
 import { Icons } from '@base-framework/ui/icons';
 import { Form } from '@base-framework/ui/molecules';
-import { Configs } from 'src/configs.js';
+import { AuthModel } from '../../../../../common/models/auth-model.js';
+import { Configs } from '../../../configs.js';
 import { PasswordValidator } from '../utils/password-validator.js';
 
 /**
@@ -60,6 +61,34 @@ const validate = (password, confirmPassword) =>
 };
 
 /**
+ * Resets the user's password.
+ *
+ * @param {object} parent - The parent component.
+ */
+const resetPassword = (parent) =>
+{
+	parent.state.loading = true;
+	const model = new AuthModel({
+		email: parent.email.value
+	});
+
+	model.xhr.resetPassword('', (response) =>
+	{
+		parent.state.loading = false;
+		parent.state.showMessage = true;
+
+		app.notify({
+			title: 'All Done!',
+			description: 'You have successfully changed your password.',
+			icon: Icons.circleCheck,
+			type: 'success'
+		});
+
+		app.navigate(Configs.router.baseUrl);
+	});
+};
+
+/**
  * ChangePasswordForm
  *
  * Renders the form for changing the password.
@@ -77,18 +106,10 @@ const ChangePasswordForm = () => (
 			const confirmPassword = parent.data.confirmPassword;
 			if (!validate(password, confirmPassword))
 			{
-				return;
+				return false;
 			}
 
-			// Handle the password change logic
-			app.notify({
-				title: 'All Done!',
-				description: 'You have successfully changed your password.',
-				icon: Icons.circleCheck,
-				type: 'success'
-			});
-
-			app.navigate(Configs.router.baseUrl);
+			resetPassword(parent);
 		},
 		role: 'form'
 	}, [
