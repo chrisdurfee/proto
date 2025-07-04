@@ -44,6 +44,20 @@ const verifyAuthCode = (code) =>
 				type: 'destructive'
 			});
 		}
+
+		if (response.allowAccess === true)
+		{
+			app.signIn(response.user);
+		}
+		else
+		{
+			app.notify({
+				title: 'Invalid Code',
+				description: response.message ?? 'The provided code is incorrect.',
+				icon: Icons.warning,
+				type: 'destructive'
+			});
+		}
 	});
 };
 

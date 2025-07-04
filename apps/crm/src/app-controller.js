@@ -46,9 +46,6 @@ export class AppController
 		this.setupRouter();
 		this.setData();
 		this.getCsrfToken();
-
-		// TODO: remove this if you are setting up the sign in
-		this.setUserData();
 	}
 
 	/**
@@ -150,10 +147,10 @@ export class AppController
 	 *
 	 * @returns {void}
 	 */
-	signIn()
+	signIn(user)
 	{
 		this.appShell.state.isSignedIn = true;
-		this.setUserData();
+		this.setUserData(user);
 	}
 
 	/**
@@ -163,10 +160,13 @@ export class AppController
 	 */
 	signOut()
 	{
+		this.data.user
+			.set(null)
+			.store();
+
 		this.appShell.state.isSignedIn = false;
 
-		// TODO: remove this comment after the sign in is set up
-		//window.location = Configs.router.baseUrl;
+		window.location = Configs.router.baseUrl;
 	}
 
 	/**
@@ -178,14 +178,14 @@ export class AppController
 	 */
 	setUserData(data = null)
 	{
-		// TODO: Set the user data from the API
-		data = data ?? {
-			name: "John Doe", // Example default user name
-			image: "https://github.com/shadcn.png", // Example avatar image
-			status: "online", // Default status
-		};
+		if (!data)
+		{
+			return;
+		}
 
-		this.data.user.set(data);
+		this.data.user
+			.set(data)
+			.store();
 	}
 
 	/**

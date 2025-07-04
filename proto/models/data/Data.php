@@ -362,6 +362,15 @@ class Data
 				continue;
 			}
 
+			/**
+			 * This will check to block any aliased fields from being mapped.
+			 */
+			$alias = $this->alias[$key] ?? null;
+			if ($alias && is_array($alias))
+			{
+				continue;
+			}
+
 			$keyMapped = $this->mapper->getMappedField($key);
 			$out[$this->prepareKeyName($keyMapped)] = $val;
 		}

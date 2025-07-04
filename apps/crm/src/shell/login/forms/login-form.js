@@ -111,8 +111,16 @@ const submit = (e, parent) =>
 
 		if (response.allowAccess === true)
 		{
-			app.signIn();
-			return;
+			app.signIn(response.user);
+		}
+		else
+		{
+			app.notify({
+				title: 'Invalid Credentials',
+				description: response.message ?? 'The provided credentials are incorrect.',
+				icon: Icons.warning,
+				type: 'destructive'
+			});
 		}
 	});
 };

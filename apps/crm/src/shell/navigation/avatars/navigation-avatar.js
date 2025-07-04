@@ -54,8 +54,8 @@ export const NavigationAvatar = Jot(
 				Div({ class: "relative mx-2" }, [
 					Avatar({
 						src: '[[image]]',
-						alt: '[[name]]',
-						watcherFallback: '[[name]]',
+						alt: '[[firstName]] [[lastName]]',
+						watcherFallback: '[[firstName]] [[lastName]]',
 						size: "sm",
 					})
 				]),

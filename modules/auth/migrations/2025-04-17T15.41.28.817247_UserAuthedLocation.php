@@ -23,17 +23,30 @@ class UserAuthedLocation extends Migration
 		{
 			$table->id();
 			$table->timestamps();
+
+			// GeoIP fields
+			$table->varchar('ip', 45)->nullable();
+			$table->varchar('network', 50)->nullable();
+			$table->varchar('continent_code', 5)->nullable();
+			$table->varchar('country_calling_code', 10)->nullable();
+
+			// Location fields
 			$table->varchar('city', 100)->nullable();
 			$table->varchar('region', 100)->nullable();
 			$table->varchar('region_code', 10)->nullable();
 			$table->varchar('country', 100)->nullable();
 			$table->varchar('country_code', 10)->nullable();
 			$table->varchar('postal', 20)->nullable();
+
+			// Spatial and timezone
 			$table->point('position');
 			$table->varchar('timezone', 50)->nullable();
+
 			$table->deletedAt();
 
 			// Indexes
+			$table->index('ip')->fields('ip');
+			$table->index('network')->fields('network');
 			$table->index('city')->fields('city');
 			$table->index('region')->fields('region');
 			$table->index('country')->fields('country');
