@@ -1,11 +1,9 @@
 import { Div, H1, Header, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
 import { Button, Input } from "@base-framework/ui/atoms";
-import { Icons } from '@base-framework/ui/icons';
 import { Form } from '@base-framework/ui/molecules';
-import { AuthModel } from '../../../../../common/models/auth-model.js';
-import { Configs } from '../../../configs.js';
-import { PasswordValidator } from '../utils/password-validator.js';
+import { resetPassword } from './reset-password.js';
+import { validate } from './validate.js';
 
 /**
  * ChangePasswordHeader
@@ -23,70 +21,6 @@ const ChangePasswordHeader = Atom(({ title, description }) => (
 		description && P({ class: 'text-base text-muted-foreground py-2 max-w-[700px]' }, description)
 	])
 ));
-
-/**
- * Validates the password and confirm password.
- *
- * @param {string} password - The password to validate.
- * @param {string} confirmPassword - The password to compare against.
- * @returns {boolean}
- */
-const validate = (password, confirmPassword) =>
-{
-	if (password !== confirmPassword)
-	{
-		app.notify({
-			title: 'Error',
-			description: 'Passwords do not match.',
-			type: 'destructive'
-		});
-		return false;
-	}
-
-	const firstName = '';
-	const lastName = '';
-	const validator = new PasswordValidator(firstName, lastName, password);
-	const result = validator.validate();
-	if (result.valid)
-	{
-		return true;
-	}
-
-	app.notify({
-		title: 'Error',
-		description: 'Password does not meet requirements.',
-		type: 'destructive'
-	});
-	return false;
-};
-
-/**
- * Resets the user's password.
- *
- * @param {object} parent - The parent component.
- */
-const resetPassword = (parent) =>
-{
-	parent.state.loading = true;
-	const model = new AuthModel({
-		email: parent.email.value
-	});
-
-	model.xhr.resetPassword('', (response) =>
-	{
-		parent.state.loading = false;
-		parent.state.showMessage = true;
-
-		app.notify({
-			title: 'All Done!',
-			description: 'You have successfully changed your password.',
-			icon: Icons.circleCheck,
-			type: 'success'
-		});
-
-		app.navigate(Configs.router.baseUrl);
-	});
-};
 
 /**
  * ChangePasswordForm
