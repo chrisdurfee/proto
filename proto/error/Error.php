@@ -65,15 +65,13 @@ namespace Proto\Error
 			int $errline
 		): bool
 		{
-			$backtrace = debug_backtrace();
-
 			return ErrorLog::create((object)[
 				'errorNumber' => $errno,
 				'errorMessage' => $errstr,
 				'errorFile' => $errfile,
 				'errorLine' => $errline,
 				'errorTrace' => '',
-				'backTrace' => JsonFormat::encode($backtrace),
+				'backTrace' => JsonFormat::encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
 				'env' => env('env'),
 				'url' => Request::fullUrlWithScheme(),
 				'query' => JsonFormat::encode(Request::all()),
@@ -98,6 +96,29 @@ namespace Proto\Error
 
 			static::setErrorHandler();
 			static::setExceptionHandler();
+			static::setShutdownHandler();
+		}
+
+		/**
+		 * Sets the shutdown handler.
+		 *
+		 * @return void
+		 */
+		protected static function setShutdownHandler(): void
+		{
+			register_shutdown_function(function(): void
+			{
+				$err = error_get_last();
+				if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR]))
+				{
+					static::errorHandler(
+						$err['type'],
+						$err['message'],
+						$err['file'],
+						$err['line']
+					);
+				}
+			});
 		}
 
 		/**

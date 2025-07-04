@@ -21,7 +21,7 @@ class Request
 	protected static string $currentPath;
 
 	/**
-	 * @var string $ipAddress IP address of the client
+	 * @var string|null $ipAddress IP address of the client
 	 */
 	protected static ?string $ipAddress;
 
@@ -98,9 +98,9 @@ class Request
 	 *
 	 * @return ?string
 	 */
-	public static function ip(): string
+	public static function ip(): ?string
 	{
-		return self::$ipAddress ??= PublicIp::get();
+		return self::$ipAddress ??= (PublicIp::get() ?? null);
 	}
 
 	/**

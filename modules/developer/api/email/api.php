@@ -10,4 +10,4 @@ use Modules\Developer\Controllers\EmailController;
  */
 router()
 	->get('developer/email/preview', [EmailController::class, 'preview'])
-	->post('developer/email/test', [EmailController::class, 'test']);
+	->all('developer/email/test', [EmailController::class, 'test']);

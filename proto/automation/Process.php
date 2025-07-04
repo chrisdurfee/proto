@@ -127,11 +127,18 @@ abstract class Process extends Base
 
 		$routine = str_replace('.', '', $routine);
 
-		/**
-		 * @var object $class The fully qualified class name of the routine.
-		 */
-		$class = $routine;
-		return new $class();
+		try
+		{
+			/**
+			 * @var object $class The fully qualified class name of the routine.
+			 */
+			$class = $routine;
+			return new $class();
+		}
+		catch (\Throwable $e)
+		{
+			return false;
+		}
 	}
 
 	/**
