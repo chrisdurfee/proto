@@ -83,11 +83,11 @@ class AuthController extends Controller
 			return $this->error('The user account is not found.', HttpStatus::NOT_FOUND->value);
 		}
 
-		// if ($user->multiFactorEnabled == true)
-		// {
-		// 	$device = $req->json('device');
-		// 	return $this->multiFactor($user, $device, $req->ip());
-		// }
+		if ($user->multiFactorEnabled == true)
+		{
+			$device = $req->json('device');
+			return $this->multiFactor($user, $device, $req->ip());
+		}
 
 		return $this->permit($user, $req->ip());
 	}

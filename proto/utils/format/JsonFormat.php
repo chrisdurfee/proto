@@ -83,7 +83,7 @@ class JsonFormat extends Format
 	 */
 	public static function decode(mixed $data): mixed
 	{
-		if ($data === null || !is_string($data))
+		if ($data === null || !is_string($data) || empty($data))
 		{
 			return null;
 		}

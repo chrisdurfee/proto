@@ -58,6 +58,7 @@ const MainContent = () => (
  */
 const resumeUserSession = () =>
 {
+	const DELAY = 1000;
 	setTimeout(() =>
 	{
 		const model = new AuthModel();
@@ -82,7 +83,7 @@ const resumeUserSession = () =>
 				app.signOut();
 			}
 		});
-	}, 1000);
+	}, DELAY);
 };
 
 /**
