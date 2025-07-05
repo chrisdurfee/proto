@@ -239,8 +239,8 @@ export const AuthModel = Model.extend({
 		{
 			const data = this.model.get();
 			let params = {
-				code: data.code,
-				email: data.email,
+				requestId: data.requestId,
+				userId: data.userId,
 				guid: GUID
 			};
 
