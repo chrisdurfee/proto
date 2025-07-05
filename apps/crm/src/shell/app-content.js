@@ -1,6 +1,5 @@
 import { Div } from '@base-framework/atoms';
 import { Import } from '@base-framework/base';
-import { Icons } from '@base-framework/ui/icons';
 import { AuthModel } from '../../../common/models/auth-model.js';
 import { openInstallPrompt } from './installation/install.js';
 
@@ -64,15 +63,8 @@ const resumeUserSession = () =>
 		const model = new AuthModel();
 		model.xhr.resume('', (response) =>
 		{
-			if (!response || !response.success)
+			if (!response)
 			{
-				app.notify({
-					title: 'Error!',
-					description: response.message ?? 'Something went wrong. Please try again later.',
-					icon: Icons.warning,
-					type: 'destructive'
-				});
-				app.signOut();
 				return;
 			}
 
