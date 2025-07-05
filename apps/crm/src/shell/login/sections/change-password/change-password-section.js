@@ -1,6 +1,6 @@
-import { Div, H1, Header, P, Section } from '@base-framework/atoms';
+import { Div, H1, Header, OnState, P, Section } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
-import { Button, Input } from "@base-framework/ui/atoms";
+import { Button, Input, LoadingButton } from "@base-framework/ui/atoms";
 import { Form } from '@base-framework/ui/molecules';
 import { resetPassword } from './reset-password.js';
 import { validate } from './validate.js';
@@ -36,8 +36,9 @@ const ChangePasswordForm = () => (
 		{
 			e.preventDefault();
 
-			const password = parent.data.password;
-			const confirmPassword = parent.data.confirmPassword;
+			const data = parent.context.data;
+			const password = data.password;
+			const confirmPassword = data.confirmPassword;
 			if (!validate(password, confirmPassword))
 			{
 				return false;
@@ -51,6 +52,7 @@ const ChangePasswordForm = () => (
 			// New Password
 			Input({
 				type: 'password',
+				cache: 'password',
 				placeholder: 'New Password',
 				required: true,
 				bind: 'password',
@@ -69,7 +71,10 @@ const ChangePasswordForm = () => (
 				'aria-required': true
 			}),
 			// Submit Button
-			Button({ type: 'submit' }, 'Change Password')
+			OnState('loading', (state) => (state)
+				? LoadingButton({ disabled: true })
+				: Button({ type: 'submit' }, 'Change Password')
+			)
 		])
 	])
 );

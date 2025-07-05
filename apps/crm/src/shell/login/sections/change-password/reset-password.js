@@ -1,6 +1,6 @@
+import { Strings } from '@base-framework/base';
 import { Icons } from '@base-framework/ui/icons';
 import { AuthModel } from '../../../../../../common/models/auth-model.js';
-import { Configs } from '../../../../configs.js';
 
 /**
  * This will send a request to reset the user's password.
@@ -11,8 +11,10 @@ import { Configs } from '../../../../configs.js';
  */
 const request = (data, callBack) =>
 {
-    const model = new AuthModel({
-		email: data.email
+	const model = new AuthModel({
+		password: data.password,
+		requestId: data.requestId,
+		userId: data.userId
 	});
 
 	model.xhr.resetPassword('', callBack);
@@ -27,18 +29,51 @@ export const resetPassword = (parent) =>
 {
 	parent.state.loading = true;
 
-	request({ email: parent.email.value }, (response) =>
+	// @ts-ignore
+	const params = Strings.parseQueryString();
+	const data = {
+		password: parent.password.value,
+		// @ts-ignore
+		requestId: params.requestId || '',
+		// @ts-ignore
+		userId: params.userId || ''
+	};
+
+	request(data, (response) =>
 	{
 		parent.state.loading = false;
 		parent.state.showMessage = true;
 
-		app.notify({
-			title: 'All Done!',
-			description: 'You have successfully changed your password.',
-			icon: Icons.circleCheck,
-			type: 'success'
-		});
+		if (!response || !response.success)
+		{
+			app.notify({
+				title: 'Error',
+				description: response?.message || 'There was an error resetting your password.',
+				icon: Icons.circleX,
+				type: 'destructive'
+			});
+			return;
+		}
 
-		app.navigate(Configs.router.baseUrl);
+		if (response.allowAccess === true)
+		{
+			app.notify({
+				title: 'All Done!',
+				description: 'You have successfully changed your password.',
+				icon: Icons.circleCheck,
+				type: 'success'
+			});
+
+			app.signIn(response.user);
+			app.navigate('/');
+			return;
+		}
+
+		app.notify({
+			title: 'Error',
+			description: response?.message || 'There was an error resetting your password.',
+			icon: Icons.circleX,
+			type: 'destructive'
+		});
 	});
 };

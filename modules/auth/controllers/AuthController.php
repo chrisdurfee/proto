@@ -482,24 +482,42 @@ class AuthController extends Controller
 	 */
 	public function resetPassword(Request $req): object
 	{
-		$user = $req->json('user');
-		if (!isset($user))
+		$userId = $req->getInt('userId');
+		if (!isset($userId))
 		{
-			return $this->error('The user is not set.', HttpStatus::BAD_REQUEST->value);
+			return $this->error('The user id is not set.', HttpStatus::BAD_REQUEST->value);
 		}
 
-		if (empty($user->password))
+		$password = $req->input('password');
+		if (empty($password))
 		{
 			return $this->error('The password is not set.', HttpStatus::BAD_REQUEST->value);
 		}
 
-		$requestId = $user->requestId;
-		$userId = $user->userId;
+		$requestId = $req->input('requestId');
+		if (empty($requestId))
+		{
+			return $this->error('The request id is not set.', HttpStatus::BAD_REQUEST->value);
+		}
 
-		$result = $this->pwService->resetPassword($requestId, $userId, $user->password);
-		return $this->response((object)[
-			'message' => ($result)?'The password has been reset successfully.' : 'The password reset has failed.',
-		]);
+		$result = $this->pwService->resetPassword($requestId, $userId, $password);
+		if ($result === -1)
+		{
+			return $this->error('The password reset request is invalid.', HttpStatus::BAD_REQUEST->value);
+		}
+
+		if ($result === false)
+		{
+			return $this->error('The password reset has failed.', HttpStatus::BAD_REQUEST->value);
+		}
+
+		$user = $this->getUserId($userId);
+		if (!$user)
+		{
+			return $this->error('The user account is not found.', HttpStatus::NOT_FOUND->value);
+		}
+
+		return $this->permit($user, $req->ip());
 	}
 
 	/**

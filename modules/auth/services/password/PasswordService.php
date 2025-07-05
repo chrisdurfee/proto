@@ -169,7 +169,7 @@ class PasswordService
 	protected function buildResetUrl(string $requestId, mixed $userId): string
 	{
 		return envUrl()
-			. '/login/auth/password-reset?requestId='
+			. '/change-password?requestId='
 			. $requestId
 			. '&userId='
 			. (string)$userId;
@@ -201,12 +201,12 @@ class PasswordService
 		mixed $userId,
 		string $newPassword,
 		string $type = 'email'
-	): bool
+	): bool|int
 	{
 		$username = $this->validateRequest($requestId, $userId);
 		if ($username === null)
 		{
-			return false;
+			return -1;
 		}
 
 		$user = $this->getUserById($userId);
@@ -267,7 +267,8 @@ class PasswordService
 		$settings = (object)[
 			'to' => $user->email,
 			'subject' => 'Your Password Has Been Reset',
-			'template' => 'Modules\\Auth\\Email\\Password\\PasswordResetSuccessEmail'
+			'template' => 'Modules\\Auth\\Email\\Password\\PasswordResetSuccessEmail',
+			'queue' => true
 		];
 
 		return $this->dispatchEmail($settings);
@@ -283,7 +284,8 @@ class PasswordService
 	{
 		$settings = (object)[
 			'to' => $user->mobile,
-			'template' => 'Modules\\Auth\\Text\\Password\\PasswordResetSuccessText'
+			'template' => 'Modules\\Auth\\Text\\Password\\PasswordResetSuccessText',
+			'queue' => true
 		];
 
 		return $this->dispatchText($settings);
@@ -298,7 +300,6 @@ class PasswordService
 	 */
 	protected function dispatchEmail(object $settings, ?object $data = null): object
 	{
-		$settings->queue = true;
 		return Dispatcher::email($settings, $data);
 	}
 
@@ -311,7 +312,6 @@ class PasswordService
 	 */
 	protected function dispatchText(object $settings, ?object $data = null): object
 	{
-		$settings->queue = true;
 		return Dispatcher::sms($settings, $data);
 	}
 }

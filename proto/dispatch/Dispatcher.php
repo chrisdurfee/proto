@@ -51,7 +51,7 @@ class Dispatcher
 	 */
 	public static function sms(object $settings, ?object $data = null): Response
 	{
-		if ($settings->queue)
+		if (isset($settings->queue))
 		{
 			Enqueuer::sms($settings, $data);
 			return self::createQueuedResponse('SMS message queued.');
@@ -69,7 +69,7 @@ class Dispatcher
 	 */
 	public static function email(object $settings, ?object $data = null): Response
 	{
-		if ($settings->queue)
+		if (isset($settings->queue))
 		{
 			Enqueuer::email($settings, $data);
 			return self::createQueuedResponse('Email message queued.');
@@ -87,7 +87,7 @@ class Dispatcher
 	 */
 	public static function push(object $settings, ?object $data = null): Response
 	{
-		if ($settings->queue)
+		if (isset($settings->queue))
 		{
 			Enqueuer::push($settings, $data);
 			return self::createQueuedResponse('Web push message queued.');

@@ -15,7 +15,7 @@ export const PageStepContainer = () => (
 		class: 'flex flex-auto flex-col',
 		switch: [
 			{
-				uri: '/change-password',
+				uri: '/change-password*',
 				import: () => import('./change-password-container.js'),
 			},
 			{

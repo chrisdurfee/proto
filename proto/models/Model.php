@@ -625,6 +625,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			return $result;
 		}
 
+		if (is_int($result) || is_float($result))
+		{
+			return $result;
+		}
+
+		if (is_string($result))
+		{
+			return $result;
+		}
+
 		if (!isset($result->rows) && !is_array($result))
 		{
 			return ($result) ? new static($result) : null;
