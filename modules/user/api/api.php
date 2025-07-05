@@ -2,7 +2,6 @@
 namespace Modules\User\Api;
 
 use Modules\User\Controllers\UserController;
-use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 
 /**
  * User API Routes
@@ -10,9 +9,6 @@ use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
  * This file contains the API routes for the User module.
  */
 router()
-	->middleware(([
-		CrossSiteProtectionMiddleware::class
-	]))
 	->patch('user/:id/status', [UserController::class, 'updateStatus'])
 	->patch('user/:id/verify-email', [UserController::class, 'verifyEmail'])
 	->patch('user/:id/update-credentials', [UserController::class, 'updateCredentials'])

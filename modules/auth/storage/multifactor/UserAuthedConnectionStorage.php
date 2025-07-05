@@ -43,7 +43,7 @@ class UserAuthedConnectionStorage extends Storage
 	): bool
 	{
 		$row = $this->select('id')
-			->where("{$this->alias}.ip_address = ?", "ud.user_id = ?", "ud.guid = ?")
+			->where("{$this->alias}.ip_address = ?", "{$this->alias}.deleted_at IS NULL", "ud.user_id = ?", "ud.guid = ?")
 			->limit(1)
 			->first([$ipAddress, $userId, $guid]);
 
