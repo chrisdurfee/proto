@@ -161,7 +161,11 @@ export const ActionTimer =
 	 */
 	setAsOnline()
 	{
-		this.setState(STATES.ONLINE);
+		const currentState = this.state.get(STATE_ATTR);
+		if (currentState !== STATES.BUSY)
+		{
+			this.setState(STATES.ONLINE);
+		}
 	},
 
 	/**
@@ -182,8 +186,11 @@ export const ActionTimer =
 	 */
 	reset()
 	{
-		// If you want to preserve "busy," add a check before setting ONLINE.
-		this.setAsOnline();
+		const currentState = this.state.get(STATE_ATTR);
+		if (currentState !== STATES.BUSY)
+		{
+			this.setAsOnline();
+		}
 		this.timer.start();
 	},
 
@@ -196,5 +203,15 @@ export const ActionTimer =
 	{
 		this.off();
 		this.timer.stop();
+	},
+
+	/**
+	 * Cleans up event listeners and timers.
+	 *
+	 * @returns {void}
+	 */
+	destroy()
+	{
+		this.stop();
 	},
 };
