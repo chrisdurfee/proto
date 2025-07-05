@@ -4,7 +4,7 @@ import { ActionTimer } from "./action-timer.js";
 import { APP_STATE, STATES, STATE_ATTR } from "./state.js";
 
 /**
- * Sends a POST request with keep-alive enabled.
+ * Sends a PATCH request with keep-alive enabled and error handling.
  *
  * @param {string} url - The endpoint URL.
  * @param {string} params - The request parameters.
@@ -48,14 +48,19 @@ export class UserLoginStatus
 		this.data = null;
 
 		/**
-		 * @member {object|null} data
+		 * @member {object|null} state
 		 */
 		this.state = null;
 
 		/**
-		 * @member {object|null} data
+		 * @member {object|null} userData
 		 */
 		this.userData = null;
+
+		/**
+		 * @member {array} eventHandlers
+		 */
+		this.eventHandlers = [];
 	}
 
 	/**
@@ -78,13 +83,14 @@ export class UserLoginStatus
 	}
 
 	/**
-	 * This will stop the timer.
+	 * This will stop the timer and clean up event listeners.
 	 *
 	 * @returns {void}
 	 */
 	stop()
 	{
 		ActionTimer.stop();
+		this.removeEvents();
 	}
 
 	/**
@@ -158,7 +164,23 @@ export class UserLoginStatus
 		{
 			// @ts-ignore
 			Events.on(...event);
+			this.eventHandlers.push(event);
 		}
+	}
+
+	/**
+	 * Removes event listeners for cleanup.
+	 *
+	 * @returns {void}
+	 */
+	removeEvents()
+	{
+		for (let event of this.eventHandlers)
+		{
+			// @ts-ignore
+			Events.off(...event);
+		}
+		this.eventHandlers = [];
 	}
 
 	/**
@@ -254,8 +276,11 @@ export class UserLoginStatus
 	 */
 	signIn()
 	{
-		this.data.set('userId', this.userData.id);
-		this.setStatus(STATES.ONLINE);
+		if (this.userData?.id)
+		{
+			this.data.set('userId', this.userData.id);
+			this.setStatus(STATES.ONLINE);
+		}
 	}
 
 	/**
@@ -266,5 +291,16 @@ export class UserLoginStatus
 	signOut()
 	{
 		this.setStatus(STATES.OFFLINE);
+	}
+
+	/**
+	 * Cleans up event listeners and timers.
+	 *
+	 * @returns {void}
+	 */
+	destroy()
+	{
+		this.stop();
+		ActionTimer.destroy?.();
 	}
 }
