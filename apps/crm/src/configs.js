@@ -34,12 +34,5 @@ export const Configs =
 	push: {
 		// TODO: Add your public key here
 		publicId: 'BLQ5dFCQWbjg4SwqEe1NNYm31aD4MMNXsflFsCc-TxbipA1eTqtX_XdJqpCGq8tTbqYtSCVJFLB4d0D4FOtTrS4'
-	},
-
-	/**
-	 * This will set the API endpoints for the user status.
-	 *
-	 * @type {string} userStatusApi
-	 */
-	userStatusApi: '/api/user/[[id]]/status',
+	}
 };
