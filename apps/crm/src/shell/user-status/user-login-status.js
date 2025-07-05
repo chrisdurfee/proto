@@ -1,5 +1,5 @@
-import { Events, State } from "@base-framework/base";
-import { UserStatus } from "../models/user-status.js";
+import { Data, Events, State } from "@base-framework/base";
+import { Configs } from "../../configs.js";
 import { ActionTimer } from "./action-timer.js";
 import { APP_STATE, STATES, STATE_ATTR } from "./state.js";
 
@@ -41,7 +41,7 @@ export class UserLoginStatus
 	 *
 	 * @param {string} apiUrl - The API endpoint URL.
 	 */
-	constructor(apiUrl = '/api/user/[[id]]/status')
+	constructor(apiUrl = Configs.userStatusApi)
 	{
 		/**
 		 * @member {string} apiUrl
@@ -111,7 +111,7 @@ export class UserLoginStatus
 	 */
 	setupData()
 	{
-		this.data = new UserStatus({
+		this.data = new Data({
 			status: STATES.OFFLINE,
 		});
 
