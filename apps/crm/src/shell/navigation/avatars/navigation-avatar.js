@@ -37,7 +37,8 @@ export const NavigationAvatar = Jot(
 	 */
 	after()
 	{
-		status.setup(app.data.user);
+		const DELAY = 1000;
+		setTimeout(() => status.setup(app.data.user), DELAY);
 	},
 
 	/**
