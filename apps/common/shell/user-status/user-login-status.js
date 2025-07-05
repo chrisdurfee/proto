@@ -1,5 +1,4 @@
 import { Data, Events, State } from "@base-framework/base";
-import { Configs } from "../../configs.js";
 import { ActionTimer } from "./action-timer.js";
 import { APP_STATE, STATES, STATE_ATTR } from "./state.js";
 
@@ -41,7 +40,7 @@ export class UserLoginStatus
 	 *
 	 * @param {string} apiUrl - The API endpoint URL.
 	 */
-	constructor(apiUrl = Configs.userStatusApi)
+	constructor(apiUrl = '/api/user/[[id]]/status')
 	{
 		/**
 		 * @member {string} apiUrl
