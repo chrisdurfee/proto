@@ -62,9 +62,9 @@ const resumeUserSession = () =>
 	setTimeout(() =>
 	{
 		const model = new AuthModel();
-		model.xhr.resume((response) =>
+		model.xhr.resume('', (response) =>
 		{
-			if (!response && !response.success)
+			if (!response || !response.success)
 			{
 				app.notify({
 					title: 'Error!',
@@ -72,6 +72,8 @@ const resumeUserSession = () =>
 					icon: Icons.warning,
 					type: 'destructive'
 				});
+				app.signOut();
+				return;
 			}
 
 			if (response.allowAccess === true)

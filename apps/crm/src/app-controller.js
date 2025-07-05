@@ -161,7 +161,7 @@ export class AppController
 	signOut()
 	{
 		this.data.user
-			.set(null)
+			.delete()
 			.store();
 
 		this.appShell.state.isSignedIn = false;
