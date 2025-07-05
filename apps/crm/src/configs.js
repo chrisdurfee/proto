@@ -41,5 +41,5 @@ export const Configs =
 	 *
 	 * @type {string} userStatusApi
 	 */
-	userStatusApi: '/api/user/status',
+	userStatusApi: '/api/user/[[id]]/status',
 };
