@@ -37,8 +37,7 @@ export const NavigationAvatar = Jot(
 	 */
 	after()
 	{
-		// TODO: uncomment to start status tracking
-		//status.setup(this.data);
+		status.setup(app.data.user);
 	},
 
 	/**
@@ -72,7 +71,6 @@ export const NavigationAvatar = Jot(
 	 */
 	destroy()
 	{
-		// TODO: uncomment to stop status tracking
-		//status.stop();
+		status.stop();
 	}
 });

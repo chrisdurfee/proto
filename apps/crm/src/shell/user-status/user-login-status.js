@@ -14,7 +14,7 @@ const sendRequest = (url, params) =>
 {
 	return fetch(url,
 	{
-		method: 'POST',
+		method: 'PATCH',
 		body: params,
 		headers: { 'Content-type': 'application/x-www-form-urlencoded' },
 		keepalive: true,
@@ -35,7 +35,7 @@ export class UserLoginStatus
 	 *
 	 * @param {string} apiUrl - The API endpoint URL.
 	 */
-	constructor(apiUrl = '/api/user-status')
+	constructor(apiUrl = '/api/user/[[id]]/status')
 	{
 		/**
 		 * @member {string} apiUrl
@@ -126,10 +126,14 @@ export class UserLoginStatus
 	setupEvents()
 	{
 		const events = [
-			['visibilitychange', document, () => {
-				if (!document.hidden) {
+			['visibilitychange', document, () =>
+			{
+				if (!document.hidden)
+				{
 					this.setOnline();
-				} else {
+				}
+				else
+				{
 					this.setOffline();
 				}
 			}],
@@ -199,7 +203,8 @@ export class UserLoginStatus
 			userId: data.userId,
 		}).toString();
 
-		sendRequest(this.apiUrl, params);
+		let url = this.apiUrl.replace('[[id]]', data.userId);
+		sendRequest(url, params);
 	}
 
 	/**
