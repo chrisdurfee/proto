@@ -101,12 +101,14 @@ class PasswordService
 			'sms' => null
 		];
 
-		if (!empty($user->mobile))
+		$mobile = $user->mobile;
+		if (!empty($mobile))
 		{
 			$result->sms = $this->textRequest($user, $requestId);
 		}
 
-		if (!empty($user->email))
+		$email = $user->email;
+		if (!empty($email))
 		{
 			$result->email = $this->emailRequest($user, $requestId);
 		}
@@ -239,12 +241,14 @@ class PasswordService
 			'sms' => null
 		];
 
-		if (!empty($user->mobile))
+		$mobile = $user->mobile;
+		if (!empty($mobile))
 		{
 			$result->sms = $this->textSuccess($user);
 		}
 
-		if (!empty($user->email))
+		$email = $user->email;
+		if (!empty($email))
 		{
 			$result->email = $this->emailSuccess($user);
 		}

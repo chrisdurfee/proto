@@ -24,7 +24,7 @@ class PasswordRequest extends Migration
 			$table->id();
 			$table->timestamps();
 			$table->int('user_id', 30);
-			$table->varchar('request_id', 255);
+			$table->varchar('request_id', 256);
 			$table->enum('status', 'pending', 'complete', 'expired', 'cancelled')->default('"pending"');
 
 			// Indexes
