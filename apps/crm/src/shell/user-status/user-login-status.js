@@ -8,17 +8,23 @@ import { APP_STATE, STATES, STATE_ATTR } from "./state.js";
  *
  * @param {string} url - The endpoint URL.
  * @param {string} params - The request parameters.
- * @returns {Promise} The fetch promise.
+ * @returns {object} The fetch promise and abort controller.
  */
 const sendRequest = (url, params) =>
 {
-	return fetch(url,
+	const controller = new AbortController();
+  	const signal = controller.signal;
+
+	const promise = fetch(url,
 	{
 		method: 'PATCH',
 		body: params,
 		headers: { 'Content-type': 'application/x-www-form-urlencoded' },
 		keepalive: true,
+		signal
 	});
+
+	return { promise, controller };
 };
 
 /**
@@ -61,6 +67,11 @@ export class UserLoginStatus
 		 * @member {array} eventHandlers
 		 */
 		this.eventHandlers = [];
+
+		/**
+		 * @member {AbortController|null} lastController
+		 */
+		this.lastController = null;
 	}
 
 	/**
@@ -211,6 +222,20 @@ export class UserLoginStatus
 	}
 
 	/**
+	 * Checks if there is a pending request and aborts it if necessary.
+	 *
+	 * @returns {void}
+	 */
+	checkLastController()
+	{
+		if (this.lastController)
+		{
+			this.lastController.abort();
+			this.lastController = null;
+		}
+	}
+
+	/**
 	 * Updates the user's status on the server.
 	 *
 	 * @param {string} status - The user's status.
@@ -218,15 +243,31 @@ export class UserLoginStatus
 	 */
 	setStatus(status)
 	{
-		const data = this.data.get();
+		this.checkLastController();
 
+		const data = this.data.get();
 		const params = new URLSearchParams({
 			status,
 			userId: data.userId,
 		}).toString();
 
 		let url = this.apiUrl.replace('[[id]]', data.userId);
-		sendRequest(url, params);
+		const { promise, controller } = sendRequest(url, params);
+
+		// Store the last controller for potential future use
+		this.lastController = controller;
+
+		// Handle the response
+		promise
+			.then((response) => null)
+			.finally(() =>
+			{
+				// clean up if this is still the “last” request
+				if (this.lastController === controller)
+				{
+					this.lastController = null;
+				}
+			});
 	}
 
 	/**
