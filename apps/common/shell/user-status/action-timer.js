@@ -12,7 +12,7 @@ import { APP_STATE, STATES, STATE_ATTR } from "./state.js";
  * @param {number} wait - The number of milliseconds to wait.
  * @returns {function} A debounced version of the callback.
  */
-const debounce = function(callBack, wait = 250)
+const debounce = function(callBack, wait = 10)
 {
 	let timer = null;
 
