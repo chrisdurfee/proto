@@ -1,7 +1,7 @@
 import { Div, Span } from "@base-framework/atoms";
 import { Component, Jot } from "@base-framework/base";
 import { Avatar, StatusIndicator } from "@base-framework/ui/molecules";
-import { UserLoginStatus } from "../../../../../common/shell/user-status/user-login-status.js";
+import { UserLoginStatus } from "../../user-status/user-login-status.js";
 
 /**
  * This will create the UserDetails molecule.

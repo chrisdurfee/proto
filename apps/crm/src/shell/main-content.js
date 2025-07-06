@@ -1,5 +1,6 @@
 import { Main } from '@base-framework/atoms';
 import { Atom } from '@base-framework/base';
+import { Heartbeat } from '../../../common/shell/heartbeat/heartbeat.js';
 import { modules } from '../modules/modules.js';
 import { AppControl } from './navigation/app-control.js';
 import { MobileHeader } from './navigation/mobile-header.js';
@@ -30,6 +31,7 @@ export const MainContent = () =>
 	const { routes, links: options } = modules;
 
 	return [
+		Heartbeat(),
 		MobileHeader(),
 
 		/**
