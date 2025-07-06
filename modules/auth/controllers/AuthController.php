@@ -228,7 +228,7 @@ class AuthController extends Controller
 			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
 		}
 
-		$this->updateUserStatus($user->id, UserStatus::OFFLINE->value, $req->ip());
+		$this->updateUserStatus($user, UserStatus::OFFLINE->value, $req->ip());
 		session()->destroy();
 
 		return $this->response(['message' => 'The user has been logged out successfully.']);

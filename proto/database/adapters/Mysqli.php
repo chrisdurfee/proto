@@ -388,11 +388,11 @@ class Mysqli extends Adapter
 	 * Deletes data from a table.
 	 *
 	 * @param string $tableName The table name.
-	 * @param int|array $id The ID or IDs to delete.
+	 * @param int|array|string $id The ID or IDs to delete.
 	 * @param string $idColumn The column representing the primary key.
 	 * @return bool True on success, false on failure.
 	 */
-	public function delete(string $tableName, int|array $id, string $idColumn = 'id') : bool
+	public function delete(string $tableName, int|array|string $id, string $idColumn = 'id') : bool
 	{
 		if (empty($id))
 		{

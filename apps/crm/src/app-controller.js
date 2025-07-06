@@ -160,13 +160,16 @@ export class AppController
 	 */
 	signOut()
 	{
-		this.data.user
-			.delete()
-			.store();
+		this.data.auth.xhr.logout('', () =>
+		{
+			this.data.user
+				.delete()
+				.store();
 
-		this.appShell.state.isSignedIn = false;
+			this.appShell.state.isSignedIn = false;
 
-		window.location = Configs.router.baseUrl;
+			window.location = Configs.router.baseUrl;
+		});
 	}
 
 	/**
