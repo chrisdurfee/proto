@@ -1,12 +1,12 @@
 import { Comment } from "@base-framework/atoms";
-import { Timer } from "./timer.js";
+import { PulseTimer } from "./pulse-timer.js";
 
 /**
  * This will set up a timer to check user
  * authentication every 15 minutes.
  */
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
-const timer = new Timer(FIFTEEN_MINUTES);
+const timer = new PulseTimer(FIFTEEN_MINUTES);
 
 /**
  * Heartbeat

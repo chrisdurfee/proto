@@ -68,14 +68,13 @@ const resumeUserSession = () =>
 				return;
 			}
 
-			if (response.allowAccess === true)
-			{
-				app.setUserData(response.user);
-			}
-			else
+			if (response.allowAccess === false)
 			{
 				app.signOut();
+				return;
 			}
+
+			app.setUserData(response.user);
 		});
 	}, DELAY);
 };

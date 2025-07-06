@@ -1,13 +1,12 @@
-
 /**
- * Timer
+ * PulseTimer
  *
  * This class is responsible for managing the timer mechanism
  *
  * It periodically checks if the user is still authenticated and
  * logs them out if their session has expired.
  */
-export class Timer
+export class PulseTimer
 {
 	/**
 	 * Timer constructor
@@ -35,7 +34,7 @@ export class Timer
 		this.timer = window.setInterval(() =>
 		{
 			this.verify();
-		}, DELAY);
+		}, 5000);
 	}
 
 	/**
@@ -66,7 +65,17 @@ export class Timer
 	 */
 	afterVerify(response)
 	{
-		if (response.allowAccess !== true)
+		if (!response)
+		{
+			return;
+		}
+
+		if (response.user)
+		{
+			app.setUserData(response.user);
+		}
+
+		if (response.allowAccess === false)
 		{
 			app.appShell.signOut();
 		}
