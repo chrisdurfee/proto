@@ -5,6 +5,7 @@ export default {
 	content: [
 		"./index.html",
 		"./src/**/*.{js,ts,jsx,tsx}",
+		"../common/**/*.{js,ts,jsx,tsx}",
 		"./node_modules/@base-framework/**/*.{js,ts,jsx,tsx}",
 	],
 	darkMode: 'media',

@@ -1,7 +1,7 @@
 {
-	"name": "@base-framework/next-app-shell",
+	"name": "crm",
 	"version": "0.1.2",
-	"description": "This is an example app that uses the base framework.",
+	"description": "This is the CRM application built with the Proto framework.",
 	"main": "/dist/main.js",
 	"type": "module",
 	"scripts": {
@@ -19,13 +19,6 @@
 	],
 	"author": "Chris Durfee",
 	"license": "ISC",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/chrisdurfee/next-app-shell.git"
-	},
-	"bugs": {
-		"url": "https://github.com/chrisdurfee/next-app-shell/issues"
-	},
 	"devDependencies": {
 		"autoprefixer": "^10.4.20",
 		"esbuild": "^0.25.0",
@@ -45,6 +38,5 @@
 	"files": [
 		"package.json",
 		"readme.md"
-	],
-	"homepage": "https://github.com/chrisdurfee/next-app-shell#readme"
+	]
 }
