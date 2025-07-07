@@ -34,7 +34,7 @@ export class PulseTimer
 		this.timer = window.setInterval(() =>
 		{
 			this.verify();
-		}, 5000);
+		}, DELAY);
 	}
 
 	/**
