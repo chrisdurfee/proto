@@ -70,14 +70,13 @@ export class PulseTimer
 			return;
 		}
 
-		if (response.user)
+		if (response.allowAccess === true)
 		{
 			app.setUserData(response.user);
 		}
-
-		if (response.allowAccess === false)
+		else
 		{
-			app.appShell.signOut();
+			app.signOut();
 		}
 	}
 }
