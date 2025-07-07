@@ -1,5 +1,5 @@
 /**
- * Config
+ * Configs
  *
  * This will set the app configs.
  *
