@@ -32,7 +32,7 @@ class EmailVerificationStorage extends Storage
 	 */
 	public function getByRequest(string $requestId, mixed $userId): ?object
 	{
-		$params = ['requestId' => $requestId, 'userId' => $userId];
+		$params = [$requestId, $userId];
 
 		return $this->select()
 			->where(
