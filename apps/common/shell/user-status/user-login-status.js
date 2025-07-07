@@ -259,6 +259,10 @@ export class UserLoginStatus
 		// Handle the response
 		promise
 			.then((response) => null)
+			.catch(err =>
+			{
+				if (err.name === 'AbortError') return;
+			})
 			.finally(() =>
 			{
 				// clean up if this is still the “last” request
