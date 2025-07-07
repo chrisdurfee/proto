@@ -260,8 +260,14 @@ class AuthController extends Controller
 			return $this->error('The user is not enabled.', HttpStatus::FORBIDDEN->value);
 		}
 
-		// refresh session ID to prevent fixation
-		session()->refreshId();
+		/**
+		 * Check if the connection is still active before refreshing the session ID.
+		 */
+		if(connection_aborted() === false)
+		{
+			// refresh session ID to prevent fixation
+			session()->refreshId();
+		}
 
 		return $this->permit($user, $req->ip());
 	}
