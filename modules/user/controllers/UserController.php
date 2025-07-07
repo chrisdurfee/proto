@@ -89,7 +89,7 @@ class UserController extends ResourceController
 			return $this->error('Invalid user ID.');
 		}
 
-		if (!$gate->isValid($request->input('requestId'), $userId))
+		if (!$gate->isValid($request->input('token'), $userId))
 		{
 			return $this->error('Invalid request.');
 		}

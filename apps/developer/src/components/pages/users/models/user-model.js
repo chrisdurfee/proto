@@ -38,7 +38,7 @@ export const UserModel = Model.extend({
 		{
 			const data = this.model.get();
 			let params = {
-				requestId: instanceParams.requestId
+				token: instanceParams.token
 			};
 
 			return this._patch(`${data.id}/verify-email`, params, instanceParams, callBack);

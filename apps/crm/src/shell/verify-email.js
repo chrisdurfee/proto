@@ -27,7 +27,7 @@ export const verifyEmail = () =>
 	const urlParams = Strings.parseQueryString();
 	const data = {
 		// @ts-ignore
-		requestId: urlParams.requestId
+		token: urlParams.token
 	};
 
 	request(data, (response) =>
@@ -40,8 +40,8 @@ export const verifyEmail = () =>
 
 		app.notify({
 			icon: Icons.circleX,
-			title: 'Invalid Code',
-			description: response.message ?? 'The provided code is incorrect.',
+			title: 'Invalid Email Verification Token',
+			description: response.message ?? 'The provided verification token is incorrect.',
 			type: 'destructive'
 		});
 	});

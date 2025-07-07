@@ -161,7 +161,7 @@ class NewUserService
 	 */
 	protected function buildVerifyUrl(string $token, mixed $userId): string
 	{
-		return envUrl() . '/verify?token=' . $token . '&userId=' . (string)$userId;
+		return envUrl() . '/verify-email?token=' . $token . '&userId=' . (string)$userId;
 	}
 
 	/**
