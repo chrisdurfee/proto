@@ -16,7 +16,7 @@ export const Configs =
 	 */
 	router:
 	{
-		baseUrl: '/crm/',
+		baseUrl: '/',
 		title: 'CRM'
 	},
 
