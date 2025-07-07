@@ -60,7 +60,7 @@ export const GetStartedPage = () =>
 				H4({ class: 'text-lg font-bold' }, 'About Proto'),
 				P(
 					{ class: 'text-muted-foreground' },
-					`Proto is a modular monolith framework inspired by Dashr. It allows scalable server applications to be created quickly and securely.
+					`Proto is a modular monolith framework. It allows scalable server applications to be created quickly and securely.
 					 The framework auto-bootstraps whenever you interact with a module, router, or controller, so minimal setup is required.`
 				),
 				P(
@@ -103,7 +103,7 @@ composer update`
 					`A typical Proto application has the following structure:`
 				),
 				CodeBlock(
-`common/          // Shared code (replaces the old "App" directory from Dashr)
+`common/          // Shared code
 modules/         // Each major feature or domain is a self-contained module
 proto/           // Core framework code (do not modify)
 public/          // Public-facing files (including the developer app in /public/developer)
