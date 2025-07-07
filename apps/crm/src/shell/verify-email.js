@@ -18,6 +18,13 @@ const request = (data, callBack) =>
 };
 
 /**
+ * Navigate to the home page.
+ *
+ * @returns {void}
+ */
+const navigateHome = () => app.navigate('/', null, true);
+
+/**
  * Verify the user's email address.
  *
  * @returns {void}
@@ -44,6 +51,7 @@ export const verifyEmail = () =>
 			description: response.message ?? 'The provided verification token is incorrect.',
 			type: 'destructive'
 		});
+		navigateHome();
 	});
 };
 
@@ -60,6 +68,6 @@ const showDialog = () =>
 		title: 'Email Verified',
 		description: 'Your email has been verified successfully.',
 		confirmTextLabel: 'Continue',
-		//onClose: () => app.navigate('/', null, true)
+		onClose: () => navigateHome()
 	}).open();
 };
