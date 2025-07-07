@@ -1,6 +1,7 @@
 import { Div } from '@base-framework/atoms';
 import { Atom, Component, Jot } from '@base-framework/base';
-import { NotificationContainer } from "@base-framework/ui/molecules";
+import { NotificationContainer } from '@base-framework/ui/molecules';
+import { verifyEmail } from './verify-email.js';
 
 /**
  * This will create the app container.
@@ -45,6 +46,13 @@ export const AppShell = Jot(
 		return Shell([
 			Div({
 				class: 'flex flex-auto flex-col',
+				route: {
+					uri: '/verify-email*',
+					callBack: () =>
+					{
+						verifyEmail();
+					}
+				},
 				switch: [
 					{
 						uri: '/sign-up*',
