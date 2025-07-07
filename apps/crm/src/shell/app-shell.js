@@ -47,11 +47,8 @@ export const AppShell = Jot(
 			Div({
 				class: 'flex flex-auto flex-col',
 				route: {
-					uri: '/verify-email*',
-					callBack: () =>
-					{
-						verifyEmail();
-					}
+					uri: 'verify-email*',
+					callBack: () => verifyEmail()
 				},
 				switch: [
 					{
