@@ -83,7 +83,7 @@ class UserController extends ResourceController
 		EmailVerificationGate $gate = new EmailVerificationGate()
 	): object
 	{
-		$userId = $request->getInt('userId');
+		$userId = $this->getResourceId($request);
 		if ($userId === null)
 		{
 			return $this->error('Invalid user ID.');
