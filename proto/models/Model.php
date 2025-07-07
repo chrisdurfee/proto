@@ -468,6 +468,29 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+	 * Tell PHP whether $model->foo should be considered "set"
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public function __isset(string $key): bool
+	{
+		$camel = Strings::camelCase($key);
+		return ($this->data->get($camel) !== null);
+	}
+
+	/**
+	 * This will remove the specified value from the model's data.
+	 *
+	 * @param string $key
+	 * @return void
+	 */
+	public function __unset(string $key): void
+	{
+		$this->data->unset(Strings::camelCase($key));
+	}
+
+	/**
 	 * Determine if a given key corresponds to a relationship method.
 	 *
 	 * @param string $key Method name.
