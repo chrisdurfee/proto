@@ -7,7 +7,7 @@ importScripts('./worker/cache-controller.js', './worker/service.js', './worker/p
  * @const
  * @type {string} appName
  */
-const APP_NAME = 'team',
+const APP_NAME = 'developer',
 
 /**
  * This is the version of the app. This is used to create the cache

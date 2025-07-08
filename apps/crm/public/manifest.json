@@ -1,7 +1,7 @@
 {
-	"short_name": "Base Example",
-	"name": "Base Example",
-	"description": "This is an example app that uses the base framework.",
+	"short_name": "CRM",
+	"name": "CRM",
+	"description": "This is the proto CRM application.",
 	"icons": [
 		{
 			"src": "./images/icons/icon-192.png",

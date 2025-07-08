@@ -7,7 +7,7 @@ importScripts('./worker/cache-controller.js', './worker/service.js', './worker/p
  * @const
  * @type {string} appName
  */
-const APP_NAME = 'base-example',
+const APP_NAME = 'crm',
 
 /**
  * This is the version of the app. This is used to create the cache
@@ -15,7 +15,7 @@ const APP_NAME = 'base-example',
  * @const
  * @type {string} version
  */
-version = '0.0.154';
+version = '0.0.1';
 
 /**
  * This will add these files to cache. Add any files you want to
