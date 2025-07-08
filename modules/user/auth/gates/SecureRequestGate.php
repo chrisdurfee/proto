@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
-namespace Modules\Auth\Auth\Gates;
+namespace Modules\User\Auth\Gates;
 
-use Modules\Auth\Models\SecureRequest;
+use Modules\User\Models\SecureRequest;
 use Proto\Auth\Gates\Gate;
 
 /**

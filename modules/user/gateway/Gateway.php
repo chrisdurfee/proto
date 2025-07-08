@@ -3,6 +3,7 @@ namespace Modules\User\Gateway;
 
 use Modules\User\Models\User;
 use Modules\User\Services\User\NewUserService;
+use Modules\User\Gateway\SecureRequestGateway;
 
 /**
  * Gateway
@@ -96,6 +97,16 @@ class Gateway
 			'status' => $status
 		]);
 		return $model->updateStatus();
+	}
+
+	/**
+	 * This will return the secure request gateway.
+	 *
+	 * @return SecureRequestGateway
+	 */
+	public function secureRequest(): SecureRequestGateway
+	{
+		return new SecureRequestGateway();
 	}
 
 	/**

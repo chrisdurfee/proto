@@ -2,6 +2,7 @@
 namespace Modules\User\Controllers;
 
 use Modules\User\Auth\Gates\EmailVerificationGate;
+use Modules\User\Auth\Gates\SecureRequestGate;
 use Modules\User\Models\User;
 use Modules\User\Auth\Policies\UserPolicy;
 use Modules\User\Services\User\PasswordUpdateService;
@@ -81,6 +82,43 @@ class UserController extends ResourceController
 	public function verifyEmail(
 		Request $request,
 		EmailVerificationGate $gate = new EmailVerificationGate()
+	): object
+	{
+		$userId = $this->getResourceId($request);
+		if ($userId === null)
+		{
+			return $this->error('Invalid user ID.');
+		}
+
+		if (!$gate->isValid($request->input('token'), $userId))
+		{
+			return $this->error('Invalid request.');
+		}
+
+		/**
+		 * This will udate the request status.
+		 */
+		$gate->updateRequest();
+
+		/**
+		 * This will add the email verified date to the user.
+		 */
+		return parent::update((object)[
+			'id' => $userId,
+			'emailVerifiedAt' => date('Y-m-d H:i:s')
+		]);
+	}
+
+	/**
+	 * This will unsubscribe the user.
+	 *
+	 * @param Request $request
+	 * @param SecureRequestGate $gate
+	 * @return object
+	 */
+	public function unsubscribe(
+		Request $request,
+		SecureRequestGate $gate = new SecureRequestGate()
 	): object
 	{
 		$userId = $this->getResourceId($request);

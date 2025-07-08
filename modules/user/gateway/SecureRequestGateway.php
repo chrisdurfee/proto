@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
-namespace Modules\Auth\Gateway;
+namespace Modules\User\Gateway;
 
-use Modules\Auth\Auth\Gates\SecureRequestGate;
+use Modules\User\Auth\Gates\SecureRequestGate;
 
 /**
  * SecureRequestGateway

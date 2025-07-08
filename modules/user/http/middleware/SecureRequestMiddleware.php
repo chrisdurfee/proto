@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
-namespace Modules\Auth\Http\Middleware;
+namespace Modules\User\Http\Middleware;
 
 use Proto\Http\Router\Request;
-use Modules\Auth\Auth\Gates\SecureRequestGate;
+use Modules\User\Auth\Gates\SecureRequestGate;
 use Proto\Http\Router\Response;
 use Proto\Utils\Format\JsonFormat;
 

@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
-namespace Modules\Auth\Models;
+namespace Modules\User\Models;
 
-use Modules\Auth\Storage\SecureRequestStorage;
+use Modules\User\Storage\SecureRequestStorage;
 use Proto\Models\Model;
 
 /**

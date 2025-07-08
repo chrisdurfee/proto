@@ -11,5 +11,6 @@ use Modules\User\Controllers\UserController;
 router()
 	->patch('user/:id/status', [UserController::class, 'updateStatus'])
 	->patch('user/:id/verify-email', [UserController::class, 'verifyEmail'])
+	->patch('user/:id/unsubscribe', [UserController::class, 'unsubscribe'])
 	->patch('user/:id/update-credentials', [UserController::class, 'updateCredentials'])
 	->resource('user', UserController::class);
