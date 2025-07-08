@@ -56,6 +56,20 @@ export class AppController
 	 */
 	setData()
 	{
+		this.data = {
+			user: this.setupUserData(),
+			auth: new AuthModel()
+		};
+	}
+
+	/**
+	 * This will setup the user data.
+	 *
+	 * @protected
+	 * @returns {object}
+	 */
+	setupUserData()
+	{
 		/**
 		 * This will set the user data to save to the local storage
 		 * and resume the user session.
@@ -63,11 +77,7 @@ export class AppController
 		const user = new UserData();
 		user.setKey("user");
 		user.resume();
-
-		this.data = {
-			user,
-			auth: new AuthModel()
-		};
+		return user;
 	}
 
 	/**
@@ -160,13 +170,12 @@ export class AppController
 	 */
 	signOut()
 	{
+		this.appShell.state.isSignedIn = false;
 		this.data.auth.xhr.logout('', () =>
 		{
 			this.data.user
 				.delete()
 				.store();
-
-			this.appShell.state.isSignedIn = false;
 
 			window.location = Configs.router.baseUrl;
 		});

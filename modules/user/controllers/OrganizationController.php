@@ -28,4 +28,16 @@ class OrganizationController extends Controller
 	{
 		parent::__construct();
 	}
+
+	/**
+	 * This will return the validation rules for the model.
+	 *
+	 * @return array<string, string>
+	 */
+	protected function validate(): array
+	{
+		return [
+			'name' => 'string:255|required'
+		];
+	}
 }

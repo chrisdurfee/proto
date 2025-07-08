@@ -41,7 +41,7 @@ class WebPushController extends Controller
 	 * @param Request $request
 	 * @return object|null
 	 */
-	public function getRequestItem(Request $request): ?object
+	protected function getRequestItem(Request $request): ?object
 	{
 		$item = $request->json('item');
 		if (!isset($item))
@@ -67,7 +67,7 @@ class WebPushController extends Controller
 	protected function updateNotificationPreference(mixed $userId, int $status = 1): bool
 	{
 		$this->notificationPreference->userId = $userId;
-		$this->notificationPreference->status = $status;
+		$this->notificationPreference->allowPush = $status;
 
 		return $this->notificationPreference->setup();
 	}
