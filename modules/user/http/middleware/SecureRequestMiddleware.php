@@ -24,8 +24,22 @@ class SecureRequestMiddleware
 	 */
 	public function handle(Request $request, callable $next): mixed
 	{
+		$requestId = $request->input('requestId') ?? $request->input('token');
+		if (!isset($requestId))
+		{
+			self::exitWithResponse();
+			return false;
+		}
+
+		$userId = $request->params()->id ?? $request->input('userId') ?? null;
+		if (!isset($userId))
+		{
+			self::exitWithResponse();
+			return false;
+		}
+
 		$gate = new SecureRequestGate();
-		if ($gate->isValid($request->input('requestId'), $request->userId()) === false)
+		if ($gate->isValid($requestId, $userId) === false)
 		{
 			self::exitWithResponse();
 		}

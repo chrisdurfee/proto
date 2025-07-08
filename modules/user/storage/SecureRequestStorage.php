@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\Auth\Storage;
+namespace Modules\User\Storage;
 
 use Proto\Storage\Storage;
 
@@ -19,7 +19,7 @@ class SecureRequestStorage extends Storage
 	 */
 	protected static function createRequestId(): string
 	{
-		$length = 128;
+		$length = 64;
 		return bin2hex(random_bytes($length));
 	}
 

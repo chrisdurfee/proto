@@ -136,6 +136,17 @@ class UserPolicy extends Policy
 	}
 
 	/**
+	 * Determines if the user can unsubscribe.
+	 *
+	 * @param Request $request The request containing the user ID.
+	 * @return bool True if the user can unsubscribe, otherwise false.
+	 */
+	public function unsubscribe(Request $request): bool
+	{
+		return true;
+	}
+
+	/**
 	 * Determines if the user can update their credentials.
 	 *
 	 * @param Request $request

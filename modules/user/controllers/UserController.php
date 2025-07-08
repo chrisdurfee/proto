@@ -2,12 +2,12 @@
 namespace Modules\User\Controllers;
 
 use Modules\User\Auth\Gates\EmailVerificationGate;
-use Modules\User\Auth\Gates\SecureRequestGate;
 use Modules\User\Models\User;
 use Modules\User\Auth\Policies\UserPolicy;
 use Modules\User\Services\User\PasswordUpdateService;
 use Proto\Controllers\ResourceController;
 use Proto\Http\Router\Request;
+use Modules\User\Models\NotificationPreference;
 
 /*
  * UserController
@@ -113,36 +113,44 @@ class UserController extends ResourceController
 	 * This will unsubscribe the user.
 	 *
 	 * @param Request $request
-	 * @param SecureRequestGate $gate
 	 * @return object
 	 */
 	public function unsubscribe(
-		Request $request,
-		SecureRequestGate $gate = new SecureRequestGate()
+		Request $request
 	): object
 	{
 		$userId = $this->getResourceId($request);
-		if ($userId === null)
+		$data = (object)[
+			'userId' => $userId,
+		];
+
+		$allowEmail = $request->getInt('allowEmail') ?? 0;
+		if (isset($allowEmail))
 		{
-			return $this->error('Invalid user ID.');
+			$data->allowEmail = $allowEmail;
 		}
 
-		if (!$gate->isValid($request->input('token'), $userId))
+		$allowSms = $request->getInt('allowSms');
+		if (isset($allowSms))
 		{
-			return $this->error('Invalid request.');
+			$data->allowSms = $allowSms;
 		}
 
-		/**
-		 * This will udate the request status.
-		 */
-		$gate->updateRequest();
+		$allowPush = $request->getInt('allowPush');
+		if (isset($allowPush))
+		{
+			$data->allowPush = $allowPush;
+		}
 
 		/**
 		 * This will add the email verified date to the user.
 		 */
-		return parent::update((object)[
-			'id' => $userId,
-			'emailVerifiedAt' => date('Y-m-d H:i:s')
+		$result = NotificationPreference::put((object)[
+			'userId' => $userId,
+		]);
+
+		return (!$result)? $this->error('Failed to unsubscribe user.') : $this->response([
+			'message' => 'User unsubscribed successfully.'
 		]);
 	}
 
