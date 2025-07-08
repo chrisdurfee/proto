@@ -12,6 +12,6 @@ use Modules\User\Http\Middleware\SecureRequestMiddleware;
 router()
 	->patch('user/:id/status', [UserController::class, 'updateStatus'])
 	->patch('user/:id/verify-email', [UserController::class, 'verifyEmail'])
-	->patch('user/:id/unsubscribe', [UserController::class, 'unsubscribe'], [ SecureRequestMiddleware::class ])
+	->all('user/:id/unsubscribe', [UserController::class, 'unsubscribe'], [ SecureRequestMiddleware::class ])
 	->patch('user/:id/update-credentials', [UserController::class, 'updateCredentials'])
 	->resource('user', UserController::class);

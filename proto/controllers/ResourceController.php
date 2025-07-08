@@ -201,9 +201,6 @@ abstract class ResourceController extends Controller
 			return $this->error('Invalid item data.');
 		}
 
-		$model = $this->model($data);
-		$this->getAddUserData($model);
-
 		return $this->addItem($data);
 	}
 
@@ -219,7 +216,6 @@ abstract class ResourceController extends Controller
 	{
 		$model = $this->model($data);
 		$this->getAddUserData($model);
-		$this->getUpdateUserData($model);
 
 		return $model->add()
 			? $this->response(['id' => $model->id])

@@ -45,31 +45,73 @@ class UserController extends ResourceController
 		return [
 			'firstName' => 'string:255|required',
 			'lastName' => 'string:255|required',
-			'email' => 'email:255|required'
+			'email' => 'email:255|required',
+			'displayName' => 'string:150',
+			'image' => 'string:150'
 		];
 	}
 
 	/**
-	 * Adds a model entry.
+	 * Updates a model item.
 	 *
-	 * @param Request $request The request object.
-	 * @return object The response.
+	 * This method initializes the model with the provided data and adds user data for updates.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return object The response object.
 	 */
-	public function add(Request $request): object
+	protected function addItem(object $data): object
 	{
-		$data = $this->getRequestItem($request);
-		if (empty($data) || empty($data->username))
-		{
-			return $this->error('No item provided.');
-		}
-
-		$isTaken = User::isUsernameTaken($data->username ?? '');
-		if ($isTaken)
+		/**
+		 * Check if the username is taken.
+		 */
+		if (User::isUsernameTaken($data->username ?? ''))
 		{
 			return $this->error('Username is already taken.');
 		}
 
-		return parent::add($request);
+		return parent::addItem($data);
+	}
+
+	/**
+	 * Restricts the data that can be updated.
+	 *
+	 * @param object $data The data to restrict.
+	 * @return void
+	 */
+	protected function restrictData(object &$data): void
+	{
+		$fields = ['username', 'password', 'emailVerifiedAt', 'acceptedTermsAt', 'trialMode', 'trialDaysLeft', 'followerCount', 'deletedAt'];
+		foreach ($fields as $field)
+		{
+			unset($data->$field);
+		}
+	}
+
+	/**
+	 * Updates a model item.
+	 *
+	 * This method initializes the model with the provided data and adds user data for updates.
+	 *
+	 * @param object $data The data to set up the model with.
+	 * @return object The response object.
+	 */
+	protected function updateItem(object $data): object
+	{
+		if (!auth()->permission->hasPermission('user.edit'))
+		{
+			/**
+			 * Restrict admin controls.
+			 */
+			unset($data->enabled);
+		}
+
+		/**
+		 * Restrict the username, password, and other sensitive fields from being updated. This
+		 * should be done elsewhere to prevent unauthorized changes.
+		 */
+		$this->restrictData($data);
+
+		return parent::updateItem($data);
 	}
 
 	/**
@@ -96,16 +138,39 @@ class UserController extends ResourceController
 		}
 
 		/**
-		 * This will udate the request status.
+		 * This will add the email verified date to the user.
 		 */
-		$gate->updateRequest();
+		$response = parent::update((object)[
+			'id' => $userId,
+			'emailVerifiedAt' => date('Y-m-d H:i:s')
+		]);
 
+		if ($response->success)
+		{
+			/**
+			 * This will update the request status.
+			 */
+			$gate->updateRequest();
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Update the user's notification preferences.
+	 *
+	 * @param object $data
+	 * @return object
+	 */
+	protected function updateNotificationPreferences(object $data): object
+	{
 		/**
 		 * This will add the email verified date to the user.
 		 */
-		return parent::update((object)[
-			'id' => $userId,
-			'emailVerifiedAt' => date('Y-m-d H:i:s')
+		$result = NotificationPreference::put($data);
+
+		return (!$result)? $this->error('Failed to unsubscribe user.') : $this->response([
+			'message' => 'User unsubscribed successfully.'
 		]);
 	}
 
@@ -142,16 +207,7 @@ class UserController extends ResourceController
 			$data->allowPush = $allowPush;
 		}
 
-		/**
-		 * This will add the email verified date to the user.
-		 */
-		$result = NotificationPreference::put((object)[
-			'userId' => $userId,
-		]);
-
-		return (!$result)? $this->error('Failed to unsubscribe user.') : $this->response([
-			'message' => 'User unsubscribed successfully.'
-		]);
+		return $this->updateNotificationPreferences($data);
 	}
 
 	/**

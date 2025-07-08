@@ -28,4 +28,17 @@ class RoleController extends Controller
 	{
 		parent::__construct();
 	}
+
+	/**
+	 * This will return the validation rules for the model.
+	 *
+	 * @return array<string, string>
+	 */
+	protected function validate(): array
+	{
+		return [
+			'name' => 'string:100|required',
+			'slug' => 'string:100|required'
+		];
+	}
 }
