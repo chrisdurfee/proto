@@ -200,7 +200,7 @@ HTML;
 		$year = date('Y');
 		$company = env('siteName');
 		$address = env('companyAddress');
-		$unsubscribeUrl = env('unsubscribeUrl');
+		$unsubscribeUrl = $this->get('unsubscribeUrl') ?? '';
 
 		return <<<HTML
 	<tr>
