@@ -3,6 +3,7 @@ namespace Proto\Dispatch\Controllers;
 
 use Proto\Dispatch\Email\Template;
 use Proto\Dispatch\Email;
+use Proto\Dispatch\Email\Unsubscribe\EmailHelper;
 use Proto\Dispatch\Response;
 
 /**
@@ -55,6 +56,7 @@ class EmailController extends Controller
 	 */
 	public static function enqueue(object $settings, ?object $data = null): object
 	{
+		$data = self::setEmailData($data, $settings);
 		$template = self::createEmail($settings->template, $data);
 		$email = env('email');
 
@@ -70,6 +72,41 @@ class EmailController extends Controller
 	}
 
 	/**
+	 * Sets the public unsubscribe URL.
+	 *
+	 * @param string $email
+	 * @return string
+	 */
+	protected static function setPublicUnsubscribeUrl(string $email): string
+	{
+		$params = EmailHelper::getUnsubscribeUrlParams($email);
+		if (!$params)
+		{
+			return '';
+		}
+
+		$baseUrl = "/email-unsubscribe";
+		return envUrl() . $baseUrl . $params;
+	}
+
+	/**
+	 * Sets the email data.
+	 *
+	 * @param object $data
+	 * @param object $settings
+	 * @return object
+	 */
+	protected static function setEmailData(object &$data, object $settings): object
+	{
+		/**
+		 * We want to add the public unsubscribe URL to the email data.
+		 */
+		$data = (is_object($data) ? $data : new \stdClass());
+		$data->unsubscribeUrl = static::setPublicUnsubscribeUrl($settings->to);
+		return $data;
+	}
+
+	/**
 	 * Sends an email.
 	 *
 	 * @param object $settings The email settings.
@@ -78,6 +115,8 @@ class EmailController extends Controller
 	 */
 	public static function dispatch(object $settings, ?object $data = null): Response
 	{
+		$data = self::setEmailData($data, $settings);
+
 		$template = $settings->compiledTemplate ?? self::createEmail($settings->template, $data);
 		$settings = self::getEmailDefaults($settings);
 
