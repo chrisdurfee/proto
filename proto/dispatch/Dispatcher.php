@@ -70,11 +70,6 @@ class Dispatcher
 	 */
 	public static function email(object $settings, ?object $data = null): Response
 	{
-		if (!isset($data->unsubscribeUrl))
-		{
-			$data->unsubscribeUrl = EmailHelper::createUnsubscribeUrl($data->to);
-		}
-
 		if (isset($settings->queue))
 		{
 			Enqueuer::email($settings, $data);
