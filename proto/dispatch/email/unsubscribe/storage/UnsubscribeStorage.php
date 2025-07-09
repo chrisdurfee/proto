@@ -36,7 +36,7 @@ class UnsubscribeStorage extends Storage
 
 		return $this->select()
 			->where(
-				'requestId = ?',
+				'request_id = ?',
 				'email = ?'
 			)
 			->first($params);

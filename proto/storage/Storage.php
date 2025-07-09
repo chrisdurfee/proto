@@ -502,8 +502,9 @@ class Storage extends TableStorage
 	 */
 	public function search(string $search = ''): array
 	{
+		$idKey = $this->model->getIdKeyName();
 		return $this->select()
-			->where("{$this->alias}.id = ?")
+			->where("{$this->alias}.{$idKey} = ?")
 			->limit(0, 20)
 			->fetch([$search]);
 	}
@@ -516,8 +517,9 @@ class Storage extends TableStorage
 	 */
 	public function get(mixed $id): ?object
 	{
+		$idKey = $this->model->getIdKeyName();
 		return $this->select()
-			->where("{$this->alias}.id = ?")
+			->where("{$this->alias}.{$idKey} = ?")
 			->first([$id]);
 	}
 

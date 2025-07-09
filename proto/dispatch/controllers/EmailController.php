@@ -74,10 +74,10 @@ class EmailController extends Controller
 	/**
 	 * Sets the public unsubscribe URL.
 	 *
-	 * @param string $email
+	 * @param ?string $email
 	 * @return string
 	 */
-	protected static function setPublicUnsubscribeUrl(string $email): string
+	protected static function setPublicUnsubscribeUrl(?string $email): string
 	{
 		$params = EmailHelper::getUnsubscribeUrlParams($email);
 		if (!$params)
@@ -92,11 +92,11 @@ class EmailController extends Controller
 	/**
 	 * Sets the email data.
 	 *
-	 * @param object $data
+	 * @param object|null $data
 	 * @param object $settings
 	 * @return object
 	 */
-	protected static function setEmailData(object &$data, object $settings): object
+	protected static function setEmailData(?object &$data, object $settings): object
 	{
 		/**
 		 * We want to add the public unsubscribe URL to the email data.
