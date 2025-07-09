@@ -53,8 +53,8 @@ class EmailHelper
 			return null;
 		}
 
-		$baseUrl = "/user/unsubscribe";
-		return envUrl() . $baseUrl . $params;
+		$baseUrl = "/api/user/unsubscribe";
+		return 'https://' . envUrl() . $baseUrl . $params;
 	}
 
 	/**

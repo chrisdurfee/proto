@@ -41,9 +41,9 @@ class UnsubscribeService
 	 * Get the user by email.
 	 *
 	 * @param string $email
-	 * @return User|null
+	 * @return object|null
 	 */
-	protected function getUserByEmail(string $email): ?User
+	protected function getUserByEmail(string $email): ?object
 	{
 		return User::getByEmail($email);
 	}
@@ -79,13 +79,13 @@ class UnsubscribeService
 			$data->allowEmail = $allowEmail;
 		}
 
-		$allowSms = $settings->allowSms ?? 0;
+		$allowSms = $settings->allowSms ?? null;
 		if (isset($allowSms))
 		{
 			$data->allowSms = $allowSms;
 		}
 
-		$allowPush = $settings->allowPush ?? 0;
+		$allowPush = $settings->allowPush ?? null;
 		if (isset($allowPush))
 		{
 			$data->allowPush = $allowPush;

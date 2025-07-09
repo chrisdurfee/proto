@@ -42,7 +42,7 @@ class EmailController extends Controller
 			'from' => $settings->from ?? $email->default,
 			'fromName' => $settings->fromName ?? $email->fromName,
 			'subject' => $settings->subject,
-			'unsubscribeUrl' => $settings->unsubscribeUrl ?? '',
+			'unsubscribeUrl' => $settings->unsubscribeUrl ?? EmailHelper::createUnsubscribeUrl($settings->to),
 			'attachments' => $settings->attachments ?? null
 		];
 	}
@@ -66,7 +66,7 @@ class EmailController extends Controller
 			'fromName' => $settings->fromName ?? $email->fromName,
 			'subject' => $settings->subject,
 			'message' => (string) $template,
-			'unsubscribeUrl' => $settings->unsubscribeUrl ?? '',
+			'unsubscribeUrl' => $settings->unsubscribeUrl ?? EmailHelper::createUnsubscribeUrl($settings->to),
 			'attachments' => $settings->attachments ?? null
 		];
 	}
@@ -86,7 +86,7 @@ class EmailController extends Controller
 		}
 
 		$baseUrl = "/email-unsubscribe";
-		return envUrl() . $baseUrl . $params;
+		return 'https://' . envUrl() . $baseUrl . $params;
 	}
 
 	/**
