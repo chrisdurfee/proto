@@ -1,4 +1,5 @@
 import { Div, OnState } from '@base-framework/atoms';
+import { ErrorSection } from './sections/error-section copy.js';
 import { SuccessSection } from './sections/success-section copy.js';
 import { VerifyingSection } from './sections/verifying-section copy.js';
 import { STEPS } from './steps.js';
@@ -18,7 +19,7 @@ export const PageStepContainer = () =>
                 case STEPS.SUCCESS:
                     return SuccessSection();
                 case STEPS.ERROR:
-                    return VerifyingSection();
+                    return ErrorSection();
                 default:
                     return VerifyingSection();
             }
