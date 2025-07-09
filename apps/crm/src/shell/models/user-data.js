@@ -28,6 +28,23 @@ export const UserData = Model.extend({
 			return this._patch(`${data.id}/update-credentials`, params, instanceParams, callBack);
 		},
 
+		/**
+		 * Unsubscribe a user from email notifications.
+		 *
+		 * @param {object} instanceParams - The instance parameters.
+		 * @param {function} callBack - The callback function.
+		 */
+		unsubscribe(instanceParams, callBack)
+		{
+			const data = this.model.get();
+			let params = {
+				email: data.email,
+				requestId: instanceParams.requestId
+			};
+
+			return this._patch(`unsubscribe`, params, instanceParams, callBack);
+		},
+
         /**
 		 * Verify a user's email.
 		 *

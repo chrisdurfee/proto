@@ -1,4 +1,6 @@
+import { Strings } from '@base-framework/base';
 import { FullscreenPage } from '@base-framework/ui/pages';
+import { UserData } from '../models/user-data.js';
 import { PageStepContainer } from './page-step-container.js';
 import { STEPS } from './steps.js';
 
@@ -17,24 +19,18 @@ const PageProps =
 {
 	/**
 	 * @function setupStates
-	 * @description
-	 *  Defines the initial state values for the sign-up page.
 	 *
-	 * @returns {object} The initial state (with step = WELCOME).
+	 * @returns {object}
 	 */
 	setupStates()
 	{
 		return {
-			step: STEPS.WELCOME,
-			next: true,
-			previous: false
+			step: STEPS.VERIFYING
 		};
 	},
 
 	/**
 	 * @function showStep
-	 * @description
-	 *  Updates the `step` state to a new step key.
 	 *
 	 * @param {string} step - One of the STEPS constants.
 	 */
@@ -44,77 +40,40 @@ const PageProps =
 		this.state.step = step;
 	},
 
-	/**
-	 * This will get the next step.
-	 *
-	 * @returns {string|null}
-	 */
-	getNextStep()
-	{
-		const values = getStepValues();
-		// @ts-ignore
-		const currentStep = this.state.step;
-		const stepIndex = values.indexOf(currentStep);
+    /**
+     * Unsubscribes the user from email notifications.
+     *
+     * @returns {void}
+     */
+    unsubscribe()
+    {
+        const params = Strings.parseQueryString();
+        const model = new UserData({
+            // @ts-ignore
+            email: params.email
+        });
 
-		const result = values[stepIndex + 1];
-		if (result)
-		{
-			this.state.previous = true;
-			return result;
+        model.xhr.unsubscribe(params, (response) =>
+        {
+            if (!response || !response.success)
+            {
+                this.showStep(STEPS.ERROR);
+                return;
+            }
 
-		}
+            this.showStep(STEPS.SUCCESS);
+        });
+    },
 
-		return null;
-	},
-
-	/**
-	 * This will get the next step.
-	 *
-	 * @returns {void}
-	 */
-	nextStep()
-	{
-		const nextStep = this.getNextStep();
-		if (!nextStep)
-		{
-			app.navigate('/');
-			return;
-		}
-
-		this.showStep(nextStep);
-	},
-
-	/**
-	 * This will get the previous step.
-	 *
-	 * @returns {string}
-	 */
-	getPrevStep()
-	{
-		const values = getStepValues();
-		// @ts-ignore
-		const currentStep = this.state.step;
-		const stepIndex = values.indexOf(currentStep);
-		if (stepIndex === 1)
-		{
-			this.state.previous = false;
-			return values[0];
-		}
-
-		this.state.previous = true;
-		return values[stepIndex - 1];
-	},
-
-	/**
-	 * This will get the previous step.
-	 *
-	 * @returns {void}
-	 */
-	prevStep()
-	{
-		const prevStep = this.getPrevStep();
-		this.showStep(prevStep);
-	}
+    /**
+     * Calls the unsubscribe method after setup.
+     *
+     * @returns {void}
+     */
+	afterSetup()
+    {
+        this.unsubscribe();
+    }
 };
 
 /**

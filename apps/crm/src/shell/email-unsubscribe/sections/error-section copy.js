@@ -17,7 +17,7 @@ export const ErrorMessage = Atom(() =>
 			Div({ class: 'flex flex-auto flex-col space-y-4' }, [
 				Div({ class: 'flex flex-auto items-center justify-center' }, [
 					Div({ class: 'w-16 h-16 mb-6 text-primary' }, [
-						Icon(Icons.circleCheck)
+						Icon(Icons.circleX)
 					])
 				]),
 				Header({ class: 'py-4 text-center' }, [
