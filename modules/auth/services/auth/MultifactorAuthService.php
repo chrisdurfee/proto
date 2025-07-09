@@ -1,6 +1,10 @@
 <?php declare(strict_types=1);
 namespace Modules\Auth\Services\Auth;
 
+use Modules\Auth\Email\Auth\AuthMultiFactorEmail;
+use Modules\Auth\Email\Auth\AuthNewConnectionEmail;
+use Modules\Auth\Text\Auth\AuthMultiFactorText;
+use Modules\Auth\Text\Auth\AuthNewConnectionText;
 use Modules\User\Models\User;
 use Proto\Dispatch\Dispatcher;
 use Modules\Auth\Auth\Gates\MultiFactorAuthGate;
@@ -131,7 +135,6 @@ class MultiFactorAuthService
 	 */
 	protected function dispatchCode(User $user, string $type, string $code): object
 	{
-		var_dump($code); // TODO Remove
 		return $type === 'sms'
 			? $this->textCode($user, $code)
 			: $this->emailCode($user, $code);
@@ -149,7 +152,7 @@ class MultiFactorAuthService
 		$settings = (object)[
 			'to' => $user->email,
 			'subject' => 'Authorization Code',
-			'template' => 'Modules\\Auth\\Email\\Auth\\AuthMultiFactorEmail'
+			'template' => AuthMultiFactorEmail::class
 		];
 
 		return $this->dispatchEmail($settings, (object)['code' => $code]);
@@ -166,7 +169,7 @@ class MultiFactorAuthService
 		$settings = (object)[
 			'to' => $user->email,
 			'subject' => 'New Sign-In Connection',
-			'template' => 'Modules\\Auth\\Email\\Auth\\AuthNewConnectionEmail'
+			'template' => AuthNewConnectionEmail::class
 		];
 
 		return $this->dispatchEmail($settings);
@@ -196,7 +199,7 @@ class MultiFactorAuthService
 	{
 		$settings = (object)[
 			'to' => $user->mobile,
-			'template' => 'Modules\\Auth\\Text\\Auth\\AuthMultiFactorText'
+			'template' => AuthMultiFactorText::class
 		];
 
 		return $this->dispatchText($settings, (object)['code' => $code]);
@@ -212,7 +215,7 @@ class MultiFactorAuthService
 	{
 		$settings = (object)[
 			'to' => $user->mobile,
-			'template' => 'Modules\\Auth\\Text\\Auth\\AuthNewConnectionText'
+			'template' => AuthNewConnectionText::class
 		];
 
 		return $this->dispatchText($settings);

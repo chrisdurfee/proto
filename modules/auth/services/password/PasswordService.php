@@ -1,6 +1,10 @@
 <?php declare(strict_types=1);
 namespace Modules\Auth\Services\Password;
 
+use Modules\Auth\Email\Password\PasswordResetRequestEmail;
+use Modules\Auth\Email\Password\PasswordResetSuccessEmail;
+use Modules\Auth\Text\Password\PasswordResetRequestText;
+use Modules\Auth\Text\Password\PasswordResetSuccessText;
 use Modules\User\Models\User;
 use Modules\Auth\Models\PasswordRequest;
 use Proto\Dispatch\Dispatcher;
@@ -128,7 +132,7 @@ class PasswordService
 		$settings = (object)[
 			'to' => $user->email,
 			'subject' => 'Password Reset Request',
-			'template' => 'Modules\\Auth\\Email\\Password\\PasswordResetRequestEmail'
+			'template' => PasswordResetRequestEmail::class
 		];
 		$data = (object)[
 			'username' => $user->username,
@@ -149,7 +153,7 @@ class PasswordService
 	{
 		$settings = (object)[
 			'to' => $user->mobile,
-			'template' => 'Modules\\Auth\\Text\\Password\\PasswordResetRequestText'
+			'template' => PasswordResetRequestText::class
 		];
 		$data = (object)[
 			'code' => $requestId,
@@ -267,7 +271,7 @@ class PasswordService
 		$settings = (object)[
 			'to' => $user->email,
 			'subject' => 'Your Password Has Been Reset',
-			'template' => 'Modules\\Auth\\Email\\Password\\PasswordResetSuccessEmail',
+			'template' => PasswordResetSuccessEmail::class,
 			'queue' => true
 		];
 
@@ -284,7 +288,7 @@ class PasswordService
 	{
 		$settings = (object)[
 			'to' => $user->mobile,
-			'template' => 'Modules\\Auth\\Text\\Password\\PasswordResetSuccessText',
+			'template' => PasswordResetSuccessText::class,
 			'queue' => true
 		];
 
