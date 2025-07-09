@@ -44,9 +44,14 @@ class PushController extends Controller
 		}
 
 		$settings = (object)[
-			'template' => 'Modules\\Developer\\Push\\Test\\TestPush',
-			'queue' => (bool)$req->input('queue')
+			'template' => 'Modules\\Developer\\Push\\Test\\TestPush'
 		];
+
+		$queue = (bool)$req->input('queue');
+		if ($queue)
+		{
+			$settings->queue = true;
+		}
 
 		return modules()->user()->push()->send($userId, $settings);
 	}

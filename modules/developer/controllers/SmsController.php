@@ -42,8 +42,13 @@ class SmsController extends Controller
 		$settings = (object)[
 			'to' => $toAddress,
 			'template' => 'Modules\\Developer\\Text\\Test\\TestText',
-			'queue' => (bool)$req->input('queue')
 		];
+
+		$queue = (bool)$req->input('queue');
+		if ($queue)
+		{
+			$settings->queue = true;
+		}
 
 		return Dispatcher::sms($settings);
 	}
