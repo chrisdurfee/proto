@@ -5,13 +5,6 @@ import { PageStepContainer } from './page-step-container.js';
 import { STEPS } from './steps.js';
 
 /**
- * This will get the step values.
- *
- * @returns {string[]}
- */
-const getStepValues = () => Object.values(STEPS);
-
-/**
  * @constant PageProps
  * @type {object}
  */
@@ -82,11 +75,11 @@ const PageProps =
  *
  * @returns {object} A FullscreenPage instance.
  */
-export const OnboardingPage = () =>
+export const EmailUnsubscribePage = () =>
 (
 	new FullscreenPage(PageProps, [
 		PageStepContainer()
 	])
 );
 
-export default OnboardingPage;
+export default EmailUnsubscribePage;
