@@ -19,7 +19,7 @@ class SecureRequestStorage extends Storage
 	 */
 	protected static function createRequestId(): string
 	{
-		$length = 64;
+		$length = 128;
 		return bin2hex(random_bytes($length));
 	}
 

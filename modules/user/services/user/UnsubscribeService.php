@@ -2,7 +2,7 @@
 namespace Modules\User\Services\User;
 
 use Modules\User\Models\User;
-use Modules\User\Models\Unsubscribe;
+use Proto\Dispatch\Email\Unsubscribe\Models\Unsubscribe;
 use Modules\User\Models\NotificationPreference;
 
 /**
@@ -14,45 +14,6 @@ use Modules\User\Models\NotificationPreference;
  */
 class UnsubscribeService
 {
-	/**
-	 * This will create a secure unsubscribe URL for the user.
-	 *
-	 * @param string $email
-	 * @return string|null
-	 */
-	public function createUnsubscribeUrl(string $email): ?string
-	{
-		$requestId = $this->getUnsubscribeRequest($email);
-		if (!$requestId)
-		{
-			return null;
-		}
-
-		$baseUrl = "/user/unsubscribe";
-		return envUrl() . $baseUrl . '?requestId=' . $requestId . '&email=' . urlencode($email);
-	}
-
-	/**
-	 * Get the unsubscribe request ID for the user.
-	 *
-	 * @param string $email
-	 * @return string|null
-	 */
-	protected function getUnsubscribeRequest(string $email): ?string
-	{
-		$model = Unsubscribe::get($email);
-		if ($model)
-		{
-			return $model->requestId;
-		}
-
-		$model = new Unsubscribe((object)[
-			'email' => $email
-		]);
-		$model->add();
-		return $model->requestId ?? null;
-	}
-
 	/**
 	 * Update the user's notification preferences.
 	 *
