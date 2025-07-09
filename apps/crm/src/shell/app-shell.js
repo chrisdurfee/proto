@@ -60,6 +60,10 @@ export const AppShell = Jot(
 						import: () => import('./onboarding/onboarding-page.js')
 					},
 					{
+						uri: '/email-unsubscribe*',
+						import: () => import('./email-unsubscribe/email-unsubscribe-page.js')
+					},
+					{
 						import: () => import('./app-content.js'),
 						preventScroll: true
 					}
