@@ -128,7 +128,6 @@ const LocationFieldset = (isEditing) => (
 				Input({
 					type: "text",
 					placeholder: "e.g. 123 Main St",
-					required: true,
 					bind: "street1"
 				})
 			]
@@ -139,7 +138,6 @@ const LocationFieldset = (isEditing) => (
 				Input({
 					type: "text",
 					placeholder: "e.g. Apt 4B",
-					required: false,
 					bind: "street2"
 				})
 			]
@@ -150,7 +148,6 @@ const LocationFieldset = (isEditing) => (
 				Input({
 					type: "text",
 					placeholder: "e.g. New York",
-					required: true,
 					bind: "city"
 				})
 			]
@@ -161,7 +158,6 @@ const LocationFieldset = (isEditing) => (
 				Input({
 					type: "text",
 					placeholder: "e.g. NY",
-					required: true,
 					bind: "state"
 				})
 			]
@@ -172,7 +168,6 @@ const LocationFieldset = (isEditing) => (
 				Input({
 					type: "text",
 					placeholder: "e.g. 10001",
-					required: true,
 					bind: "postalCode"
 				})
 			]

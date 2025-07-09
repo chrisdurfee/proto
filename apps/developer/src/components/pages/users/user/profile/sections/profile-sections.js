@@ -75,6 +75,26 @@ export const LocaleDetailsSection = () =>
 	ProfileSection({ title: "Locale Details" }, [
 		Card({ class: "p-6", margin: "m-0", hover: true }, [
 			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" }, [
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Address"),
+					P({ class: "font-medium text-foreground capitalize truncate" }, "[[user.street1]] [[user.street2]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "City"),
+					P({ class: "font-medium text-foreground uppercase" }, "[[user.city]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "State"),
+					P({ class: "font-medium text-foreground uppercase" }, "[[user.state]]")
+				]),
+
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Postal Code"),
+					P({ class: "font-medium text-foreground uppercase" }, "[[user.postalCode]]")
+				]),
+
 				// Language
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Language"),
@@ -270,9 +290,6 @@ export const AuthedDeviceSection = (user) =>
 			DynamicDataTable({
 				key: 'id',
 				data: new UserAuthedDeviceModel({
-					filter: {
-						userId: user.id
-					},
 					userId: user.id
 				}),
 				headers: [

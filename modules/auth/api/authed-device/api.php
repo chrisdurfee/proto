@@ -6,7 +6,7 @@ use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 use Proto\Http\Router\Router;
 
 /**
- * Auth API Routes
+ * Authed Device Routes
  *
  * This file defines the API routes for user authentication, including
  * login, logout, registration, MFA, and CSRF token retrieval.

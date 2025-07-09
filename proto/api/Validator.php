@@ -102,6 +102,8 @@ class Validator
 				$this->addError("The key {$key} is not set.");
 				return false;
 			}
+
+			return true;
 		}
 
 		$type = $this->getType($details);
@@ -174,7 +176,7 @@ class Validator
 
 		if ($isValid === false)
 		{
-			$this->addError("The key {$key} is not correct.");
+			$this->addError("The value {$key} is not correct.");
 			return false;
 		}
 
@@ -184,7 +186,7 @@ class Validator
 			$result = (strlen($value) <= $limit);
 			if ($result === false)
 			{
-				$this->addError("The key {$key} is over the max size.");
+				$this->addError("The value {$key} is over the max size.");
 			}
 		}
 
