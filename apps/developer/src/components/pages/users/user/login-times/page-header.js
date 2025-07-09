@@ -10,7 +10,7 @@ import { Icons } from "@base-framework/ui/icons";
 export const PageHeader = () => (
 	Header({ class: 'flex flex-auto flex-col pt-0 sm:pt-2 md:pt-0' }, [
 		Div({ class: 'flex flex-auto items-center justify-between w-full' }, [
-			H1({ class: 'text-3xl font-bold' }, 'Timeclock'),
+			H1({ class: 'text-3xl font-bold' }, 'Login Times'),
 			Div({ class: 'flex items-center gap-2' }, [
 				Div({ class: 'hidden lg:flex' }, [
 					Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.clock, click: () => null }, 'Clock In/Out'),

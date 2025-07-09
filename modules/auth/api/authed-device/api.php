@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\Auth\Api;
+namespace Modules\Auth\Api\AuthedDevice;
 
 use Modules\Auth\Controllers\UserAuthedDeviceController;
 use Proto\Http\Middleware\CrossSiteProtectionMiddleware;

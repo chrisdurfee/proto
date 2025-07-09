@@ -21,8 +21,8 @@ const ContentPage = () => (
 	Div({
 		class: 'flex flex-auto flex-col p-4 lg:p-6',
 		switch: [
-			Page(`/directory/user/:userId`, () => import('./profile/profile-page.js')),
-			Page(`/directory/user/:userId/timeclock`, () => import('./login-times/timeclock-page.js'))
+			Page(`/users/:userId`, () => import('./profile/profile-page.js')),
+			Page(`/users/:userId/login-times`, () => import('./login-times/login-time-page.js'))
 		]
 	})
 );
