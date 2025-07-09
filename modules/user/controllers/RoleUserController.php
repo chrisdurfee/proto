@@ -39,7 +39,7 @@ class RoleUserController extends Controller
 	public function delete(Request $request): object
 	{
 		$data = $this->getRequestItem($request);
-		if (empty($data) || empty($data->userId) || empty($data->roleId))
+		if (empty($data) || !isset($data->userId) || !isset($data->roleId))
 		{
 			return $this->error('No item provided.');
 		}

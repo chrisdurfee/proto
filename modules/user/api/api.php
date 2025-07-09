@@ -9,8 +9,20 @@ use Modules\User\Controllers\UserController;
  * This file contains the API routes for the User module.
  */
 router()
+
+	/**
+	 * Status routes
+	 */
 	->patch('user/:id/status', [UserController::class, 'updateStatus'])
+
+	/**
+	 * Email routes
+	 */
 	->patch('user/:id/verify-email', [UserController::class, 'verifyEmail'])
 	->all('user/unsubscribe', [UserController::class, 'unsubscribe'])
+
+	/**
+	 * Profile routes
+	 */
 	->patch('user/:id/update-credentials', [UserController::class, 'updateCredentials'])
 	->resource('user', UserController::class);

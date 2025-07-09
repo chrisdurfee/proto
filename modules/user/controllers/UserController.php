@@ -8,7 +8,6 @@ use Modules\User\Services\User\PasswordUpdateService;
 use Modules\User\Services\User\UnsubscribeService;
 use Proto\Controllers\ResourceController;
 use Proto\Http\Router\Request;
-use Modules\User\Models\NotificationPreference;
 
 /*
  * UserController

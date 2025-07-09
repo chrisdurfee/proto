@@ -5,7 +5,7 @@ use Modules\User\Controllers\RoleController;
 use Modules\User\Controllers\RoleUserController;
 
 /**
- * User Role API Routes
+ * User Role Routes
  *
  * This will handle the API routes for the User Roles.
  */
@@ -13,7 +13,7 @@ router()
 	->resource('user/:userId/role', RoleUserController::class);
 
 /**
- * Role API Routes
+ * Role Routes
  *
  * This will handle the API routes for the Roles.
  */
