@@ -47,7 +47,14 @@ class UserController extends ResourceController
 			'lastName' => 'string:255|required',
 			'email' => 'email:255|required',
 			'displayName' => 'string:150',
-			'image' => 'string:150'
+			'image' => 'string:150',
+			'street1' => 'string:255',
+			'street2' => 'string:255',
+			'city' => 'string:255',
+			'state' => 'string:100',
+			'postalCode' => 'string:20',
+			'country' => 'string:100',
+			'mobile' => 'phone:14'
 		];
 	}
 
