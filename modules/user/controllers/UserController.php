@@ -5,6 +5,7 @@ use Modules\User\Auth\Gates\EmailVerificationGate;
 use Modules\User\Models\User;
 use Modules\User\Auth\Policies\UserPolicy;
 use Modules\User\Services\User\PasswordUpdateService;
+use Modules\User\Services\User\UnsubscribeService;
 use Proto\Controllers\ResourceController;
 use Proto\Http\Router\Request;
 use Modules\User\Models\NotificationPreference;
@@ -157,37 +158,26 @@ class UserController extends ResourceController
 	}
 
 	/**
-	 * Update the user's notification preferences.
-	 *
-	 * @param object $data
-	 * @return object
-	 */
-	protected function updateNotificationPreferences(object $data): object
-	{
-		/**
-		 * This will add the email verified date to the user.
-		 */
-		$result = NotificationPreference::put($data);
-
-		return (!$result)? $this->error('Failed to unsubscribe user.') : $this->response([
-			'message' => 'User unsubscribed successfully.'
-		]);
-	}
-
-	/**
 	 * This will unsubscribe the user.
 	 *
 	 * @param Request $request
+	 * @param UnsubscribeService $service
 	 * @return object
 	 */
 	public function unsubscribe(
-		Request $request
+		Request $request,
+		UnsubscribeService $service = new UnsubscribeService()
 	): object
 	{
-		$userId = $this->getResourceId($request);
 		$data = (object)[
-			'userId' => $userId,
+			'email' => $request->input('email'),
+			'requestId' => $request->input('requestId')
 		];
+
+		if (!$data->email || !$data->requestId)
+		{
+			return $this->error('Invalid unsubscribe request.');
+		}
 
 		$allowEmail = $request->getInt('allowEmail') ?? 0;
 		if (isset($allowEmail))
@@ -207,7 +197,10 @@ class UserController extends ResourceController
 			$data->allowPush = $allowPush;
 		}
 
-		return $this->updateNotificationPreferences($data);
+		$result = $service->unsubscribe($data);
+		return (!$result)? $this->error('Failed to unsubscribe user.') : $this->response([
+			'message' => 'User unsubscribed successfully.'
+		]);
 	}
 
 	/**

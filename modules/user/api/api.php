@@ -2,7 +2,6 @@
 namespace Modules\User\Api;
 
 use Modules\User\Controllers\UserController;
-use Modules\User\Http\Middleware\SecureRequestMiddleware;
 
 /**
  * User API Routes
@@ -12,6 +11,6 @@ use Modules\User\Http\Middleware\SecureRequestMiddleware;
 router()
 	->patch('user/:id/status', [UserController::class, 'updateStatus'])
 	->patch('user/:id/verify-email', [UserController::class, 'verifyEmail'])
-	->all('user/:id/unsubscribe', [UserController::class, 'unsubscribe'], [ SecureRequestMiddleware::class ])
+	->all('user/unsubscribe', [UserController::class, 'unsubscribe'])
 	->patch('user/:id/update-credentials', [UserController::class, 'updateCredentials'])
 	->resource('user', UserController::class);
