@@ -33,40 +33,40 @@ const PageProps =
 		this.state.step = step;
 	},
 
-    /**
-     * Unsubscribes the user from email notifications.
-     *
-     * @returns {void}
-     */
-    unsubscribe()
-    {
-        const params = Strings.parseQueryString();
-        const model = new UserData({
-            // @ts-ignore
-            email: params.email
-        });
+	/**
+	 * Unsubscribes the user from email notifications.
+	 *
+	 * @returns {void}
+	 */
+	unsubscribe()
+	{
+		const params = Strings.parseQueryString();
+		const model = new UserData({
+			// @ts-ignore
+			email: params.email
+		});
 
-        model.xhr.unsubscribe(params, (response) =>
-        {
-            if (!response || !response.success)
-            {
-                this.showStep(STEPS.ERROR);
-                return;
-            }
+		model.xhr.unsubscribe(params, (response) =>
+		{
+			if (!response || !response.success)
+			{
+				this.showStep(STEPS.ERROR);
+				return;
+			}
 
-            this.showStep(STEPS.SUCCESS);
-        });
-    },
+			this.showStep(STEPS.SUCCESS);
+		});
+	},
 
-    /**
-     * Calls the unsubscribe method after setup.
-     *
-     * @returns {void}
-     */
+	/**
+	 * Calls the unsubscribe method after setup.
+	 *
+	 * @returns {void}
+	 */
 	afterSetup()
-    {
-        this.unsubscribe();
-    }
+	{
+		this.unsubscribe();
+	}
 };
 
 /**

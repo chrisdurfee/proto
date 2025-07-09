@@ -11,18 +11,18 @@ import { STEPS } from './steps.js';
  */
 export const PageStepContainer = () =>
 (
-    Div({ class: 'flex flex-auto flex-col' }, [
-        OnState('step', (step) =>
-        {
-            switch (step)
-            {
-                case STEPS.SUCCESS:
-                    return SuccessSection();
-                case STEPS.ERROR:
-                    return ErrorSection();
-                default:
-                    return VerifyingSection();
-            }
-        })
-    ])
+	Div({ class: 'flex flex-auto flex-col' }, [
+		OnState('step', (step) =>
+		{
+			switch (step)
+			{
+				case STEPS.SUCCESS:
+					return SuccessSection();
+				case STEPS.ERROR:
+					return ErrorSection();
+				default:
+					return VerifyingSection();
+			}
+		})
+	])
 );
