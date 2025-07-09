@@ -4,6 +4,7 @@ namespace Modules\Auth\Controllers;
 
 use Proto\Controllers\ResourceController as Controller;
 use Modules\Auth\Models\Multifactor\UserAuthedDevice;
+use Proto\Http\Router\Request;
 
 /**
  * UserAuthedDeviceController
@@ -20,5 +21,23 @@ class UserAuthedDeviceController extends Controller
 	public function __construct(protected ?string $model = UserAuthedDevice::class)
 	{
 		parent::__construct();
+	}
+
+	/**
+	 * Modifies the filter object based on the request.
+	 *
+	 * @param mixed $filter
+	 * @param Request $request
+	 * @return object|null
+	 */
+	protected function modifyFilter(?object $filter, Request $request): ?object
+	{
+		$userId = $request->params()->userId ?? null;
+		if (isset($userId))
+		{
+			$filter->userId = $userId;
+		}
+
+		return $filter;
 	}
 }

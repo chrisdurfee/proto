@@ -95,6 +95,18 @@ abstract class ApiController extends Controller
 	}
 
 	/**
+	 * Modifies the filter object based on the request.
+	 *
+	 * @param mixed $filter
+	 * @param Request $request
+	 * @return object|null
+	 */
+	protected function modifyFilter(?object $filter, Request $request): ?object
+	{
+		return $filter;
+	}
+
+	/**
 	 * This will get the filter from the request.
 	 *
 	 * @param Request $request The request object.
@@ -108,6 +120,7 @@ abstract class ApiController extends Controller
 			$filter = urldecode($filter);
 		}
 
-		return JsonFormat::decode($filter) ?? (object)[];
+		$filter = JsonFormat::decode($filter) ?? (object)[];
+		return $this->modifyFilter($filter, $request);
 	}
 }
