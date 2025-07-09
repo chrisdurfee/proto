@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
-namespace Modules\User\Models;
+namespace Proto\Dispatch\Email\Unsubscribe\Models;
 
-use Modules\User\Storage\UnsubscribeStorage;
+use Proto\Dispatch\Email\Unsubscribe\Storage\UnsubscribeStorage;
 use Proto\Models\Model;
 
 /**
  * Unsubscribe
  *
- * @package Modules\Auth\Models
+ * @package Proto\Dispatch\Email\Unsubscribe\Models
  */
 class Unsubscribe extends Model
 {

@@ -4,6 +4,7 @@ namespace Modules\User\Gateway;
 use Modules\User\Models\User;
 use Modules\User\Services\User\NewUserService;
 use Modules\User\Gateway\SecureRequestGateway;
+use Modules\User\Services\User\UnsubscribeService;
 
 /**
  * Gateway
@@ -97,6 +98,18 @@ class Gateway
 			'status' => $status
 		]);
 		return $model->updateStatus();
+	}
+
+	/**
+	 * Create an unsubscribe URL for the user.
+	 *
+	 * @param string $email
+	 * @return string|null
+	 */
+	public function createUnsubscribeUrl(string $email): ?string
+	{
+		$service = new UnsubscribeService();
+		return $service->createUnsubscribeUrl($email);
 	}
 
 	/**

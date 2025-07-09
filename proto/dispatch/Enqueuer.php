@@ -5,6 +5,7 @@ use Proto\Dispatch\Models\Queue\EmailQueue;
 use Proto\Dispatch\Controllers;
 use Proto\Dispatch\Models\Queue\SmsQueue;
 use Proto\Dispatch\Models\Queue\PushQueue;
+use Proto\Dispatch\Email\Unsubscribe\EmailHelper;
 
 /**
  * Class Enqueuer
@@ -39,6 +40,11 @@ class Enqueuer
 	 */
 	public static function email(object $settings, ?object $data = null): object
 	{
+		if (!isset($data->unsubscribeUrl))
+		{
+			$data->unsubscribeUrl = EmailHelper::createUnsubscribeUrl($data->to);
+		}
+
 		$settings = Controllers\EmailController::enqueue($settings, $data);
 		EmailQueue::create($settings);
 

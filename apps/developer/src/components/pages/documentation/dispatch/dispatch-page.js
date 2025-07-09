@@ -79,11 +79,11 @@ export const DispatchPage = () =>
 				]),
 				CodeBlock(
 `$settings = (object)[
-    'to' => 'email@email.com',
-    'subject' => 'Subject',
+	'to' => 'email@email.com',
+	'subject' => 'Subject',
 	'fromName' => 'Sender Name', // optional
-	'unsubscribeUrl' => '', // optional
-    'template' => 'Common\\Email\\ExampleEmail',
+	'unsubscribeUrl' => '', // optional, it will set this by default in the EmailHelper class
+	'template' => 'Common\\Email\\ExampleEmail',
 	'attachments' => [
 		'/path/to/file1.pdf',
 	]
@@ -120,9 +120,9 @@ Dispatcher::email($settings, $data);
 				]),
 				CodeBlock(
 `$settings = (object)[
-    'to' => '1112221111',
-    'session' => 'session id', // if different than the default
-    'template' => 'Common\\Text\\ExampleSms'
+	'to' => '1112221111',
+	'session' => 'session id', // if different than the default
+	'template' => 'Common\\Text\\ExampleSms'
 ];
 
 $data = (object)[];
@@ -165,7 +165,7 @@ Dispatcher::sms($settings, $data);`
 				]),
 				CodeBlock(
 `$settings = (object)[
-    'subscriptions' => [
+	'subscriptions' => [
 		[
 			'id' => 'subscription id',
 			'endpoint' => 'https://example.com/push/endpoint',
@@ -175,7 +175,7 @@ Dispatcher::sms($settings, $data);`
 			]
 		]
 	],
-    'template' => 'Common\\Push\\ExamplePush',
+	'template' => 'Common\\Push\\ExamplePush',
 	'queue' => false, // optional
 };
 
@@ -199,7 +199,7 @@ Dispatcher::push($settings, $data);`
 				),
 				CodeBlock(
 `$settings = (object)[
-    'template' => 'Common\\Push\\ExamplePush',
+	'template' => 'Common\\Push\\ExamplePush',
 	'queue' => false, // optional
 };
 

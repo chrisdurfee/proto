@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-namespace Modules\User\Storage;
+namespace Proto\Dispatch\Email\Unsubscribe\Storage;
 
 use Proto\Storage\Storage;
 
@@ -8,7 +8,7 @@ use Proto\Storage\Storage;
  *
  * Handles the storage operations for unsubscribe requests.
  *
- * @package Modules\Auth\Storage
+ * @package Proto\Dispatch\Email\Unsubscribe\Storage
  */
 class UnsubscribeStorage extends Storage
 {
