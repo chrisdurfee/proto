@@ -123,6 +123,61 @@ const LocationFieldset = (isEditing) => (
     Fieldset({ legend: "Location Information" }, [
 
 		new FormField(
+			{ name: "street_1", label: "Street 1", description: "Enter the user's street address." },
+			[
+				Input({
+					type: "text",
+					placeholder: "e.g. 123 Main St",
+					required: true,
+					bind: "street1"
+				})
+			]
+		),
+		new FormField(
+			{ name: "street_2", label: "Street 2", description: "Enter the user's street address (optional)." },
+			[
+				Input({
+					type: "text",
+					placeholder: "e.g. Apt 4B",
+					required: false,
+					bind: "street2"
+				})
+			]
+		),
+		new FormField(
+			{ name: "city", label: "City", description: "Enter the user's city." },
+			[
+				Input({
+					type: "text",
+					placeholder: "e.g. New York",
+					required: true,
+					bind: "city"
+				})
+			]
+		),
+		new FormField(
+			{ name: "state", label: "State", description: "Enter the user's state." },
+			[
+				Input({
+					type: "text",
+					placeholder: "e.g. NY",
+					required: true,
+					bind: "state"
+				})
+			]
+		),
+		new FormField(
+			{ name: "postalCode", label: "Postal Code", description: "Enter the user's postal code." },
+			[
+				Input({
+					type: "text",
+					placeholder: "e.g. 10001",
+					required: true,
+					bind: "postalCode"
+				})
+			]
+		),
+		new FormField(
 			{ name: "timezone", label: "Timezone", description: "Select the user's timezone." },
 			[
 				Select({

@@ -51,6 +51,11 @@ class User extends Model
 		'gender',
 
 		// Contact & locale
+		'street1',
+		'street2',
+		'city',
+		'state',
+		'postalCode',
 		'timezone',
 		'language',
 		'currency',
@@ -129,7 +134,7 @@ class User extends Model
 	 *
 	 * @return Relations\BelongsToMany
 	 */
-	public function followers(): \Proto\Models\Relations\BelongsToMany
+	public function followers(): Relations\BelongsToMany
 	{
 		return $this->belongsToMany(
 			User::class,

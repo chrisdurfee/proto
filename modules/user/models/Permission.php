@@ -44,13 +44,13 @@ class Permission extends Model
 	 */
 	protected static function joins(object $builder): void
 	{
-		// $builder
-		// 	->belongsToMany(Role::class, [
-		// 		'id',
-		// 		'name',
-		// 		'slug',
-		// 		'description'
-		// 	]);
+		$builder
+			->belongsToMany(Role::class, [
+				'id',
+				'name',
+				'slug',
+				'description'
+			]);
 	}
 
 	/**

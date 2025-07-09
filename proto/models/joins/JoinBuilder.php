@@ -375,7 +375,11 @@ class JoinBuilder
 	 * @param array $pivotFields Fields to select from the pivot table.
 	 * @return ModelJoin
 	 */
-	public function belongsToMany(string $related, array $relatedFields = [], array $pivotFields = []): ModelJoin
+	public function belongsToMany(
+		string $related,
+		array $relatedFields = [],
+		array $pivotFields = []
+	): ModelJoin
 	{
 		if (isset($this->parentModel))
 		{

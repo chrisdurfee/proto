@@ -45,6 +45,11 @@ class User extends Migration
 			$table->enum('gender', 'male','female','other','prefer_not_say')->nullable();
 
 			// Locale
+			$table->varchar('street_1', 255)->nullable();
+			$table->varchar('street_2', 255)->nullable();
+			$table->varchar('city', 255)->nullable();
+			$table->varchar('state', 100)->nullable();
+			$table->varchar('postal_code', 20)->nullable();
 			$table->varchar('timezone', 50)->nullable();
 			$table->varchar('language', 10)->nullable();
 			$table->varchar('currency', 3)->nullable();

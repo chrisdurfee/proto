@@ -4,7 +4,7 @@ namespace Modules\User\Api\Role\Permission;
 use Modules\User\Controllers\PermissionRoleController;
 
 /**
- * Role Permission API Routes
+ * Role Permission Routes
  *
  * This file contains the API routes for the permission module.
  */

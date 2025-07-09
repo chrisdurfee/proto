@@ -18,7 +18,7 @@ class Strings
 	 */
 	public static function snakeCase(string $str): string
 	{
-		return strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1_$2', $str));
+		return strtolower(preg_replace('/([a-z])([A-Z0-9])/', '$1_$2', $str));
 	}
 
 	/**
@@ -29,7 +29,7 @@ class Strings
 	 */
 	public static function kebabCase(string $str): string
 	{
-		return strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $str));
+		return strtolower(preg_replace('/([a-z])([A-Z0-9])/', '$1-$2', $str));
 	}
 
 	/**
@@ -41,7 +41,7 @@ class Strings
 	public static function hyphen(string $str): string
 	{
 		$str = str_replace(['_', ' '], '-', $str);
-		return strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $str));
+		return strtolower(preg_replace('/([a-z])([A-Z0-9])/', '$1-$2', $str));
 	}
 
 	/**
@@ -52,7 +52,7 @@ class Strings
 	 */
 	public static function camelCase(string $str): string
 	{
-		return lcfirst(preg_replace_callback('/(_|-)([a-z])/', fn($matches) => strtoupper($matches[2]), $str));
+		return lcfirst(preg_replace_callback('/(_|-)([a-z0-9])/', fn($matches) => strtoupper($matches[2]), $str));
 	}
 
 	/**

@@ -4,7 +4,7 @@ namespace Modules\User\Api\Permission;
 use Modules\User\Controllers\PermissionController;
 
 /**
- * Permission API Routes
+ * Permission Routes
  *
  * This will handle the API routes for the Permissions.
  */

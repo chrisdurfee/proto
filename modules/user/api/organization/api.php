@@ -5,7 +5,7 @@ use Modules\User\Controllers\OrganizationController;
 use Modules\User\Controllers\OrganizationUserController;
 
 /**
- * User Organization API Routes
+ * User Organization Routes
  *
  * This will handle the API routes for the User Organizations.
  */
@@ -13,7 +13,7 @@ router()
 	->resource('user/:userId/organization', OrganizationUserController::class);
 
 /**
- * Organization API Routes
+ * Organization Routes
  *
  * This will handle the API routes for Organizations.
  */
