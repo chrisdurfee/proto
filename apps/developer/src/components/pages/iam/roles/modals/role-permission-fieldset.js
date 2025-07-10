@@ -1,6 +1,7 @@
-import { Div, OnState } from "@base-framework/atoms";
+import { Div, OnState, Span } from "@base-framework/atoms";
 import { Component, Jot } from "@base-framework/base";
-import { Checkbox, Fieldset, Skeleton } from "@base-framework/ui/atoms";
+import { Toggle } from "@base-framework/ui";
+import { Fieldset, Skeleton } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { FormField } from "@base-framework/ui/molecules";
 import { PermissionModel } from "../../permissions/models/permission-model.js";
@@ -79,17 +80,17 @@ const PermissionFields = ({ hasPermission, togglePermission }) => (
 				description: permission.description
 			},
 			[
-				new Checkbox({
-					label: permission.name,
-					required: false,
-					// @ts-ignore
-					checked: hasPermission(permission.name),
-					onChange: (checked, e) =>
-					{
-						// @ts-ignore
-						togglePermission(permission, checked);
-					}
-				})
+				Div({ class: 'flex items-center space-x-2' }, [
+					new Toggle({
+						active: hasPermission(permission.name),
+						change: (active, e) =>
+						{
+							// @ts-ignore
+							togglePermission(permission, active);
+						}
+					}),
+					Span({ class: 'text-base' }, permission.name)
+				])
 			])
 		]
 	})

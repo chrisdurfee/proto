@@ -1,8 +1,8 @@
-import { Div, OnState } from "@base-framework/atoms";
+import { Div, OnState, Span } from "@base-framework/atoms";
 import { Component, Jot } from "@base-framework/base";
-import { Checkbox, Fieldset, Skeleton } from "@base-framework/ui/atoms";
+import { Fieldset, Skeleton } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
-import { FormField } from "@base-framework/ui/molecules";
+import { FormField, Toggle } from "@base-framework/ui/molecules";
 import { RoleModel } from "../../iam/roles/models/role-model.js";
 import { UserRoleModel } from "../models/user-role-model.js";
 
@@ -79,17 +79,17 @@ const RoleFields = ({ hasRole, toggleRole }) => (
 				description: role.description
 			},
 			[
-				new Checkbox({
-					label: role.name,
-					required: false,
-					// @ts-ignore
-					checked: hasRole(role.name),
-					onChange: (checked, e) =>
-					{
-						// @ts-ignore
-						toggleRole(role, checked);
-					}
-				})
+				Div({ class: 'flex items-center space-x-2' }, [
+					new Toggle({
+						active: hasRole(role.name),
+						change: (active, e) =>
+						{
+							// @ts-ignore
+							toggleRole(role, active);
+						}
+					}),
+					Span({ class: 'text-base' }, role.name)
+				])
 			])
 		]
 	})
