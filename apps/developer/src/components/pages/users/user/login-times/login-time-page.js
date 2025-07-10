@@ -1,38 +1,8 @@
 import { Div, UseParent } from "@base-framework/atoms";
 import { BlankPage } from "@base-framework/ui/pages";
-import { UserModel } from "../../models/user-model.js";
 import { LoginLogModel } from "./login-log-model.js";
 import { LoginTable } from "./login-table.js";
 import { PageHeader } from "./page-header.js";
-
-/**
- * @type {object} Props
- */
-const Props =
-{
-	setData()
-	{
-		return new UserModel({
-			filter: {
-
-			}
-		});
-	},
-
-	/**
-	 * This will update the user page when the url is
-	 * updated.
-	 *
-	 * @returns {void}
-	 */
-	update()
-	{
-		if (this.list)
-		{
-			//this.list.refresh();
-		}
-	}
-};
 
 /**
  * This will create the login time page.
@@ -53,20 +23,6 @@ export const LoginTimePage = () =>
 	const Props =
 	{
 		data,
-
-		/**
-		 * This will update the user page when the url is
-		 * updated.
-		 *
-		 * @returns {void}
-		 */
-		update()
-		{
-			if (this.list)
-			{
-				//this.list.refresh();
-			}
-		}
 	};
 
 	return new BlankPage(Props, [
