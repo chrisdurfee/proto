@@ -2,6 +2,7 @@
 namespace Proto\Auth\Policies;
 
 use Proto\Controllers\ControllerInterface;
+use Proto\Http\Router\Request;
 
 /**
  * Class Policy
@@ -20,4 +21,16 @@ abstract class Policy
 	 * @return void
 	 */
 	public function __construct(protected ?ControllerInterface $controller = null) {}
+
+	/**
+	 * This will get the resource ID from the request.
+	 *
+	 * @param Request $request
+	 * @return int|null
+	 */
+	protected function getResourceId(Request $request): ?int
+	{
+		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		return (isset($id) && is_numeric($id)) ? (int) $id : null;
+	}
 }

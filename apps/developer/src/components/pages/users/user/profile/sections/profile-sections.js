@@ -290,7 +290,10 @@ export const AuthedDeviceSection = (user) =>
 			DynamicDataTable({
 				key: 'id',
 				data: new UserAuthedDeviceModel({
-					userId: user.id
+					userId: user.id,
+					orderBy: {
+						createdAt: 'DESC'
+					}
 				}),
 				headers: [
 					{ label: 'Platform', key: 'platform' },

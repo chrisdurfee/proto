@@ -6,7 +6,6 @@ use Modules\User\Auth\Gates\RoleGate;
 use Modules\User\Auth\Gates\PermissionGate;
 use Modules\User\Auth\Gates\ResourceGate;
 use Proto\Controllers\Controller;
-use Proto\Http\Router\Request;
 
 /**
  * Policy
@@ -87,17 +86,5 @@ class Policy extends BasePolicy
 		}
 
 		return $this->resourceGate->isOwner($ownerId);
-	}
-
-	/**
-	 * This will get the resource ID from the request.
-	 *
-	 * @param Request $request
-	 * @return int|null
-	 */
-	protected function getResourceId(Request $request): ?int
-	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
-		return (isset($id) && is_numeric($id)) ? (int) $id : null;
 	}
 }
