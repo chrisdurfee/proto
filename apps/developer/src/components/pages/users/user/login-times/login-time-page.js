@@ -14,6 +14,9 @@ export const LoginTimePage = () =>
 	const data = new LoginLogModel({
 		filter: {
 
+		},
+		orderBy: {
+			createdAt: 'DESC'
 		}
 	});
 

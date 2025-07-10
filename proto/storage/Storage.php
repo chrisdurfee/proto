@@ -565,9 +565,10 @@ class Storage extends TableStorage
 		$orderBy = $modifiers['orderBy'] ?? null;
 		if (is_object($orderBy))
 		{
+			$isSnakeCase = $this->model->isSnakeCase();
 			foreach ($orderBy as $rawField  => $rawDir)
 			{
-				$field = Sanitize::cleanColumn($rawField );
+				$field = $this->prepareField($rawField, $isSnakeCase);
 				if ($field === '')
 				{
 					// skip empty or entirely‐stripped names
