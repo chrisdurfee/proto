@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Services\User;
 
+use Modules\User\Email\Welcome\WelcomeVerificationEmail;
 use Modules\User\Models\User;
 use Modules\User\Models\RoleUser;
 use Modules\User\Models\Role;
@@ -142,7 +143,7 @@ class NewUserService
 		$settings = (object)[
 			'to' => $user->email,
 			'subject' => 'Welcome to ' . $siteName . '! Please verify your email',
-			'template' => 'Modules\\User\\Email\\Welcome\\WelcomeVerificationEmail'
+			'template' => WelcomeVerificationEmail::class
 		];
 		$data = (object)[
 			'username' => $user->username,
