@@ -5,15 +5,17 @@
  * @param {function} callBack
  * @param {string} title
  * @param {boolean} [persist=true]
+ * @param {boolean} [preventScroll=false]
  * @returns {object}
  */
-const DynamicRoute = (uri, callBack, title, persist = false) =>
+const DynamicRoute = (uri, callBack, title, persist = true, preventScroll = false) =>
 {
 	return {
 		uri,
 		import: callBack,
 		title,
-		persist: true
+		preventScroll,
+		persist
 	};
 };
 
@@ -54,10 +56,10 @@ export const Routes = () => [
 	/**
 	 * Docs routes
 	 */
-	DynamicRoute('/docs*', () => import('../components/pages/documentation/documentation-page.js'), 'Docs', true),
+	DynamicRoute('/docs*', () => import('../components/pages/documentation/documentation-page.js'), 'Docs'),
 
 	/**
 	 * Email routes
 	 */
-	DynamicRoute('/email*', () => import('../components/pages/email/email-page.js'), 'Email', true),
+	DynamicRoute('/email*', () => import('../components/pages/email/email-page.js'), 'Email'),
 ];
