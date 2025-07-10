@@ -1,14 +1,11 @@
 <?php declare(strict_types=1);
 namespace Modules\Auth\Controllers;
 
-use Modules\User\Gateway\Gateway;
 use Modules\User\Models\User;
-use Modules\Auth\Models\LoginLog;
 use Modules\Auth\Controllers\LoginAttemptController;
 use Modules\Auth\Controllers\UserStatus;
 use Modules\Auth\Services\Auth\MultiFactorAuthService;
 use Modules\Auth\Controllers\Multifactor\MultiFactorHelper;
-use Modules\Auth\Services\Password\PasswordService;
 use Proto\Controllers\Controller;
 use Proto\Http\Router\Request;
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
@@ -22,6 +19,8 @@ use Proto\Auth\Gates\CrossSiteRequestForgeryGate;
  */
 class AuthController extends Controller
 {
+	use AuthTrait;
+
 	/**
 	 * Maximum failed login attempts allowed.
 	 *
@@ -30,20 +29,13 @@ class AuthController extends Controller
 	const MAX_ATTEMPTS = 10;
 
 	/**
-	 * @var Gateway
-	 */
-	protected Gateway $user;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param MultiFactorAuthService $mfaService
-	 * @param PasswordService $pwService
 	 * @return void
 	 */
 	public function __construct(
 		protected MultiFactorAuthService $mfaService = new MultiFactorAuthService(),
-		protected PasswordService $pwService = new PasswordService(),
 	)
 	{
 		parent::__construct();
@@ -90,37 +82,6 @@ class AuthController extends Controller
 		}
 
 		return $this->permit($user, $req->ip());
-	}
-
-	/**
-	 * This will permit a user access to sign in.
-	 *
-	 * @param User $user
-	 * @param string $ip
-	 * @return object
-	 */
-	protected function permit(User $user, string $ip): object
-	{
-		$this->updateUserStatus($user, UserStatus::ONLINE->value, $ip);
-		$this->setSessionUser($user);
-		$this->setLastLogin($user);
-
-		return $this->response([
-			'allowAccess' => true,
-			'user' => $user->getData()
-		]);
-	}
-
-	/**
-	 * This will set the last login time for the user.
-	 *
-	 * @param User $user
-	 * @return bool
-	 */
-	protected function setLastLogin(User $user): bool
-	{
-		$user->lastLoginAt = date('Y-m-d H:i:s');
-		return modules()->user()->update($user->getData());
 	}
 
 	/**
@@ -358,49 +319,6 @@ class AuthController extends Controller
 	}
 
 	/**
-	 * This will update the user status.
-	 *
-	 * @param User $user
-	 * @param string $status
-	 * @param string $ip
-	 * @return bool
-	 */
-	protected function updateUserStatus(User $user, string $status, string $ip): bool
-	{
-		$success = $this->user->updateStatus($user->id, $status);
-		if (!$success)
-		{
-			return false;
-		}
-
-		return $this->updateLoginStatus($user->id, $status, $ip);
-	}
-
-	/**
-	 * Update login status (login/logout) in LoginLog.
-	 *
-	 * @param int|string $userId
-	 * @param string $status
-	 * @param string $ip
-	 * @return bool
-	 */
-	protected function updateLoginStatus(int|string $userId, string $status, string $ip): bool
-	{
-		if ($status !== UserStatus::ONLINE->value && $status !== UserStatus::OFFLINE->value)
-		{
-			return false;
-		}
-
-		$direction = $status === UserStatus::ONLINE->value ? 'login' : 'logout';
-		return LoginLog::create((object)[
-			'dateTimeSetup' => date('Y-m-d H:i:s'),
-			'userId' => $userId,
-			'direction' => $direction,
-			'ip' => $ip
-		]);
-	}
-
-	/**
 	 * Count recent failed login attempts.
 	 *
 	 * @param string $username
@@ -410,130 +328,5 @@ class AuthController extends Controller
 	protected function getAttempts(string $username, string $ipAddress): int
 	{
 		return LoginAttemptController::countAttempts($ipAddress, $username);
-	}
-
-	/**
-	 * Retrieve a user by ID or null.
-	 *
-	 * @param mixed $userId
-	 * @return User|null
-	 */
-	protected function getUserId(mixed $userId): ?User
-	{
-		return modules()->user()->get($userId);
-	}
-
-	/**
-	 * Request a password reset.
-	 *
-	 * @param Request $req
-	 * @return object
-	 */
-	public function requestPasswordReset(Request $req): object
-	{
-		$email = $req->input('email');
-		if (!isset($email))
-		{
-			return $this->error('The email is missing.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		$user = $this->user->getByEmail($email);
-		if (!$user)
-		{
-			return $this->error('The user is not found.', HttpStatus::NOT_FOUND->value);
-		}
-
-		$result = $this->pwService->sendResetRequest($user);
-		if (empty($result->email) && empty($result->sms))
-		{
-			return $this->error('The password reset request has failed.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		return $this->response((object)[
-			'message' => 'The password reset request has been sent successfully.'
-		]);
-	}
-
-	/**
-	 * Validate the password request.
-	 *
-	 * @param Request $req
-	 * @return object
-	 */
-	public function validatePasswordRequest(Request $req): object
-	{
-		$requestId = $req->input('requestId');
-		$userId = $req->getInt('userId');
-		if (!isset($requestId) || !isset($userId))
-		{
-			return $this->error('The request id or user id is missing.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		$username = $this->pwService->validateRequest($requestId, $userId);
-		if ($username === null)
-		{
-			return $this->error('No request is found.', HttpStatus::NOT_FOUND->value);
-		}
-
-		return $this->response((object)[
-			'username' => $username
-		]);
-	}
-
-	/**
-	 * Reset the password for a user.
-	 *
-	 * @param Request $req
-	 * @return object
-	 */
-	public function resetPassword(Request $req): object
-	{
-		$userId = $req->getInt('userId');
-		if (!isset($userId))
-		{
-			return $this->error('The user id is not set.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		$password = $req->input('password');
-		if (empty($password))
-		{
-			return $this->error('The password is not set.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		$requestId = $req->input('requestId');
-		if (empty($requestId))
-		{
-			return $this->error('The request id is not set.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		$result = $this->pwService->resetPassword($requestId, $userId, $password);
-		if ($result === -1)
-		{
-			return $this->error('The password reset request is invalid.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		if ($result === false)
-		{
-			return $this->error('The password reset has failed.', HttpStatus::BAD_REQUEST->value);
-		}
-
-		$user = $this->getUserId($userId);
-		if (!$user)
-		{
-			return $this->error('The user account is not found.', HttpStatus::NOT_FOUND->value);
-		}
-
-		return $this->permit($user, $req->ip());
-	}
-
-	/**
-	 * Store the authenticated user in session.
-	 *
-	 * @param User $user
-	 * @return void
-	 */
-	protected function setSessionUser(User $user): void
-	{
-		setSession('user', $user->getData());
 	}
 }

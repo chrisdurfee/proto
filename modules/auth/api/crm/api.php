@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 namespace Modules\Auth\Api;
 
-use Modules\Auth\Controllers\AuthController;
 use Modules\Auth\Controllers\PasswordController;
+use Modules\Auth\Controllers\CrmAuthController;
 use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
-use Proto\Http\Middleware\DomainMiddleware;
 use Proto\Http\Middleware\ThrottleMiddleware;
 use Proto\Http\Router\Router;
+use Proto\Http\Middleware\DomainMiddleware;
 
 /**
- * Auth API Routes
+ * Auth Routes
  *
  * This file defines the API routes for user authentication, including
  * login, logout, registration, MFA, and CSRF token retrieval.
@@ -18,23 +18,23 @@ router()
 	->middleware(([
 		CrossSiteProtectionMiddleware::class
 	]))
-	->post('auth/pulse', [AuthController::class, 'pulse'])
-	->post('auth/register', [AuthController::class, 'register'])
-	->get('auth/csrf-token', [AuthController::class, 'getToken'], [
+	->post('auth/crm/pulse', [CrmAuthController::class, 'pulse'])
+	->get('auth/crm/csrf-token', [CrmAuthController::class, 'getToken'], [
 		DomainMiddleware::class
 	]);
 
 router()
 	->middleware(([
-		ThrottleMiddleware::class
+		ThrottleMiddleware::class,
 	]))
-	->group('auth', function(Router $router)
+	->group('auth/crm', function(Router $router)
 	{
-		$controller = new AuthController();
+		$controller = new CrmAuthController();
 		// standard login / logout / register
 		$router->post('login', [$controller, 'login']);
 		$router->post('logout', [$controller, 'logout']);
 		$router->post('resume', [$controller, 'resume']);
+		$router->post('pulse', [$controller, 'pulse']);
 
 		// MFA: send & verify one‑time codes
 		$router->post('mfa/code', [$controller, 'getAuthCode']);
