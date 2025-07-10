@@ -3,6 +3,18 @@ import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 
 /**
+ * This will refresh the list.
+ *
+ * @param {object} e - The event object.
+ * @param {object} parent - The parent object.
+ * @returns {void}
+ */
+const refresh = (e, { list }) =>
+{
+	list.refresh();
+};
+
+/**
  * This will create a page header for the timeclock page.
  *
  * @returns {object}
@@ -13,13 +25,11 @@ export const PageHeader = () => (
 			H1({ class: 'text-3xl font-bold' }, 'Login Times'),
 			Div({ class: 'flex items-center gap-2' }, [
 				Div({ class: 'hidden lg:flex' }, [
-					Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.clock, click: () => null }, 'Clock In/Out'),
-					Button({ variant: 'withIcon', class: 'text-muted-foreground outline ml-2', icon: Icons.circlePlus, click: () => null }, 'Add Entry')
+					Button({ variant: 'withIcon', class: 'text-muted-foreground primary', icon: Icons.refresh, click: refresh }, 'Refresh')
 				]),
 				Div({ class: 'flex lg:hidden mr-0' }, [
-					Tooltip({ content: 'Clock In/Out', position: 'left' }, Button({ variant: 'icon', class: 'outline mr-2', icon: Icons.clock, click: () => null })),
-					Tooltip({ content: 'Add Entry', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.circlePlus, click: () => null }))
-				])
+					Tooltip({ content: 'Refresh', position: 'left' }, Button({ variant: 'icon', class: 'outline', icon: Icons.refresh, click: refresh }))
+				]),
 			])
 		])
 	])

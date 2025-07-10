@@ -14,4 +14,4 @@ router()
 	->middleware(([
 		CrossSiteProtectionMiddleware::class
 	]))
-	->resource('auth/:userId/login-log', LoginLogController::class);
+	->get('auth/:userId/login-log', [LoginLogController::class, 'all']);

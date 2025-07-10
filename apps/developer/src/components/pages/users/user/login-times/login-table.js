@@ -15,7 +15,7 @@ const HeaderRow = () =>
 		Tr({ class: 'text-muted-foreground border-b' }, [
 			CheckboxCol({ class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'userId', label: 'User ID' }),
-			HeaderCol({ key: 'createdAt', label: 'Logged At', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'createdAt', label: 'Created At', class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'direction', label: 'Type' }),
 			HeaderCol({ key: 'ip', label: 'IP Address', class: 'hidden md:table-cell' })
 		])
@@ -35,7 +35,7 @@ export const LoginRow = (row, onSelect) =>
 		Td({ class: 'p-4 hidden md:table-cell' }, [
 			new Checkbox({ checked: row.selected, class: 'mr-2', onChange: () => onSelect(row) })
 		]),
-		Td({ class: 'p-4' }, row.userId),
+		Td({ class: 'p-4' }, String(row.userId)),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.createdAt),
 		Td({ class: 'p-4' }, Span({ class: 'capitalize' }, row.direction)),
 		Td({ class: 'p-4 hidden md:table-cell' }, row.ip)
@@ -50,4 +50,4 @@ export const LoginRow = (row, onSelect) =>
  * @returns {object}
  */
 export const LoginTable = (data) =>
-	ScrollableDataTable({ data, cache: 'list', customHeader: HeaderRow(), rows: [], rowItem: LoginRow, key: 'id' });
+	ScrollableDataTable({ data, cache: 'list', limit: 50, customHeader: HeaderRow(), rows: [], rowItem: LoginRow, key: 'id' });

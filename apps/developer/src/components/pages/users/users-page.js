@@ -27,20 +27,6 @@ export const UsersPage = () =>
 	const Props =
 	{
 		data,
-
-		/**
-		 * This will update the user page when the url is
-		 * updated.
-		 *
-		 * @returns {void}
-		 */
-		update()
-		{
-			if (this.list)
-			{
-				//this.list.refresh();
-			}
-		}
 	};
 
 	return new BlankPage(Props, [

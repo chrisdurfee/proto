@@ -1,10 +1,9 @@
-import { Div } from "@base-framework/atoms";
+import { Div, UseParent } from "@base-framework/atoms";
 import { BlankPage } from "@base-framework/ui/pages";
 import { UserModel } from "../../models/user-model.js";
 import { LoginLogModel } from "./login-log-model.js";
 import { LoginTable } from "./login-table.js";
 import { PageHeader } from "./page-header.js";
-import { SummaryCards } from "./summary-cards.js";
 
 /**
  * @type {object} Props
@@ -72,15 +71,19 @@ export const LoginTimePage = () =>
 
 	return new BlankPage(Props, [
 		Div({ class: 'grid grid-cols-1' }, [
-			Div({ class: 'flex flex-auto flex-col pt-0 lg:space-y-12 w-full mx-auto 2xl:max-w-[1600px]' }, [
-				PageHeader(),
-				Div({ class: 'flex flex-auto flex-col space-y-4 lg:space-y-2' }, [
-					SummaryCards(),
-					Div({ class: 'flex flex-col overflow-x-auto' }, [
-						LoginTable(data)
+			UseParent(({ route }) =>
+			{
+				// @ts-ignore
+				data.userId = route.userId;
+				return Div({ class: 'flex flex-auto flex-col pt-0 lg:space-y-12 w-full mx-auto 2xl:max-w-[1600px]' }, [
+					PageHeader(),
+					Div({ class: 'flex flex-auto flex-col space-y-4 lg:space-y-2' }, [
+						Div({ class: 'flex flex-col overflow-x-auto' }, [
+							LoginTable(data)
+						])
 					])
-				])
-			])
+				]);
+			})
 		])
 	]);
 };

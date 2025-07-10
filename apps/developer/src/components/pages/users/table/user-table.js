@@ -2,21 +2,6 @@ import { A, Div, P, Span, Td, Thead, Tr } from "@base-framework/atoms";
 import { Badge, Checkbox } from "@base-framework/ui/atoms";
 import { Avatar, StaticStatusIndicator } from "@base-framework/ui/molecules";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
-import { UserModal } from "../modals/user-modal.js";
-
-/**
- * This will create a permission modal.
- *
- * @param {object} item
- * @param {object} parent
- * @returns {object}
- */
-const Modal = (item, { parent }) => (
-	UserModal({
-		item,
-		onClose: (data) => parent.list.mingle([ data.get() ])
-	})
-);
 
 /**
  * This will create a user avatar.
@@ -80,7 +65,7 @@ export const UserRow = (row, onSelect) => (
 		Td({ class: 'p-4' }, [
 			UserAvatar(row)
 		]),
-		Td({ class: 'p-4 max-w-[200px] truncate' }, [
+		Td({ class: 'p-4 max-w-[200px] truncate hidden md:table-cell' }, [
 			A({ href: `mailto:${row.email}`, class: 'text-muted-foreground', 'data-cancel-route': true }, row.email)
 		]),
 		Td({ class: 'p-4 hidden md:table-cell' }, [
@@ -89,7 +74,7 @@ export const UserRow = (row, onSelect) => (
 		Td({ class: 'p-4 hidden md:table-cell' }, [
 			A({ href: `users/${row.id}`, class: 'text-muted-foreground' }, row.emailVerifiedAt || '-')
 		]),
-		Td({ class: 'p-4 flex flex-wrap gap-2' }, [
+		Td({ class: 'p-4 hidden md:table-cell flex-wrap gap-2' }, [
 			A({ href: `users/${row.id}`, class: 'text-muted-foreground' }, UserRoles(row))
 		])
 	])
@@ -106,10 +91,10 @@ const HeaderRow = () => (
 			CheckboxCol({ class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'id', label: 'ID', class: 'hidden md:table-cell' }),
 			HeaderCol({ key: 'name', label: 'Name' }),
-			HeaderCol({ key: 'email', label: 'Email' }),
-			HeaderCol({ key: 'createdAt', label: 'Created At' }),
-			HeaderCol({ key: 'emailVerifiedAt', label: 'Email Verified' }),
-			HeaderCol({ key: 'roles', label: 'Roles' })
+			HeaderCol({ key: 'email', label: 'Email', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'createdAt', label: 'Created At', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'emailVerifiedAt', label: 'Email Verified', class: 'hidden md:table-cell' }),
+			HeaderCol({ key: 'roles', label: 'Roles', class: 'hidden md:table-cell' })
 		])
 	])
 );
