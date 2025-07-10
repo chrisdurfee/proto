@@ -371,10 +371,14 @@ abstract class ResourceController extends ApiController
 		$limit = $request->getInt('limit') ?? 50;
 		$search = $request->input('search');
 		$custom = $request->input('custom');
+		$dates = $this->setDateModifier($request);
+		$orderBy = $this->setOrderByModifier($request);
 
 		$result = $this->model::all($filter, $offset, $limit, [
 			'search' => $search,
-			'custom' => $custom
+			'custom' => $custom,
+			'dates' => $dates,
+			'orderBy' => $orderBy
 		]);
 		return $this->response($result);
 	}

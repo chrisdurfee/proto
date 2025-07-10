@@ -123,4 +123,37 @@ abstract class ApiController extends Controller
 		$filter = JsonFormat::decode($filter) ?? (object)[];
 		return $this->modifyFilter($filter, $request);
 	}
+
+	/**
+	 * Sets the date modifier for the request.
+	 *
+	 * @param Request $request The request object.
+	 * @return object|null The date modifier object or null.
+	 */
+	protected function setDateModifier(Request $request): ?object
+	{
+		$dates = $request->json('dates');
+		if ($dates === null)
+		{
+			return null;
+		}
+
+		if (empty($dates->field))
+		{
+			$dates->field = 'createdAt';
+		}
+
+		return $dates;
+	}
+
+	/**
+	 * Sets the order by modifier for the request.
+	 *
+	 * @param Request $request The request object.
+	 * @return object|null The order by modifier object or null.
+	 */
+	protected function setOrderByModifier(Request $request): ?object
+	{
+		return $request->json('orderBy') ?? null;
+	}
 }

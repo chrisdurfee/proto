@@ -17,9 +17,10 @@ class ErrorLogStorage extends Storage
 	 *
 	 * @param object $sql
 	 * @param array|null $modifiers
+	 * @param array $params
 	 * @return void
 	 */
-	protected function setOrderBy(object $sql, ?array $modifiers = null): void
+	protected function setOrderBy(object $sql, ?array $modifiers = null, ?array &$params = null): void
 	{
 		$sql->orderBy("e.created_at DESC");
 	}

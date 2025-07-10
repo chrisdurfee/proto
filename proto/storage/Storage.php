@@ -8,6 +8,8 @@ use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Storage\Helpers\FieldHelper;
 use Proto\Storage\Helpers\SubQueryHelper;
+use Proto\Utils\Sanitize;
+use Proto\Utils\Strings;
 
 /**
  * Class Storage
@@ -345,7 +347,7 @@ class Storage extends TableStorage
 		}
 
 		$isSnakeCase = $this->model->isSnakeCase();
-		$mapped      = [];
+		$mapped = [];
 
 		// 1) subquery‐joins for all multiple ModelJoins
 		foreach ($joins as $join)
@@ -539,15 +541,43 @@ class Storage extends TableStorage
 	}
 
 	/**
+	 * (Optional) Sets a custom where clause.
+	 *
+	 * @param object $sql Query builder instance.
+	 * @param array|null $modifiers Modifiers.
+	 * @param array|null $params Parameter array.
+	 * @return void
+	 */
+	protected function setCustomWhere(object $sql, ?array $modifiers = null, ?array &$params = null): void
+	{
+	}
+
+	/**
 	 * (Optional) Apply order-by conditions.
 	 *
 	 * @param object $sql Query builder instance.
 	 * @param array|null $modifiers Modifiers.
+	 * @param array|null $params Parameter array.
 	 * @return void
 	 */
-	protected function setOrderBy(object $sql, ?array $modifiers = null): void
+	protected function setOrderBy(object $sql, ?array $modifiers = null, ?array &$params = null): void
 	{
-		// Implement order-by logic as needed.
+		$orderBy = $modifiers['orderBy'] ?? null;
+		if (is_object($orderBy))
+		{
+			foreach ($orderBy as $rawField  => $rawDir)
+			{
+				$field = Sanitize::cleanColumn($rawField );
+				if ($field === '')
+				{
+					// skip empty or entirely‐stripped names
+					continue;
+				}
+
+				$direction = strtoupper((string)$rawDir) === 'DESC' ? 'DESC' : 'ASC';
+				$sql->orderBy("{$field} {$direction}");
+			}
+		}
 	}
 
 	/**
@@ -562,12 +592,13 @@ class Storage extends TableStorage
 	public function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
 	{
 		$params = [];
-		$where = static::getWhere($params, $filter, $modifiers);
+		$where = $this->getWhere($params, $filter, $modifiers);
 		$sql = $this->select()
 			->where(...$where)
 			->limit($offset, $limit);
 
-		$this->setOrderBy($sql, $modifiers);
+		$this->setCustomWhere($sql, $modifiers, $params);
+		$this->setOrderBy($sql, $modifiers, $params);
 
 		$rows = $sql->fetch($params);
 		return (object)[ 'rows' => $rows];
@@ -594,9 +625,51 @@ class Storage extends TableStorage
 	 * @param mixed $filter Filter criteria.
 	 * @return void
 	 */
+	protected function setDefaultModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], mixed $filter = null): void
+	{
+		$isSnakeCase = $this->model->isSnakeCase();
+
+		$dates = $modifiers['dates'] ?? '';
+		if (is_object($dates))
+		{
+			$field = $dates->field ?? 'createdAt';
+			$field = self::prepareField($field, $isSnakeCase);
+
+			$params[] = $dates->start ?? '';
+			$params[] = $dates->end ?? '';
+			$where[] = "($field BETWEEN ? AND ?)";
+		}
+
+		static::setModifiers($where, $modifiers, $params, $filter);
+	}
+
+	/**
+	 * Allow modifiers to adjust where clauses.
+	 *
+	 * @param array &$where Where clauses.
+	 * @param array|null $modifiers Modifiers.
+	 * @param array &$params Parameter array.
+	 * @param mixed $filter Filter criteria.
+	 * @return void
+	 */
 	protected static function setModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], mixed $filter = null): void
 	{
-		// Implement modifier logic if needed.
+	}
+
+	/**
+	 * Prepare a field name for use in queries.
+	 *
+	 * @param string $field Field name.
+	 * @param bool $isSnakeCase Whether to convert to snake_case.
+	 * @return string
+	 */
+	protected static function prepareField(string $field, bool $isSnakeCase = true): string
+	{
+		if ($isSnakeCase)
+		{
+			$field = Strings::snakeCase($field);
+		}
+		return Sanitize::cleanColumn($field);
 	}
 
 	/**
@@ -607,10 +680,10 @@ class Storage extends TableStorage
 	 * @param array|null $modifiers Modifiers.
 	 * @return array
 	 */
-	protected static function getWhere(array &$params, $filter, ?array $modifiers = null): array
+	protected function getWhere(array &$params, $filter, ?array $modifiers = null): array
 	{
 		$where = static::setFilters($filter, $params);
-		static::setModifiers($where, $modifiers, $params, $filter);
+		$this->setDefaultModifiers($where, $modifiers, $params, $filter);
 		return $where;
 	}
 
@@ -624,7 +697,7 @@ class Storage extends TableStorage
 	 */
 	public function where(mixed $filter, array &$params, ?array $modifiers = null): AdapterProxy
 	{
-		$where = static::getWhere($params, $filter, $modifiers);
+		$where = $this->getWhere($params, $filter, $modifiers);
 		return $this->select()->where(...$where);
 	}
 
@@ -699,7 +772,7 @@ class Storage extends TableStorage
 	public function count($filter = null, ?array $modifiers = null): object
 	{
 		$params = [];
-		$where = self::getWhere($params, $filter, $modifiers);
+		$where = $this->getWhere($params, $filter, $modifiers);
 		return $this->select([['COUNT(*)'], 'count'])->where(...$where)->first($params);
 	}
 }

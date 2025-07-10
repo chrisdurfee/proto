@@ -251,27 +251,15 @@ class UserStorage extends Storage
 	}
 
 	/**
-	 * Retrieve rows by filter, limit, and modifiers.
+	 * (Optional) Sets a custom where clause.
 	 *
-	 * @param array|object|null $filter Filter criteria.
-	 * @param int|null $offset Offset.
-	 * @param int|null $limit Limit count.
+	 * @param object $sql Query builder instance.
 	 * @param array|null $modifiers Modifiers.
-	 * @return object
+	 * @param array|null $params Parameter array.
+	 * @return void
 	 */
-	public function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
+	protected function setCustomWhere(object $sql, ?array $modifiers = null, ?array &$params = null): void
 	{
-		$params = [];
-		$where = static::getWhere($params, $filter, $modifiers);
-		$sql = $this->select()
-			->where(...$where)
-			->limit($offset, $limit);
-
 		//$sql->whereJoin('organizations', ["id" => 2], $params);
-
-		$this->setOrderBy($sql, $modifiers);
-
-		$rows = $sql->fetch($params);
-		return (object)[ 'rows' => $rows];
 	}
 }

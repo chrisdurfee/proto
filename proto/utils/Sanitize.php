@@ -72,7 +72,7 @@ class Sanitize
 	 */
 	public static function cleanColumn(string $col): string
 	{
-		return preg_replace('/[^a-zA-Z0-9_.]/', '', $col);
+		return (string) preg_replace('/[^a-zA-Z0-9_.]/', '', $col);
 	}
 
 	/**
