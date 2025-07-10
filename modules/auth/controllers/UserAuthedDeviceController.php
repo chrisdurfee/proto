@@ -5,6 +5,7 @@ namespace Modules\Auth\Controllers;
 use Proto\Controllers\ResourceController as Controller;
 use Modules\Auth\Models\Multifactor\UserAuthedDevice;
 use Proto\Http\Router\Request;
+use Common\Auth\Policies\UserPolicy;
 
 /**
  * UserAuthedDeviceController
@@ -13,6 +14,11 @@ use Proto\Http\Router\Request;
  */
 class UserAuthedDeviceController extends Controller
 {
+	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = UserPolicy::class;
+
 	/**
 	 * Initializes the model class.
 	 *
