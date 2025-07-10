@@ -1,8 +1,8 @@
 import { Div, H1, Header } from "@base-framework/atoms";
-import { Input } from "@base-framework/ui";
 import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { Combobox } from "@base-framework/ui/molecules";
+import { SearchInput } from "@base-framework/ui/organisms";
 import { UserModal } from "./modals/user-modal.js";
 
 /**
@@ -79,10 +79,12 @@ export const PageHeader = () => (
 		Div({ class: 'flex flex-auto items-center justify-between w-full' }, [
 			H1({ class: 'text-3xl font-bold' }, 'Users'),
 			Div({ class: 'flex items-center gap-2' }, [
-				Input({
+				SearchInput({
+					class: 'min-w-40 lg:min-w-96',
 					placeholder: 'Search users...',
 					bind: 'search',
-					keyup: (e, parent) => parent.list.refresh()
+					keyup: (e, parent) => parent.list.refresh(),
+					icon: Icons.magnifyingGlass.default
 				}),
 				Div({ class: 'hidden lg:flex' }, [
 					Button({ variant: 'withIcon', class: 'text-muted-foreground outline', icon: Icons.refresh, click: refresh }, 'Refresh')
