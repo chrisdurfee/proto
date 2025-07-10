@@ -24,20 +24,6 @@ export const ErrorPage = () =>
 	const Props =
 	{
 		data,
-
-		/**
-		 * This will update the error table when the url is
-		 * updated.
-		 *
-		 * @returns {void}
-		 */
-		update()
-		{
-			if (this.list)
-			{
-				this.list.refresh();
-			}
-		}
 	};
 	return new BlankPage(Props, [
 		Div({ class: 'grid grid-cols-1' }, [
