@@ -16,6 +16,7 @@ export const UsersPage = () =>
 	 * @type {Model} data
 	 */
 	const data = new UserModel({
+		search: '',
 		filter: {
 
 		}
