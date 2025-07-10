@@ -25,6 +25,7 @@ export const ErrorPage = () =>
 	{
 		data,
 	};
+
 	return new BlankPage(Props, [
 		Div({ class: 'grid grid-cols-1' }, [
 			Div({ class: 'flex flex-auto flex-col p-6 pt-0 space-y-6 md:space-y-12 md:pt-6 lg:p-8 w-full mx-auto' }, [
