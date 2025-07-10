@@ -1,7 +1,9 @@
 import { Code, Pre } from "@base-framework/atoms";
 import { Data, DateTime } from "@base-framework/base";
+import { Button } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { DetailBody, DetailSection, Modal, SplitRow } from "@base-framework/ui/molecules";
+import { ResultButtons } from "../table/result-buttons";
 
 /**
  * Helper function to mimic the old displayResults() behavior.
@@ -49,7 +51,6 @@ export const ErrorModal = (props) => new Modal(
 	icon: Icons.bug,
 	size: 'lg',
 	type: 'right',
-	hidePrimaryButton: true,
 	error: props.error,
 
 	/**
@@ -88,14 +89,16 @@ export const ErrorModal = (props) => new Modal(
 		});
 	},
 
-	/**
-	 * Lifecycle method triggered on modal close.
-	 *
-	 * Optional: Add cleanup or navigation logic here.
-	 */
-	onClose: () =>
+	getButtons()
 	{
-		// e.g., navigate away or perform cleanup.
+		const error = this.error;
+		return [
+			Button({ variant: 'outline', click: () => this.destroy() }, 'Cancel'),
+			new ResultButtons({
+				id: error.id,
+				resolved: error.resolved
+			})
+		];
 	}
 },
 [

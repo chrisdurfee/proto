@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\Developer\Controllers;
 
-use Proto\Controllers\Controller as BaseController;
+use Proto\Controllers\ApiController as BaseController;
 use Modules\Developer\Auth\Policies\DeveloperPolicy;
 
 /**

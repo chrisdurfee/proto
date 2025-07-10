@@ -5,6 +5,20 @@ import { ErrorModal } from "../modals/error-modal.js";
 import { ResultButtons } from "./result-buttons.js";
 
 /**
+ * This will create a permission modal.
+ *
+ * @param {object} item
+ * @param {object} parent
+ * @returns {object}
+ */
+const Modal = (item, { parent }) => (
+	ErrorModal({
+		error: item,
+		onClose: (data) => parent.list.mingle([ data.get() ])
+	}).open()
+);
+
+/**
  * This will render a header row in the table.
  *
  * @returns {object}
@@ -34,9 +48,7 @@ const HeaderRow = () => (
 export const Row = (row, onSelect) => (
 	Tr({
 		class: 'items-center px-4 py-2 hover:bg-muted/50 cursor-pointer',
-		click: () => ErrorModal({
-			error: row
-		}).open()
+		click: (e, parent) => Modal(row, parent)
 	}, [
 		Td({ class: 'p-4 hidden md:table-cell' }, [
 			new Checkbox({

@@ -13,19 +13,6 @@ use Proto\Storage\Storage;
 class ErrorLogStorage extends Storage
 {
 	/**
-	 * This will set the getRows order by.
-	 *
-	 * @param object $sql
-	 * @param array|null $modifiers
-	 * @param array $params
-	 * @return void
-	 */
-	protected function setOrderBy(object $sql, ?array $modifiers = null, ?array &$params = null): void
-	{
-		$sql->orderBy("e.created_at DESC");
-	}
-
-	/**
 	 * This will allow the where to be modified by modifiers.
 	 *
 	 * @param array $where

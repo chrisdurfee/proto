@@ -12,7 +12,10 @@ import { ErrorTable } from "./table/error-table.js";
 export const ErrorPage = () =>
 {
 	const data = new ErrorModel({
-		filter: 'all'
+		filter: 'all',
+		orderBy: {
+			createdAt: 'DESC'
+		}
 	});
 
 	/**

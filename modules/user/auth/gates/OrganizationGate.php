@@ -29,6 +29,7 @@ class OrganizationGate extends Gate
 		$organizations = $currentUser->organizations ?? [];
 		foreach ($organizations as $organization)
 		{
+			$organization = (object)$organization;
 			if ($organization->id === $orgId)
 			{
 				return true;

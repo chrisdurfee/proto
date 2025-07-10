@@ -32,7 +32,7 @@ class PermissionGate extends Gate
 		$roles = $user->roles ?? [];
 		foreach ($roles as $role)
 		{
-			if (!$this->canAccessOrg($organizationId, $role))
+			if (!$this->canAccessOrg($organizationId, (object)$role))
 			{
 				continue;
 			}

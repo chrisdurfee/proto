@@ -23,9 +23,9 @@ class ErrorController extends Controller
 	{
 		$id = $request->getInt('id');
 		$resolved = $request->input('resolved');
-		if (empty($id) || empty($resolved))
+		if (!isset($id) || !isset($resolved))
 		{
-			return $this->response()->error('Invalid request.');
+			return $this->error('Invalid request.');
 		}
 
 		return $this->updateResolved($id, $resolved);
@@ -84,10 +84,14 @@ class ErrorController extends Controller
 		$limit = $request->getInt('limit');
 		$search = $request->input('search');
 		$custom = $request->input('custom');
+		$orderBy = $this->setOrderByModifier($request);
+		$dates = $this->setDateModifier($request);
 
 		$result = ErrorLog::all($filter, $offset, $limit, [
 			'search' => $search,
-			'custom' => $custom
+			'custom' => $custom,
+			'orderBy' => $orderBy,
+			'dates' => $dates
 		]);
 		return $this->response($result);
 	}
