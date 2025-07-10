@@ -76,7 +76,23 @@ class UserController extends ResourceController
 			return $this->error('Username is already taken.');
 		}
 
+		$this->restrictData($data);
 		return parent::addItem($data);
+	}
+
+	/**
+	 * Restricts the data that can be updated.
+	 *
+	 * @param object $data The data to restrict.
+	 * @return void
+	 */
+	protected function restrictCredentials(object &$data): void
+	{
+		$fields = ['username', 'password'];
+		foreach ($fields as $field)
+		{
+			unset($data->$field);
+		}
 	}
 
 	/**
@@ -87,7 +103,7 @@ class UserController extends ResourceController
 	 */
 	protected function restrictData(object &$data): void
 	{
-		$fields = ['username', 'password', 'emailVerifiedAt', 'acceptedTermsAt', 'trialMode', 'trialDaysLeft', 'followerCount', 'deletedAt'];
+		$fields = ['emailVerifiedAt', 'acceptedTermsAt', 'trialMode', 'trialDaysLeft', 'followerCount', 'deletedAt'];
 		foreach ($fields as $field)
 		{
 			unset($data->$field);
@@ -116,6 +132,7 @@ class UserController extends ResourceController
 		 * Restrict the username, password, and other sensitive fields from being updated. This
 		 * should be done elsewhere to prevent unauthorized changes.
 		 */
+		$this->restrictCredentials($data);
 		$this->restrictData($data);
 
 		return parent::updateItem($data);
