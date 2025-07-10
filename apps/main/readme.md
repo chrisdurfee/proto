@@ -1,8 +1,8 @@
-# Proto CRM App
+# Proto Main App
 
 ## Framework Overview
 
-This is a CRM application built using the Base Framework. It provides a set of features and functionalities tailored for customer relationship management.
+This is a Main application built using the Base Framework. It provides a set of features and functionalities tailored for general purposes.
 
 ## Layouts
 
@@ -22,11 +22,11 @@ This app uses components and atoms to create layouts. Components are reusable la
 
 ## Getting Started
 
-To begin using the crm app, follow these steps:
+To begin using the main app, follow these steps:
 
 1. Navigate to the project directory:
 ```bash
-cd ./apps/crm
+cd ./apps/main
 ```
 
 2. Install dependencies (ensure Node.js is installed):

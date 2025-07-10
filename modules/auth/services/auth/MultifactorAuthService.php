@@ -184,7 +184,6 @@ class MultiFactorAuthService
 	 */
 	protected function dispatchEmail(object $settings, ?object $data = null): object
 	{
-		$settings->queue = true;
 		return Dispatcher::email($settings, $data);
 	}
 
@@ -230,7 +229,6 @@ class MultiFactorAuthService
 	 */
 	protected function dispatchText(object $settings, ?object $data = null): object
 	{
-		$settings->queue = true;
 		return Dispatcher::sms($settings, $data);
 	}
 }

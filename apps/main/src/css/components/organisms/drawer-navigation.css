@@ -1,0 +1,9 @@
+.drawer .navigation li.option,
+.drawer .navigation li.option a,
+.drawer .navigation li.option>div {
+	height: 40px;
+}
+
+.drawer .navigation li.option .label {
+	margin-left: 16px;
+}
