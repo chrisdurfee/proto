@@ -3,6 +3,7 @@ import { Badge, Button, Checkbox } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
 import { Avatar, EmptyState, StaticStatusIndicator } from "@base-framework/ui/molecules";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
+import { UserModal } from "../modals/user-modal.js";
 
 /**
  * This will create a user avatar.
@@ -120,7 +121,13 @@ export const UserTable = (data) => (
 			description: 'No users have been found. Maybe create a new user.',
 			icon: Icons.user.minus
 		}, [
-			Button({ variant: 'withIcon', icon: Icons.user.plus }, 'Add User')
+			Button({ variant: 'withIcon', icon: Icons.user.plus, click: (e, parent) => UserModal({
+				onClose: (data) =>
+				{
+					// @ts-ignore
+					parent.list.refresh();
+				}
+			}) }, 'Add User')
 		])
 	})
 );

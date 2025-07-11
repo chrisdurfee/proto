@@ -75,7 +75,7 @@ const Dropdown = () => (
  * @returns {object}
  */
 export const PageHeader = () => (
-	Header({ class: 'flex flex-auto flex-col' }, [
+	Header({ class: 'flex flex-col' }, [
 		Div({ class: 'flex flex-auto items-center justify-between w-full' }, [
 			H1({ class: 'text-3xl font-bold' }, 'Users'),
 			Div({ class: 'flex items-center gap-2' }, [
