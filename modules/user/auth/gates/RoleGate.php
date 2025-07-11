@@ -48,7 +48,8 @@ class RoleGate extends Gate
 		$roles = $user->roles ?? [];
 		foreach ($roles as $role)
 		{
-			if (!$this->canAccessOrg($organizationId, (object)$role))
+			$role = (object)$role;
+			if (!$this->canAccessOrg($organizationId, $role))
 			{
 				continue;
 			}
@@ -79,7 +80,8 @@ class RoleGate extends Gate
 		$roles = $user->roles ?? [];
 		foreach ($roles as $role)
 		{
-			if (!$this->canAccessOrg($organizationId, (object)$role))
+			$role = (object)$role;
+			if (!$this->canAccessOrg($organizationId, $role))
 			{
 				continue;
 			}
