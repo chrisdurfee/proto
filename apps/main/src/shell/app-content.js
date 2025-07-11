@@ -57,7 +57,7 @@ const MainContent = () => (
  */
 const resumeUserSession = () =>
 {
-	const DELAY = 1000;
+	const DELAY = 200;
 	setTimeout(() =>
 	{
 		const model = new AuthModel();
