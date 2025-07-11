@@ -7,7 +7,7 @@
  */
 export const Configs =
 {
-	APP_NAME: 'CRM',
+	APP_NAME: 'Main',
 
 	/**
 	 * This will set the base URL for the app.
@@ -17,7 +17,7 @@ export const Configs =
 	router:
 	{
 		baseUrl: '/',
-		title: 'CRM'
+		title: 'Main'
 	},
 
 	/**
