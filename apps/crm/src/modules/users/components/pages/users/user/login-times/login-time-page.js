@@ -29,7 +29,7 @@ export const LoginTimePage = () =>
 	};
 
 	return new BlankPage(Props, [
-		Div({ class: 'grid grid-cols-1' }, [
+		Div({ class: 'grid grid-cols-1 flex-auto' }, [
 			UseParent(({ route }) =>
 			{
 				// @ts-ignore
@@ -37,7 +37,7 @@ export const LoginTimePage = () =>
 				return Div({ class: 'flex flex-auto flex-col pt-0 lg:space-y-12 w-full mx-auto 2xl:max-w-[1600px]' }, [
 					PageHeader(),
 					Div({ class: 'flex flex-auto flex-col space-y-4 lg:space-y-2' }, [
-						Div({ class: 'flex flex-col overflow-x-auto' }, [
+						Div({ class: 'flex flex-auto flex-col overflow-x-auto' }, [
 							LoginTable(data)
 						])
 					])

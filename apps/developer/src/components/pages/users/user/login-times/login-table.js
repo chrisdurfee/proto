@@ -1,7 +1,8 @@
 import { Span, Td, Thead, Tr } from "@base-framework/atoms";
-import { ScrollableDataTable } from "@base-framework/ui";
 import { Checkbox } from "@base-framework/ui/atoms";
-import { CheckboxCol, HeaderCol } from "@base-framework/ui/organisms";
+import { Icons } from "@base-framework/ui/icons";
+import { EmptyState } from "@base-framework/ui/molecules";
+import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
 
 /**
  * HeaderRow
@@ -50,4 +51,18 @@ export const LoginRow = (row, onSelect) =>
  * @returns {object}
  */
 export const LoginTable = (data) =>
-	ScrollableDataTable({ data, cache: 'list', limit: 50, customHeader: HeaderRow(), rows: [], rowItem: LoginRow, key: 'id' });
+	ScrollableDataTable({
+		data,
+		cache: 'list',
+		limit: 50,
+		customHeader: HeaderRow(),
+		rows: [],
+		rowItem:
+		LoginRow,
+		key: 'id',
+		emptyState: () => EmptyState({
+			title: 'Who Hurt Them?',
+			description: 'No login attempts have been found. Maybe we should send them flowers.',
+			icon: Icons.clock
+		})
+	});
