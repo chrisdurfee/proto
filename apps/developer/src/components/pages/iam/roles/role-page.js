@@ -28,27 +28,13 @@ export const RolePage = () =>
 		 * This will remove the padding.
 		 */
 		class: 'pt-0',
-
-		/**
-		 * This will update the role page when the url is
-		 * updated.
-		 *
-		 * @returns {void}
-		 */
-		update()
-		{
-			if (this.list)
-			{
-				this.list.refresh();
-			}
-		}
 	};
 	return new BlankPage(Props, [
-		Div({ class: 'grid grid-cols-1' }, [
+		Div({ class: 'grid grid-cols-1 flex-auto' }, [
 			Div({ class: 'flex flex-auto flex-col p-6 pt-0 space-y-6 md:space-y-12 md:pt-6 lg:p-8 w-full mx-auto' }, [
 				PageHeader(),
 				Div({ class: 'flex flex-auto flex-col space-y-2 md:space-y-4' }, [
-					Div({ class: 'flex flex-col overflow-x-auto' }, [
+					Div({ class: 'flex flex-auto flex-col overflow-x-auto' }, [
 						RoleTable(data)
 					])
 				])
