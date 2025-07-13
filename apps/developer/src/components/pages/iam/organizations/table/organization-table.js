@@ -73,11 +73,11 @@ export const OrganizationTable = (data) => (
 		rowItem: OrganizationRow,
 		key: 'id',
 		emptyState: () => EmptyState({
-			title: 'Missing Some Permissions',
-			description: 'No permissions have been found.',
-			icon: Icons.locked
+			title: 'No Organizations Found',
+			description: 'No organizations have been found.',
+			icon: Icons.office.double
 		}, [
-			Button({ variant: 'withIcon', icon: Icons.circlePlus, click: (e, parent) => Modal(null, parent) }, 'Add Permission')
+			Button({ variant: 'withIcon', icon: Icons.circlePlus, click: (e, parent) => Modal(null, parent) }, 'Add Organization')
 		])
 	})
 );
