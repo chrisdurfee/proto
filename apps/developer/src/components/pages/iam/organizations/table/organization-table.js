@@ -1,5 +1,7 @@
 import { Td, Thead, Tr } from "@base-framework/atoms";
-import { Checkbox } from "@base-framework/ui/atoms";
+import { Button, Checkbox } from "@base-framework/ui/atoms";
+import { Icons } from "@base-framework/ui/icons";
+import { EmptyState } from "@base-framework/ui/molecules";
 import { CheckboxCol, HeaderCol, ScrollableDataTable } from "@base-framework/ui/organisms";
 import { OrganizationModal } from "../modals/organization-modal.js";
 
@@ -70,5 +72,12 @@ export const OrganizationTable = (data) => (
 		limit: 50,
 		rowItem: OrganizationRow,
 		key: 'id',
+		emptyState: () => EmptyState({
+			title: 'Missing Some Permissions',
+			description: 'No permissions have been found.',
+			icon: Icons.locked
+		}, [
+			Button({ variant: 'withIcon', icon: Icons.circlePlus, click: (e, parent) => Modal(null, parent) }, 'Add Permission')
+		])
 	})
 );
