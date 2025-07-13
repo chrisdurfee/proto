@@ -1,5 +1,7 @@
-import { Div, P, Td, Tr } from "@base-framework/atoms";
+import { Div, P, Span, Td, Tr } from "@base-framework/atoms";
+import { Atom } from "@base-framework/base";
 import { Badge, Card } from "@base-framework/ui/atoms";
+import { EmptyState } from "@base-framework/ui/molecules";
 import { DataTable, DynamicDataTable } from "@base-framework/ui/organisms";
 import { UserAuthedDeviceModel } from "../../../models/user-authed-device-model.js";
 import { ProfileSection } from "./profile-section.js";
@@ -239,7 +241,7 @@ export const ScheduleSection = () =>
  */
 export const AboutSection = ({ bio }) =>
 	ProfileSection({ title: "Bio"}, [
-		P({ class: "text-base text-muted-foreground" }, bio)
+		P({ class: "text-base text-muted-foreground" }, '[[user.bio]]')
 	]);
 
 /**
@@ -265,6 +267,22 @@ export const ContactSection = ({ user }) =>
 	]);
 
 /**
+ * Sets up role badges.
+ *
+ * @param {Array} roles - Array of role objects.
+ * @returns {object}
+ */
+const setupRoles = (roles) =>
+{
+	if (roles.length)
+	{
+		return roles.map(role => Badge({ variant: "outline" }, role.name))
+	}
+
+	return Span({ class: "text-muted-foreground" }, "No roles assigned");
+};
+
+/**
  * Creates a role section.
  *
  * @param {object} props
@@ -274,9 +292,25 @@ export const ContactSection = ({ user }) =>
 export const RoleSection = ({ roles }) =>
 	ProfileSection({ title: "Roles" }, [
 		Div({ class: "space-y-4" }, [
-			Div({ class: "flex flex-wrap gap-2" }, roles.map(role => Badge({ variant: "outline" }, role.name)))
+			Div({ class: "flex flex-wrap gap-2" }, setupRoles(roles))
 		])
 	]);
+
+/**
+ * Creates a list empty state.
+ *
+ * @param {object} props
+ * @param {Array} children - Child elements to render.
+ * @returns {object}
+ */
+export const ListEmptyState = Atom((props, children = []) => (
+	Div({ class: 'flex flex-auto flex-col items-center border rounded-md' }, [
+		EmptyState({
+			title: props.title || 'No Data',
+			description: props.description || 'No description available.'
+		}, children)
+	])
+));
 
 /**
  * AuthedDeviceSection
@@ -306,7 +340,11 @@ export const AuthedDeviceSection = (user) =>
 					Td({ class: "p-4" }, P(device.platform)),
 					Td({ class: "p-4 text-muted-foreground" }, P(device.brand)),
 					Td({ class: "p-4" }, Badge({ variant: "primary" }, device.version))
-				])
+				]),
+				emptyState: () => ListEmptyState({
+					title: 'No Authed Devices',
+					description: 'The user has not authed any devices.'
+				})
 			})
 		)
 	]);
@@ -333,7 +371,11 @@ export const OrganizationSection = ({ organizations }) =>
 					Td({ class: "p-4" }, String(org.id)),
 					Td({ class: "p-4 text-muted-foreground" }, P(org.name)),
 					Td({ class: "p-4" }, Badge({ variant: "primary" }, 'Active'))
-				])
+				]),
+				emptyState: () => ListEmptyState({
+					title: 'No Organizations',
+					description: 'The user is not a member of any organizations.'
+				})
 			})
 		)
 	]);
