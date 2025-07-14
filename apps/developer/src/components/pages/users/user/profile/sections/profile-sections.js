@@ -241,7 +241,9 @@ export const ScheduleSection = () =>
  */
 export const AboutSection = ({ bio }) =>
 	ProfileSection({ title: "Bio"}, [
-		P({ class: "text-base text-muted-foreground" }, '[[user.bio]]')
+		P({ class: 'text-muted-foreground' }, ['[[user.bio]]', (value) => (
+			(value) ? value : "No bio available."
+		)])
 	]);
 
 /**
