@@ -1,8 +1,8 @@
 import { A, Div, H1 } from "@base-framework/atoms";
-import { Avatar, Tooltip } from "@base-framework/ui";
-import { Button } from "@base-framework/ui/atoms";
+import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
-import { StaticStatusIndicator } from "@base-framework/ui/molecules";
+import { Avatar, StaticStatusIndicator } from "@base-framework/ui/molecules";
+import { Format } from "@base-framework/ui/utils";
 
 /**
  * UserHeader
@@ -44,7 +44,7 @@ export const UserHeader = ({ user }) => (
 		// phone and email
 		Div({ class: 'text-sm text-muted-foreground gap-1 flex-col truncate items-center justify-center mt-4 hidden md:flex' }, [
 			Div('[[user.email]]'),
-			Div('[[user.mobile]]'),
+			Div(Format.phone('[[user.mobile]]')),
 		]),
 		Div({ class: 'flex flex-auto items-center justify-center' }, [
 			Div({ class: 'flex space-x-4 mt-4' }, [

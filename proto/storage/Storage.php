@@ -582,6 +582,36 @@ class Storage extends TableStorage
 	}
 
 	/**
+	 * Apply group-by conditions.
+	 *
+	 * @param object $sql Query builder instance.
+	 * @param array|null $modifiers Modifiers.
+	 * @param array|null $params Parameter array.
+	 * @return void
+	 */
+	protected function setGroupBy(object $sql, ?array $modifiers = null, ?array &$params = null): void
+	{
+		$groupBy = $modifiers['groupBy'] ?? null;
+		if (is_array($groupBy))
+		{
+			$isSnakeCase = $this->model->isSnakeCase();
+			$fields = [];
+			foreach ($groupBy as $rawField)
+			{
+				$field = $this->prepareField($rawField, $isSnakeCase);
+				if ($field === '')
+				{
+					// skip empty or entirely‐stripped names
+					continue;
+				}
+				$fields[] = $field;
+			}
+
+			$sql->groupBy(...$fields);
+		}
+	}
+
+	/**
 	 * Retrieve rows by filter, limit, and modifiers.
 	 *
 	 * @param array|object|null $filter Filter criteria.
@@ -600,6 +630,7 @@ class Storage extends TableStorage
 
 		$this->setCustomWhere($sql, $modifiers, $params);
 		$this->setOrderBy($sql, $modifiers, $params);
+		$this->setGroupBy($sql, $modifiers, $params);
 
 		$rows = $sql->fetch($params);
 		return (object)[ 'rows' => $rows];

@@ -3,6 +3,7 @@ import { Atom } from "@base-framework/base";
 import { Badge, Card } from "@base-framework/ui/atoms";
 import { EmptyState } from "@base-framework/ui/molecules";
 import { DataTable, DynamicDataTable } from "@base-framework/ui/organisms";
+import { Format } from "@base-framework/ui/utils";
 import { UserAuthedDeviceModel } from "../../../models/user-authed-device-model.js";
 import { ProfileSection } from "./profile-section.js";
 
@@ -37,12 +38,12 @@ export const OrgDetailsSection = () =>
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Date Created"),
-					P({ class: "font-medium text-foreground" }, "[[user.createdAt]]")
+					P({ class: "font-medium text-foreground" }, Format.date("[[user.createdAt]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Birth Date"),
-					P({ class: "font-medium text-foreground" }, "[[user.dob]]")
+					P({ class: "font-medium text-foreground" }, Format.date("[[user.dob]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
@@ -52,17 +53,17 @@ export const OrgDetailsSection = () =>
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Allows Email"),
-					P({ class: "font-medium text-foreground" }, "[[user.allowEmail]]")
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.allowEmail]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Allows Sms"),
-					P({ class: "font-medium text-foreground" }, "[[user.allowSms]]")
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.allowSms]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Allows Push"),
-					P({ class: "font-medium text-foreground" }, "[[user.allowPush]]")
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.allowPush]]"))
 				])
 			])
 		])
@@ -134,42 +135,42 @@ export const AppDetailsSection = () =>
 			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" }, [
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Accepted Terms"),
-					P({ class: "font-medium text-foreground" }, "[[user.acceptedTermsAt]]")
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.acceptedTermsAt]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Last Login"),
-					P({ class: "font-medium text-foreground" }, "[[user.lastLoginAt]]")
+					P({ class: "font-medium text-foreground" }, Format.dateTime("[[user.lastLoginAt]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Enabled"),
-					P({ class: "font-medium text-foreground" }, "[[user.enabled]]")
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.enabled]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Email Verified"),
-					P({ class: "font-medium text-foreground" }, "[[user.emailVerifiedAt]]")
+					P({ class: "font-medium text-foreground" }, Format.dateTime("[[user.emailVerifiedAt]]", 'Not Verified'))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Allows Marketing"),
-					P({ class: "font-medium text-foreground" }, "[[user.marketingOptIn]]")
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.marketingOptIn]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Last Updated"),
-					P({ class: "font-medium text-foreground" }, "[[user.updatedAt]]")
+					P({ class: "font-medium text-foreground" }, Format.dateTime("[[user.updatedAt]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Follower Count"),
-					P({ class: "font-medium text-foreground" }, "[[user.followerCount]]")
+					P({ class: "font-medium text-foreground" }, Format.number("[[user.followerCount]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Password Changed"),
-					P({ class: "font-medium text-foreground" }, "[[user.lastPasswordChangeAt]]")
+					P({ class: "font-medium text-foreground" }, Format.dateTime("[[user.lastPasswordChangeAt]]", 'No change'))
 				]),
 			])
 		])
@@ -187,7 +188,7 @@ export const PersonalDetailsSection = () =>
 				// Trial mode
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Trial Mode"),
-					P({ class: "font-medium text-foreground" }, "[[user.trialMode]]")
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.trialMode]]"))
 				]),
 
 				// Marketing
@@ -241,9 +242,7 @@ export const ScheduleSection = () =>
  */
 export const AboutSection = ({ bio }) =>
 	ProfileSection({ title: "Bio"}, [
-		P({ class: 'text-muted-foreground' }, ['[[user.bio]]', (value) => (
-			(value) ? value : "No bio available."
-		)])
+		P({ class: 'text-muted-foreground' }, Format.default('[[user.bio]]', "No bio available."))
 	]);
 
 /**
@@ -259,11 +258,11 @@ export const ContactSection = ({ user }) =>
 		Div({ class: "divide-y divide-muted-200 text-sm text-muted-foreground" }, [
 			Div({ class: "flex justify-between py-2" }, [
 				P({ class: "font-medium text-foreground" }, "Email"),
-				P({ class: "truncate" }, user.email)
+				P({ class: "truncate" }, '[[user.email]]')
 			]),
 			Div({ class: "flex justify-between py-2" }, [
 				P({ class: "font-medium text-foreground" }, "Phone"),
-				P({ class: "truncate" }, user.phone || "—")
+				P({ class: "truncate" }, Format.phone('[[user.phone]]', "—"))
 			])
 		])
 	]);
@@ -294,7 +293,7 @@ const setupRoles = (roles) =>
 export const RoleSection = ({ roles }) =>
 	ProfileSection({ title: "Roles" }, [
 		Div({ class: "space-y-4" }, [
-			Div({ class: "flex flex-wrap gap-2" }, setupRoles(roles))
+			Div({ class: "flex flex-wrap gap-2", onSet: ['user.roles', setupRoles] })
 		])
 	]);
 

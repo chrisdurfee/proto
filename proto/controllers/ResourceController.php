@@ -373,12 +373,14 @@ abstract class ResourceController extends ApiController
 		$custom = $request->input('custom');
 		$dates = $this->setDateModifier($request);
 		$orderBy = $this->setOrderByModifier($request);
+		$groupBy = $this->setGroupByModifier($request);
 
 		$result = $this->model::all($filter, $offset, $limit, [
 			'search' => $search,
 			'custom' => $custom,
 			'dates' => $dates,
-			'orderBy' => $orderBy
+			'orderBy' => $orderBy,
+			'groupBy' => $groupBy
 		]);
 		return $this->response($result);
 	}
