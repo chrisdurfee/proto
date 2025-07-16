@@ -2,6 +2,7 @@
 namespace Proto\Models;
 
 use Proto\Base;
+use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Models\Data\Data;
 use Proto\Storage\Storage;
 use Proto\Storage\StorageProxy;
@@ -74,9 +75,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Storage connection instance.
 	 *
-	 * @var object|null
+	 * @var StorageProxy|null
 	 */
-	public ?object $storage = null;
+	public ?StorageProxy $storage = null;
 
 	/**
 	 * Storage wrapper instance.
@@ -800,12 +801,17 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Set up storage connection.
 	 *
-	 * @return object
+	 * @return StorageProxy
 	 */
-	protected function setupStorage(): object
+	protected function setupStorage(): StorageProxy
 	{
 		$className = static::$storageType;
 		$storageInstance = new $className($this);
+
+		/**
+		 * The storage is wrapped in a proxy to dispatch events
+		 * for all actions the storage layer is calling.
+		 */
 		$eventProxy = new StorageProxy($this, $storageInstance);
 		return $this->storage = $eventProxy;
 	}
@@ -1016,18 +1022,15 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * Get rows from storage.
 	 *
 	 * @param array $filter Filter criteria.
-	 * @return array|null
+	 * @return AdapterProxy
 	 */
-	public static function where(array $filter): ?array
+	public static function where(array $filter): AdapterProxy
 	{
 		$instance = new static();
-		$rows = $instance->storage->where($filter);
-		if ($rows !== false && !empty($rows))
-		{
-			$rows = $instance->convertRows($rows);
-		}
-
-		return $rows;
+		/**
+		 * @SuppressWarnings PHP0408,PHP0423
+		 */
+		return $instance->storage->where($filter);
 	}
 
 	/**

@@ -730,6 +730,9 @@ class Storage extends TableStorage
 	public function where(mixed $filter, array &$params, ?array $modifiers = null): AdapterProxy
 	{
 		$where = $this->getWhere($params, $filter, $modifiers);
+		/**
+		 * @SuppressWarnings PHP0408,PHP0423
+		 */
 		return $this->select()->where(...$where);
 	}
 

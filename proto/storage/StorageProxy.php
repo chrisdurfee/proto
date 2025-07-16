@@ -11,6 +11,7 @@ use Proto\Models\ModelInterface;
  * This class creates a storage proxy object that dispatches events for all actions the storage layer is calling.
  * This allows developers to track when the storage is being modified without manually dispatching events.
  *
+ * @mixin Storage
  * @package Proto\Storage
  */
 class StorageProxy extends EventProxy implements StorageInterface

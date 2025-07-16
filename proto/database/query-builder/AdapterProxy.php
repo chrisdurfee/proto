@@ -2,12 +2,22 @@
 namespace Proto\Database\QueryBuilder;
 
 use Proto\Database\Adapters\Adapter;
+use Proto\Database\QueryBuilder\Select;
+use Proto\Database\QueryBuilder\Insert;
+use Proto\Database\QueryBuilder\Replace;
+use Proto\Database\QueryBuilder\Update;
+use Proto\Database\QueryBuilder\Delete;
 
 /**
  * AdapterProxy
  *
  * Adds adapter functionality to the query builder.
  *
+ * @mixin Select
+ * @mixin Insert
+ * @mixin Replace
+ * @mixin Update
+ * @mixin Delete
  * @package Proto\Database\QueryBuilder
  */
 class AdapterProxy
