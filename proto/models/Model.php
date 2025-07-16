@@ -1032,15 +1032,17 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * Get rows from storage.
 	 *
 	 * @param array $filter Filter criteria.
+	 * @param array|null $params Query parameters.
+	 * @param array|null $modifiers Query modifiers.
 	 * @return AdapterProxy
 	 */
-	public static function where(array $filter): AdapterProxy
+	public static function where(array $filter, ?array $params = null, ?array $modifiers = null): AdapterProxy
 	{
 		$instance = new static();
 		/**
 		 * @SuppressWarnings PHP0408,PHP0423
 		 */
-		return $instance->storage->where($filter);
+		return $instance->storage->where($filter, $params, $modifiers);
 	}
 
 	/**

@@ -118,26 +118,51 @@ class ExampleController extends ModelController
 					For example, a controller method might look like this:`
 				),
 				CodeBlock(
-`public function getByName(string $name)
+`
+// single row
+public function getByName(string $name)
 {
     // Retrieve a user by name using the model
-    $row = $this->model()->getBy(['name' => $name]);
+    $row = $this->model::getBy(['name' => $name]);
     if ($row === null)
 	{
         return $this->error('No user was found');
     }
 
     return $this->response($row);
-}
+}`
+				),
 
-// or
+				CodeBlock(
+`
+// multiple rows
 public function getByName(string $name)
 {
     // Retrieve a user by name using the model
-    $rows = $this->model()->fetchWhere(['name' => $name]);
+    $rows = $this->model::fetchWhere(['name' => $name]);
     if ($rows === null)
 	{
-        return $this->error('No user was found');
+        return $this->error('No users were found');
+    }
+
+    return $this->response($rows);
+}`
+				),
+
+				CodeBlock(
+`
+// custom query
+public function getByName(string $name)
+{
+    // Retrieve a user by name using the model
+    $rows = $this->model::where(['name' => $name])
+        ->orderBy('id DESC')
+		->groupBy('id')
+		->fetch();
+
+    if ($rows === null)
+	{
+        return $this->error('No users were found');
     }
 
     return $this->response($rows);
