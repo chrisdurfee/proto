@@ -26,10 +26,15 @@ class WebPushUserStorage extends Storage
 			return false;
 		}
 
-		return $this->select()
-			->where('user_id = ?')
-			->limit($limit)
-			->first([$userId]);
+		$sql = $this->select()
+			->where('user_id = ?');
+
+		if ($limit)
+		{
+			$sql->limit(1);
+		}
+
+		return $sql->fetch([$userId]);
 	}
 
 	/**

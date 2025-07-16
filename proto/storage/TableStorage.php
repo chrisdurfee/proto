@@ -102,6 +102,9 @@ class TableStorage implements StorageInterface
 		return $this->table($tableName)
 			->insert()
 			->fields(array_keys($objectVars))
+			/**
+			 * @suppresswarnings PHP0418
+			 */
 			->values(array_fill(0, count($objectVars), '?'))
 			->execute(array_values($objectVars));
 	}

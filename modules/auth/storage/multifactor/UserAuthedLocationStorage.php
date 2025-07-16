@@ -45,6 +45,9 @@ class UserAuthedLocationStorage extends Storage
 		$result = $this->table()
 			->insert()
 			->fields($params->cols)
+			/**
+			 * @suppresswarnings PHP0418
+			 */
 			->values($params->placeholders)
 			->execute($params->params);
 
