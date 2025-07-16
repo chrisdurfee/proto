@@ -121,13 +121,26 @@ class ExampleController extends ModelController
 `public function getByName(string $name)
 {
     // Retrieve a user by name using the model
-    $result = $this->model()->getBy(['name' => $name]);
-    if ($result === false)
+    $row = $this->model()->getBy(['name' => $name]);
+    if ($row === null)
 	{
         return $this->error('No user was found');
     }
 
-    return $this->response($result);
+    return $this->response($row);
+}
+
+// or
+public function getByName(string $name)
+{
+    // Retrieve a user by name using the model
+    $rows = $this->model()->fetchWhere(['name' => $name]);
+    if ($rows === null)
+	{
+        return $this->error('No user was found');
+    }
+
+    return $this->response($rows);
 }`
 				)
 			]),
@@ -376,23 +389,6 @@ public function updateStatus(Request $request): object
 				CodeBlock(
 `// Create a new model instance with provided data
 $model = $this->model($data);`
-				)
-			]),
-
-			// Access Model Storage
-			Section({ class: 'space-y-4 mt-12' }, [
-				H4({ class: 'text-lg font-bold' }, 'Access Model Storage'),
-				P({ class: 'text-muted-foreground' },
-					`Models map database rows to camelCase properties, which is helpful when interacting with the model.
-					To access raw data, use the storage property; to automatically convert results to camelCase,
-					use the controller storage proxy:`
-				),
-				CodeBlock(
-`// Access raw storage data (snake_case properties)
-$data = $this->model()->storage->getBy(['name' => $name]);
-
-// Access converted storage data (camelCase properties)
-$data = $this->storage()->getBy(['name' => $name]);`
 				)
 			]),
 

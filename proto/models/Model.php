@@ -1044,6 +1044,17 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+	 * Gets all rows by the where filter.
+	 *
+	 * @param array $filter
+	 * @return array
+	 */
+	public static function fetchWhere(array $filter): ?array
+	{
+		return static::getRows($filter)->rows ?? null;
+	}
+
+	/**
 	 * Get rows from storage.
 	 *
 	 * @param array|object|null $filter Filter criteria.

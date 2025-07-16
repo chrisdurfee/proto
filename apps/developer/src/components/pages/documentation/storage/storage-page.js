@@ -172,9 +172,8 @@ $sql = $this->builder('other_table', 'o')->select()->where("o.active = 1");`
 	['a.id', '>', $user->id]
 ];
 
-$sql = $this->getBy($filter);   // one
-$sql = $this->where($filter);   // many
-$result = $this->fetch($sql, $params);`
+$row = $this->getBy($filter);   // one
+$rows = $this->fetchWhere($filter);   // many`
 				)
 			]),
 

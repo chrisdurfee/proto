@@ -531,7 +531,7 @@ class Storage extends TableStorage
 	 * @param array|object $filter Filter criteria.
 	 * @return object|null
 	 */
-	public function getBy($filter): mixed
+	public function getBy(object|array $filter): mixed
 	{
 		$params = [];
 		$where = static::setFilters($filter, $params);

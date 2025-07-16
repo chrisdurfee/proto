@@ -74,7 +74,7 @@ class HasMany
 			return null;
 		}
 
-		return ($this->related)::where([
+		return ($this->related)::fetchWhere([
 			[$this->foreignKey, $localValue]
 		]) ?? null;
 	}
