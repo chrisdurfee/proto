@@ -1031,12 +1031,12 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Get rows from storage.
 	 *
-	 * @param array $filter Filter criteria.
+	 * @param array|object|null $filter Filter criteria.
 	 * @param array|null $params Query parameters.
 	 * @param array|null $modifiers Query modifiers.
 	 * @return AdapterProxy
 	 */
-	public static function where(array $filter, ?array $params = null, ?array $modifiers = null): AdapterProxy
+	public static function where(mixed $filter, ?array $params = null, ?array $modifiers = null): AdapterProxy
 	{
 		$instance = new static();
 		/**
@@ -1048,10 +1048,10 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Gets all rows by the where filter.
 	 *
-	 * @param array $filter
+	 * @param array|object|null $filter
 	 * @return array
 	 */
-	public static function fetchWhere(array $filter): ?array
+	public static function fetchWhere(mixed $filter): ?array
 	{
 		return static::getRows($filter)->rows ?? null;
 	}
