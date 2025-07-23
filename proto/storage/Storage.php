@@ -5,7 +5,6 @@ use Proto\Models\Model;
 use Proto\Models\Joins\ModelJoin;
 use Proto\Database\Database;
 use Proto\Database\QueryBuilder\QueryHandler;
-use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Storage\Helpers\FieldHelper;
 use Proto\Storage\Helpers\SubQueryHelper;
 use Proto\Utils\Sanitize;

@@ -3,7 +3,6 @@ namespace Proto\Dispatch;
 
 include_once __DIR__ . '/../../vendor/autoload.php';
 
-use Proto\Config;
 use Minishlink\WebPush\WebPush as wPush;
 use Minishlink\WebPush\Subscription;
 
@@ -57,8 +56,8 @@ class WebPush extends Dispatch
 	 */
 	protected function getAuthSettings() : array
 	{
-		$settings = Config::getInstance();
-		if (empty($settings->push->auth))
+		$settings = env('push');
+		if (empty($settings->auth))
 		{
 			return [];
 		}

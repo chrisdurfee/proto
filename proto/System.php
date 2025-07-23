@@ -58,6 +58,7 @@ class System
 	/**
 	 * Sets the application error reporting based on the configuration settings.
 	 *
+	 * @suppressWarnings PHP0416
 	 * @return void
 	 */
 	protected function setErrorReporting(): void

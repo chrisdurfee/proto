@@ -77,9 +77,9 @@ namespace Proto\Database\QueryBuilder
 		 *
 		 * @param mixed ...$fields One or more fields to select.
 		 *
-		 * @return AdapterProxy The adapter proxy wrapping the SELECT query builder.
+		 * @return object The adapter proxy wrapping the SELECT query builder.
 		 */
-		public function select(...$fields) : AdapterProxy
+		public function select(...$fields) : object
 		{
 			$query = new Select($this->tableName, $this->alias);
 			$query->select(...$fields);
@@ -104,9 +104,9 @@ namespace Proto\Database\QueryBuilder
 		 *
 		 * @param array|object|null $data The data to insert.
 		 *
-		 * @return AdapterProxy The adapter proxy wrapping the INSERT query builder.
+		 * @return object The adapter proxy wrapping the INSERT query builder.
 		 */
-		public function insert(array|object|null $data = null) : AdapterProxy
+		public function insert(array|object|null $data = null) : object
 		{
 			$query = new Insert($this->tableName, $this->alias);
 			$query->insert($data);
@@ -118,9 +118,9 @@ namespace Proto\Database\QueryBuilder
 		 *
 		 * @param array|object|null $data The data for the replace operation.
 		 *
-		 * @return AdapterProxy The adapter proxy wrapping the REPLACE query builder.
+		 * @return object The adapter proxy wrapping the REPLACE query builder.
 		 */
-		public function replace(array|object|null $data = null) : AdapterProxy
+		public function replace(array|object|null $data = null) : object
 		{
 			$query = new Replace($this->tableName, $this->alias);
 			$query->replace($data);
@@ -132,9 +132,9 @@ namespace Proto\Database\QueryBuilder
 		 *
 		 * @param array|object|string ...$fields One or more fields or data to update.
 		 *
-		 * @return AdapterProxy The adapter proxy wrapping the UPDATE query builder.
+		 * @return object The adapter proxy wrapping the UPDATE query builder.
 		 */
-		public function update(array|object|string ...$fields) : AdapterProxy
+		public function update(array|object|string ...$fields) : object
 		{
 			$query = new Update($this->tableName, $this->alias);
 			$query->update(...$fields);
@@ -166,9 +166,9 @@ namespace Proto\Database\QueryBuilder
 		/**
 		 * Creates a DELETE query builder and wraps it in an adapter proxy.
 		 *
-		 * @return AdapterProxy The adapter proxy wrapping the DELETE query builder.
+		 * @return object The adapter proxy wrapping the DELETE query builder.
 		 */
-		public function delete() : AdapterProxy
+		public function delete() : object
 		{
 			$query = new Delete($this->tableName, $this->alias);
 			return $this->createAdapterProxy($query);

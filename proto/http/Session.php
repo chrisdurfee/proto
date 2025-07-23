@@ -39,8 +39,8 @@ class Session
 	 */
 	protected static function getConfigType(): string
 	{
-		$config = Config::getInstance();
-		return ($config->session ?? 'file') === 'file' ? FileSession::class : DatabaseSession::class;
+		$session = env('session');
+		return ($session ?? 'file') === 'file' ? FileSession::class : DatabaseSession::class;
 	}
 
 	/**
