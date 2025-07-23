@@ -464,9 +464,9 @@ class Storage extends TableStorage
 	 * Create a select query builder.
 	 *
 	 * @param mixed ...$fields Field list.
-	 * @return AdapterProxy
+	 * @return object
 	 */
-	public function select(...$fields): AdapterProxy
+	public function select(...$fields): object
 	{
 		$joins = $this->model->getJoins();
 		$colNames = [];
@@ -725,9 +725,9 @@ class Storage extends TableStorage
 	 * @param array|object|null $filter Filter criteria.
 	 * @param array &$params Parameter array.
 	 * @param array|null $modifiers Modifiers.
-	 * @return AdapterProxy
+	 * @return object
 	 */
-	public function where(mixed $filter, array &$params, ?array $modifiers = null): AdapterProxy
+	public function where(mixed $filter, array &$params, ?array $modifiers = null): object
 	{
 		$where = $this->getWhere($params, $filter, $modifiers);
 		/**

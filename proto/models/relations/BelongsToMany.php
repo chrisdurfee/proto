@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 namespace Proto\Models\Relations;
 
-use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Models\Model;
 use Proto\Utils\Strings;
 
@@ -279,9 +278,9 @@ class BelongsToMany
 	/**
 	 * Build the base query for selecting related rows.
 	 *
-	 * @return AdapterProxy
+	 * @return object
 	 */
-	protected function buildBaseQuery(): AdapterProxy
+	protected function buildBaseQuery(): object
 	{
 		$relatedTable = ($this->related)::table();
 		return $this->parent
