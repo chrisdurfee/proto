@@ -227,9 +227,9 @@ class StreamSocket implements SocketInterface
 	 *
 	 * @param float|null $timeout The timeout period.
 	 * @param string|null $peerName The peer name reference.
-	 * @return SocketInterface|null
+	 * @return StreamSocket|null
 	 */
-	public function accept(?float $timeout = null, string &$peerName = null): ?SocketInterface
+	public function accept(?float $timeout = null, string &$peerName = null): ?StreamSocket
 	{
 		$stream = @stream_socket_accept($this->stream, $timeout, $peerName);
 		return $stream ? new static($stream) : null;

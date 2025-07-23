@@ -18,11 +18,11 @@ class Connection extends SocketHandler
 	/**
 	 * Initializes a new connection.
 	 *
-	 * @param SocketInterface $socket The socket instance.
+	 * @param StreamSocket $socket The socket instance.
 	 * @return void
 	 */
 	public function __construct(
-		protected readonly SocketInterface $socket
+		protected readonly StreamSocket $socket
 	)
 	{
 		parent::__construct();
