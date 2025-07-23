@@ -11,4 +11,11 @@ namespace Proto\Storage;
  */
 interface StorageInterface
 {
+    /**
+	 * Normalize data from snake_case to camelCase.
+	 *
+	 * @param mixed $data Raw data.
+	 * @return mixed
+	 */
+	public function normalize(mixed $data): mixed;
 }

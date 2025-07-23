@@ -10,4 +10,10 @@ namespace Proto\Models;
  */
 interface ModelInterface
 {
+    /**
+     * Get the data for the model.
+     *
+     * @return object
+     */
+    public function getData(): object;
 }

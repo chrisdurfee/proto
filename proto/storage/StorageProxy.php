@@ -3,7 +3,7 @@ namespace Proto\Storage;
 
 use Proto\Events\EventProxy;
 use Proto\Events\Events;
-use Proto\Models\ModelInterface;
+use Proto\Models\Model;
 
 /**
  * StorageProxy
@@ -19,13 +19,13 @@ class StorageProxy extends EventProxy implements StorageInterface
 	/**
 	 * Sets up the storage proxy.
 	 *
-	 * @param ModelInterface $model The model associated with the storage proxy.
-	 * @param StorageInterface $storage The storage object.
+	 * @param Model $model The model associated with the storage proxy.
+	 * @param Storage $storage The storage object.
 	 * @return void
 	 */
 	public function __construct(
-		protected ModelInterface &$model,
-		StorageInterface &$storage
+		protected Model &$model,
+		public Storage &$storage
 	)
 	{
 		$target = $this->getModelName($model);
@@ -35,10 +35,10 @@ class StorageProxy extends EventProxy implements StorageInterface
 	/**
 	 * Retrieves the model name.
 	 *
-	 * @param ModelInterface $model The model object.
+	 * @param Model $model The model object.
 	 * @return string The model name.
 	 */
-	protected function getModelName(ModelInterface $model): string
+	protected function getModelName(Model $model): string
 	{
 		$reflect = new \ReflectionClass($model);
 		return $reflect->getShortName();
@@ -94,5 +94,16 @@ class StorageProxy extends EventProxy implements StorageInterface
 			'args' => $response->args,
 			'data' => $response->data
 		]);
+	}
+
+	/**
+	 * Normalize data from snake_case to camelCase.
+	 *
+	 * @param mixed $data Raw data.
+	 * @return mixed
+	 */
+	public function normalize(mixed $data): mixed
+	{
+		return $this->storage->normalize($data);
 	}
 }

@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Storage;
 
-use Proto\Models\ModelInterface;
+use Proto\Models\Model;
 use Proto\Models\Joins\ModelJoin;
 use Proto\Database\Database;
 use Proto\Database\QueryBuilder\QueryHandler;
@@ -38,11 +38,11 @@ class Storage extends TableStorage
 	/**
 	 * Storage constructor.
 	 *
-	 * @param ModelInterface $model The model instance.
+	 * @param Model $model The model instance.
 	 * @param string $database The database adapter class.
 	 */
 	public function __construct(
-		protected ModelInterface $model,
+		protected Model $model,
 		string $database = Database::class
 	)
 	{
@@ -466,7 +466,7 @@ class Storage extends TableStorage
 	 * @param mixed ...$fields Field list.
 	 * @return AdapterProxy
 	 */
-	public function select(...$fields)
+	public function select(...$fields): AdapterProxy
 	{
 		$joins = $this->model->getJoins();
 		$colNames = [];

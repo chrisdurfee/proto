@@ -159,6 +159,115 @@ abstract class Adapter
 	}
 
 	/**
+	 * Executes a SQL query.
+	 *
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return bool True on success, false on failure.
+	 */
+	abstract public function execute(string $sql, array|object $params = []) : bool;
+
+	/**
+	 * Fetches the results of a SQL query.
+	 *
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @param string $resultType The type of results: 'object' or 'array'.
+	 * @return array|null The fetched results as an array, or null on failure.
+	 */
+	abstract public function fetch(string $sql, array|object $params = [], string $resultType = 'object') : ?array;
+
+	/**
+	 * Fetches the first result of a SQL query.
+	 *
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return object|null The first result as an object, or null on failure.
+	 */
+	abstract public function first(string $sql, array|object $params = []) : ?object;
+
+	/**
+	 * Executes a SQL query.
+	 *
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return bool True on success, false on failure.
+	 */
+	abstract public function query(string $sql, array|object $params = []) : bool;
+
+	/**
+	 * Executes a transaction with a single query.
+	 *
+	 * @param string $sql The SQL query.
+	 * @param array|object $params The parameters to bind.
+	 * @return bool True on success, false on failure.
+	 */
+	abstract public function transaction(string $sql, array|object $params = []) : bool;
+
+	/**
+	 * Commits a database transaction.
+	 *
+	 * @return bool True on success, false on failure.
+	 */
+	abstract public function commit() : bool;
+
+	/**
+	 * Rolls back a database transaction.
+	 *
+	 * @return bool True on success, false on failure.
+	 */
+	abstract public function rollback() : bool;
+
+	/**
+	 * Insert a record.
+	 *
+	 * @param object $data Data to insert.
+	 * @return bool
+	 */
+	abstract public function insert(string $tableName, array|object $data) : bool;
+
+	/**
+	 * Replace a record.
+	 *
+	 * @param string $tableName Table name.
+	 * @param array|object $data Data to replace.
+	 * @return bool
+	 */
+	abstract public function replace(string $tableName, array|object $data) : bool;
+
+	/**
+	 * Updates data in a table.
+	 *
+	 * @param string $tableName The table name.
+	 * @param array|object $data The data to update.
+	 * @param string $idColumn The column representing the primary key.
+	 * @return bool True on success, false on failure.
+	 */
+	abstract public function update(string $tableName, array|object $data, string $idColumn = 'id') : bool;
+
+	/**
+	 * Deletes data from a table.
+	 *
+	 * @param string $tableName The table name.
+	 * @param int|array|string $id The ID or IDs to delete.
+	 * @param string $idColumn The column representing the primary key.
+	 * @return bool True on success, false on failure.
+	 */
+	abstract public function delete(string $tableName, int|array|string $id, string $idColumn = 'id') : bool;
+
+	/**
+	 * Selects data from a table.
+	 *
+	 * @param string $tableName The table name.
+	 * @param string $where The WHERE clause.
+	 * @param array|object $params The parameters for the WHERE clause.
+	 * @param int|null $offset The offset value.
+	 * @param int|null $count The count value.
+	 * @return array|bool The fetched results as an array, or false on failure.
+	 */
+	abstract public function select(string $tableName, string $where = '', array|object $params = [], ?int $offset = null, ?int $count = null) : array|bool;
+
+	/**
 	 * Logs an error and sets the last error state.
 	 *
 	 * @param object|string $sql SQL query that caused the error.

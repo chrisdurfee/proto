@@ -402,7 +402,7 @@ abstract class Query extends Template
 	 * @param string $columnName
 	 * @param array|object $value
 	 * @param mixed $path
-	 * @return Query
+	 * @return self
 	 */
 	public function whereJson(string $columnName, array|object $value, ?string $path = '$'): self
 	{
@@ -419,7 +419,7 @@ abstract class Query extends Template
 	 * @param mixed $value
 	 * @param array $params
 	 * @param mixed $path
-	 * @return Query
+	 * @return self
 	 */
 	public function whereJoin(
 		string $columnName,

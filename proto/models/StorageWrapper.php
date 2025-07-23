@@ -2,13 +2,14 @@
 namespace Proto\Models;
 
 use Proto\Storage\StorageInterface;
+use Proto\Storage\Storage;
 
 /**
  * StorageWrapper
  *
  * This class wraps the storage object and provides methods to interact with it.
  *
- * @mixin \Proto\Storage\Storage
+ * @mixin Storage
  * @package Proto\Models
  */
 class StorageWrapper

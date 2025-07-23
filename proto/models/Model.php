@@ -417,7 +417,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Magic setter for model properties or relations.
 	 *
-	 * If a relation name matches, we store it in $loadedRelations instead of $data.
+	 * If a relation name matches, we store it in $relations instead of $data.
 	 *
 	 * @param string $key Property or relation name.
 	 * @param mixed $value Value to assign.
@@ -427,7 +427,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		if ($this->isRelationMethod($key))
 		{
-			$this->loadedRelations[$key] = $value;
+			$this->relations[$key] = $value;
 			return;
 		}
 
