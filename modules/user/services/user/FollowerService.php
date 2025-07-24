@@ -4,7 +4,6 @@ namespace Modules\User\Services\User;
 use Modules\User\Models\User;
 use Modules\User\Models\FollowerUser;
 use Modules\User\Push\NewFollowerPush;
-use Proto\Dispatch\Dispatcher;
 use Proto\Controllers\Response;
 
 /**
