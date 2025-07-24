@@ -93,14 +93,13 @@ class BelongsToMany
 	}
 
 	/**
-	 * Get all related model instances for this parent.
+	 * Get the base select query for fetching related models.
 	 *
-	 * @return object[]
+	 * @return object
 	 */
-	public function getResults(): array
+	protected function getSelectQuery(): object
 	{
 		$query = $this->buildBaseQuery();
-		$parentId = $this->getParentId();
 		$on = "p.{$this->relatedPivot} = r.{$this->relatedKey}";
 
 		$joinDef = [
@@ -111,10 +110,38 @@ class BelongsToMany
 			'fields' => null
 		];
 
-		$rows = $query
+		return $query
 			->join($joinDef)
-			->where("p.{$this->foreignPivot} = ?")
-			->fetch([$parentId]);
+			->where("p.{$this->foreignPivot} = ?");
+	}
+
+	/**
+	 * Get all related model instances for this parent.
+	 *
+	 * @return object[]
+	 */
+	public function getResults(): array
+	{
+		$parentId = $this->getParentId();
+
+		$query = $this->getSelectQuery();
+		$rows = $query->fetch([$parentId]);
+
+		$instance = new $this->related();
+		return $instance->convertRows($rows);
+	}
+
+	/**
+	 * Get all related model instances for this parent.
+	 *
+	 * @return object[]
+	 */
+	public function all(): array
+	{
+		$parentId = $this->getParentId();
+
+		$query = $this->getSelectQuery();
+		$rows = $query->fetch([$parentId]);
 
 		$instance = new $this->related();
 		return $instance->convertRows($rows);

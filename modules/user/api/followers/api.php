@@ -12,7 +12,7 @@ use Proto\Http\Router\Router;
 router()
 	->group('user/:id/followers', function(Router $router)
 	{
-		$router->get(':followerId', [FollowerController::class, 'follow']);
+		$router->post(':followerId', [FollowerController::class, 'follow']);
 		$router->post(':followerId/notify', [FollowerController::class, 'notify']);
 		$router->put(':followerId/toggle', [FollowerController::class, 'toggle']);
 		$router->delete(':followerId', [FollowerController::class, 'unfollow']);

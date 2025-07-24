@@ -34,7 +34,17 @@ class FollowerService
 
 		$alreadyFollows = $this->alreadyFollows($userId, $followerId);
 		$result = $user->followers()->toggle([$followerId]);
+		if (!$result)
+		{
+			return Response::invalid('Failed to toggle follower status.');
+		}
+
 		$this->updateFollowerCount($user, $alreadyFollows ? 'down' : 'up');
+		if (!$alreadyFollows)
+		{
+			$this->notifyNewFollower($userId, $followerId);
+		}
+
 		return Response::success(['result' => $result]);
 	}
 
@@ -75,6 +85,8 @@ class FollowerService
 		{
 			return Response::invalid('Failed to follow user.');
 		}
+
+		$this->notifyNewFollower($userId, $followerId);
 
 		$countUpdate = $this->updateFollowerCount($user, 'up');
 		if (!$countUpdate)
@@ -128,7 +140,7 @@ class FollowerService
 	 * @param bool $queue Whether to queue the email
 	 * @return object
 	 */
-	public function notifyNewFollower(mixed $userId, mixed $followerId, bool $queue = false): object
+	public function notifyNewFollower(mixed $userId, mixed $followerId, bool $queue = true): object
 	{
 		$user = User::get($userId);
 		if (!$user)
@@ -171,7 +183,7 @@ class FollowerService
 	 * @param bool $queue Whether to queue the email
 	 * @return object
 	 */
-	protected function dispatchNotification(User $user, User $follower, bool $queue = false): object
+	protected function dispatchNotification(User $user, User $follower, bool $queue = true): object
 	{
 		$settings = (object)[
 			'to' => $user->email,
