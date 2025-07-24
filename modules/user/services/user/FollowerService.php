@@ -31,7 +31,9 @@ class FollowerService
 			return (object)['success' => false, 'error' => 'User not found.'];
 		}
 
+		$alreadyFollows = $this->alreadyFollows($userId, $followerId);
 		$result = $user->followers()->toggle([$followerId]);
+		$this->updateFollowerCount($user, $alreadyFollows ? 'down' : 'up');
 		return Response::success(['result' => $result]);
 	}
 
