@@ -3,6 +3,7 @@ namespace Modules\User\Services\User;
 
 use Modules\User\Models\User;
 use Modules\User\Models\FollowerUser;
+use Modules\User\Push\NewFollowerPush;
 use Proto\Dispatch\Dispatcher;
 use Proto\Controllers\Response;
 
@@ -174,8 +175,7 @@ class FollowerService
 	{
 		$settings = (object)[
 			'to' => $user->email,
-			'subject' => 'You have a new follower!',
-			'template' => 'Modules\\User\\Push\\User\\NewFollower'
+			'template' => NewFollowerPush::class
 		];
 
 		if ($queue)
@@ -188,6 +188,6 @@ class FollowerService
 			'follower' => $follower
 		];
 
-		return Dispatcher::email($settings, $data);
+		return modules()->user()->push()->send($user->id, $settings, $data);
 	}
 }
