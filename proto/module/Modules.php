@@ -48,7 +48,7 @@ namespace Proto\Module
 		 * @return mixed
 		 * @throws Exception
 		 */
-		public function __call(string $name, array $arguments)
+		public function __call(string $name, array $arguments): mixed
 		{
 			if (isset($this->registered[$name]))
 			{

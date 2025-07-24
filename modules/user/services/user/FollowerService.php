@@ -142,7 +142,7 @@ class FollowerService
 			return Response::invalid('Follower not found.');
 		}
 
-		return $this->dispatchEmail($user, $follower, $queue);
+		return $this->dispatchNotification($user, $follower, $queue);
 	}
 
 	/**
@@ -164,14 +164,14 @@ class FollowerService
 	}
 
 	/**
-	 * Queue and dispatch an email via the app's dispatcher.
+	 * Queue and dispatch a notification via the app's dispatcher.
 	 *
 	 * @param User $user The user to notify
 	 * @param User $follower The follower user
 	 * @param bool $queue Whether to queue the email
 	 * @return object
 	 */
-	protected function dispatchEmail(User $user, User $follower, bool $queue = false): object
+	protected function dispatchNotification(User $user, User $follower, bool $queue = false): object
 	{
 		$settings = (object)[
 			'to' => $user->email,
