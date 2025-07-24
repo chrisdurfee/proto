@@ -38,7 +38,7 @@ class FollowerController extends Controller
 	 */
 	public function notify(Request $request): object
 	{
-		$followerId = $request->getInt('userId') ?? null;
+		$followerId = $request->params()->followerId ?? null;
 		if (!isset($followerId))
 		{
 			return $this->error('Follower user ID is required.');
@@ -51,7 +51,7 @@ class FollowerController extends Controller
 		}
 
 		$queue = $request->input('queue');
-		$result = $this->followerService->notifyNewFollower($userId, $followerId, (bool)$queue);
+		$result = $this->followerService->notifyNewFollower((int)$userId, (int)$followerId, (bool)$queue);
 		if (!$result->success)
 		{
 			return $this->error($result->message);
@@ -68,7 +68,7 @@ class FollowerController extends Controller
 	 */
 	public function toggle(Request $request): object
 	{
-		$followerId = $request->getInt('userId') ?? null;
+		$followerId = $request->params()->followerId ?? null;
 		if (!isset($followerId))
 		{
 			return $this->error('Follower user ID is required.');
@@ -80,7 +80,7 @@ class FollowerController extends Controller
 			return $this->error('Invalid user ID to follow.');
 		}
 
-		$result = $this->followerService->toggleFollower((int)$userId, $followerId);
+		$result = $this->followerService->toggleFollower((int)$userId, (int)$followerId);
 		if (!$result->success)
 		{
 			return $this->error($result->message);
@@ -97,7 +97,7 @@ class FollowerController extends Controller
 	 */
 	public function follow(Request $request): object
 	{
-		$followerId = $request->getInt('userId') ?? null;
+		$followerId = $request->params()->followerId ?? null;
 		if (!isset($followerId))
 		{
 			return $this->error('Follower user ID is required.');
@@ -109,7 +109,7 @@ class FollowerController extends Controller
 			return $this->error('Invalid user ID to follow.');
 		}
 
-		$result = $this->followerService->followUser((int)$userId, $followerId);
+		$result = $this->followerService->followUser((int)$userId, (int)$followerId);
 		if (!$result->success)
 		{
 			return $this->error($result->message);
@@ -126,7 +126,7 @@ class FollowerController extends Controller
 	 */
 	public function unfollow(Request $request): object
 	{
-		$followerId = $request->getInt('userId') ?? null;
+		$followerId = $request->params()->followerId ?? null;
 		if (!isset($followerId))
 		{
 			return $this->error('Follower user ID is required.');
@@ -138,7 +138,7 @@ class FollowerController extends Controller
 			return $this->error('Invalid user ID to unfollow.');
 		}
 
-		$result = $this->followerService->unfollowUser((int)$userId, $followerId);
+		$result = $this->followerService->unfollowUser((int)$userId, (int)$followerId);
 		if (!$result->success)
 		{
 			return $this->error($result->message);

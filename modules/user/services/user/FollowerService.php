@@ -18,11 +18,11 @@ class FollowerService
 	/**
 	 * Toggles the follower status between a user and follower.
 	 *
-	 * @param int $userId The user being followed/unfollowed
-	 * @param int $followerId The user doing the following/unfollowing
+	 * @param mixed $userId The user being followed/unfollowed
+	 * @param mixed $followerId The user doing the following/unfollowing
 	 * @return object
 	 */
-	public function toggleFollower(int $userId, int $followerId): object
+	public function toggleFollower(mixed $userId, mixed $followerId): object
 	{
 		$user = User::get($userId);
 		if (!$user)
@@ -37,11 +37,11 @@ class FollowerService
 	/**
 	 * Adds a follower to a user.
 	 *
-	 * @param int $userId The user being followed
-	 * @param int $followerId The user doing the following
+	 * @param mixed $userId The user being followed
+	 * @param mixed $followerId The user doing the following
 	 * @return object
 	 */
-	public function followUser(int $userId, int $followerId): object
+	public function followUser(mixed $userId, mixed $followerId): object
 	{
 		$user = User::get($userId);
 		if (!$user)
@@ -67,11 +67,11 @@ class FollowerService
 	/**
 	 * Removes a follower from a user.
 	 *
-	 * @param int $userId The user being unfollowed
-	 * @param int $followerId The user doing the unfollowing
+	 * @param mixed $userId The user being unfollowed
+	 * @param mixed $followerId The user doing the unfollowing
 	 * @return object
 	 */
-	public function unfollowUser(int $userId, int $followerId): object
+	public function unfollowUser(mixed $userId, mixed $followerId): object
 	{
 		$user = User::get($userId);
 		if (!$user)
@@ -97,12 +97,12 @@ class FollowerService
 	/**
 	 * Send notification email to user about new follower.
 	 *
-	 * @param int $userId The user who gained a follower
-	 * @param int $followerId The user who started following
+	 * @param mixed $userId The user who gained a follower
+	 * @param mixed $followerId The user who started following
 	 * @param bool $queue Whether to queue the email
 	 * @return object
 	 */
-	public function notifyNewFollower(int $userId, int $followerId, bool $queue = false): object
+	public function notifyNewFollower(mixed $userId, mixed $followerId, bool $queue = false): object
 	{
 		$user = User::get($userId);
 		if (!$user)
@@ -131,7 +131,7 @@ class FollowerService
 		$newFollowerCount = ($direction === 'up') ? (++$user->followerCount) : (--$user->followerCount);
 
 		$model = new User((object)[
-			'id' => $user->getId(),
+			'id' => $user->id,
 			'followerCount' => $newFollowerCount
 		]);
 		return $model->update();

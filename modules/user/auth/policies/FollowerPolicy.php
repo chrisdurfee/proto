@@ -20,7 +20,7 @@ class FollowerPolicy extends Policy
 	 */
 	public function unfollow(Request $request): bool
 	{
-        $followerId = $request->getInt('userId') ?? null;
+        $followerId = $request->params()->followerId ?? null;
 		return $this->ownsResource($followerId);
 	}
 
@@ -32,7 +32,7 @@ class FollowerPolicy extends Policy
 	 */
 	public function follow(Request $request): bool
 	{
-        $followerId = $request->getInt('userId') ?? null;
+        $followerId = $request->params()->followerId ?? null;
 		return $this->ownsResource($followerId);
 	}
 
@@ -44,7 +44,7 @@ class FollowerPolicy extends Policy
      */
     public function toggle(Request $request): bool
 	{
-        $followerId = $request->getInt('userId') ?? null;
+        $followerId = $request->params()->followerId ?? null;
 		return $this->ownsResource($followerId);
 	}
 
@@ -56,7 +56,7 @@ class FollowerPolicy extends Policy
      */
     public function notify(Request $request): bool
 	{
-        $followerId = $request->getInt('userId') ?? null;
+        $followerId = $request->params()->followerId ?? null;
 		return $this->ownsResource($followerId);
 	}
 }
