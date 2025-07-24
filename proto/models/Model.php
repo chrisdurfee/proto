@@ -1014,15 +1014,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * Get rows from storage.
 	 *
 	 * @param array $filter Filter criteria.
-	 * @return object|false
+	 * @return object|null
 	 */
-	public static function getBy(array $filter): object|false
+	public static function getBy(array $filter): ?object
 	{
 		$instance = new static();
 		$row = $instance->storage->getBy($filter);
 		if ($row)
 		{
 			$row = $instance->convertRows([$row]);
+			return $row[0] ?? null;
 		}
 
 		return $row;

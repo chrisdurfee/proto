@@ -201,7 +201,7 @@ class BelongsToMany
 	public function sync(array $ids): bool
 	{
 		$current = array_map(
-			fn(Model $m): int => $m->{$this->relatedKey},
+			fn($m): int => $m->{$this->relatedKey},
 			$this->getResults()
 		);
 
@@ -236,7 +236,7 @@ class BelongsToMany
 	public function toggle(array $ids): bool
 	{
 		$current = array_map(
-			fn(Model $m): int => $m->{$this->relatedKey},
+			fn($m): int => $m->{$this->relatedKey},
 			$this->getResults()
 		);
 

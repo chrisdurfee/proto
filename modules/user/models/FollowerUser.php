@@ -48,4 +48,20 @@ class FollowerUser extends Model
 			)
 			->on(['followerUserId', 'id']);
 	}
+
+	/**
+	 * Check if a follower relationship exists.
+	 *
+	 * @param mixed $userId
+	 * @param mixed $followerId
+	 * @return bool
+	 */
+	public static function isAdded(mixed $userId, mixed $followerId): bool
+	{
+		$row = static::getBy([
+			['user_id', $userId],
+			['follower_user_id', $followerId]
+		]);
+		return $row !== null;
+	}
 }

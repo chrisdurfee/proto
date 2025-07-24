@@ -2,6 +2,7 @@
 namespace Modules\User\Services\User;
 
 use Modules\User\Models\User;
+use Modules\User\Models\FollowerUser;
 use Proto\Dispatch\Dispatcher;
 use Proto\Controllers\Response;
 
@@ -35,6 +36,18 @@ class FollowerService
 	}
 
 	/**
+	 * Check if a user is already followed by another user.
+	 *
+	 * @param mixed $userId
+	 * @param mixed $followerId
+	 * @return bool
+	 */
+	protected function alreadyFollows(mixed $userId, mixed $followerId): bool
+	{
+		return FollowerUser::isAdded($userId, $followerId);
+	}
+
+	/**
 	 * Adds a follower to a user.
 	 *
 	 * @param mixed $userId The user being followed
@@ -47,6 +60,11 @@ class FollowerService
 		if (!$user)
 		{
 			return Response::invalid('User not found.');
+		}
+
+		if ($this->alreadyFollows($userId, $followerId))
+		{
+			return Response::invalid('User is already followed.');
 		}
 
 		$result = $user->followers()->attach($followerId);
@@ -77,6 +95,11 @@ class FollowerService
 		if (!$user)
 		{
 			return Response::invalid('User not found.');
+		}
+
+		if (!$this->alreadyFollows($userId, $followerId))
+		{
+			return Response::invalid('User is not followed.');
 		}
 
 		$result = $user->followers()->detach($followerId);
