@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Modules\User\Controllers;
 
+use Modules\User\Auth\Policies\FollowerPolicy;
 use Proto\Controllers\ApiController as Controller;
 use Modules\User\Services\User\FollowerService;
 use Proto\Http\Router\Request;
@@ -12,6 +13,11 @@ use Proto\Http\Router\Request;
  */
 class FollowerController extends Controller
 {
+	/**
+	 * @var string|null $policy
+	 */
+	protected ?string $policy = FollowerPolicy::class;
+
 	/**
 	 * FollowerController constructor.
 	 *
@@ -48,7 +54,7 @@ class FollowerController extends Controller
 		$result = $this->followerService->notifyNewFollower($userId, $followerId, (bool)$queue);
 		if (!$result->success)
 		{
-			return $this->error($result->error);
+			return $this->error($result->message);
 		}
 
 		return $this->response($result->result);
@@ -77,7 +83,7 @@ class FollowerController extends Controller
 		$result = $this->followerService->toggleFollower((int)$userId, $followerId);
 		if (!$result->success)
 		{
-			return $this->error($result->error);
+			return $this->error($result->message);
 		}
 
 		return $this->response($result->result);
@@ -106,7 +112,7 @@ class FollowerController extends Controller
 		$result = $this->followerService->followUser((int)$userId, $followerId);
 		if (!$result->success)
 		{
-			return $this->error($result->error);
+			return $this->error($result->message);
 		}
 
 		return $this->response($result->result);
@@ -135,7 +141,7 @@ class FollowerController extends Controller
 		$result = $this->followerService->unfollowUser((int)$userId, $followerId);
 		if (!$result->success)
 		{
-			return $this->error($result->error);
+			return $this->error($result->message);
 		}
 
 		return $this->response($result->result);
