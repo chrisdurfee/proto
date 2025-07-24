@@ -2,7 +2,7 @@
 namespace Proto\Automation\Processes\Dispatch;
 
 use Proto\Automation\Processes\Routine;
-use Proto\Models\ModelInterface;
+use Proto\Models\Model;
 
 /**
  * QueueRoutine
@@ -51,9 +51,9 @@ abstract class QueueRoutine extends Routine
 	 * This will get the queue model.
 	 *
 	 * @param object|null $data
-	 * @return ModelInterface
+	 * @return Model
 	 */
-	abstract protected function getModel(?object $data = null): ModelInterface;
+	abstract protected function getModel(?object $data = null): Model;
 
 	/**
 	 * Starts the routine's process.

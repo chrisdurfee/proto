@@ -3,7 +3,7 @@ namespace Proto\Automation\Processes\Dispatch;
 
 use Proto\Dispatch\Models\Queue\EmailQueue;
 use Proto\Dispatch\Dispatcher;
-use Proto\Models\ModelInterface;
+use Proto\Models\Model;
 
 /**
  * EmailQueueRoutine
@@ -18,9 +18,9 @@ class EmailQueueRoutine extends QueueRoutine
 	 * This will get the queue model.
 	 *
 	 * @param object|null $data
-	 * @return ModelInterface
+	 * @return Model
 	 */
-	protected function getModel(?object $data = null): ModelInterface
+	protected function getModel(?object $data = null): Model
 	{
 		return new EmailQueue($data);
 	}

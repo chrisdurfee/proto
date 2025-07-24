@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Cache\Policies;
 
+use Proto\Controllers\ResourceController;
 use Proto\Http\Router\Request;
 
 /**
@@ -12,6 +13,18 @@ use Proto\Http\Router\Request;
  */
 class ModelPolicy extends Policy
 {
+	/**
+	 * Creates a cache policy instance.
+	 *
+	 * @param ResourceController $controller The controller instance.
+	 * @return void
+	 */
+	public function __construct(
+		protected ResourceController $controller
+	)
+	{
+	}
+
 	/**
 	 * Adds or updates model data.
 	 *

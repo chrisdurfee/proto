@@ -24,7 +24,8 @@ class UserStorage extends Storage
 		 * @var Model $model
 		 */
 		$model = $this->model;
-		$model->password = PasswordHelper::saltPassword($model->password);
+		$password = $model->password ?? null;
+		$model->password = PasswordHelper::saltPassword($password);
 
 		return parent::add();
 	}

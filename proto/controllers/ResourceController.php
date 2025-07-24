@@ -102,12 +102,12 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function getAddUserData(Model $model): void
 	{
-		if ($model->has('createdBy') && !is_numeric($model->createdBy))
+		if ($model->has('createdBy') && !isset($model->createdBy))
 		{
 			$model->createdBy = session()->user->id ?? null;
 		}
 
-		if ($model->has('authorId') && !is_numeric($model->authorId))
+		if ($model->has('authorId') && !isset($model->authorId))
 		{
 			$model->authorId = session()->user->id ?? null;
 		}
@@ -163,7 +163,7 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function getUpdateUserData(Model $model): void
 	{
-		if ($model->has('updatedBy') && !is_numeric($model->updatedBy))
+		if ($model->has('updatedBy') && !isset($model->updatedBy))
 		{
 			$model->updatedBy = session()->user->id ?? null;
 		}
