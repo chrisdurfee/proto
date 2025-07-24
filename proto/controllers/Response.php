@@ -79,9 +79,20 @@ class Response
 	 * @param string $message The error message.
 	 * @return object The formatted error response.
 	 */
-	public static function errorResponse(string $message = ''): object
+	public static function invalid(string $message = ''): object
 	{
 		return (new static())->error($message)->format();
+	}
+
+	/**
+	 * Creates and returns a success response.
+	 *
+	 * @param string $message The success message.
+	 * @return object The formatted success response.
+	 */
+	public static function success(mixed $data = null): object
+	{
+		return (new static($data ))->format();
 	}
 
 	/**

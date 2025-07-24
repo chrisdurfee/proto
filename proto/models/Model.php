@@ -974,9 +974,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * Get a record by identifier.
 	 *
 	 * @param int|string $id Identifier.
-	 * @return object|null
+	 * @return static|null
 	 */
-	public static function get(mixed $id): ?object
+	public static function get(mixed $id): ?static
 	{
 		$instance = new static();
 		$row = $instance->storage->get($id);
@@ -1085,9 +1085,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function convertRows(array $rows): array
 	{
-		$rows = array_map([$this, 'augment'],$rows);
+		$rows = array_map([$this, 'augment'], $rows);
 		$rows = $this->data->convertRows($rows);
-		return array_map([$this, 'format'],$rows);
+		return array_map([$this, 'format'], $rows);
 	}
 
 	/**

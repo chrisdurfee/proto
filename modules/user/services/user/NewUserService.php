@@ -3,7 +3,6 @@ namespace Modules\User\Services\User;
 
 use Modules\User\Email\Welcome\WelcomeVerificationEmail;
 use Modules\User\Models\User;
-use Modules\User\Models\RoleUser;
 use Modules\User\Models\Role;
 use Modules\User\Models\EmailVerification;
 use Proto\Dispatch\Dispatcher;
@@ -97,22 +96,18 @@ class NewUserService
 	 * This will add the role to the user.
 	 *
 	 * @param User $user
-	 * @param string $role
+	 * @param string $roleSlug
 	 * @return bool
 	 */
-	protected function addRole(User $user, string $role): bool
+	protected function addRole(User $user, string $roleSlug): bool
 	{
-		$role = (new Role())->getBySlug($role);
+		$role = (new Role())->getBySlug($roleSlug);
 		if (!$role)
 		{
 			return false;
 		}
 
-		$model = new RoleUser((object)[
-			'userId' => $user->id,
-			'roleId' => $role->id
-		]);
-		return $model->add();
+		return $user->roles()->attach($role->id);
 	}
 
 	/**

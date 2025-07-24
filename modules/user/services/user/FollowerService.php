@@ -1,0 +1,168 @@
+<?php declare(strict_types=1);
+namespace Modules\User\Services\User;
+
+use Modules\User\Models\User;
+use Proto\Dispatch\Dispatcher;
+use Proto\Controllers\Response;
+
+/**
+ * FollowerService
+ *
+ * Handles follower-related operations including following, unfollowing,
+ * toggling follower status, and sending notifications.
+ *
+ * @package Modules\User\Services\User
+ */
+class FollowerService
+{
+	/**
+	 * Toggles the follower status between a user and follower.
+	 *
+	 * @param int $userId The user being followed/unfollowed
+	 * @param int $followerId The user doing the following/unfollowing
+	 * @return object
+	 */
+	public function toggleFollower(int $userId, int $followerId): object
+	{
+		$user = User::get($userId);
+		if (!$user)
+		{
+			return (object)['success' => false, 'error' => 'User not found.'];
+		}
+
+		$result = $user->followers()->toggle([$followerId]);
+		return Response::success(['result' => $result]);
+	}
+
+	/**
+	 * Adds a follower to a user.
+	 *
+	 * @param int $userId The user being followed
+	 * @param int $followerId The user doing the following
+	 * @return object
+	 */
+	public function followUser(int $userId, int $followerId): object
+	{
+		$user = User::get($userId);
+		if (!$user)
+		{
+			return Response::invalid('User not found.');
+		}
+
+		$result = $user->followers()->attach($followerId);
+		if (!$result)
+		{
+			return Response::invalid('Failed to follow user.');
+		}
+
+		$countUpdate = $this->updateFollowerCount($user, 'up');
+		if (!$countUpdate)
+		{
+			return Response::invalid('Failed to update follower count.');
+		}
+
+		return Response::success(['result' => $result]);
+	}
+
+	/**
+	 * Removes a follower from a user.
+	 *
+	 * @param int $userId The user being unfollowed
+	 * @param int $followerId The user doing the unfollowing
+	 * @return object
+	 */
+	public function unfollowUser(int $userId, int $followerId): object
+	{
+		$user = User::get($userId);
+		if (!$user)
+		{
+			return Response::invalid('User not found.');
+		}
+
+		$result = $user->followers()->detach($followerId);
+		if (!$result)
+		{
+			return Response::invalid('Failed to unfollow user.');
+		}
+
+		$countUpdate = $this->updateFollowerCount($user, 'down');
+		if (!$countUpdate)
+		{
+			return Response::invalid('Failed to update follower count.');
+		}
+
+		return Response::success(['result' => $result]);
+	}
+
+	/**
+	 * Send notification email to user about new follower.
+	 *
+	 * @param int $userId The user who gained a follower
+	 * @param int $followerId The user who started following
+	 * @param bool $queue Whether to queue the email
+	 * @return object
+	 */
+	public function notifyNewFollower(int $userId, int $followerId, bool $queue = false): object
+	{
+		$user = User::get($userId);
+		if (!$user)
+		{
+			return Response::invalid('User not found.');
+		}
+
+		$follower = User::get($followerId);
+		if (!$follower)
+		{
+			return Response::invalid('Follower not found.');
+		}
+
+		return $this->dispatchEmail($user, $follower, $queue);
+	}
+
+	/**
+	 * Updates the follower count for a user.
+	 *
+	 * @param User $user The user object
+	 * @param string $direction The direction to update ('up' or 'down')
+	 * @return bool
+	 */
+	protected function updateFollowerCount(User $user, string $direction = 'up'): bool
+	{
+		$newFollowerCount = ($direction === 'up') ? (++$user->followerCount) : (--$user->followerCount);
+
+		$model = new User((object)[
+			'id' => $user->getId(),
+			'followerCount' => $newFollowerCount
+		]);
+		return $model->update();
+	}
+
+	/**
+	 * Queue and dispatch an email via the app's dispatcher.
+	 *
+	 * @param User $user The user to notify
+	 * @param User $follower The follower user
+	 * @param bool $queue Whether to queue the email
+	 * @return object
+	 */
+	protected function dispatchEmail(User $user, User $follower, bool $queue = false): object
+	{
+		$settings = (object)[
+			'to' => $user->email,
+			'subject' => 'You have a new follower!',
+			'template' => 'Modules\\User\\Push\\User\\NewFollower'
+		];
+
+		if ($queue)
+		{
+			$settings->queue = true;
+		}
+
+		$data = (object)[
+			'user' => $user,
+			'follower' => $follower
+		];
+
+		return Dispatcher::email($settings, $data);
+	}
+}

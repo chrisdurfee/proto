@@ -95,7 +95,7 @@ trait ModelTrait
 
 		if (!\is_callable([$modelClass, $method]))
 		{
-			return Response::errorResponse('The method is not callable.');
+			return Response::invalid('The method is not callable.');
 		}
 
 		return \call_user_func_array([$modelClass, $method], $arguments);

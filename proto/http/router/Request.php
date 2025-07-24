@@ -11,6 +11,7 @@ use Proto\Utils\Format\JsonFormat;
  * This class extends the base HTTP Request, adding input sanitization
  * for router-specific requests.
  *
+ * @mixin BaseRequest
  * @package Proto\Http\Router
  */
 class Request
