@@ -565,18 +565,7 @@ class Storage extends TableStorage
 		if (is_object($orderBy))
 		{
 			$isSnakeCase = $this->model->isSnakeCase();
-			foreach ($orderBy as $rawField  => $rawDir)
-			{
-				$field = $this->prepareField($rawField, $isSnakeCase);
-				if ($field === '')
-				{
-					// skip empty or entirely‐stripped names
-					continue;
-				}
-
-				$direction = strtoupper((string)$rawDir) === 'DESC' ? 'DESC' : 'ASC';
-				$sql->orderBy("{$field} {$direction}");
-			}
+			ModifierUtil::setOrderBy($sql, $orderBy, $isSnakeCase);
 		}
 	}
 
@@ -594,19 +583,7 @@ class Storage extends TableStorage
 		if (is_array($groupBy))
 		{
 			$isSnakeCase = $this->model->isSnakeCase();
-			$fields = [];
-			foreach ($groupBy as $rawField)
-			{
-				$field = $this->prepareField($rawField, $isSnakeCase);
-				if ($field === '')
-				{
-					// skip empty or entirely‐stripped names
-					continue;
-				}
-				$fields[] = $field;
-			}
-
-			$sql->groupBy(...$fields);
+			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase);
 		}
 	}
 
@@ -663,12 +640,7 @@ class Storage extends TableStorage
 		$dates = $modifiers['dates'] ?? '';
 		if (is_object($dates))
 		{
-			$field = $dates->field ?? 'createdAt';
-			$field = self::prepareField($field, $isSnakeCase);
-
-			$params[] = $dates->start ?? '';
-			$params[] = $dates->end ?? '';
-			$where[] = "($field BETWEEN ? AND ?)";
+			ModifierUtil::addDateModifier($dates, $where, $params, $isSnakeCase);
 		}
 
 		static::setModifiers($where, $modifiers, $params, $filter);

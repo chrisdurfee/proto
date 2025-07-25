@@ -332,16 +332,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @return bool
 	 */
-	public function areColumnsSnakeCase(): bool
-	{
-		return static::$isSnakeCase;
-	}
-
-	/**
-	 * Check if model data is snake_case.
-	 *
-	 * @return bool
-	 */
 	public function isSnakeCase(): bool
 	{
 		return static::$isSnakeCase;

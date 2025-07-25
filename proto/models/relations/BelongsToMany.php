@@ -3,6 +3,7 @@ namespace Proto\Models\Relations;
 
 use Proto\Models\Model;
 use Proto\Utils\Strings;
+use Proto\Storage\Filter;
 
 /**
  * Class BelongsToMany
@@ -124,26 +125,47 @@ class BelongsToMany
 	{
 		$parentId = $this->getParentId();
 
-		$query = $this->getSelectQuery();
-		$rows = $query->fetch([$parentId]);
+		$sql = $this->getSelectQuery();
+		$rows = $sql->fetch([$parentId]);
 
 		$instance = new $this->related();
 		return $instance->convertRows($rows);
 	}
 
 	/**
-	 * Get all related model instances for this parent.
+	 * Get all related rows with filters, offsets, and limits.
 	 *
+	 * @param mixed $filter Filter conditions.
+	 * @param int|null $offset Offset for pagination.
+	 * @param int|null $limit Limit for pagination.
+	 * @param array|null $modifiers Additional query modifiers.
 	 * @return object[]
 	 */
-	public function all(): array
+	public function all(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): array
 	{
 		$parentId = $this->getParentId();
-
-		$query = $this->getSelectQuery();
-		$rows = $query->fetch([$parentId]);
-
 		$instance = new $this->related();
+		$isSnakeCase = $this->parent->isSnakeCase();
+
+		$params = [$parentId];
+		$where = Filter::setup($filter, $params);
+		$sql = $this->getSelectQuery()
+			->where(...$where)
+			->limit($offset, $limit);
+
+		$orderBy = $modifiers['orderBy'] ?? null;
+		if (is_object($orderBy))
+		{
+			ModifierUtil::setOrderBy($sql, $orderBy, $isSnakeCase);
+		}
+
+		$groupBy = $modifiers['groupBy'] ?? null;
+		if (is_array($groupBy))
+		{
+			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase);
+		}
+
+		$rows = $sql->fetch($params);
 		return $instance->convertRows($rows);
 	}
 
