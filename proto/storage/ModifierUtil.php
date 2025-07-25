@@ -43,8 +43,13 @@ class ModifierUtil
 		$field = $dates->field ?? 'createdAt';
 		$field = self::prepareField($field, $isSnakeCase);
 
-		$params[] = $dates->start ?? '';
-		$params[] = $dates->end ?? '';
+		$start = $dates->start ?? '';
+		$start = (str_contains($start, ':')) ? $start : $start . ' 00:00:00';
+		$params[] = $start;
+
+		$end = $dates->end ?? '';
+		$end = (str_contains($end, ':')) ? $end : $end . ' 23:59:59';
+		$params[] = $end;
 		$where[] = "($field BETWEEN ? AND ?)";
 	}
 

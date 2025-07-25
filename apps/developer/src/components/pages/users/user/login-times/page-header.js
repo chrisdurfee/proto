@@ -1,6 +1,8 @@
 import { Div, H1, Header } from "@base-framework/atoms";
 import { Button, Tooltip } from "@base-framework/ui/atoms";
 import { Icons } from "@base-framework/ui/icons";
+import { DateRangePicker } from "@base-framework/ui/molecules";
+import { getDate } from "./get-date.js";
 
 /**
  * This will refresh the list.
@@ -24,6 +26,19 @@ export const PageHeader = () => (
 		Div({ class: 'flex flex-auto items-center justify-between w-full' }, [
 			H1({ class: 'text-3xl font-bold' }, 'Login Times'),
 			Div({ class: 'flex items-center gap-2' }, [
+				new DateRangePicker({
+					start: getDate('start'),
+					end: getDate('end'),
+					onChange: (range, { data, list }) =>
+					{
+						data.dates = {
+							start: range.start,
+							end: range.end
+						};
+
+						list.refresh();
+					}
+				}),
 				Div({ class: 'hidden lg:flex' }, [
 					Button({ variant: 'withIcon', class: 'text-muted-foreground primary', icon: Icons.refresh, click: refresh }, 'Refresh')
 				]),

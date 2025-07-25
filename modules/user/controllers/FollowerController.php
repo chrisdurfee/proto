@@ -5,6 +5,7 @@ use Modules\User\Auth\Policies\FollowerPolicy;
 use Proto\Controllers\ApiController as Controller;
 use Modules\User\Services\User\FollowerService;
 use Proto\Http\Router\Request;
+use Modules\User\Models\User;
 
 /**
  * FollowerController

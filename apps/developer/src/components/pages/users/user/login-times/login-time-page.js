@@ -1,5 +1,6 @@
 import { Div, UseParent } from "@base-framework/atoms";
 import { BlankPage } from "@base-framework/ui/pages";
+import { getDate } from "./get-date.js";
 import { LoginLogModel } from "./login-log-model.js";
 import { LoginTable } from "./login-table.js";
 import { PageHeader } from "./page-header.js";
@@ -14,6 +15,10 @@ export const LoginTimePage = () =>
 	const data = new LoginLogModel({
 		filter: {
 
+		},
+		dates: {
+			start: getDate('start'),
+			end: getDate('end')
 		},
 		orderBy: {
 			createdAt: 'DESC'
