@@ -76,6 +76,7 @@ class User extends Migration
 
 			// Additional fields
 			$table->integer('follower_count', 30)->default(0);
+			$table->integer('following_count', 30)->default(0);
 
 			// Indexes for quick lookups
 			$table->index('first_name')->fields('first_name', 'last_name', 'status');
