@@ -15,5 +15,6 @@ router()
 		$router->post(':followerId', [FollowerController::class, 'follow']);
 		$router->post(':followerId/notify', [FollowerController::class, 'notify']);
 		$router->put(':followerId/toggle', [FollowerController::class, 'toggle']);
+		$router->get('', [FollowerController::class, 'all']);
 		$router->delete(':followerId', [FollowerController::class, 'unfollow']);
 	});

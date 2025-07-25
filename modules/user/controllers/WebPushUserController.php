@@ -29,12 +29,12 @@ class WebPushUserController extends Controller
 	 * This will check if the user can receive push notifications.
 	 *
 	 * @param mixed $userId
-	 * @param NotificationPreference $preferenceClass
+	 * @param string $preferenceClass
 	 * @return bool
 	 */
 	protected function canPush(
 		mixed $userId,
-		NotificationPreference $preferenceClass = NotificationPreference::class
+		string $preferenceClass = NotificationPreference::class
 	): bool
 	{
 		$preference = $preferenceClass::getBy([

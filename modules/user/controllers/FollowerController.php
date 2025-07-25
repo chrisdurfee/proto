@@ -146,4 +146,41 @@ class FollowerController extends Controller
 
 		return $this->response($result->result);
 	}
+
+	/**
+	 * Retrieve all records.
+	 *
+	 * @param array|object|null $filter Filter criteria.
+	 * @param int|null $offset Offset.
+	 * @param int|null $limit Count.
+	 * @param array|null $modifiers Modifiers.
+	 * @return object
+	 */
+	public function all(Request $request): object
+	{
+		$userId = $this->getResourceId($request);
+		if ($userId === null)
+		{
+			return $this->error('Invalid user ID to unfollow.');
+		}
+
+		$filter = $this->getFilter($request);
+		$offset = $request->getInt('offset') ?? 0;
+		$limit = $request->getInt('limit') ?? 50;
+		$search = $request->input('search');
+		$custom = $request->input('custom');
+		$dates = $this->setDateModifier($request);
+		$orderBy = $this->setOrderByModifier($request);
+		$groupBy = $this->setGroupByModifier($request);
+
+		$user = User::get($userId);
+		$result = $user->followers()->all($filter, $offset, $limit, [
+			'search' => $search,
+			'custom' => $custom,
+			'dates' => $dates,
+			'orderBy' => $orderBy,
+			'groupBy' => $groupBy
+		]);
+		return $this->response($result);
+	}
 }
