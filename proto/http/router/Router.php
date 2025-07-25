@@ -194,6 +194,11 @@ class Router
 	 */
 	protected function getUri(string $uri): string
 	{
+		if ($uri === '')
+		{
+			return $this->basePath;
+		}
+
 		return $this->basePath . '/' . $this->stripBasePath($uri);
 	}
 
