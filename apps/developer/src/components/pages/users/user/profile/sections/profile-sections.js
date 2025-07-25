@@ -164,14 +164,38 @@ export const AppDetailsSection = () =>
 				]),
 
 				Div({ class: "space-y-1" }, [
-					P({ class: "text-sm text-muted-foreground" }, "Follower Count"),
-					P({ class: "font-medium text-foreground" }, Format.number("[[user.followerCount]]"))
+					P({ class: "text-sm text-muted-foreground" }, "Multi Factor"),
+					P({ class: "font-medium text-foreground" }, Format.yesno("[[user.multiFactorEnabled]]"))
 				]),
 
 				Div({ class: "space-y-1" }, [
 					P({ class: "text-sm text-muted-foreground" }, "Password Changed"),
 					P({ class: "font-medium text-foreground" }, Format.dateTime("[[user.lastPasswordChangeAt]]", 'No change'))
 				]),
+			])
+		])
+	]);
+
+/**
+ * PersonalFollowSection
+ *
+ * @returns {object}
+ */
+export const PersonalFollowSection = () =>
+	ProfileSection({ title: "Follow Details" }, [
+		Div([
+			Div({ class: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" }, [
+				// Followers
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Followers"),
+					P({ class: "font-medium text-foreground" }, Format.number("[[user.followerCount]]"))
+				]),
+
+				// Following
+				Div({ class: "space-y-1" }, [
+					P({ class: "text-sm text-muted-foreground" }, "Following"),
+					P({ class: "font-medium text-foreground" }, Format.number("[[user.followingCount]]"))
+				])
 			])
 		])
 	]);
