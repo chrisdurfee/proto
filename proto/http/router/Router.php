@@ -199,6 +199,11 @@ class Router
 			return $this->basePath;
 		}
 
+		if ($uri === '*')
+		{
+			return $this->basePath . '*';
+		}
+
 		return $this->basePath . '/' . $this->stripBasePath($uri);
 	}
 
