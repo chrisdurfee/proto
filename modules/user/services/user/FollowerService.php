@@ -38,7 +38,7 @@ class FollowerService
 			return Response::invalid('Failed to toggle follower status.');
 		}
 
-		$this->updateFollowerCount($user, $alreadyFollows ? 'down' : 'up');
+		$this->updateCounts($user, $followerId, $alreadyFollows ? 'down' : 'up');
 		if (!$alreadyFollows)
 		{
 			$this->notifyNewFollower($userId, $followerId);
@@ -87,7 +87,7 @@ class FollowerService
 
 		$this->notifyNewFollower($userId, $followerId);
 
-		$countUpdate = $this->updateFollowerCount($user, 'up');
+		$countUpdate = $this->updateCounts($user, $followerId, 'up');
 		if (!$countUpdate)
 		{
 			return Response::invalid('Failed to update follower count.');
@@ -122,13 +122,37 @@ class FollowerService
 			return Response::invalid('Failed to unfollow user.');
 		}
 
-		$countUpdate = $this->updateFollowerCount($user, 'down');
+		$countUpdate = $this->updateCounts($user, $followerId, 'down');
 		if (!$countUpdate)
 		{
 			return Response::invalid('Failed to update follower count.');
 		}
 
 		return Response::success(['result' => $result]);
+	}
+
+	/**
+	 * Updates the follower count for a user.
+	 *
+	 * @param User $user The user object
+	 * @param string $direction The direction to update ('up' or 'down')
+	 * @return bool
+	 */
+	protected function updateCounts(User $user, mixed $followerId, string $direction = 'up'): bool
+	{
+		$result = $this->updateFollowerCount($user, $direction);
+		if (!$result)
+		{
+			return false;
+		}
+
+		$result = $this->updateFollowingCount($followerId, $direction);
+		if (!$result)
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -170,6 +194,30 @@ class FollowerService
 		$model = new User((object)[
 			'id' => $user->id,
 			'followerCount' => $newFollowerCount
+		]);
+		return $model->update();
+	}
+
+	/**
+	 * Updates the follower count for a user.
+	 *
+	 * @param User $user The user object
+	 * @param string $direction The direction to update ('up' or 'down')
+	 * @return bool
+	 */
+	protected function updateFollowingCount(mixed $followerId, string $direction = 'up'): bool
+	{
+		$follower = User::get($followerId);
+		if (!$follower)
+		{
+			return false;
+		}
+
+		$newFollowingCount = ($direction === 'up') ? (++$follower->followingCount) : (--$follower->followingCount);
+
+		$model = new User((object)[
+			'id' => $follower->id,
+			'followingCount' => $newFollowingCount
 		]);
 		return $model->update();
 	}
