@@ -146,6 +146,21 @@ class User extends Model
 	}
 
 	/**
+	 * This will get the user blocked users.
+	 *
+	 * @return Relations\BelongsToMany
+	 */
+	public function blocked(): Relations\BelongsToMany
+	{
+		return $this->belongsToMany(
+			User::class,
+			'block_users',
+			'user_id',
+			'block_user_id'
+		);
+	}
+
+	/**
 	 * @var string $storageType
 	 */
 	protected static string $storageType = UserStorage::class;

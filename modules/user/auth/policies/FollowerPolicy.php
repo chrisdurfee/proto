@@ -13,10 +13,10 @@ use Proto\Http\Router\Request;
 class FollowerPolicy extends Policy
 {
 	/**
-	 * Determines if the user can list all users.
+	 * Determines if the user can unfollow a user.
 	 *
 	 * @param Request $request The request object.
-	 * @return bool True if the user can view users, otherwise false.
+	 * @return bool True if the user can unfollow, otherwise false.
 	 */
 	public function unfollow(Request $request): bool
 	{
@@ -25,10 +25,10 @@ class FollowerPolicy extends Policy
 	}
 
 	/**
-	 * Determines if the user can list all users.
+	 * Determines if the user can follow a user.
 	 *
 	 * @param Request $request The request object.
-	 * @return bool True if the user can view users, otherwise false.
+	 * @return bool True if the user can follow, otherwise false.
 	 */
 	public function follow(Request $request): bool
 	{
@@ -61,10 +61,10 @@ class FollowerPolicy extends Policy
 	}
 
 	/**
-	 * Determines if the user can list all users.
+	 * Determines if the user can list all followers.
 	 *
 	 * @param Request $request The request object.
-	 * @return bool True if the user can view users, otherwise false.
+	 * @return bool True if the user can view followers, otherwise false.
 	 */
 	public function all(Request $request): bool
 	{

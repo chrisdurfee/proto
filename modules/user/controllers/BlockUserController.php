@@ -3,16 +3,16 @@ namespace Modules\User\Controllers;
 
 use Modules\User\Auth\Policies\FollowerPolicy;
 use Proto\Controllers\ApiController as Controller;
-use Modules\User\Services\User\FollowerService;
+use Modules\User\Services\User\BlockUserService;
 use Proto\Http\Router\Request;
 use Modules\User\Models\User;
 
 /**
- * FollowerController
+ * BlockUserController
  *
  * @package Modules\User\Controllers
  */
-class FollowerController extends Controller
+class BlockUserController extends Controller
 {
 	/**
 	 * @var string|null $policy
@@ -20,68 +20,38 @@ class FollowerController extends Controller
 	protected ?string $policy = FollowerPolicy::class;
 
 	/**
-	 * FollowerController constructor.
+	 * BlockUserController constructor.
 	 *
-	 * @param FollowerService $followerService
+	 * @param BlockUserService $blockUserService
 	 * @return void
 	 */
 	public function __construct(
-		protected FollowerService $followerService = new FollowerService()
+		protected BlockUserService $blockUserService = new BlockUserService()
 	)
 	{
 	}
 
 	/**
-	 * Notify a user about a new follower.
-	 *
-	 * @param Request $request The request object.
-	 * @return object
-	 */
-	public function notify(Request $request): object
-	{
-		$followerId = $request->params()->followerId ?? null;
-		if (!isset($followerId))
-		{
-			return $this->error('Follower user ID is required.');
-		}
-
-		$userId = $this->getResourceId($request);
-		if ($userId === null)
-		{
-			return $this->error('Invalid user ID to follow.');
-		}
-
-		$queue = $request->input('queue');
-		$result = $this->followerService->notifyNewFollower((int)$userId, (int)$followerId, (bool)$queue);
-		if (!$result->success)
-		{
-			return $this->error($result->message);
-		}
-
-		return $this->response($result->result);
-	}
-
-	/**
-	 * Toggles the follower status.
+	 * Toggles the block status.
 	 *
 	 * @param Request $request The request object.
 	 * @return object
 	 */
 	public function toggle(Request $request): object
 	{
-		$followerId = $request->params()->followerId ?? null;
-		if (!isset($followerId))
+		$blockUserId = $request->params()->blockUserId ?? null;
+		if (!isset($blockUserId))
 		{
-			return $this->error('Follower user ID is required.');
+			return $this->error('Blocked user ID is required.');
 		}
 
 		$userId = $this->getResourceId($request);
 		if ($userId === null)
 		{
-			return $this->error('Invalid user ID to follow.');
+			return $this->error('Invalid user ID to block.');
 		}
 
-		$result = $this->followerService->toggleFollower((int)$userId, (int)$followerId);
+		$result = $this->blockUserService->toggleBlock((int)$userId, (int)$blockUserId);
 		if (!$result->success)
 		{
 			return $this->error($result->message);
@@ -91,26 +61,26 @@ class FollowerController extends Controller
 	}
 
 	/**
-	 * Adds a follower.
+	 * Adds a blocked user.
 	 *
 	 * @param Request $request The request object.
 	 * @return object
 	 */
-	public function follow(Request $request): object
+	public function block(Request $request): object
 	{
-		$followerId = $request->params()->followerId ?? null;
-		if (!isset($followerId))
+		$blockUserId = $request->params()->blockUserId ?? null;
+		if (!isset($blockUserId))
 		{
-			return $this->error('Follower user ID is required.');
+			return $this->error('Blocked user ID is required.');
 		}
 
 		$userId = $this->getResourceId($request);
 		if ($userId === null)
 		{
-			return $this->error('Invalid user ID to follow.');
+			return $this->error('Invalid user ID.');
 		}
 
-		$result = $this->followerService->followUser((int)$userId, (int)$followerId);
+		$result = $this->blockUserService->blockUser((int)$userId, (int)$blockUserId);
 		if (!$result->success)
 		{
 			return $this->error($result->message);
@@ -120,26 +90,26 @@ class FollowerController extends Controller
 	}
 
 	/**
-	 * Removes a follower.
+	 * Removes a blocked user.
 	 *
 	 * @param Request $request The request object.
 	 * @return object
 	 */
-	public function unfollow(Request $request): object
+	public function unblock(Request $request): object
 	{
-		$followerId = $request->params()->followerId ?? null;
-		if (!isset($followerId))
+		$blockUserId = $request->params()->blockUserId ?? null;
+		if (!isset($blockUserId))
 		{
-			return $this->error('Follower user ID is required.');
+			return $this->error('Blocked user ID is required.');
 		}
 
 		$userId = $this->getResourceId($request);
 		if ($userId === null)
 		{
-			return $this->error('Invalid user ID to unfollow.');
+			return $this->error('Invalid user ID.');
 		}
 
-		$result = $this->followerService->unfollowUser((int)$userId, (int)$followerId);
+		$result = $this->blockUserService->unblockUser((int)$userId, (int)$blockUserId);
 		if (!$result->success)
 		{
 			return $this->error($result->message);
@@ -175,7 +145,7 @@ class FollowerController extends Controller
 		$groupBy = $this->setGroupByModifier($request);
 
 		$user = User::get($userId);
-		$result = $user->followers()->all($filter, $offset, $limit, [
+		$result = $user->blocked()->all($filter, $offset, $limit, [
 			'search' => $search,
 			'custom' => $custom,
 			'dates' => $dates,
