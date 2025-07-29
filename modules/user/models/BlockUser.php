@@ -46,7 +46,7 @@ class BlockUser extends Model
 				User::class,
 				fields: ['id', 'displayName', 'image']
 			)
-			->on(['followerUserId', 'id']);
+			->on(['blockUserId', 'id']);
 	}
 
 	/**
