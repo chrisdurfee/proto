@@ -13,10 +13,11 @@ spl_autoload_register(function(string $class): void
 
 	// Convert all folder names to lowercase, except for the file itself
 	$segments = explode(DIRECTORY_SEPARATOR, $path);
-	$segmentsCount = count($segments);
+	// only lowercase the first directory segment
+	$segmentsCount = count($segments) > 1? 1 : 0;
 
 	// Loop through and convert each folder name (except the last, which is the file)
-	for ($i = 0; $i < $segmentsCount - 1; $i++)
+	for ($i = 0; $i < $segmentsCount; $i++)
 	{
 		$segments[$i] = strtolower(preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $segments[$i]));
 	}

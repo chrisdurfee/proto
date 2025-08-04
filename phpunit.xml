@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="proto/autoload.php"
+         bootstrap="vendor/autoload.php"
          colors="true"
 >
     <testsuites>
         <testsuite name="ModuleTests">
             <directory suffix="Test.php" recursive="true">./modules</directory>
         </testsuite>
-        <testsuite name="Unit">
+        <testsuite name="Unit">`
             <!-- Existing project-wide unit tests -->
-            <directory suffix="Test.php">./common/tests/unit</directory>
+            <directory suffix="Test.php">./common/Tests/Unit</directory>
             <!-- proto unit tests -->
-            <directory suffix="Test.php">./proto/tests/unit</directory>
+            <directory suffix="Test.php">./proto/Tests/Unit</directory>
         </testsuite>
 
         <testsuite name="Feature">
             <!-- Existing project-wide feature tests -->
-            <directory suffix="Test.php">./common/tests/feature</directory>
+            <directory suffix="Test.php">./common/Tests/Feature</directory>
             <!-- Module-specific feature tests -->
-            <directory suffix="Test.php">./modules/*/tests/feature</directory>
+            <directory suffix="Test.php">./modules/*/Tests/Feature</directory>
         </testsuite>
     </testsuites>
 
