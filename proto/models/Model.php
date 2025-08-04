@@ -1027,7 +1027,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * @param array|null $modifiers Query modifiers.
 	 * @return AdapterProxy
 	 */
-	public static function where(?array $params = null,mixed $filter, ?array $modifiers = null): AdapterProxy
+	public static function where(?array $params = null, mixed $filter = null, ?array $modifiers = null): AdapterProxy
 	{
 		$instance = new static();
 		/**

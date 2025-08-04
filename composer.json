@@ -1,7 +1,13 @@
 {
 	"name": "protoframework/proto",
 	"description": "The Proto Framework - A modular monolith framework for PHP.",
-	"keywords": ["proto", "framework", "modular", "monolith", "php"],
+	"keywords": [
+		"proto",
+		"framework",
+		"modular",
+		"monolith",
+		"php"
+	],
 	"type": "project",
 	"license": "MIT",
 	"authors": [
@@ -36,6 +42,14 @@
 	"extra": {
 		"branch-alias": {
 			"dev-main": "1.0-dev"
+		}
+	},
+	"autoload": {
+		"psr-4": {
+			"Proto\\": "proto/",
+			"Modules\\": "modules/",
+			"Common\\": "common/",
+			"Apps\\": "apps/"
 		}
 	}
 }
