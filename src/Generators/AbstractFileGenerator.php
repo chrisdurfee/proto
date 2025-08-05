@@ -68,7 +68,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 			case 'common':
 				return realpath(BASE_PATH . '/common');
 			case 'proto':
-				return realpath(BASE_PATH . '/proto');
+				return realpath(BASE_PATH . '/vendor/protoframework/proto/src');
 			default:
 				return (realpath(BASE_PATH . '/modules') . DIRECTORY_SEPARATOR . $module);
 		}

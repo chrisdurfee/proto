@@ -39,7 +39,7 @@ class Guide
 
 		$this->migrationDirs = [
 			$projectRoot . '/common/Migrations',
-			$projectRoot . '/proto/Migrations'
+			$projectRoot . '/vendor/protoframework/proto/src/Migrations'
 		];
 
 		$modulesDir = $projectRoot . '/modules';
