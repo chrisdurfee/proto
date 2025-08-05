@@ -49,7 +49,7 @@ namespace Proto
 		 */
 		private function loadSettings(): void
 		{
-			$contents = File::get(__DIR__ . '/../common/Config/.env');
+			$contents = File::get(__DIR__ . '/../../../../common/Config/.env');
 
 			if (!$contents)
 			{
