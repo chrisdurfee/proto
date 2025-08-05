@@ -20,7 +20,7 @@ class ResourceHelper
 	 */
 	protected static function getResourcePath(string $resourcePath): ?string
 	{
-		$path = realpath(__DIR__ . '/../../modules/' . $resourcePath . '/api.php');
+		$path = realpath(__DIR__ . '/../../../../../modules/' . $resourcePath . '/api.php');
 		return ($path) ? $path : null;
 	}
 
