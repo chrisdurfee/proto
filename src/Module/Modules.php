@@ -63,7 +63,7 @@ namespace Proto\Module
 namespace
 {
 	use Proto\Module\Modules;
-	use Common\Auth;
+	use Proto\Auth;
 
 	/**
 	 * This will set up the global auth function to use in the
