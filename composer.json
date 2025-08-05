@@ -46,10 +46,10 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"Proto\\": "proto/",
-			"Modules\\": "modules/",
-			"Common\\": "common/",
-			"Apps\\": "apps/"
-		}
+			"Proto\\": "src/"
+		},
+		"classmap": [
+			"Migrations"
+		]
 	}
 }

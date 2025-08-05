@@ -56,13 +56,13 @@ A typical Proto application is structured as follows:
 
 ## Bootstrapping
 
-Proto auto bootstraps when interfacing with an API, Controller, Model, Storage, or Routine. Simply include `/proto/autoload.php` and call the namespaced classes you need.
+Proto auto bootstraps when interfacing with an API, Controller, Model, Storage, or Routine. Simply include `/vendor/autoload.php` and call the namespaced classes you need.
 
 ```php
 <?php declare(strict_types=1);
 
 // Bootstrap the application
-require_once __DIR__ . '/proto/autoload.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 // Example: Create a user via the User module gateway
 modules()->user()->v1()->createUser($data);
@@ -164,31 +164,10 @@ Use this tool to quickly scaffold new features or manage existing ones without n
 
 ### Installation
 
-1. Clone the repository:
-```sh
-git clone https://github.com/chrisdurfee/proto.git
-```
-
-2. Install dependencies using Composer:
+1. Install package using Composer:
 ```sh
 cd proto
-composer install
-```
-or
-```sh
-composer update
-```
-
-### Configuration
-
-Configure your application settings in the `Common/Config` `.env` file. All environment variables should be registered as JSON.
-
-### Running the Application
-
-Start your application using Docker, the built-in PHP server, or your preferred method:
-
-```sh
-docker compose up --build
+composer install protoframework/proto
 ```
 
 or start your PHP server.
