@@ -24,7 +24,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	 */
 	protected function saveFile(string $dir, string $fileName, mixed $content): bool
 	{
-		$path = $this->convertSlashes(strtolower($dir) . '/' . $fileName);
+		$path = $this->convertSlashes($dir . '/' . $fileName);
 		if (file_exists($path))
         {
 			return false;
