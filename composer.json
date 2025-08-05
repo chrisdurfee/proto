@@ -47,9 +47,6 @@
 	"autoload": {
 		"psr-4": {
 			"Proto\\": "src/"
-		},
-		"classmap": [
-			"Migrations"
-		]
+		}
 	}
 }
