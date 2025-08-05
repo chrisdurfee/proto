@@ -133,7 +133,7 @@ class ResourceHelper
 		$partsCount = count($parts);
 
 		// Loop through and convert each folder name (except the last, which is the file)
-		for ($i = 0; $i < $partsCount - 1; $i++)
+		for ($i = 0; $i < $partsCount; $i++)
 		{
 			$parts[$i] = Strings::pascalCase($parts[$i]);
 		}
