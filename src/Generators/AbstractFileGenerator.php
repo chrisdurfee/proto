@@ -66,11 +66,11 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 		switch (strtolower($module))
 		{
 			case 'common':
-				return realpath(__DIR__ . '/../../common');
+				return realpath(BASE_PATH . '/common');
 			case 'proto':
-				return realpath(__DIR__ . '/../../proto');
+				return realpath(BASE_PATH . '/proto');
 			default:
-				return (realpath(__DIR__ . '/../../modules') . DIRECTORY_SEPARATOR . $module);
+				return (realpath(BASE_PATH . '/modules') . DIRECTORY_SEPARATOR . $module);
 		}
 	}
 

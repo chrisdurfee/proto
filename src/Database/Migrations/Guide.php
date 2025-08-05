@@ -35,12 +35,14 @@ class Guide
 	 */
 	protected function setMigrationDirs(): void
 	{
+		$projectRoot = BASE_PATH;
+
 		$this->migrationDirs = [
-			__DIR__ . '/../../../common/Migrations',
-			__DIR__ . '/../../../proto/Migrations'
+			$projectRoot . '/common/Migrations',
+			$projectRoot . '/proto/Migrations'
 		];
 
-		$modulesDir = __DIR__ . '/../../../modules';
+		$modulesDir = $projectRoot . '/modules';
 		if (is_dir($modulesDir))
 		{
 			$modules = array_diff(scandir($modulesDir) ?: [], ['.', '..']);

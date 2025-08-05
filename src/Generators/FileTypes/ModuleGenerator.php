@@ -39,6 +39,6 @@ class ModuleGenerator extends AbstractFileGenerator
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$folderName = $this->convertSlashes($dir);
-		return realpath(__DIR__ . '/../../../modules') . '/' . $folderName;
+		return realpath(BASE_PATH . '/modules') . '/' . $folderName;
 	}
 }

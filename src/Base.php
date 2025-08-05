@@ -5,7 +5,7 @@ use Proto\Module\ModuleManager;
 use Proto\Providers\ServiceManager;
 
 // Define the base path constant
-define('BASE_PATH', realpath(__DIR__ . '/../'));
+define('BASE_PATH', realpath(__DIR__ . '/../../../'));
 
 /**
  * Base class
