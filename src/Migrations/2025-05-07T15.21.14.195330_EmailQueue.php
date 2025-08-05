@@ -6,6 +6,7 @@ use Proto\Database\Migrations\Migration;
  * EmailQueue
  *
  * Creates the email_queue table for dispatching emails.
+ * @suppresswarnings PHP6609
  */
 class EmailQueue extends Migration
 {

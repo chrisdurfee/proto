@@ -6,6 +6,7 @@ use Proto\Database\Migrations\Migration;
  * RolesPermissionsSeed
  *
  * This migration seeds the database with initial roles and permissions.
+ * @suppresswarnings PHP6609
  */
 class RolesPermissionsSeed extends Migration
 {

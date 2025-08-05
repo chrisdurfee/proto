@@ -4,7 +4,7 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Unsubscribe
- *
+ * @suppresswarnings PHP6609
  */
 class Unsubscribe extends Migration
 {

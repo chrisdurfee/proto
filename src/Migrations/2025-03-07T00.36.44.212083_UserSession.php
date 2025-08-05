@@ -4,6 +4,8 @@ use Proto\Database\Migrations\Migration;
 
 /**
  * Migration for the user_sessions table.
+ *
+ * @suppresswarnings PHP6609
  */
 class UserSession extends Migration
 {

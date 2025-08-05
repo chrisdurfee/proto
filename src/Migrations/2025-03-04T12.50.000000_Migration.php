@@ -6,6 +6,7 @@ use Proto\Database\Migrations\Migration as BaseMigration;
  * Migration for the migrations table.
  *
  * @package Proto\Database\Migrations
+ * @suppresswarnings PHP6609
  */
 class Migration extends BaseMigration
 {

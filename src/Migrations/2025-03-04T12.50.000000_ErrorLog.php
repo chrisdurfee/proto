@@ -6,6 +6,7 @@ use Proto\Database\Migrations\Migration;
  * Migration for the proto_error_log table.
  *
  * @package Proto\Database\Migrations
+ * @suppresswarnings PHP6609
  */
 class ErrorLog extends Migration
 {

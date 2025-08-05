@@ -6,6 +6,7 @@ use Proto\Database\Migrations\Migration;
  * SmsQueue
  *
  * Creates the sms_queue table for dispatching SMS messages.
+ * @suppresswarnings PHP6609
  */
 class SmsQueue extends Migration
 {

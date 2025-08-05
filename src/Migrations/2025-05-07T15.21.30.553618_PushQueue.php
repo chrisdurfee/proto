@@ -6,6 +6,7 @@ use Proto\Database\Migrations\Migration;
  * PushQueue
  *
  * Creates the web_push_queue table for dispatching web push notifications.
+ * @suppresswarnings PHP6609
  */
 class PushQueue extends Migration
 {
