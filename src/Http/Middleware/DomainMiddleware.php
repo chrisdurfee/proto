@@ -24,22 +24,15 @@ class DomainMiddleware
 	{
 		$allowed = (array)env('urls');
 
-		$originHeader = $request->header('origin')  ?? '';
-		$refererHeader = $request->header('referer') ?? '';
-
-		$originHost = $originHeader ? parse_url($originHeader,  PHP_URL_HOST) : null;
-		$refererHost = $refererHeader ? parse_url($refererHeader, PHP_URL_HOST) : null;
-
-		$hostHeader = $request->header('host')
-			? strtolower(explode(':', $request->header('host'), 2)[0])
-			: null;
-
-
-		return (
-			in_array($originHost,  $allowed, true)
-		 || in_array($refererHost, $allowed, true)
-		 || in_array($hostHeader,  $allowed, true)
+		$allowedHosts = array_map(fn($u) =>
+			parse_url($u, PHP_URL_HOST) ?: strtolower($u),
+			$allowed
 		);
+
+		$hostHeader = $request->header('host');
+		$hostOnly = strtolower(explode(':',$hostHeader)[0]);
+
+		return in_array($hostOnly, $allowedHosts, true);
 	}
 
 	/**
@@ -51,10 +44,15 @@ class DomainMiddleware
 	 */
 	public function handle(Request $request, callable $next): mixed
 	{
+		$origin = $request->header('origin');
+		if ($origin === null)
+		{
+			return $next($request);
+		}
+
 		if (!$this->isSupportedDomain($request))
 		{
-			$FORBIDDEN_CODE = 403;
-			$this->error('Domain not allowed', $FORBIDDEN_CODE);
+			$this->error('Domain not allowed', 403);
 			return null;
 		}
 
