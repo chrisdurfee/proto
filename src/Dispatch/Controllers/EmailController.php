@@ -121,7 +121,7 @@ class EmailController extends Controller
 		$settings = self::getEmailDefaults($settings);
 
 		$attachments = !empty($settings->attachments) ? $settings->attachments : null;
-		$email = new Email($settings->to, 'html', $settings->from, $settings->subject, $template, $attachments);
+		$email = new Email($settings->to, 'html', $settings->from, $settings->subject, $template, $attachments, $settings->fromName);
 
 		if (!empty($settings->unsubscribeUrl))
 		{

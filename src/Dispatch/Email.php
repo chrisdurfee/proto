@@ -116,7 +116,8 @@ class Email extends Dispatch
 		string $from,
 		string $subject,
 		string $message,
-		?array $attachments = null
+		?array $attachments = null,
+		?string $fromName = null
 	)
 	{
 		$this->to = $to;
@@ -124,6 +125,7 @@ class Email extends Dispatch
 		$this->from = $from;
 		$this->subject = $subject;
 		$this->message = $message;
+		$this->fromName = $fromName;
 		$this->addAttachments($attachments);
 		$this->initializeMailer();
 	}
