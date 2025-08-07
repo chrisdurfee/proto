@@ -179,6 +179,19 @@ class Alter extends Blueprint
 	}
 
 	/**
+	 * Drop an index by name.
+	 *
+	 * @param string $indexName
+	 * @return self
+	 */
+	public function dropIndex(string $indexName): self
+	{
+		// we want “DROP INDEX indexName”
+		$this->dropping[] = "INDEX {$indexName}";
+		return $this;
+	}
+
+	/**
 	 * Drops a field.
 	 *
 	 * @param string $fieldName The name of the field.
