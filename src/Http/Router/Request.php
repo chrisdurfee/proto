@@ -120,7 +120,7 @@ class Request
 		$validator = Validator::create($data, $rules);
 		if (!$validator->isValid())
 		{
-			$statusCode = 404;
+			$statusCode = 400;
 			$response = new Response();
 			$response->sendHeaders($statusCode)->json([
 				"message"=> $validator->getMessage(),
