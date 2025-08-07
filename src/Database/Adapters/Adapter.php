@@ -278,6 +278,11 @@ abstract class Adapter
 	{
 		$this->displayError($sql);
 		$this->setLastError($errorMessage);
+		error(
+			$errorMessage . ' query: ' . $sql,
+			__FILE__,
+			__LINE__
+		);
 	}
 
 	/**
