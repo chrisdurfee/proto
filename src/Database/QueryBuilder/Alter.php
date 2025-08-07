@@ -199,7 +199,7 @@ class Alter extends Blueprint
 	 */
 	public function drop(string $fieldName): self
 	{
-		$this->dropping[] = $fieldName;
+		$this->dropping[] = "COLUMN {$fieldName}";
 		return $this;
 	}
 
