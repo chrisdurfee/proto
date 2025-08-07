@@ -22,7 +22,7 @@ class DomainMiddleware
 	 */
 	protected function isSupportedDomain(Request $request): bool
 	{
-		$allowed = (array)env('urls');
+		$allowed = (array)env('domain');
 
 		$allowedHosts = array_map(fn($u) =>
 			parse_url($u, PHP_URL_HOST) ?: strtolower($u),

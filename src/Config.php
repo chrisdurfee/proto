@@ -73,11 +73,11 @@ namespace Proto
 		private function detectEnvironment(): void
 		{
 			$host = $_SERVER['HTTP_HOST'] ?? '';
-			$urls = $this->get('urls');
+			$urls = $this->get('domain');
 
 			$this->set('env', match (true)
 			{
-				$host === '' || $host === $urls->prod => 'prod',
+				$host === '' || $host === $urls->production => 'prod',
 				isset($urls->staging) && $host === $urls->staging => 'staging',
 				isset($urls->testing) && $host === $urls->testing => 'testing',
 				default => 'dev',
@@ -201,8 +201,20 @@ namespace Proto
 				return self::$envUrl;
 			}
 
-			$urls = $this->get('urls');
-			$url = $urls->{$this->getEnv()} ?? '';
+			$urls = $this->get('domain');
+			$env = $this->getEnv();
+			if ($env === 'prod')
+			{
+				$url = $urls->production;
+			}
+			elseif ($env === 'dev')
+			{
+				$url = $urls->development;
+			}
+			else
+			{
+				$url = $urls->{$env} ?? $urls->production;
+			}
 
 			// Cache the URL
 			self::$envUrl = $url;
