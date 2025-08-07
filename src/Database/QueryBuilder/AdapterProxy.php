@@ -23,6 +23,11 @@ use Proto\Database\QueryBuilder\Delete;
 class AdapterProxy
 {
 	/**
+	 * @var array
+	 */
+	protected array $params = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param object $sql The SQL component.
@@ -31,6 +36,40 @@ class AdapterProxy
 	 */
 	public function __construct(protected ?object $sql, protected ?Adapter $db = null)
 	{
+	}
+
+	/**
+	 * Gets the query parameters.
+	 *
+	 * @return array
+	 */
+	public function params(): array
+	{
+		return $this->params;
+	}
+
+	/**
+	 * Adds a query parameter.
+	 *
+	 * @param mixed $value The parameter value.
+	 * @return self
+	 */
+	public function addParam(mixed $value): self
+	{
+		$this->params[] = $value;
+		return $this;
+	}
+
+	/**
+	 * Adds query parameters.
+	 *
+	 * @param array $values The parameter values.
+	 * @return self
+	 */
+	public function addParams(array $values): self
+	{
+		$this->params = array_merge($this->params, $values);
+		return $this;
 	}
 
 	/**
@@ -99,6 +138,7 @@ class AdapterProxy
 			return false;
 		}
 
+		$params = array_merge($this->params, $params);
 		return $this->db->execute((string) $this->sql, $params);
 	}
 
@@ -115,6 +155,7 @@ class AdapterProxy
 			return false;
 		}
 
+		$params = array_merge($this->params, $params);
 		return $this->db->transaction((string) $this->sql, $params);
 	}
 
@@ -131,6 +172,7 @@ class AdapterProxy
 			return [];
 		}
 
+		$params = array_merge($this->params, $params);
 		return $this->db->fetch((string) $this->sql, $params);
 	}
 
@@ -164,6 +206,7 @@ class AdapterProxy
 		}
 
 		$this->sql->limit(1);
+		$params = array_merge($this->params, $params);
 		return $this->db->first((string) $this->sql, $params);
 	}
 
