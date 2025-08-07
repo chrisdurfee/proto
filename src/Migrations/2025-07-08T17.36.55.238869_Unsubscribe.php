@@ -30,12 +30,6 @@ class Unsubscribe extends Migration
 			$table->index('email')->fields('email');
 			$table->index('request_id')->fields('request_id', 'email', 'created_at');
 			$table->index('created_at')->fields('created_at');
-
-			// Foreign keys
-			$table->foreign('email')
-				->references('email')
-				->on('users')
-				->onDelete('cascade');
 		});
 	}
 
