@@ -4,6 +4,7 @@ namespace Proto\Http\Router;
 use Proto\Http\Request as BaseRequest;
 use Proto\Utils\Sanitize;
 use Proto\Utils\Format\JsonFormat;
+use Proto\Api\Validator;
 
 /**
  * Request
@@ -94,6 +95,41 @@ class Request
 	{
 		$input = BaseRequest::raw($name, $default);
 		return $this->clean($input);
+	}
+
+	/**
+	 * Gets the validated data from the request.
+	 *
+	 * @param array $rules
+	 * @param string|null $keyName
+	 * @return ?object
+	 */
+	public function validate(array $rules = [], ?string $keyName = 'item'): ?object
+	{
+		$data = $this->json($keyName) ?? (object)$this->all();
+		if (!$data)
+		{
+			return null;
+		}
+
+		if (count($rules) < 1)
+		{
+			return $data;
+		}
+
+		$validator = Validator::create($data, $rules);
+		if (!$validator->isValid())
+		{
+			$statusCode = 404;
+			$response = new Response();
+			$response->sendHeaders($statusCode)->json([
+				"message"=> $validator->getMessage(),
+				"success"=> false
+			]);
+			die;
+		}
+
+		return $data;
 	}
 
 	/**
