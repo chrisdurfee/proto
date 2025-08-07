@@ -2,6 +2,9 @@
 namespace Proto\Dispatch;
 
 use Proto\Dispatch\Utils\Emogrifier;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 /**
  * Class Email
@@ -63,6 +66,20 @@ class Email extends Dispatch
 	public array $attachments = [];
 
 	/**
+	 * PHPMailer instance for SMTP email sending.
+	 *
+	 * @var PHPMailer|null
+	 */
+	private ?PHPMailer $mailer = null;
+
+	/**
+	 * Controls whether emails are actually sent (useful for development).
+	 *
+	 * @var bool
+	 */
+	private bool $sendingEnabled = true;
+
+	/**
 	 * Unsubscribe URL for the email.
 	 *
 	 * @var string
@@ -108,6 +125,59 @@ class Email extends Dispatch
 		$this->subject = $subject;
 		$this->message = $message;
 		$this->addAttachments($attachments);
+		$this->initializeMailer();
+	}
+
+	/**
+	 * Initialize PHPMailer with SMTP configuration.
+	 *
+	 * @return void
+	 */
+	private function initializeMailer(): void
+	{
+		$this->mailer = new PHPMailer(true);
+		/**
+		 * Enable or disable email sending using the environment configuration.
+		 */
+		$settings = env('email')->smtp ?? (object) [];
+		$this->sendingEnabled = $settings->sendingEnabled ?? true;
+
+		try
+		{
+			// Server settings
+			$this->mailer->isSMTP();
+			$this->mailer->Host = $settings->host ?? '';
+			$this->mailer->SMTPAuth = true;
+			$this->mailer->Username = $settings->username ?? '';
+			$this->mailer->Password = $settings->password ?? '';
+
+			// Encryption and port
+			$encryption = $settings->encryption ?? 'tls';
+			if ($encryption === 'ssl')
+			{
+				$this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+				$this->mailer->Port = (int) ($settings->port ?? 465);
+			}
+			else
+			{
+				$this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+				$this->mailer->Port = (int) ($settings->port ?? 587);
+			}
+
+			// Default sender
+			$fromAddress = $settings->fromAddress ?? $this->from;
+			$fromName = $settings->fromName ?? $this->getFromName();
+			$this->mailer->setFrom($fromAddress, $fromName);
+
+		}
+		catch (Exception $e)
+		{
+			error(
+				"Email SMTP Configuration Error: " . $e->getMessage(),
+				__FILE__,
+				__LINE__
+			);
+		}
 	}
 
 	/**
@@ -397,18 +467,104 @@ class Email extends Dispatch
 	}
 
 	/**
-	 * Sends the email using the PHP mail function.
+	 * Sends the email using PHPMailer with SMTP.
 	 *
 	 * @return bool True if the email was sent successfully, false otherwise.
 	 */
 	private function email(): bool
 	{
-		$to = $this->to;
-		$subject = $this->subject;
-		$message = $this->setupMessage();
-		$header = $this->setupHeader();
+		if (!$this->sendingEnabled)
+		{
+			return true;
+		}
 
-		return mail($to, $subject, wordwrap($message, 70), $header, '-f' . $this->from);
+		if (!$this->mailer)
+		{
+			return false;
+		}
+
+		try
+		{
+			// Clear any previous recipients and attachments
+			$this->mailer->clearAddresses();
+			$this->mailer->clearAttachments();
+
+			// Add recipient
+			$this->mailer->addAddress($this->to);
+
+			// Set subject
+			$this->mailer->Subject = $this->subject;
+
+			// Set message content
+			if ($this->messageType === 'html')
+			{
+				$this->mailer->isHTML(true);
+				$this->mailer->Body = $this->changeCssToInline($this->message);
+				// Add plain text alternative if possible
+				$this->mailer->AltBody = strip_tags($this->message);
+			}
+			else
+			{
+				$this->mailer->isHTML(false);
+				$this->mailer->Body = $this->message;
+			}
+
+			// Add attachments
+			foreach ($this->attachments as $file)
+			{
+				if (is_file($file))
+				{
+					$filename = self::createAttachmentName($file);
+					$this->mailer->addAttachment($file, $filename);
+				}
+			}
+
+			// Send the email
+			return $this->mailer->send();
+
+		}
+		catch (Exception $e)
+		{
+			error(
+				"Email sending error: " . $e->getMessage(),
+				__FILE__,
+				__LINE__
+			);
+			return false;
+		}
+	}
+
+	/**
+	 * Enable or disable email sending (useful for development).
+	 *
+	 * @param bool $enabled Whether to enable email sending.
+	 *
+	 * @return self
+	 */
+	public function setSendingEnabled(bool $enabled): self
+	{
+		$this->sendingEnabled = $enabled;
+		return $this;
+	}
+
+	/**
+	 * Check if email sending is enabled.
+	 *
+	 * @return bool
+	 */
+	public function isSendingEnabled(): bool
+	{
+		return $this->sendingEnabled;
+	}
+
+	/**
+	 * Get the PHPMailer instance for advanced configuration.
+	 *
+	 * @return PHPMailer|null
+	 */
+	public function getMailer(): ?PHPMailer
+	{
+		return $this->mailer;
 	}
 
 	/**
