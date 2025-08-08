@@ -6,7 +6,7 @@ namespace Proto\Database\Adapters\Sql
 	 *
 	 * Provides SQL functions that can be used to create SQL in storage layers.
 	 *
-	 * @package Proto\Database\Adapters\SQL
+	 * @package Proto\Database\Adapters\Sql
 	 */
 	class Sql
 	{

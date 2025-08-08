@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Database\QueryBuilder;
 
-use Proto\Database\Adapters\SQL\Mysql\MysqliBindTrait;
+use Proto\Database\Adapters\Sql\Mysql\MysqliBindTrait;
 
 /**
  * Query
