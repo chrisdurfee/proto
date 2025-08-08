@@ -9,7 +9,7 @@ use Proto\Utils\Filter\Sanitize;
  *
  * Provides functionality for validating and sanitizing data based on a set of rules.
  *
- * @package Proto\API
+ * @package Proto\Api
  */
 class Validator
 {
