@@ -206,6 +206,7 @@ class ModelPolicy extends Policy
 	 * @param int|null $limit The count value.
 	 * @param string|null $search The search query.
 	 * @param array|null $custom Custom parameters.
+	 * @param string|null $lastCursor The last cursor value.
 	 * @return string The generated parameter string.
 	 */
 	public function setupAllParams(
@@ -213,7 +214,8 @@ class ModelPolicy extends Policy
 		?int $offset = null,
 		?int $limit = null,
 		?string $search = null,
-		?array $custom = null
+		?array $custom = null,
+		?string $lastCursor = null
 	): string
 	{
 		$params = [];
@@ -243,6 +245,11 @@ class ModelPolicy extends Policy
 			$params[] = implode(':', $custom);
 		}
 
+		if (!empty($lastCursor))
+		{
+			$params[] = (string) $lastCursor;
+		}
+
 		return implode(':', $params);
 	}
 
@@ -259,6 +266,7 @@ class ModelPolicy extends Policy
 		$limit = $request->getInt('limit') ?? 50;
 		$search = $request->input('search') ?? null;
 		$custom = $request->input('custom') ?? null;
+		$lastCursor = $request->input('lastCursor') ?? null;
 
 		// Skip caching for searches
 		if ($this->isSearching($search))
@@ -266,7 +274,7 @@ class ModelPolicy extends Policy
 			return $this->controller->all($request);
 		}
 
-		$params = $this->setupAllParams($filter, $offset, $limit, $search, $custom);
+		$params = $this->setupAllParams($filter, $offset, $limit, $search, $custom, $lastCursor);
 		$key = $this->createKey('all', $params);
 		if ($this->hasKey($key))
 		{

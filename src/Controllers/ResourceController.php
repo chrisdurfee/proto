@@ -371,6 +371,7 @@ abstract class ResourceController extends ApiController
 		$limit = $request->getInt('limit') ?? 50;
 		$search = $request->input('search');
 		$custom = $request->input('custom');
+		$lastCursor = $request->input('lastCursor') ?? null;
 		$dates = $this->setDateModifier($request);
 		$orderBy = $this->setOrderByModifier($request);
 		$groupBy = $this->setGroupByModifier($request);
@@ -380,7 +381,8 @@ abstract class ResourceController extends ApiController
 			'custom' => $custom,
 			'dates' => $dates,
 			'orderBy' => $orderBy,
-			'groupBy' => $groupBy
+			'groupBy' => $groupBy,
+			'cursor' => $lastCursor
 		]);
 		return $this->response($result);
 	}

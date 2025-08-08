@@ -699,9 +699,9 @@ class Storage extends TableStorage
 	 *
 	 * @param array $rows Result set rows.
 	 * @param string $idKey ID key name.
-	 * @return string|null
+	 * @return mixed
 	 */
-	protected function getLastCursor(array $rows, string $idKey): ?string
+	protected function getLastCursor(array $rows, string $idKey): mixed
 	{
 		if (empty($rows))
 		{
@@ -725,6 +725,7 @@ class Storage extends TableStorage
 		if ($offset !== null && $limit !== null)
 		{
 			$sql->limit($offset, $limit);
+			return;
 		}
 
 		if ($limit !== null)
