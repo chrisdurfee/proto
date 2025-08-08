@@ -646,7 +646,7 @@ class Storage extends TableStorage
 		$cursor = $modifiers['cursor'] ?? null;
 		if ($cursor !== null)
 		{
-			$this->setCursorLimit($sql, $params, $idKey, $limit, $cursor);
+			$this->setCursorLimit($sql, $params, $idKey, $limit, $cursor, $modifiers);
 		}
 		else
 		{
@@ -664,13 +664,15 @@ class Storage extends TableStorage
 	 * @param mixed $cursor Cursor value.
 	 * @return void
 	 */
-	protected function setCursorLimit(object $sql, array &$params, string $idKey, ?int $limit = null, mixed $cursor = null): void
+	protected function setCursorLimit(object $sql, array &$params, string $idKey, ?int $limit = null, mixed $cursor = null, ?array $modifiers = null): void
 	{
 		// Determine ID column and add a keyset condition
 		$qualifiedId = $this->getCursorColumnName($idKey);
 
-		// Default to forward pagination: fetch rows with id > cursor
-		$sql->where("{$qualifiedId} > ?");
+		// Use operator based on existing orderBy direction (ASC => ">", DESC => "<")
+		$dir = $this->getOrderByDirection($modifiers);
+		$operator = ($dir === 'DESC') ? '<' : '>';
+		$sql->where("{$qualifiedId} {$operator} ?");
 		$params[] = $cursor;
 
 		$rowCount = $limit;
@@ -679,6 +681,32 @@ class Storage extends TableStorage
 			// One-arg limit means row count in our Query builder
 			$sql->limit((int)$rowCount);
 		}
+	}
+
+	/**
+	 * Extract the first orderBy direction from modifiers.
+	 *
+	 * @param array|null $modifiers
+	 * @return string 'ASC' or 'DESC'
+	 */
+	protected function getOrderByDirection(?array $modifiers = null): string
+	{
+		$orderBy = $modifiers['orderBy'] ?? null;
+		if (!$orderBy)
+		{
+			return 'ASC';
+		}
+
+		$orderBy = (object)$orderBy;
+		if (is_object($orderBy))
+		{
+			foreach ($orderBy as $field => $dir)
+			{
+				return (strtoupper((string)$dir) === 'DESC') ? 'DESC' : 'ASC';
+			}
+		}
+
+		return 'ASC';
 	}
 
 	/**
