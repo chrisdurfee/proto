@@ -633,7 +633,7 @@ class Storage extends TableStorage
 	 * @param array|null $modifiers Modifiers.
 	 * @return void
 	 */
-	public function setLimit(
+	protected function setLimit(
 		object $sql,
 		array &$params,
 		string $idKey,
