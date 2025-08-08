@@ -862,16 +862,33 @@ class Storage extends TableStorage
 	 *
 	 * @param array|object|null $filter Filter criteria.
 	 * @param int|null $offset Offset.
-	 * @param int|null $count Limit count.
+	 * @param int|null $limit Limit count.
 	 * @param array|null $modifiers Modifiers.
-	 * @return array
+	 * @return object
 	 */
-	public function all(mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null): array
+	public function all(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
 	{
 		$params = [];
-		return $this->where($filter, $params, $modifiers)
-			->limit($offset, $count)
-			->fetch($params);
+		$sql = $this->where($filter, $params, $modifiers);
+
+		$this->setCustomWhere($sql, $modifiers, $params);
+		$this->setOrderBy($sql, $modifiers, $params);
+		$this->setGroupBy($sql, $modifiers, $params);
+
+		/**
+		 * This will add a limit by cursor or offset.
+		 */
+		$idKey = $this->model->getIdKeyName();
+		$this->setLimit($sql, $params, $idKey, $offset, $limit, $modifiers);
+
+		$rows = $sql->fetch($params);
+		$result = [ 'rows' => $rows ];
+		if (!empty($rows))
+		{
+			$result['lastCursor'] = $this->getLastCursor($rows, $idKey);
+		}
+
+		return (object)$result;
 	}
 
 	/**
@@ -925,10 +942,16 @@ class Storage extends TableStorage
 	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
-	public function count($filter = null, ?array $modifiers = null): object
+	public function count(mixed $filter = null, ?array $modifiers = null): object
 	{
 		$params = [];
 		$where = $this->getWhere($params, $filter, $modifiers);
-		return $this->select([['COUNT(*)'], 'count'])->where(...$where)->first($params);
+		$sql = $this->select([['COUNT(*)'], 'count'])->where(...$where);
+
+		$this->setCustomWhere($sql, $modifiers, $params);
+		$this->setOrderBy($sql, $modifiers, $params);
+		$this->setGroupBy($sql, $modifiers, $params);
+
+		return $sql->first($params);
 	}
 }
