@@ -123,6 +123,7 @@ class ResourceHelper
 		});
 
 		$moduleName = array_shift($parts);
+		$moduleName = Strings::pascalCase($moduleName);
 
 		// Ensure the module name is present.
 		if (empty($moduleName))
