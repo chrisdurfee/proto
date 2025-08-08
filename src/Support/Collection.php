@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Proto\Support;
+namespace Proto\Support {
 
 /**
  * Collection class
@@ -17,6 +17,13 @@ class Collection implements \JsonSerializable
 	protected array $items = [];
 
 	/**
+	 * Optional cursor metadata for keyset pagination.
+	 *
+	 * @var mixed|null
+	 */
+	protected mixed $lastCursor = null;
+
+	/**
 	 * Initializes the collection with an optional array of items.
 	 *
 	 * @param array|null $items The initial items.
@@ -24,6 +31,28 @@ class Collection implements \JsonSerializable
 	public function __construct(?array $items = null)
 	{
 		$this->items = $items ?? [];
+	}
+
+	/**
+	 * Sets the last cursor value.
+	 *
+	 * @param mixed $cursor
+	 * @return self
+	 */
+	public function setLastCursor(mixed $cursor): self
+	{
+		$this->lastCursor = $cursor;
+		return $this;
+	}
+
+	/**
+	 * Gets the last cursor value.
+	 *
+	 * @return mixed
+	 */
+	public function getLastCursor(): mixed
+	{
+		return $this->lastCursor;
 	}
 
 	/**
@@ -210,9 +239,9 @@ class Collection implements \JsonSerializable
 		return $this->items;
 	}
 }
+}
 
-namespace
-{
+namespace {
 	use Proto\Support\Collection;
 
 	/**

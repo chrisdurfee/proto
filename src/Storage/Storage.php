@@ -600,16 +600,137 @@ class Storage extends TableStorage
 	{
 		$params = [];
 		$where = $this->getWhere($params, $filter, $modifiers);
-		$sql = $this->select()
-			->where(...$where)
-			->limit($offset, $limit);
+		$sql = $this->select()->where(...$where);
 
 		$this->setCustomWhere($sql, $modifiers, $params);
 		$this->setOrderBy($sql, $modifiers, $params);
 		$this->setGroupBy($sql, $modifiers, $params);
 
+		/**
+		 * This will add a limit by cursor or offset.
+		 */
+		$idKey = $this->model->getIdKeyName();
+		$this->setLimit($sql, $params, $idKey, $offset, $limit, $modifiers);
+
 		$rows = $sql->fetch($params);
-		return (object)[ 'rows' => $rows];
+		$result = [ 'rows' => $rows ];
+		if (!empty($rows))
+		{
+			$result['lastCursor'] = $this->getLastCursor($rows, $idKey);
+		}
+
+		return (object)$result;
+	}
+
+	/**
+	 * Sets the limit and offset for the SQL query.
+	 *
+	 * @param object $sql Query builder instance.
+	 * @param array &$params Parameter array.
+	 * @param string $idKey ID key name.
+	 * @param int|null $offset Offset.
+	 * @param int|null $limit Limit count.
+	 * @param array|null $modifiers Modifiers.
+	 * @return void
+	 */
+	public function setLimit(
+		object $sql,
+		array &$params,
+		string $idKey,
+		?int $offset = null,
+		?int $limit = null,
+		?array $modifiers = null
+	): void
+	{
+		// Cursor-based pagination support: when a cursor is provided, use keyset pagination
+		$cursor = $modifiers['cursor'] ?? null;
+		if ($cursor !== null)
+		{
+			$this->setCursorLimit($sql, $params, $idKey, $limit, $cursor);
+		}
+		else
+		{
+			$this->addListLimit($sql, $offset, $limit);
+		}
+	}
+
+	/**
+	 * Sets the limit and cursor for the SQL query.
+	 *
+	 * @param object $sql Query builder instance.
+	 * @param array &$params Parameter array.
+	 * @param string $idKey ID key name.
+	 * @param int|null $limit Limit count.
+	 * @param mixed $cursor Cursor value.
+	 * @return void
+	 */
+	protected function setCursorLimit(object $sql, array &$params, string $idKey, ?int $limit = null, mixed $cursor = null): void
+	{
+		// Determine ID column and add a keyset condition
+		$qualifiedId = $this->getCursorColumnName($idKey);
+
+		// Default to forward pagination: fetch rows with id > cursor
+		$sql->where("{$qualifiedId} > ?");
+		$params[] = $cursor;
+
+		$rowCount = $limit;
+		if ($rowCount !== null)
+		{
+			// One-arg limit means row count in our Query builder
+			$sql->limit((int)$rowCount);
+		}
+	}
+
+	/**
+	 * Get the cursor column name for keyset pagination.
+	 *
+	 * @param string $idKey ID key name.
+	 * @return string
+	 */
+	protected function getCursorColumnName(string $idKey): string
+	{
+		$isSnakeCase = $this->model->isSnakeCase();
+		$idField = self::prepareField($idKey, $isSnakeCase);
+		return $this->alias . '.' . $idField;
+	}
+
+	/**
+	 * Retrieves the last cursor value from the result set.
+	 *
+	 * @param array $rows Result set rows.
+	 * @param string $idKey ID key name.
+	 * @return string|null
+	 */
+	protected function getLastCursor(array $rows, string $idKey): ?string
+	{
+		if (empty($rows))
+		{
+			return null;
+		}
+
+		$last = end($rows);
+		return $last->{$idKey} ?? null;
+	}
+
+	/**
+	 * Adds pagination limits to the SQL query.
+	 *
+	 * @param object $sql Query builder instance.
+	 * @param int|null $offset Offset.
+	 * @param int|null $limit Limit count.
+	 * @return void
+	 */
+	protected function addListLimit(object $sql, ?int $offset = null, ?int $limit = null): void
+	{
+		if ($offset !== null && $limit !== null)
+		{
+			$sql->limit($offset, $limit);
+		}
+
+		if ($limit !== null)
+		{
+			$sql->limit($limit);
+		}
 	}
 
 	/**

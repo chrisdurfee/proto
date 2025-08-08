@@ -1096,7 +1096,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$result = $this->getRows($filter, $offset, $count, $modifiers);
 		$rows = $result->rows ?? [];
-		return new Collection($rows);
+		// If using cursor pagination, attach lastCursor as metadata on the Collection via a lightweight subclassing pattern
+		$collection = new Collection($rows);
+		if (($modifiers['cursor'] ?? null) !== null && isset($result->lastCursor))
+		{
+			$collection->setLastCursor($result->lastCursor);
+		}
+		return $collection;
 	}
 
 	/**
