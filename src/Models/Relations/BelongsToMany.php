@@ -172,6 +172,8 @@ class BelongsToMany
 		Limit::add($sql, $params, $this->parent, $offset, $limit, $modifiers);
 
 		$rows = $sql->fetch($params);
+		$rows = $instance->convertRows($rows);
+
 		$result = [ 'rows' => $rows ];
 		if (!empty($rows))
 		{
