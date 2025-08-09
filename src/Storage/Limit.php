@@ -34,6 +34,11 @@ class Limit
 	{
 		// Cursor-based pagination support: when a cursor is provided, use keyset pagination
 		$cursor = $modifiers['cursor'] ?? null;
+		if ($cursor === '')
+		{
+			$cursor = null;
+		}
+
 		if ($cursor !== null)
 		{
 			self::cursor($sql, $params, $model, $limit, $cursor, $modifiers);
