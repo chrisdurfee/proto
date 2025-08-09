@@ -5,6 +5,7 @@ use Proto\Models\Model;
 use Proto\Utils\Strings;
 use Proto\Storage\Filter;
 use Proto\Storage\ModifierUtil;
+use Proto\Storage\Limit;
 
 /**
  * Class BelongsToMany
@@ -140,9 +141,9 @@ class BelongsToMany
 	 * @param int|null $offset Offset for pagination.
 	 * @param int|null $limit Limit for pagination.
 	 * @param array|null $modifiers Additional query modifiers.
-	 * @return object[]
+	 * @return object
 	 */
-	public function all(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): array
+	public function all(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
 	{
 		$parentId = $this->getParentId();
 		$instance = new $this->related();
@@ -151,8 +152,7 @@ class BelongsToMany
 		$params = [$parentId];
 		$where = Filter::setup($filter, $params);
 		$sql = $this->getSelectQuery()
-			->where(...$where)
-			->limit($offset, $limit);
+			->where(...$where);
 
 		$orderBy = $modifiers['orderBy'] ?? null;
 		if (is_object($orderBy))
@@ -166,8 +166,20 @@ class BelongsToMany
 			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase);
 		}
 
+		/**
+		 * This will add a limit by cursor or offset.
+		 */
+		Limit::add($sql, $params, $this->parent, $offset, $limit, $modifiers);
+
 		$rows = $sql->fetch($params);
-		return $instance->convertRows($rows);
+		$result = [ 'rows' => $rows ];
+		if (!empty($rows))
+		{
+			$idKey = $this->parent->getIdKeyName();
+			$result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
+		}
+
+		return (object)$result;
 	}
 
 	/**

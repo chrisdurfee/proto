@@ -609,157 +609,17 @@ class Storage extends TableStorage
 		/**
 		 * This will add a limit by cursor or offset.
 		 */
-		$idKey = $this->model->getIdKeyName();
-		$this->setLimit($sql, $params, $idKey, $offset, $limit, $modifiers);
+		Limit::add($sql, $params, $this->model, $offset, $limit, $modifiers);
 
 		$rows = $sql->fetch($params);
 		$result = [ 'rows' => $rows ];
 		if (!empty($rows))
 		{
-			$result['lastCursor'] = $this->getLastCursor($rows, $idKey);
+			$idKey = $this->model->getIdKeyName();
+			$result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
 		}
 
 		return (object)$result;
-	}
-
-	/**
-	 * Sets the limit and offset for the SQL query.
-	 *
-	 * @param object $sql Query builder instance.
-	 * @param array &$params Parameter array.
-	 * @param string $idKey ID key name.
-	 * @param int|null $offset Offset.
-	 * @param int|null $limit Limit count.
-	 * @param array|null $modifiers Modifiers.
-	 * @return void
-	 */
-	protected function setLimit(
-		object $sql,
-		array &$params,
-		string $idKey,
-		?int $offset = null,
-		?int $limit = null,
-		?array $modifiers = null
-	): void
-	{
-		// Cursor-based pagination support: when a cursor is provided, use keyset pagination
-		$cursor = $modifiers['cursor'] ?? null;
-		if ($cursor !== null)
-		{
-			$this->setCursorLimit($sql, $params, $idKey, $limit, $cursor, $modifiers);
-		}
-		else
-		{
-			$this->addListLimit($sql, $offset, $limit);
-		}
-	}
-
-	/**
-	 * Sets the limit and cursor for the SQL query.
-	 *
-	 * @param object $sql Query builder instance.
-	 * @param array &$params Parameter array.
-	 * @param string $idKey ID key name.
-	 * @param int|null $limit Limit count.
-	 * @param mixed $cursor Cursor value.
-	 * @return void
-	 */
-	protected function setCursorLimit(object $sql, array &$params, string $idKey, ?int $limit = null, mixed $cursor = null, ?array $modifiers = null): void
-	{
-		// Determine ID column and add a keyset condition
-		$qualifiedId = $this->getCursorColumnName($idKey);
-
-		// Use operator based on existing orderBy direction (ASC => ">", DESC => "<")
-		$dir = $this->getOrderByDirection($modifiers);
-		$operator = ($dir === 'DESC') ? '<' : '>';
-		$sql->where("{$qualifiedId} {$operator} ?");
-		$params[] = $cursor;
-
-		$rowCount = $limit;
-		if ($rowCount !== null)
-		{
-			// One-arg limit means row count in our Query builder
-			$sql->limit((int)$rowCount);
-		}
-	}
-
-	/**
-	 * Extract the first orderBy direction from modifiers.
-	 *
-	 * @param array|null $modifiers
-	 * @return string 'ASC' or 'DESC'
-	 */
-	protected function getOrderByDirection(?array $modifiers = null): string
-	{
-		$orderBy = $modifiers['orderBy'] ?? null;
-		if (!$orderBy)
-		{
-			return 'ASC';
-		}
-
-		$orderBy = (object)$orderBy;
-		if (is_object($orderBy))
-		{
-			foreach ($orderBy as $field => $dir)
-			{
-				return (strtoupper((string)$dir) === 'DESC') ? 'DESC' : 'ASC';
-			}
-		}
-
-		return 'ASC';
-	}
-
-	/**
-	 * Get the cursor column name for keyset pagination.
-	 *
-	 * @param string $idKey ID key name.
-	 * @return string
-	 */
-	protected function getCursorColumnName(string $idKey): string
-	{
-		$isSnakeCase = $this->model->isSnakeCase();
-		$idField = self::prepareField($idKey, $isSnakeCase);
-		return $this->alias . '.' . $idField;
-	}
-
-	/**
-	 * Retrieves the last cursor value from the result set.
-	 *
-	 * @param array $rows Result set rows.
-	 * @param string $idKey ID key name.
-	 * @return mixed
-	 */
-	protected function getLastCursor(array $rows, string $idKey): mixed
-	{
-		if (empty($rows))
-		{
-			return null;
-		}
-
-		$last = end($rows);
-		return $last->{$idKey} ?? null;
-	}
-
-	/**
-	 * Adds pagination limits to the SQL query.
-	 *
-	 * @param object $sql Query builder instance.
-	 * @param int|null $offset Offset.
-	 * @param int|null $limit Limit count.
-	 * @return void
-	 */
-	protected function addListLimit(object $sql, ?int $offset = null, ?int $limit = null): void
-	{
-		if ($offset !== null && $limit !== null)
-		{
-			$sql->limit($offset, $limit);
-			return;
-		}
-
-		if ($limit !== null)
-		{
-			$sql->limit($limit);
-		}
 	}
 
 	/**
@@ -878,14 +738,13 @@ class Storage extends TableStorage
 		/**
 		 * This will add a limit by cursor or offset.
 		 */
-		$idKey = $this->model->getIdKeyName();
-		$this->setLimit($sql, $params, $idKey, $offset, $limit, $modifiers);
+		Limit::add($sql, $params, $this->model, $offset, $limit, $modifiers);
 
 		$rows = $sql->fetch($params);
 		$result = [ 'rows' => $rows ];
 		if (!empty($rows))
 		{
-			$result['lastCursor'] = $this->getLastCursor($rows, $idKey);
+			$result['lastCursor'] = Limit::getLastCursor($rows, $this->model->getIdKeyName());
 		}
 
 		return (object)$result;
