@@ -164,7 +164,7 @@ class ModelPolicy extends Policy
 		}
 
 		$response = $this->controller->get($request);
-		$this->setValue($key, $response, $this->expire);
+		$this->setValue($key, $response, $this->getMethodExpiration('get'));
 
 		return $response;
 	}
@@ -183,6 +183,41 @@ class ModelPolicy extends Policy
 			foreach ($keys as $key)
 			{
 				$this->deleteKey($key);
+			}
+		}
+
+		// Also clear any generic method caches that might be affected
+		$this->deleteGenericMethodCaches();
+	}
+
+	/**
+	 * Deletes cached generic method keys.
+	 *
+	 * @return void
+	 */
+	protected function deleteGenericMethodCaches(): void
+	{
+		// Get all cache keys for this controller
+		$controllerPrefix = $this->controller::class . ':';
+		$allKeys = $this->getKeys($controllerPrefix . '*');
+
+		if (!empty($allKeys))
+		{
+			$standardMethods = ['get', 'all', 'setup', 'add', 'merge', 'update', 'updateStatus', 'delete'];
+
+			foreach ($allKeys as $key)
+			{
+				// Extract method name from cache key
+				$keyParts = explode(':', $key);
+				if (count($keyParts) >= 2)
+				{
+					$method = $keyParts[1];
+					// If it's not a standard CRUD method, it's likely a generic cached method
+					if (!in_array($method, $standardMethods))
+					{
+						$this->deleteKey($key);
+					}
+				}
 			}
 		}
 	}
@@ -282,8 +317,112 @@ class ModelPolicy extends Policy
 		}
 
 		$response = $this->controller->all($request);
-		$this->setValue($key, $response, $this->expire);
+		$this->setValue($key, $response, $this->getMethodExpiration('all'));
 
 		return $response;
+	}
+
+	/**
+	 * Magic method to handle dynamic method calls.
+	 * This method provides generic caching for non-standard GET requests.
+	 *
+	 * @param string $method The method name.
+	 * @param array $arguments The method arguments.
+	 * @return mixed The result of the method call.
+	 */
+	public function __call(string $method, array $arguments): mixed
+	{
+		// Check if this is a GET request for generic caching
+		if ($this->isGetRequest() && method_exists($this->controller, $method))
+		{
+			return $this->handleGenericGetRequest($method, $arguments);
+		}
+
+		// For non-GET requests or methods that don't exist, call controller directly
+		return $this->controller->{$method}(...$arguments);
+	}
+
+	/**
+	 * Checks if the current request is a GET request.
+	 *
+	 * @return bool True if it's a GET request, otherwise false.
+	 */
+	protected function isGetRequest(): bool
+	{
+		return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET';
+	}
+
+	/**
+	 * Handles generic caching for GET requests.
+	 *
+	 * @param string $method The method name.
+	 * @param array $arguments The method arguments.
+	 * @return mixed The cached or fresh result.
+	 */
+	protected function handleGenericGetRequest(string $method, array $arguments): mixed
+	{
+		// Generate a cache key based on method name and serialized arguments
+		$request = $arguments[0] ?? null;
+		$cacheParams = $this->generateGenericCacheParams($method, $request);
+		$key = $this->createKey($method, $cacheParams);
+
+		// Check if we have a cached result
+		if ($this->hasKey($key))
+		{
+			return $this->getValue($key);
+		}
+
+		// Call the controller method and cache the result
+		$response = $this->controller->{$method}(...$arguments);
+		$this->setValue($key, $response, $this->getMethodExpiration($method));
+
+		return $response;
+	}
+
+	/**
+	 * Generates cache parameters for generic methods.
+	 *
+	 * @param string $method The method name.
+	 * @param Request|null $request The request object.
+	 * @return string The generated cache parameters.
+	 */
+	protected function generateGenericCacheParams(string $method, $request = null): string
+	{
+		if (!$request || !($request instanceof Request))
+		{
+			return 'no-params';
+		}
+
+		$params = [];
+
+		// Include common request parameters that might affect the response
+		$id = $this->getResourceId($request);
+		if ($id !== null)
+		{
+			$params[] = "id:{$id}";
+		}
+
+		// Include query parameters that might affect caching
+		$queryParams = ['filter', 'status', 'type', 'category', 'limit', 'offset', 'lastCursor'];
+		foreach ($queryParams as $param)
+		{
+			$value = $request->input($param);
+			if ($value !== null)
+			{
+				$params[] = "{$param}:" . (is_array($value) ? implode(',', $value) : $value);
+			}
+		}
+
+		// Include any additional parameters from the request
+		$allInputs = $request->all();
+		foreach ($allInputs as $key => $value)
+		{
+			if (!in_array($key, $queryParams) && $key !== 'id' && $value !== null)
+			{
+				$params[] = "{$key}:" . (is_array($value) ? implode(',', $value) : $value);
+			}
+		}
+
+		return empty($params) ? 'no-params' : implode('|', $params);
 	}
 }

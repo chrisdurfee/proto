@@ -22,6 +22,18 @@ abstract class Policy implements CachePolicyInterface
 	protected int $expire = 300;
 
 	/**
+	 * Cache expiration times for specific methods.
+	 *
+	 * @var array
+	 */
+	protected array $methodExpiration = [
+		'all' => 600,      // List methods can be cached longer
+		'get' => 1800,     // Single items can be cached longer
+		'count' => 300,    // Count operations
+		'search' => 120,   // Search results shorter cache
+	];
+
+	/**
 	 * Creates a cache policy instance.
 	 *
 	 * @param ApiController $controller The controller instance.
@@ -89,6 +101,17 @@ abstract class Policy implements CachePolicyInterface
 	public function setValue(string $key, mixed $value, ?int $expire = null): void
 	{
 		Cache::set($key, JsonFormat::encode($value), $expire ?? $this->expire);
+	}
+
+	/**
+	 * Gets the expiration time for a specific method.
+	 *
+	 * @param string $method The method name.
+	 * @return int The expiration time in seconds.
+	 */
+	protected function getMethodExpiration(string $method): int
+	{
+		return $this->methodExpiration[$method] ?? $this->expire;
 	}
 
 	/**
