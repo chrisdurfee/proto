@@ -368,7 +368,7 @@ class Guide
 	{
 		$model = new MigrationModel((object) [
 			'migration' => $migration->getFileName(),
-			'group_id'  => $groupId
+			'group_id' => $groupId
 		]);
 
 		return $model->add();
