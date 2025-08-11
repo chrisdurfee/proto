@@ -72,11 +72,18 @@ class Guide
 	/**
 	 * Retrieves all previous migrations.
 	 *
-	 * @return array Previous migration records.
+	 * @return array Previous migration records or an empty array if none exist.
 	 */
 	protected function getPreviousMigrations() : array
 	{
-		return MigrationModel::all()->rows;
+		try
+		{
+			return MigrationModel::all()->rows;
+		}
+		catch (\Exception $e)
+		{
+			return [];
+		}
 	}
 
 	/**
