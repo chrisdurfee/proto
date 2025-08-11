@@ -72,11 +72,16 @@ class ModuleManager
 		// Generate a key from the class name.
 		$key = self::generateKey($className);
 
-		// Register the module using a factory callable that returns a new instance.
-		registerModule($key, function() use ($key)
+		$pascalCaseKey = ucfirst($key);
+		$path = 'Modules\\' . $pascalCaseKey . '\\Gateway\\Gateway';
+		if (!class_exists($path))
 		{
-			$pascalCaseKey = ucfirst($key);
-			$path = 'Modules\\' . $pascalCaseKey . '\\Gateway\\Gateway';
+			return;
+		}
+
+		// Register the module using a factory callable that returns a new instance.
+		registerModule($key, function() use ($path)
+		{
 			return new $path();
 		});
 	}
