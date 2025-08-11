@@ -349,7 +349,8 @@ class ModelPolicy extends Policy
 	 */
 	protected function isGetRequest(): bool
 	{
-		return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET';
+		// Use the framework's Request class instead of direct $_SERVER access
+		return strtoupper(\Proto\Http\Request::method()) === 'GET';
 	}
 
 	/**
