@@ -65,18 +65,41 @@ namespace Proto\Error
 			int $errline
 		): bool
 		{
-			return ErrorLog::create((object)[
-				'errorNumber' => $errno,
-				'errorMessage' => $errstr,
-				'errorFile' => $errfile,
-				'errorLine' => $errline,
-				'errorTrace' => '',
-				'backTrace' => JsonFormat::encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
-				'env' => env('env'),
-				'url' => Request::fullUrlWithScheme(),
-				'query' => JsonFormat::encode(Request::all()),
-				'errorIp' => Request::ip()
-			]);
+			$data = (object)[
+					'errorNumber' => $errno,
+					'errorMessage' => $errstr,
+					'errorFile' => $errfile,
+					'errorLine' => $errline,
+					'errorTrace' => '',
+					'backTrace' => JsonFormat::encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
+					'env' => env('env'),
+					'url' => Request::fullUrlWithScheme(),
+					'query' => JsonFormat::encode(Request::all()),
+					'errorIp' => Request::ip()
+			];
+
+			try
+			{
+				return ErrorLog::create($data);
+			}
+			catch (\Throwable $e)
+			{
+				static::fail($data);
+				return false;
+			}
+		}
+
+		/**
+		 * Outputs debug information and terminates the script.
+		 *
+		 * @param object $data The data to output.
+		 * @return void
+		 */
+		protected static function fail(object $data): void
+		{
+			echo '<pre>';
+			var_dump($data);
+			die;
 		}
 
 		/**
@@ -162,8 +185,7 @@ namespace Proto\Error
 		public static function exceptionHandler(\Throwable $exception): bool
 		{
 			$backtrace = debug_backtrace();
-
-			return ErrorLog::create((object)[
+			$data = (object)[
 				'errorNumber' => $exception->getCode(),
 				'errorMessage' => $exception->getMessage(),
 				'errorFile' => $exception->getFile(),
@@ -174,7 +196,17 @@ namespace Proto\Error
 				'url' => Request::fullUrlWithScheme(),
 				'query' => JsonFormat::encode(Request::all()),
 				'errorIp' => Request::ip()
-			]);
+			];
+
+			try
+			{
+				return ErrorLog::create($data);
+			}
+			catch (\Throwable $e)
+			{
+				static::fail($data);
+				return false;
+			}
 		}
 
 		/**
