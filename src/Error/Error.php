@@ -152,7 +152,7 @@ namespace Proto\Error
 		protected static function fail(object $data): void
 		{
 			Response::error(
-				json_encode($data),
+				'Error tracker error: ' . json_encode($data),
 				500
 			);
 			die;
