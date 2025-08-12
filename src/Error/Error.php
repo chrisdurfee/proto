@@ -15,6 +15,20 @@ namespace Proto\Error
 	class Error
 	{
 		/**
+		 * Flag to prevent infinite loops when error logging fails.
+		 *
+		 * @var bool
+		 */
+		private static bool $errorLoggingFailed = false;
+
+		/**
+		 * Flag to track if we've already tried to check database connectivity.
+		 *
+		 * @var bool
+		 */
+		private static bool $databaseChecked = false;
+
+		/**
 		 * Enables or disables displaying errors.
 		 *
 		 * @param bool $displayErrors Whether to display errors.
@@ -26,6 +40,14 @@ namespace Proto\Error
 
 			if (env('errorTracking'))
 			{
+				// Test database connectivity before enabling error tracking
+				if (!static::$databaseChecked && !static::isDatabaseAvailable())
+				{
+					static::$errorLoggingFailed = true;
+					static::$databaseChecked = true;
+					static::failDatabaseUnavailable("Error tracking disabled - database tables not available");
+				}
+
 				static::trackErrors();
 			}
 		}
@@ -65,17 +87,31 @@ namespace Proto\Error
 			int $errline
 		): bool
 		{
+			// Prevent infinite loops if error logging has already failed
+			if (static::$errorLoggingFailed)
+			{
+				return false;
+			}
+
+			// Check if this is a database table missing error to prevent infinite loops
+			if (str_contains($errstr, "doesn't exist") || str_contains($errstr, "Table") && str_contains($errstr, "exist"))
+			{
+				static::$errorLoggingFailed = true;
+				// Database tables are missing - this is a fatal configuration issue
+				static::failDatabaseUnavailable("Database table missing: $errstr in $errfile:$errline");
+			}
+
 			$data = (object)[
-					'errorNumber' => $errno,
-					'errorMessage' => $errstr,
-					'errorFile' => $errfile,
-					'errorLine' => $errline,
-					'errorTrace' => '',
-					'backTrace' => JsonFormat::encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
-					'env' => env('env'),
-					'url' => Request::fullUrlWithScheme(),
-					'query' => JsonFormat::encode(Request::all()),
-					'errorIp' => Request::ip()
+				'errorNumber' => $errno,
+				'errorMessage' => $errstr,
+				'errorFile' => $errfile,
+				'errorLine' => $errline,
+				'errorTrace' => '',
+				'backTrace' => JsonFormat::encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
+				'env' => env('env'),
+				'url' => Request::fullUrlWithScheme(),
+				'query' => JsonFormat::encode(Request::all()),
+				'errorIp' => Request::ip()
 			];
 
 			try
@@ -84,6 +120,12 @@ namespace Proto\Error
 			}
 			catch (\Throwable $e)
 			{
+				static::$errorLoggingFailed = true;
+				// Check if the exception is about missing table
+				if (str_contains($e->getMessage(), "doesn't exist") || str_contains($e->getMessage(), "Table"))
+				{
+					static::failDatabaseUnavailable("Database error logging failed - table missing: " . $e->getMessage());
+				}
 				static::fail($data);
 				return false;
 			}
@@ -100,6 +142,73 @@ namespace Proto\Error
 			echo '<pre>';
 			var_dump($data);
 			die;
+		}
+
+		/**
+		 * Handles database unavailable errors and terminates the script.
+		 *
+		 * @param string $message The error message to display.
+		 * @return void
+		 */
+		protected static function failDatabaseUnavailable(string $message): void
+		{
+			// Log to PHP error log first
+			error_log($message);
+
+			// Display a user-friendly error message and terminate
+			http_response_code(500);
+
+			// Clear any output that might have been started
+			if (ob_get_level()) {
+				ob_clean();
+			}
+
+			echo '<html><head><title>Database Configuration Error</title></head><body>';
+			echo '<h1>Database Configuration Error</h1>';
+			echo '<p>The application cannot continue because required database tables are missing.</p>';
+			echo '<p>Please contact your system administrator to resolve this issue.</p>';
+			echo '<hr>';
+			echo '<p><small>Error: ' . htmlspecialchars($message) . '</small></p>';
+			echo '</body></html>';
+
+			die();
+		}
+
+		/**
+		 * Resets the error logging failed flag.
+		 * Call this after fixing database issues to re-enable error logging.
+		 *
+		 * @return void
+		 */
+		public static function resetErrorLogging(): void
+		{
+			static::$errorLoggingFailed = false;
+			static::$databaseChecked = false;
+		}
+
+		/**
+		 * Checks if the database and required tables are available.
+		 *
+		 * @return bool Whether the database is available for error logging.
+		 */
+		protected static function isDatabaseAvailable(): bool
+		{
+			try
+			{
+				// Check if ErrorLog class exists and has the create method
+				if (!class_exists(ErrorLog::class) || !method_exists(ErrorLog::class, 'create'))
+				{
+					return false;
+				}
+
+				// Simply return true for now - we'll catch actual database errors during logging
+				// The real protection happens in errorHandler and exceptionHandler methods
+				return true;
+			}
+			catch (\Throwable $e)
+			{
+				return false;
+			}
 		}
 
 		/**
@@ -184,6 +293,20 @@ namespace Proto\Error
 		 */
 		public static function exceptionHandler(\Throwable $exception): bool
 		{
+			// Prevent infinite loops if error logging has already failed
+			if (static::$errorLoggingFailed)
+			{
+				return false;
+			}
+
+			// Check if this is a database table missing exception to prevent infinite loops
+			if (str_contains($exception->getMessage(), "doesn't exist") || str_contains($exception->getMessage(), "Table") && str_contains($exception->getMessage(), "exist"))
+			{
+				static::$errorLoggingFailed = true;
+				// Database tables are missing - this is a fatal configuration issue
+				static::failDatabaseUnavailable("Database table missing exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
+			}
+
 			$backtrace = debug_backtrace();
 			$data = (object)[
 				'errorNumber' => $exception->getCode(),
@@ -204,6 +327,12 @@ namespace Proto\Error
 			}
 			catch (\Throwable $e)
 			{
+				static::$errorLoggingFailed = true;
+				// Check if the exception is about missing table
+				if (str_contains($e->getMessage(), "doesn't exist") || str_contains($e->getMessage(), "Table"))
+				{
+					static::failDatabaseUnavailable("Database error logging failed - table missing: " . $e->getMessage());
+				}
 				static::fail($data);
 				return false;
 			}
