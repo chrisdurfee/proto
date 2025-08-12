@@ -3,6 +3,7 @@ namespace Proto\Error
 {
 	use Proto\Error\Models\ErrorLog;
 	use Proto\Http\Request;
+	use Proto\Http\Response;
 	use Proto\Utils\Format\JsonFormat;
 
 	/**
@@ -166,23 +167,19 @@ namespace Proto\Error
 			// Log to PHP error log first
 			error_log($message);
 
-			// Display a user-friendly error message and terminate
-			http_response_code(500);
-
 			// Clear any output that might have been started
 			if (ob_get_level())
 			{
 				ob_clean();
 			}
 
-			echo '<html><head><title>Database Configuration Error</title></head><body>';
-			echo '<h1>Database Configuration Error</h1>';
-			echo '<p>The application cannot continue because required database tables are missing.</p>';
-			echo '<p>Please contact your system administrator to resolve this issue.</p>';
-			echo '<hr>';
-			echo '<p><small>Error: ' . htmlspecialchars($message) . '</small></p>';
-			echo '</body></html>';
+			// Send JSON error response using Proto Response class
+			Response::error(
+				'Database Configuration Error: The application cannot continue because required database tables are missing. Please contact your system administrator to resolve this issue.',
+				500
+			);
 
+			// Terminate the application
 			die();
 		}
 
