@@ -151,8 +151,10 @@ namespace Proto\Error
 		 */
 		protected static function fail(object $data): void
 		{
-			echo '<pre>';
-			var_dump($data);
+			Response::error(
+				json_encode($data),
+				500
+			);
 			die;
 		}
 
