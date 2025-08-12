@@ -29,6 +29,17 @@ namespace Proto\Error
 		private static bool $databaseChecked = false;
 
 		/**
+		 * Checks if a message indicates the error log table is missing.
+		 *
+		 * @param string $message The error message to check.
+		 * @return bool Whether the message indicates the error log table is missing.
+		 */
+		protected static function isErrorLogTableMissing(string $message): bool
+		{
+			return str_contains($message, "proto_error_log") && str_contains($message, "doesn't exist");
+		}
+
+		/**
 		 * Enables or disables displaying errors.
 		 *
 		 * @param bool $displayErrors Whether to display errors.
@@ -93,12 +104,12 @@ namespace Proto\Error
 				return false;
 			}
 
-			// Check if this is a database table missing error to prevent infinite loops
-			if (str_contains($errstr, "doesn't exist") || str_contains($errstr, "Table") && str_contains($errstr, "exist"))
+			// Check if this is the error log table missing - this is the only table we care about for error logging
+			if (static::isErrorLogTableMissing($errstr))
 			{
 				static::$errorLoggingFailed = true;
-				// Database tables are missing - this is a fatal configuration issue
-				static::failDatabaseUnavailable("Database table missing: $errstr in $errfile:$errline");
+				// Error log table is missing - this is a fatal configuration issue for error tracking
+				static::failDatabaseUnavailable("Error log table missing: $errstr in $errfile:$errline");
 			}
 
 			$data = (object)[
@@ -121,10 +132,10 @@ namespace Proto\Error
 			catch (\Throwable $e)
 			{
 				static::$errorLoggingFailed = true;
-				// Check if the exception is about missing table
-				if (str_contains($e->getMessage(), "doesn't exist") || str_contains($e->getMessage(), "Table"))
+				// Check if this is the error log table missing - this is the only table we care about for error logging
+				if (static::isErrorLogTableMissing($e->getMessage()))
 				{
-					static::failDatabaseUnavailable("Database error logging failed - table missing: " . $e->getMessage());
+					static::failDatabaseUnavailable("Error log table missing: " . $e->getMessage());
 				}
 				static::fail($data);
 				return false;
@@ -159,7 +170,8 @@ namespace Proto\Error
 			http_response_code(500);
 
 			// Clear any output that might have been started
-			if (ob_get_level()) {
+			if (ob_get_level())
+			{
 				ob_clean();
 			}
 
@@ -299,12 +311,12 @@ namespace Proto\Error
 				return false;
 			}
 
-			// Check if this is a database table missing exception to prevent infinite loops
-			if (str_contains($exception->getMessage(), "doesn't exist") || str_contains($exception->getMessage(), "Table") && str_contains($exception->getMessage(), "exist"))
+			// Check if this is the error log table missing to prevent infinite loops
+			if (static::isErrorLogTableMissing($exception->getMessage()))
 			{
 				static::$errorLoggingFailed = true;
-				// Database tables are missing - this is a fatal configuration issue
-				static::failDatabaseUnavailable("Database table missing exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
+				// Error log table is missing - this is a fatal configuration issue for error tracking
+				static::failDatabaseUnavailable("Error log table missing exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
 			}
 
 			$backtrace = debug_backtrace();
@@ -328,10 +340,10 @@ namespace Proto\Error
 			catch (\Throwable $e)
 			{
 				static::$errorLoggingFailed = true;
-				// Check if the exception is about missing table
-				if (str_contains($e->getMessage(), "doesn't exist") || str_contains($e->getMessage(), "Table"))
+				// Check if this is the error log table missing - this is the only table we care about for error logging
+				if (static::isErrorLogTableMissing($e->getMessage()))
 				{
-					static::failDatabaseUnavailable("Database error logging failed - table missing: " . $e->getMessage());
+					static::failDatabaseUnavailable("Error log table missing: " . $e->getMessage());
 				}
 				static::fail($data);
 				return false;
