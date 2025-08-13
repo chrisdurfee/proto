@@ -56,12 +56,61 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	}
 
 	/**
-	 * Gets the full directory path for a module.
+	 * Gets the full directory path for a module with Docker environment support.
 	 *
 	 * @param string $module The module name.
 	 * @return string The full directory path.
 	 */
 	protected function getModuleDir(string $module): string
+	{
+		// Check if we're running in Docker container
+		if (getenv('DOCKER_CONTAINER') === 'true' || file_exists('/.dockerenv'))
+		{
+			return $this->getDockerModuleDir($module);
+		}
+
+		// Standard local environment behavior
+		return $this->getLocalModuleDir($module);
+	}
+
+	/**
+	 * Gets the module directory for Docker environments.
+	 *
+	 * @param string $module The module name.
+	 * @return string The full directory path.
+	 */
+	protected function getDockerModuleDir(string $module): string
+	{
+		$basePath = getenv('PROJECT_ROOT') ?: BASE_PATH;
+
+		switch (strtolower($module))
+		{
+			case 'common':
+				$path = $basePath . '/common';
+				break;
+			case 'proto':
+				$path = $basePath . '/vendor/protoframework/proto/src';
+				break;
+			default:
+				$path = $basePath . '/modules/' . $module;
+		}
+
+		// Ensure the directory exists
+		if (!is_dir($path))
+		{
+			mkdir($path, 0755, true);
+		}
+
+		return $path;
+	}
+
+	/**
+	 * Gets the module directory for local environments.
+	 *
+	 * @param string $module The module name.
+	 * @return string The full directory path.
+	 */
+	protected function getLocalModuleDir(string $module): string
 	{
 		switch (strtolower($module))
 		{

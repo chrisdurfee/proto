@@ -21,32 +21,6 @@ use Proto\Database\Database;
 class Generator
 {
 	/**
-	 * Constructor.
-	 */
-	public function __construct()
-	{
-		$this->checkEnv();
-	}
-
-	/**
-	 * Checks that the environment is set to dev.
-	 *
-	 * @return void
-	 */
-	protected function checkEnv(): void
-	{
-		$env = env('env'); // Alternatively, use Config::access('env') if preferred.
-		if ($env !== 'dev')
-		{
-			new Response([
-				'message' => 'Unable to generate new resources when the env is not set to dev.',
-				'success' => false
-			], 403);
-			die;
-		}
-	}
-
-	/**
 	 * Delegates resource generation to the provided file generator.
 	 *
 	 * @param FileGeneratorInterface $generator The file generator strategy.
