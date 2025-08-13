@@ -4,11 +4,12 @@ namespace Proto\Generators\FileTypes;
 use Proto\Generators\AbstractFileGenerator;
 use Proto\Generators\Templates;
 use Proto\Utils\Strings;
+use Proto\Utils\Files\File;
 
 /**
- * ControllerGenerator
+ * ModuleGenerator
  *
- * Generates controller files based on the provided settings.
+ * Generates module files based on the provided settings.
  *
  * @package Proto\Generators\FileTypes
  */
@@ -31,14 +32,32 @@ class ModuleGenerator extends AbstractFileGenerator
 
 	/**
 	 * Returns the full directory path where the module file should be saved.
+	 * Now uses the Docker-aware getModuleDir method from AbstractFileGenerator.
 	 *
 	 * @param string $dir The relative directory.
+	 * @param string $module The module name (unused in this implementation).
 	 * @return string The full directory path.
 	 */
 	protected function getDir(string $dir, string $module): string
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$folderName = $this->convertSlashes($dir);
-		return realpath(BASE_PATH . '/modules') . '/' . $folderName;
+
+		// For module generation, we need to construct the path differently
+		// since we're creating the module directory itself
+		if ($this->isDockerEnvironment())
+		{
+			$basePath = $this->getBasePath();
+			$targetDir = $basePath . '/modules/' . $folderName;
+			File::checkDir($targetDir);
+
+			return $targetDir;
+		}
+		else
+		{
+			// Local environment
+			$modulesBasePath = realpath(BASE_PATH . '/modules');
+			return $modulesBasePath . DIRECTORY_SEPARATOR . $folderName;
+		}
 	}
 }

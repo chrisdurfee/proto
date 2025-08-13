@@ -56,6 +56,16 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	}
 
 	/**
+	 * Checks if the environment is Docker.
+	 *
+	 * @return bool True if in Docker environment, false otherwise.
+	 */
+	protected function isDockerEnvironment(): bool
+	{
+		return getenv('DOCKER_CONTAINER') === 'true' || file_exists('/.dockerenv');
+	}
+
+	/**
 	 * Gets the full directory path for a module with Docker environment support.
 	 *
 	 * @param string $module The module name.
@@ -64,13 +74,23 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	protected function getModuleDir(string $module): string
 	{
 		// Check if we're running in Docker container
-		if (getenv('DOCKER_CONTAINER') === 'true' || file_exists('/.dockerenv'))
+		if ($this->isDockerEnvironment())
 		{
 			return $this->getDockerModuleDir($module);
 		}
 
 		// Standard local environment behavior
 		return $this->getLocalModuleDir($module);
+	}
+
+	/**
+	 * Gets the base path for the project.
+	 *
+	 * @return string The base path.
+	 */
+	protected function getBasePath(): string
+	{
+		return getenv('PROJECT_ROOT') ?: BASE_PATH;
 	}
 
 	/**
@@ -81,7 +101,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	 */
 	protected function getDockerModuleDir(string $module): string
 	{
-		$basePath = getenv('PROJECT_ROOT') ?: BASE_PATH;
+		$basePath = $this->getBasePath();
 
 		switch (strtolower($module))
 		{
@@ -96,10 +116,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 		}
 
 		// Ensure the directory exists
-		if (!is_dir($path))
-		{
-			mkdir($path, 0755, true);
-		}
+		File::checkDir($path);
 
 		return $path;
 	}
