@@ -41,6 +41,40 @@ class MigrationTemplate extends ClassTemplate
 	}
 
 	/**
+	 * Retrieves the up migration string.
+	 *
+	 * @return string
+	 */
+	protected function up(): string
+	{
+		$up = $this->get('up');
+		if ($up)
+		{
+			// replace the \t and \n with proper indentation
+			return str_replace(['\t', '\n'], ["\t\t", PHP_EOL . "\t\t"], $up);
+		}
+
+		return '';
+	}
+
+	/**
+	 * Retrieves the down migration string.
+	 *
+	 * @return string
+	 */
+	protected function down(): string
+	{
+		$down = $this->get('down');
+		if ($down)
+		{
+			// replace the \t and \n with proper indentation
+			return str_replace(['\t', '\n'], ["\t\t", PHP_EOL . "\t\t"], $down);
+		}
+
+		return '';
+	}
+
+	/**
 	 * This will get the package string.
 	 *
 	 * @return string
@@ -57,6 +91,9 @@ class MigrationTemplate extends ClassTemplate
 	 */
 	protected function getClassContent(): string
 	{
+		$up = $this->up();
+		$down = $this->down();
+
 		return <<<EOT
 	/**
 	 * @var string \$connection
@@ -70,7 +107,7 @@ class MigrationTemplate extends ClassTemplate
 	 */
 	public function up(): void
 	{
-
+		$up
 	}
 
 	/**
@@ -80,7 +117,7 @@ class MigrationTemplate extends ClassTemplate
 	 */
 	public function down(): void
 	{
-
+		$down
 	}
 EOT;
 	}
