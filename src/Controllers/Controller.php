@@ -49,6 +49,27 @@ abstract class Controller extends Base implements ControllerInterface
 	}
 
 	/**
+	 * Generates a success response.
+	 *
+	 * @param object|array $data The response data.
+	 * @param int $statusCode The HTTP status code.
+	 * @return object The success response object.
+	 */
+	protected function success(object|array $data, int $statusCode = 200): object
+	{
+		$response = new Response();
+		$data = is_array($data) ? (object) $data : $data;
+
+		if ($statusCode)
+		{
+			$data->code = $statusCode;
+		}
+
+		$response->success($data);
+		return $response->format();
+	}
+
+	/**
 	 * Generates a response based on the provided arguments.
 	 *
 	 * @param mixed ...$args Response data and optional error message.
