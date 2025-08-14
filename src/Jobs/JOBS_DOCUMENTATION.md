@@ -288,20 +288,20 @@ foreach ($failedJobs as $failedJob) {
 Listen to job events:
 
 ```php
+<?php
 use Proto\Events\Events;
 
-$events = new Events();
-
-$events->on('job.processing', function($jobData) {
-    echo "Processing job: " . $jobData['job_class'] . "\n";
+// Use static methods - no need to instantiate
+Events::on('job.processing', function($jobEvent) {
+    echo "Processing job: " . $jobEvent->get('job_class') . "\n";
 });
 
-$events->on('job.processed', function($jobData) {
-    echo "Completed job: " . $jobData['job_class'] . "\n";
+Events::on('job.processed', function($jobEvent) {
+    echo "Completed job: " . $jobEvent->get('job_class') . "\n";
 });
 
-$events->on('job.failed', function($jobData) {
-    echo "Failed job: " . $jobData['job_class'] . "\n";
+Events::on('job.failed', function($jobEvent) {
+    echo "Failed job: " . $jobEvent->get('job_class') . "\n";
 });
 ```
 
