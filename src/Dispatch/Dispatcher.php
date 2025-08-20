@@ -2,7 +2,6 @@
 namespace Proto\Dispatch;
 
 use Proto\Dispatch\Controllers;
-use Proto\Dispatch\Email\Unsubscribe\EmailHelper;
 
 /**
  * Dispatcher

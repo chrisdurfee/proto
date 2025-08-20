@@ -3,7 +3,6 @@ namespace Proto\Dispatch;
 
 use Proto\Dispatch\Utils\Emogrifier;
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
 /**
