@@ -7,6 +7,7 @@ use Proto\Database\QueryBuilder\Insert;
 use Proto\Database\QueryBuilder\Replace;
 use Proto\Database\QueryBuilder\Update;
 use Proto\Database\QueryBuilder\Delete;
+use Proto\Storage\Filter;
 
 /**
  * AdapterProxy
@@ -208,6 +209,53 @@ class AdapterProxy
 		$this->sql->limit(1);
 		$params = array_merge($this->params, $params);
 		return $this->db->first((string) $this->sql, $params);
+	}
+
+	/**
+	 * Sets the fields to be updated.
+	 *
+	 * @param mixed ...$fields The fields to set.
+	 * @return self
+	 */
+	public function set(...$fields): self
+	{
+		$filteredFields = [];
+		// update the fields to use filter if is array
+		foreach ($fields as $field)
+		{
+			if (is_array($field))
+			{
+				$field = Filter::setup($field, $this->params);
+			}
+
+			$filteredFields[] = $field;
+		}
+
+		$this->sql->set(...$filteredFields);
+		return $this;
+	}
+
+	/**
+	 * Adds WHERE conditions to the query with filter support.
+	 *
+	 * @param mixed ...$where One or more conditions, each as a string or array.
+	 * @return self Returns the current instance.
+	 */
+	public function where(mixed ...$where): self
+	{
+		$filteredWhere = [];
+		foreach ($where as $condition)
+		{
+			if (is_array($condition))
+			{
+				$condition = Filter::setup($condition, $this->params);
+			}
+
+			$filteredWhere[] = $condition;
+		}
+
+		$this->sql->where(...$filteredWhere);
+		return $this;
 	}
 
 	/**
