@@ -224,8 +224,7 @@ class Data
 	public function has(string $key): bool
 	{
 		$key = Strings::camelCase($key);
-		return property_exists($this->data, $key)
-			&& !in_array($key, $this->fieldBlacklist, true);
+		return property_exists($this->data, $key);
 	}
 
 	/**
