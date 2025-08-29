@@ -52,8 +52,8 @@ class JobTable extends Migration
 			$table->varchar('job_class', 255);
 			$table->varchar('job_name', 255);
 			$table->longText('data')->nullable();
-			$table->tinyInt('attempts')->default(0);
-			$table->tinyInt('max_retries')->default(3);
+			$table->tinyInteger('attempts')->default(0);
+			$table->tinyInteger('max_retries')->default(3);
 			$table->int('timeout')->default(300);
 			$table->enum('status', 'pending', 'processing', 'completed', 'failed')->default('"pending"');
 			$table->createdAt();
@@ -85,7 +85,7 @@ class JobTable extends Migration
 			$table->varchar('job_class', 255);
 			$table->varchar('job_name', 255);
 			$table->longText('data')->nullable();
-			$table->tinyInt('attempts');
+			$table->tinyInteger('attempts');
 			$table->text('error');
 			$table->datetime('failed_at');
 
