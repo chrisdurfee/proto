@@ -81,8 +81,17 @@ class Session
 	 */
 	public static function init(): SessionInterface
 	{
-		$type = self::getType();
-		return $type::init();
+		try
+		{
+			$type = self::getType();
+			return $type::init();
+		}
+		catch (\Exception $e)
+		{
+			self::$type = FileSession::class;
+			self::$instance = self::$type::getInstance();
+			return self::$type::init();
+		}
 	}
 
 	/**

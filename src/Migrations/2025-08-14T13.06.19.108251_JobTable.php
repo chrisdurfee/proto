@@ -54,7 +54,7 @@ class JobTable extends Migration
 			$table->longText('data')->nullable();
 			$table->tinyInteger('attempts')->default(0);
 			$table->tinyInteger('max_retries')->default(3);
-			$table->int('timeout')->default(300);
+			$table->int('timeout', 20)->default(300);
 			$table->enum('status', 'pending', 'processing', 'completed', 'failed')->default('"pending"');
 			$table->createdAt();
 			$table->datetime('available_at');
