@@ -6,6 +6,7 @@ namespace Proto\Database\QueryBuilder;
  *
  * This class handles CREATE TABLE queries.
  *
+ * @mixin CreateField
  * @package Proto\Database\QueryBuilder
  */
 class Create extends Blueprint
@@ -246,12 +247,14 @@ class Create extends Blueprint
 	/**
 	 * Adds the timestamp fields.
 	 *
-	 * @return void
+	 * @return self
 	 */
-	public function timestamps(): void
+	public function timestamps(): self
 	{
 		$this->createdAt();
 		$this->updatedAt();
+
+		return $this;
 	}
 
 	/**
@@ -275,9 +278,9 @@ class Create extends Blueprint
 	 *
 	 * @param string $method The method name.
 	 * @param array $arguments The method arguments.
-	 * @return mixed
+	 * @return CreateField|null
 	 */
-	public function __call(string $method, array $arguments): mixed
+	public function __call(string $method, array $arguments): ?CreateField
 	{
 		$field = $this->createField($arguments[0]);
 		$callable = [$field, $method];
@@ -286,6 +289,7 @@ class Create extends Blueprint
 			$this->removeField($field);
 			return null;
 		}
+
 		$args = array_slice($arguments, 1);
 		return call_user_func_array($callable, $args);
 	}
