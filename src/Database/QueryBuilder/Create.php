@@ -180,9 +180,9 @@ class Create extends Blueprint
 		$field->int($length)->nullable();
 
 		$this->foreign('created_by')
-				  ->references('id')
-				  ->on('users')
-				  ->onDelete('cascade');
+			->references('id')
+			->on('users')
+			->onDelete('cascade');
 
 		return $field;
 	}
@@ -199,9 +199,9 @@ class Create extends Blueprint
 		$field->int($length)->nullable();
 
 		$this->foreign('updated_by')
-				  ->references('id')
-				  ->on('users')
-				  ->onDelete('cascade');
+			->references('id')
+			->on('users')
+			->onDelete('cascade');
 
 		return $field;
 	}
@@ -218,9 +218,9 @@ class Create extends Blueprint
 		$field->int($length)->nullable();
 
 		$this->foreign('deleted_by')
-				  ->references('id')
-				  ->on('users')
-				  ->onDelete('cascade');
+			->references('id')
+			->on('users')
+			->onDelete('cascade');
 
 		return $field;
 	}
@@ -237,9 +237,9 @@ class Create extends Blueprint
 		$field->int($length)->nullable();
 
 		$this->foreign('author_id')
-				  ->references('id')
-				  ->on('users')
-				  ->onDelete('cascade');
+			->references('id')
+			->on('users')
+			->onDelete('cascade');
 
 		return $field;
 	}

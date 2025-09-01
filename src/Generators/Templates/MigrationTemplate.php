@@ -37,7 +37,8 @@ class MigrationTemplate extends ClassTemplate
 	 */
 	protected function getUse(): string
 	{
-		return "use Proto\\Database\\Migrations\\Migration;";
+		return "use Proto\\Database\\Migrations\\Migration;
+use Proto\\Database\\QueryBuilder\\Create;";
 	}
 
 	/**

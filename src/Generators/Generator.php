@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 namespace Proto\Generators;
 
-use Proto\Http\Response;
 use Proto\Generators\FileGeneratorInterface;
 use Proto\Database\QueryBuilder\Create;
 use Proto\Database\Database;
