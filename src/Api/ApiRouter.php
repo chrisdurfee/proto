@@ -219,17 +219,18 @@ namespace Proto\Api
 		 *
 		 * @param string $message The error message.
 		 * @param int $httpCode The HTTP status code.
-		 * @return Response The constructed error response.
+		 * @return void
 		 */
-		public static function error(string $message, int $httpCode): Response
+		public static function error(string $message, int $httpCode): void
 		{
-			return new Response(
+			new Response(
 				(object)[
 					'message' => $message,
 					'success' => false
 				],
 				$httpCode
 			);
+			die;
 		}
 	}
 }
