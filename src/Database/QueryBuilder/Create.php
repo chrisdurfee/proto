@@ -6,7 +6,6 @@ namespace Proto\Database\QueryBuilder;
  *
  * This class handles CREATE TABLE queries.
  *
- * @mixin CreateField
  * @package Proto\Database\QueryBuilder
  */
 class Create extends Blueprint
