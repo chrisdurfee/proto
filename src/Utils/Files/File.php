@@ -83,6 +83,34 @@ class File extends Util
 	}
 
 	/**
+	 * Ensures the directory exists and is writable.
+	 *
+	 * @param string $path The file path (not the dir).
+	 * @return bool
+	 */
+	public static function ensureWritableDir(string $path): bool
+	{
+		$dir = dirname($path);
+		if (!is_dir($dir))
+		{
+			$PERMISSIONS = 0775;
+			if (!@mkdir($dir, $PERMISSIONS, true))
+			{
+				return false;
+			}
+		}
+
+		// Try to make it writable for owner/group
+		if (!is_writable($dir))
+		{
+			@chmod($dir, 0775);
+			clearstatcache(true, $dir);
+		}
+
+		return is_writable($dir);
+	}
+
+	/**
 	 * Renames a file.
 	 *
 	 * @param string $oldFileName The current file name.
@@ -91,7 +119,26 @@ class File extends Util
 	 */
 	public static function rename(string $oldFileName, string $newFileName): bool
 	{
-		return \file_exists($oldFileName) ? \rename($oldFileName, $newFileName) : false;
+		if (!\file_exists($oldFileName))
+		{
+			return false;
+		}
+
+		static::checkDir($newFileName);
+		// Fast path: same filesystem
+		if (@\rename($oldFileName, $newFileName))
+		{
+			return true;
+		}
+
+		// Cross-device fallback
+		if (@\copy($oldFileName, $newFileName))
+		{
+			@\unlink($oldFileName);
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
