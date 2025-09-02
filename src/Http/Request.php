@@ -484,15 +484,15 @@ class Request
 		}
 
 		$uploadFiles = [];
-		foreach ($files as $file)
+		foreach ($files as $key => $value)
 		{
-			$file = self::setupFile($file);
+			$file = self::setupFile($value);
 			if (!$file)
 			{
 				continue;
 			}
 
-			array_push($uploadFiles, $file);
+			$uploadFiles[$key] = $file;
 		}
 		return $uploadFiles;
 	}
