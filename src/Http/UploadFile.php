@@ -78,7 +78,7 @@ class UploadFile
 	 */
 	protected function getValue(string $key): ?string
 	{
-		return isset($this->tmpFile[$key]) ? Sanitize::string($this->tmpFile[$key]) : null;
+		return isset($this->tmpFile[$key]) ? Sanitize::string((string)$this->tmpFile[$key]) : null;
 	}
 
 	/**
