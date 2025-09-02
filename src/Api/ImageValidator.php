@@ -49,32 +49,41 @@ class ImageValidator
         $allowedMimes = $allowedMimes ?? static::$defaultMimeTypes;
 
         // Handle different file input types
-        if ($file instanceof UploadFile) {
+        if ($file instanceof UploadFile)
+        {
             $uploadFile = $file;
-        } elseif (is_array($file) && isset($file['tmp_name'])) {
+        }
+        elseif (is_array($file) && isset($file['tmp_name']))
+        {
             $uploadFile = new UploadFile($file);
-        } else {
+        }
+        else
+        {
             return ['valid' => false, 'errors' => ['Invalid file format']];
         }
 
         // Check if file exists and was uploaded successfully
-        if (!static::isValidUpload($uploadFile)) {
+        if (!static::isValidUpload($uploadFile))
+        {
             return ['valid' => false, 'errors' => ['File upload failed or file does not exist']];
         }
 
         // Validate file size
-        if (!static::validateSize($uploadFile, $maxSizeKb)) {
+        if (!static::validateSize($uploadFile, $maxSizeKb))
+        {
             $errors[] = "File size exceeds maximum allowed size of {$maxSizeKb}KB";
         }
 
         // Validate MIME type
-        if (!static::validateMimeType($uploadFile, $allowedMimes)) {
+        if (!static::validateMimeType($uploadFile, $allowedMimes))
+        {
             $allowedTypes = implode(', ', static::getMimeExtensions($allowedMimes));
             $errors[] = "File type not allowed. Allowed types: {$allowedTypes}";
         }
 
         // Validate if it's actually an image by checking file contents
-        if (!static::validateImageContent($uploadFile)) {
+        if (!static::validateImageContent($uploadFile))
+        {
             $errors[] = "File is not a valid image";
         }
 
@@ -134,7 +143,8 @@ class ImageValidator
      */
     protected static function getActualMimeType(string $filePath): string
     {
-        if (function_exists('finfo_open')) {
+        if (function_exists('finfo_open'))
+        {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mimeType = finfo_file($finfo, $filePath);
             finfo_close($finfo);
@@ -165,8 +175,10 @@ class ImageValidator
     protected static function getMimeExtensions(array $mimeTypes): array
     {
         $extensions = [];
-        foreach ($mimeTypes as $mime) {
-            switch ($mime) {
+        foreach ($mimeTypes as $mime)
+        {
+            switch ($mime)
+            {
                 case 'image/jpeg':
                     $extensions[] = 'jpeg';
                     break;
@@ -206,9 +218,11 @@ class ImageValidator
         $types = explode(',', $mimeString);
         $mimeTypes = [];
 
-        foreach ($types as $type) {
+        foreach ($types as $type)
+        {
             $type = trim($type);
-            if (!str_starts_with($type, 'image/')) {
+            if (!str_starts_with($type, 'image/'))
+            {
                 $type = 'image/' . $type;
             }
             $mimeTypes[] = $type;

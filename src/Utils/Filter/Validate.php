@@ -2,6 +2,8 @@
 
 namespace Proto\Utils\Filter;
 
+use Proto\Http\UploadFile;
+
 /**
  * Validate
  *
@@ -136,12 +138,14 @@ class Validate extends Filter
 	public static function image(mixed $image): bool
 	{
 		// Basic check - if it's not an array or UploadFile, it's not valid
-		if (!is_array($image) && !($image instanceof \Proto\Http\UploadFile)) {
+		if (!is_array($image) && !($image instanceof UploadFile))
+		{
 			return false;
 		}
 
 		// If it's an array, check if it has the required upload file structure
-		if (is_array($image)) {
+		if (is_array($image))
+		{
 			return isset($image['tmp_name']) &&
 				   isset($image['name']) &&
 				   isset($image['type']) &&
