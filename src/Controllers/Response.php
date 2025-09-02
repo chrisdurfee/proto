@@ -15,21 +15,21 @@ class Response
 	 *
 	 * @var bool
 	 */
-	protected bool $success = true;
+	public bool $success = true;
 
 	/**
 	 * Stores an error message if applicable.
 	 *
 	 * @var string
 	 */
-	protected string $message = 'There was an error processing the result.';
+	public string $message = 'There was an error processing the result.';
 
 	/**
 	 * Holds response data.
 	 *
 	 * @var object|null
 	 */
-	protected ?object $data = null;
+	public ?object $data = null;
 
 	/**
 	 * Initializes a new response object.
