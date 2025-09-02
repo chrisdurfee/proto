@@ -183,7 +183,9 @@ class Validator
 		// Handle image validation specially
 		if ($method === 'image')
 		{
-			return $this->validateImage($key, $value, $type[1], $details);
+			$maxSizeKb = $type[1] ?? null;
+			$maxSizeKb = ($maxSizeKb)? (int)$maxSizeKb : null;
+			return $this->validateImage($key, $value, $maxSizeKb, $details);
 		}
 
 		$isValid = Validate::$method($value);
