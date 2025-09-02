@@ -107,8 +107,14 @@ class Validator
 		}
 
 		$type = $this->getType($details);
-		$value = $this->sanitizeValue($key, $value, $type[0]);
-		return $this->validateByType($key, $value, $type);
+
+		// Skip sanitization for image files
+		if ($type[0] !== 'image')
+		{
+			$value = $this->sanitizeValue($key, $value, $type[0]);
+		}
+
+		return $this->validateByType($key, $value, $type, $details);
 	}
 
 	/**
@@ -167,11 +173,19 @@ class Validator
 	 * @param string $key The data key.
 	 * @param mixed $value The sanitized value.
 	 * @param array $type An array containing [method, limit].
+	 * @param string $details The full validation rule string.
 	 * @return bool True if valid, false otherwise.
 	 */
-	protected function validateByType(string $key, mixed $value, array $type): bool
+	protected function validateByType(string $key, mixed $value, array $type, string $details = ''): bool
 	{
 		$method = $type[0];
+
+		// Handle image validation specially
+		if ($method === 'image')
+		{
+			return $this->validateImage($key, $value, $type[1], $details);
+		}
+
 		$isValid = Validate::$method($value);
 
 		if ($isValid === false)
@@ -228,6 +242,63 @@ class Validator
 		$this->isValid = false;
 		$this->errors[] = $message;
 		return $this;
+	}
+
+	/**
+	 * Validates an image file with specific rules.
+	 *
+	 * @param string $key The data key.
+	 * @param mixed $value The image file value.
+	 * @param int $maxSizeKb Maximum file size in KB.
+	 * @param string $details The full validation rule string.
+	 * @return bool True if valid, false otherwise.
+	 */
+	protected function validateImage(string $key, mixed $value, int $maxSizeKb, string $details): bool
+	{
+		// First check if it's a valid image file format
+		if (!Validate::image($value))
+		{
+			$this->addError("The value {$key} is not a valid image file.");
+			return false;
+		}
+
+		// Parse additional rules from details
+		$allowedMimes = $this->parseImageMimes($details);
+
+		// Use ImageValidator for comprehensive validation
+		$validation = ImageValidator::validate($value, $maxSizeKb, $allowedMimes);
+		if (!$validation['valid'])
+		{
+			foreach ($validation['errors'] as $error)
+			{
+				$this->addError("The image {$key}: {$error}");
+			}
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Parses MIME types from the validation details string.
+	 *
+	 * @param string $details The validation rule string.
+	 * @return array|null Array of allowed MIME types or null for defaults.
+	 */
+	protected function parseImageMimes(string $details): ?array
+	{
+		$parts = explode('|', $details);
+		foreach ($parts as $part)
+		{
+			$part = trim($part);
+			if (str_starts_with($part, 'mimes:'))
+			{
+				$mimeString = substr($part, 6); // Remove 'mimes:' prefix
+				return ImageValidator::parseMimeTypes($mimeString);
+			}
+		}
+
+		return null; // Use defaults
 	}
 
 	/**
