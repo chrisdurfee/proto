@@ -3,17 +3,43 @@ namespace Proto\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Proto\Base;
+use Proto\Tests\Traits\DatabaseTestHelpers;
+use Proto\Tests\Traits\ModelTestHelpers;
+use Proto\Tests\Traits\HttpTestHelpers;
+use Proto\Tests\Traits\AssertionHelpers;
+use Proto\Tests\Traits\TestDataHelpers;
+use Proto\Tests\Traits\MockHelpers;
+use Proto\Tests\Traits\FileTestHelpers;
 
 /**
  * Abstract Test Class
  *
  * Serves as the base class for all test cases.
  * Ensures the system is properly initialized before running tests.
+ * Provides comprehensive testing utilities through traits.
  *
  * @package Proto\Tests
  */
 abstract class Test extends TestCase
 {
+	use DatabaseTestHelpers,
+		ModelTestHelpers,
+		HttpTestHelpers,
+		AssertionHelpers,
+		TestDataHelpers,
+		MockHelpers,
+		FileTestHelpers;
+
+	/**
+	 * @var bool $useTransactions Whether to use database transactions for isolation
+	 */
+	protected bool $useTransactions = true;
+
+	/**
+	 * @var array $seeders Database seeders to run before tests
+	 */
+	protected array $seeders = [];
+
 	/**
 	 * Initializes the test case.
 	 *
@@ -23,6 +49,18 @@ abstract class Test extends TestCase
 	{
 		parent::setUp();
 		$this->setupSystem();
+		$this->setupTestEnvironment();
+	}
+
+	/**
+	 * Cleans up after each test.
+	 *
+	 * @return void
+	 */
+	protected function tearDown(): void
+	{
+		$this->cleanupTestEnvironment();
+		parent::tearDown();
 	}
 
 	/**
@@ -34,5 +72,99 @@ abstract class Test extends TestCase
 	protected function setupSystem(): void
 	{
 		new Base();
+	}
+
+	/**
+	 * Sets up the test environment.
+	 *
+	 * @return void
+	 */
+	protected function setupTestEnvironment(): void
+	{
+		// Setup database if needed
+		if ($this->useTransactions) {
+			$this->beginDatabaseTransaction();
+		}
+
+		// Run seeders
+		if (!empty($this->seeders)) {
+			$this->seedDatabase($this->seeders);
+		}
+
+		// Reset HTTP state
+		$this->resetHttpState();
+	}
+
+	/**
+	 * Cleans up the test environment.
+	 *
+	 * @return void
+	 */
+	protected function cleanupTestEnvironment(): void
+	{
+		// Cleanup database
+		if ($this->useTransactions) {
+			$this->cleanupDatabase();
+		}
+
+		// Cleanup models
+		$this->cleanupModels();
+
+		// Cleanup temporary files
+		$this->cleanupTempFiles();
+
+		// Cleanup test files
+		$this->cleanupTestFiles();
+
+		// Clear mocks
+		$this->clearMocks();
+
+		// Reset HTTP state
+		$this->resetHttpState();
+	}
+
+	/**
+	 * Refreshes the application state.
+	 *
+	 * @return void
+	 */
+	protected function refreshApplication(): void
+	{
+		$this->setupSystem();
+	}
+
+	/**
+	 * Enables or disables database transactions for this test.
+	 *
+	 * @param bool $enabled
+	 * @return void
+	 */
+	protected function setUseTransactions(bool $enabled): void
+	{
+		$this->useTransactions = $enabled;
+	}
+
+	/**
+	 * Sets the seeders to run before tests.
+	 *
+	 * @param array $seeders
+	 * @return void
+	 */
+	protected function setSeeders(array $seeders): void
+	{
+		$this->seeders = $seeders;
+	}
+
+	/**
+	 * Helper method to quickly create test data.
+	 *
+	 * @param array $data
+	 * @return void
+	 */
+	protected function withTestData(array $data): void
+	{
+		foreach ($data as $key => $value) {
+			$this->setTestData($key, $value);
+		}
 	}
 }
