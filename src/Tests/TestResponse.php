@@ -2,6 +2,7 @@
 namespace Proto\Tests;
 
 use Proto\Http\Response;
+use \PHPUnit\Framework\Assert;
 
 /**
  * TestResponse
@@ -56,7 +57,7 @@ class TestResponse
 	 */
 	public function assertStatus(int $status): self
 	{
-		\PHPUnit\Framework\Assert::assertEquals($status, $this->statusCode,
+		Assert::assertEquals($status, $this->statusCode,
 			"Expected status code [{$status}] but received [{$this->statusCode}]"
 		);
 		return $this;
@@ -69,7 +70,7 @@ class TestResponse
 	 */
 	public function assertSuccessful(): self
 	{
-		\PHPUnit\Framework\Assert::assertTrue($this->statusCode >= 200 && $this->statusCode < 300,
+		Assert::assertTrue($this->statusCode >= 200 && $this->statusCode < 300,
 			"Expected successful status code but received [{$this->statusCode}]"
 		);
 		return $this;
@@ -85,8 +86,9 @@ class TestResponse
 	{
 		$responseData = $this->getJsonData();
 
-		foreach ($data as $key => $value) {
-			\PHPUnit\Framework\Assert::assertEquals($value, $responseData[$key] ?? null,
+		foreach ($data as $key => $value)
+		{
+			Assert::assertEquals($value, $responseData[$key] ?? null,
 				"Failed asserting that JSON response contains [{$key}] with value [{$value}]"
 			);
 		}
@@ -129,8 +131,9 @@ class TestResponse
 	{
 		$responseData = $this->getJsonData();
 
-		foreach ($data as $key => $value) {
-			\PHPUnit\Framework\Assert::assertNotEquals($value, $responseData[$key] ?? null,
+		foreach ($data as $key => $value)
+		{
+			Assert::assertNotEquals($value, $responseData[$key] ?? null,
 				"Failed asserting that JSON response does not contain [{$key}] with value [{$value}]"
 			);
 		}
@@ -145,13 +148,14 @@ class TestResponse
 	 */
 	public function assertRedirect(?string $uri = null): self
 	{
-		\PHPUnit\Framework\Assert::assertTrue($this->statusCode >= 300 && $this->statusCode < 400,
+		Assert::assertTrue($this->statusCode >= 300 && $this->statusCode < 400,
 			"Expected redirect status code but received [{$this->statusCode}]"
 		);
 
-		if ($uri !== null) {
+		if ($uri !== null)
+		{
 			$location = $this->headers['Location'] ?? null;
-			\PHPUnit\Framework\Assert::assertEquals($uri, $location,
+			Assert::assertEquals($uri, $location,
 				"Expected redirect to [{$uri}] but got [{$location}]"
 			);
 		}
@@ -195,12 +199,14 @@ class TestResponse
 	 */
 	protected function getJsonData(): array
 	{
-		if (is_string($this->content)) {
+		if (is_string($this->content))
+		{
 			$decoded = json_decode($this->content, true);
 			return is_array($decoded) ? $decoded : [];
 		}
 
-		if (is_object($this->content)) {
+		if (is_object($this->content))
+		{
 			return json_decode(json_encode($this->content), true) ?: [];
 		}
 
@@ -216,14 +222,18 @@ class TestResponse
 	 */
 	protected function assertJsonStructureRecursive(array $structure, array $data): void
 	{
-		foreach ($structure as $key => $value) {
-			if (is_array($value)) {
-				\PHPUnit\Framework\Assert::assertArrayHasKey($key, $data,
+		foreach ($structure as $key => $value)
+		{
+			if (is_array($value))
+			{
+				Assert::assertArrayHasKey($key, $data,
 					"Failed asserting that JSON structure has key [{$key}]"
 				);
 				$this->assertJsonStructureRecursive($value, $data[$key]);
-			} else {
-				\PHPUnit\Framework\Assert::assertArrayHasKey($value, $data,
+			}
+			else
+			{
+				Assert::assertArrayHasKey($value, $data,
 					"Failed asserting that JSON structure has key [{$value}]"
 				);
 			}
@@ -239,12 +249,16 @@ class TestResponse
 	 */
 	protected function assertArrayContainsFragment(array $fragment, array $data): void
 	{
-		foreach ($fragment as $key => $value) {
-			if (is_array($value)) {
-				\PHPUnit\Framework\Assert::assertArrayHasKey($key, $data);
+		foreach ($fragment as $key => $value)
+		{
+			if (is_array($value))
+			{
+				Assert::assertArrayHasKey($key, $data);
 				$this->assertArrayContainsFragment($value, $data[$key]);
-			} else {
-				\PHPUnit\Framework\Assert::assertEquals($value, $data[$key] ?? null,
+			}
+			else
+			{
+				Assert::assertEquals($value, $data[$key] ?? null,
 					"Failed asserting that response contains [{$key}] with value [{$value}]"
 				);
 			}

@@ -82,12 +82,14 @@ abstract class Test extends TestCase
 	protected function setupTestEnvironment(): void
 	{
 		// Setup database if needed
-		if ($this->useTransactions) {
+		if ($this->useTransactions)
+		{
 			$this->beginDatabaseTransaction();
 		}
 
 		// Run seeders
-		if (!empty($this->seeders)) {
+		if (!empty($this->seeders))
+		{
 			$this->seedDatabase($this->seeders);
 		}
 
@@ -103,7 +105,8 @@ abstract class Test extends TestCase
 	protected function cleanupTestEnvironment(): void
 	{
 		// Cleanup database
-		if ($this->useTransactions) {
+		if ($this->useTransactions)
+		{
 			$this->cleanupDatabase();
 		}
 
@@ -163,7 +166,8 @@ abstract class Test extends TestCase
 	 */
 	protected function withTestData(array $data): void
 	{
-		foreach ($data as $key => $value) {
+		foreach ($data as $key => $value)
+		{
 			$this->setTestData($key, $value);
 		}
 	}
