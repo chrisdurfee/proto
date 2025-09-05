@@ -57,14 +57,14 @@ trait TestDataHelpers
 		$fixturePath = $this->getFixturePath($filename);
 
 		if (!file_exists($fixturePath))
-        {
+		{
 			throw new \InvalidArgumentException("Fixture file not found: {$fixturePath}");
 		}
 
 		$extension = pathinfo($fixturePath, PATHINFO_EXTENSION);
 
 		return match ($extension)
-        {
+		{
 			'json' => $this->loadJsonFixture($fixturePath),
 			'php' => $this->loadPhpFixture($fixturePath),
 			'yml', 'yaml' => $this->loadYamlFixture($fixturePath),
@@ -110,13 +110,13 @@ trait TestDataHelpers
 	protected function cleanupTempFiles(): void
 	{
 		foreach ($this->tempFiles as $path)
-        {
+		{
 			if (is_file($path))
-            {
+			{
 				unlink($path);
 			}
-            elseif (is_dir($path))
-            {
+			elseif (is_dir($path))
+			{
 				$this->removeDirectory($path);
 			}
 		}
@@ -141,7 +141,7 @@ trait TestDataHelpers
 	protected function getDataManager(): TestDataManager
 	{
 		if ($this->dataManager === null)
-        {
+		{
 			$this->dataManager = new TestDataManager();
 		}
 		return $this->dataManager;
@@ -163,9 +163,9 @@ trait TestDataHelpers
 		];
 
 		foreach ($possiblePaths as $path)
-        {
+		{
 			if (file_exists($path))
-            {
+			{
 				return $path;
 			}
 		}
@@ -186,7 +186,7 @@ trait TestDataHelpers
 		$data = json_decode($content, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE)
-        {
+		{
 			throw new \RuntimeException("Invalid JSON in fixture: " . json_last_error_msg());
 		}
 
@@ -214,7 +214,7 @@ trait TestDataHelpers
 	protected function loadYamlFixture(string $path): array
 	{
 		if (!function_exists('yaml_parse_file'))
-        {
+		{
 			throw new \RuntimeException("YAML extension is required to parse YAML fixtures");
 		}
 
@@ -231,20 +231,20 @@ trait TestDataHelpers
 	protected function removeDirectory(string $dir): void
 	{
 		if (!is_dir($dir))
-        {
+		{
 			return;
 		}
 
 		$files = array_diff(scandir($dir), ['.', '..']);
 		foreach ($files as $file)
-        {
+		{
 			$path = $dir . DIRECTORY_SEPARATOR . $file;
 			if (is_dir($path))
-            {
+			{
 				$this->removeDirectory($path);
 			}
-            else
-            {
+			else
+			{
 				unlink($path);
 			}
 		}

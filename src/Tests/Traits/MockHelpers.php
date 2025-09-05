@@ -96,12 +96,12 @@ trait MockHelpers
 		$expectation = $mock->expects($this->exactly($times))->method($method);
 
 		if (!empty($arguments))
-        {
+		{
 			$expectation->with(...$arguments);
 		}
 
 		if ($returnValue !== null)
-        {
+		{
 			$expectation->willReturn($returnValue);
 		}
 	}
@@ -141,7 +141,7 @@ trait MockHelpers
 	protected function verifyMockExpectations(): void
 	{
 		foreach ($this->mocks as $mock)
-        {
+		{
 			// PHPUnit automatically verifies expectations in tearDown
 			// This method is for explicit verification if needed
 		}

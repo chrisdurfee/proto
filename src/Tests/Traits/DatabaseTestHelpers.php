@@ -45,13 +45,24 @@ trait DatabaseTestHelpers
 	{
 		foreach ($seeders as $seeder)
 		{
-			if (class_exists($seeder))
+			if (!class_exists($seeder))
+			{
+				continue;
+			}
+
+			// Check if it's a proper seeder class
+			if (is_subclass_of($seeder, 'Proto\Database\Seeders\Seeder'))
 			{
 				$seederInstance = new $seeder();
-				if (method_exists($seederInstance, 'run'))
-				{
-					$seederInstance->run();
-				}
+				$seederInstance->run();
+				continue;
+			}
+
+			// Legacy support for classes with run() method
+			$seederInstance = new $seeder();
+			if (method_exists($seederInstance, 'run'))
+			{
+				$seederInstance->run();
 			}
 		}
 	}

@@ -25,6 +25,10 @@ final class ExampleTest extends Test
 		// Example: Assert table count
 		// $this->assertDatabaseCount('users', 0);
 
+		// Example: Using seeders
+		// $this->seedDatabase([UserSeeder::class]);
+		// $this->assertDatabaseCount('users', 4); // 4 users from UserSeeder
+
 		$this->assertTrue(true, 'Database helpers are available');
 	}
 

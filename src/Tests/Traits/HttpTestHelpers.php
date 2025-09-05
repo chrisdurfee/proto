@@ -229,7 +229,7 @@ trait HttpTestHelpers
 
 		// Add authentication headers
 		if ($this->authToken)
-        {
+		{
 			$requestHeaders['Authorization'] = 'Bearer ' . $this->authToken;
 		}
 
@@ -241,10 +241,10 @@ trait HttpTestHelpers
 		$response = new Response();
 
 		try
-        {
+		{
 			// Setup session if needed
 			if (!empty($this->sessionData) || $this->authenticatedUser)
-            {
+			{
 				$this->setupTestSession($request);
 			}
 
@@ -258,8 +258,8 @@ trait HttpTestHelpers
 			return new TestResponse($response, $result, $statusCode, $this->getResponseHeaders());
 
 		}
-        catch (\Exception $e)
-        {
+		catch (\Exception $e)
+		{
 			// Handle exceptions and return error response
 			return new TestResponse($response, ['error' => $e->getMessage()], 500);
 		}
@@ -282,23 +282,23 @@ trait HttpTestHelpers
 
 		// Set headers in $_SERVER
 		foreach ($headers as $key => $value)
-        {
+		{
 			$serverKey = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
 			$_SERVER[$serverKey] = $value;
 		}
 
 		// Set request data
 		if ($method === 'GET')
-        {
+		{
 			$_GET = $data;
 		}
-        else
-        {
+		else
+		{
 			$_POST = $data;
 
 			// For JSON requests, set raw input
 			if (isset($headers['Content-Type']) && $headers['Content-Type'] === 'application/json')
-            {
+			{
 				// Mock php://input for JSON data
 				$this->mockPhpInput(json_encode($data));
 			}
@@ -314,16 +314,16 @@ trait HttpTestHelpers
 	protected function setupTestSession(Request $request): void
 	{
 		if ($this->authenticatedUser)
-        {
+		{
 			$this->sessionData['user'] = $this->authenticatedUser;
 		}
 
-        Session::init();
+		Session::init();
 
 		// Setup session with test data
 		$session = Session::getInstance();
 		foreach ($this->sessionData as $key => $value)
-        {
+		{
 			$session->{$key} = $value;
 		}
 	}
@@ -360,12 +360,12 @@ trait HttpTestHelpers
 	protected function extractStatusCode(mixed $result): int
 	{
 		if (is_object($result) && isset($result->code))
-        {
+		{
 			return (int) $result->code;
 		}
 
 		if (is_array($result) && isset($result['code']))
-        {
+		{
 			return (int) $result['code'];
 		}
 
