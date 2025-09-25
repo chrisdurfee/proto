@@ -5,6 +5,7 @@ use Proto\Utils\Strings;
 use Proto\Database\Migrations\Models\Migration as MigrationModel;
 use Proto\Database\Database;
 use Proto\Database\Adapters\Adapter;
+use Proto\Error\Error;
 
 /**
  * Guide
@@ -76,6 +77,8 @@ class Guide
 	 */
 	protected function getPreviousMigrations() : array
 	{
+		Error::disable();
+
 		try
 		{
 			return MigrationModel::all()->rows;
@@ -83,6 +86,10 @@ class Guide
 		catch (\Exception $e)
 		{
 			return [];
+		}
+		finally
+		{
+			Error::enable();
 		}
 	}
 

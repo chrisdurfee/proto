@@ -65,6 +65,18 @@ namespace Proto\Error
 		}
 
 		/**
+		 * Disables error tracking by restoring default handlers.
+		 *
+		 * @return void
+		 */
+		public static function disable(): void
+		{
+			// Restore default PHP error and exception handlers
+			restore_error_handler();
+			restore_exception_handler();
+		}
+
+		/**
 		 * Sets the app's error reporting level.
 		 *
 		 * @param bool $displayErrors Whether to display errors.
