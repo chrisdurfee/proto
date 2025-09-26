@@ -32,6 +32,9 @@ namespace Proto\Error
 		/** @var bool */
 		private static bool $trackingEnabled = false;
 
+		/** @var bool */
+		private static bool $manuallyDisabled = false;
+
 		/**
 		 * Checks if a message indicates the error log table is missing.
 		 *
@@ -54,6 +57,12 @@ namespace Proto\Error
 			static::setErrorReporting($displayErrors);
 			static::$errorLoggingFailed = false;
 			static::$databaseChecked = false;
+
+			// Respect manual disable - don't override if manually disabled
+			if (static::$manuallyDisabled)
+			{
+				return;
+			}
 
 			static::$trackingEnabled = env('errorTracking');
 			if (!static::$trackingEnabled)
@@ -80,6 +89,7 @@ namespace Proto\Error
 		public static function disable(): void
 		{
 			static::$trackingEnabled = false;
+			static::$manuallyDisabled = true;
 
 			// Restore default PHP error and exception handlers
 			restore_error_handler();
