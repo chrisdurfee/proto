@@ -229,6 +229,19 @@ abstract class Migration
 	}
 
 	/**
+	 * Executes a query with optional parameters.
+	 *
+	 * @param string|object $query The SQL query string or object.
+	 * @param array $params The query parameters.
+	 * @return bool Query execution success.
+	 */
+	public function execute(string|object $query, array $params = []): bool
+	{
+		$db = $this->db();
+		return $db->execute((string)$query, $params);
+	}
+
+	/**
 	 * This will allow you to seed the database with data.
 	 *
 	 * @return void
