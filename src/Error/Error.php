@@ -49,6 +49,7 @@ namespace Proto\Error
 		public static function enable(bool $displayErrors = false): void
 		{
 			static::setErrorReporting($displayErrors);
+			static::$errorLoggingFailed = false;
 
 			if (env('errorTracking'))
 			{
@@ -71,6 +72,8 @@ namespace Proto\Error
 		 */
 		public static function disable(): void
 		{
+			static::$errorLoggingFailed = true;
+
 			// Restore default PHP error and exception handlers
 			restore_error_handler();
 			restore_exception_handler();
