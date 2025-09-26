@@ -29,6 +29,9 @@ namespace Proto\Error
 		 */
 		private static bool $databaseChecked = false;
 
+		/** @var bool */
+		private static bool $trackingEnabled = false;
+
 		/**
 		 * Checks if a message indicates the error log table is missing.
 		 *
@@ -50,19 +53,23 @@ namespace Proto\Error
 		{
 			static::setErrorReporting($displayErrors);
 			static::$errorLoggingFailed = false;
+			static::$databaseChecked = false;
 
-			if (env('errorTracking'))
+			static::$trackingEnabled = env('errorTracking');
+			if (!static::$trackingEnabled)
 			{
-				// Test database connectivity before enabling error tracking
-				if (!static::$databaseChecked && !static::isDatabaseAvailable())
-				{
-					static::$errorLoggingFailed = true;
-					static::$databaseChecked = true;
-					static::failDatabaseUnavailable("Error tracking disabled - database tables not available");
-				}
-
-				static::trackErrors();
+				return;
 			}
+
+			// Test database connectivity before enabling error tracking
+			if (!static::$databaseChecked && !static::isDatabaseAvailable())
+			{
+				static::$errorLoggingFailed = true;
+				static::$databaseChecked = true;
+				static::failDatabaseUnavailable("Error tracking disabled - database tables not available");
+			}
+
+			static::trackErrors();
 		}
 
 		/**
@@ -72,7 +79,7 @@ namespace Proto\Error
 		 */
 		public static function disable(): void
 		{
-			static::$errorLoggingFailed = true;
+			static::$trackingEnabled = false;
 
 			// Restore default PHP error and exception handlers
 			restore_error_handler();
@@ -87,15 +94,17 @@ namespace Proto\Error
 		 */
 		protected static function setErrorReporting(bool $displayErrors): void
 		{
-			if (!$displayErrors)
+			if ($displayErrors)
 			{
-				error_reporting(0);
+				error_reporting(E_ALL);
+				ini_set('display_errors', '1');
+				ini_set('display_startup_errors', '1');
 				return;
 			}
 
-			error_reporting(E_ALL);
-			ini_set('display_errors', '1');
-			ini_set('display_startup_errors', '1');
+			error_reporting(0);
+			ini_set('display_errors', '0');
+			ini_set('display_startup_errors', '0');
 		}
 
 		/**
@@ -115,9 +124,9 @@ namespace Proto\Error
 		): bool
 		{
 			// Prevent infinite loops if error logging has already failed
-			if (static::$errorLoggingFailed)
+			if (static::$errorLoggingFailed || !static::$trackingEnabled)
 			{
-				return false;
+				return true;
 			}
 
 			// Check if this is the error log table missing - this is the only table we care about for error logging
@@ -154,7 +163,7 @@ namespace Proto\Error
 					static::failDatabaseUnavailable("Error log table missing: " . $e->getMessage());
 				}
 				static::fail($data);
-				return false;
+				return true;
 			}
 		}
 
@@ -269,6 +278,11 @@ namespace Proto\Error
 				$err = error_get_last();
 				if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR]))
 				{
+					if (!static::$trackingEnabled || static::$errorLoggingFailed)
+					{
+						return;
+					}
+
 					static::errorHandler(
 						$err['type'],
 						$err['message'],
@@ -287,7 +301,7 @@ namespace Proto\Error
 		protected static function setErrorLogging(): void
 		{
 			ini_set('log_errors', '1');
-			ini_set('error_log', 'error.log');
+			ini_set('error_log', rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'proto_error.log');
 		}
 
 		/**
@@ -320,9 +334,9 @@ namespace Proto\Error
 		public static function exceptionHandler(\Throwable $exception): bool
 		{
 			// Prevent infinite loops if error logging has already failed
-			if (static::$errorLoggingFailed)
+			if (static::$errorLoggingFailed || !static::$trackingEnabled)
 			{
-				return false;
+				return true;
 			}
 
 			// Check if this is the error log table missing to prevent infinite loops
@@ -360,7 +374,7 @@ namespace Proto\Error
 					static::failDatabaseUnavailable("Error log table missing: " . $e->getMessage());
 				}
 				static::fail($data);
-				return false;
+				return true;
 			}
 		}
 
