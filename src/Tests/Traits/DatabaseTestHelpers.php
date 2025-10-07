@@ -43,6 +43,8 @@ trait DatabaseTestHelpers
 	 */
 	protected function seedDatabase(array $seeders = []): void
 	{
+		$db = $this->getTestDatabase();
+
 		foreach ($seeders as $seeder)
 		{
 			if (!class_exists($seeder))
@@ -54,6 +56,8 @@ trait DatabaseTestHelpers
 			if (is_subclass_of($seeder, 'Proto\Database\Seeders\Seeder'))
 			{
 				$seederInstance = new $seeder();
+				// Pass the test database connection to ensure same transaction
+				$seederInstance->setConnection($db);
 				$seederInstance->run();
 				continue;
 			}

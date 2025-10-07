@@ -23,12 +23,6 @@ class UserSeeder extends Seeder
 	 */
 	public function run(): void
 	{
-		// Only seed if the table is empty
-		if (!$this->isEmpty('users'))
-		{
-			return;
-		}
-
 		$users = [
 			[
 				'username' => 'john.doe',

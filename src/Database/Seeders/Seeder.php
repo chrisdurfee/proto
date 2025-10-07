@@ -20,6 +20,11 @@ abstract class Seeder
 	protected ?Database $database = null;
 
 	/**
+	 * @var Mysqli|null $externalConnection
+	 */
+	protected ?Mysqli $externalConnection = null;
+
+	/**
 	 * Connection key.
 	 * @var string
 	 */
@@ -31,6 +36,17 @@ abstract class Seeder
 	 * @return void
 	 */
 	abstract public function run(): void;
+
+	/**
+	 * Set an external database connection to use.
+	 *
+	 * @param Mysqli $connection
+	 * @return void
+	 */
+	public function setConnection(Mysqli $connection): void
+	{
+		$this->externalConnection = $connection;
+	}
 
 	/**
 	 * Gets the database instance.
@@ -54,6 +70,12 @@ abstract class Seeder
 	 */
 	protected function getConnection(?string $connection = null): ?Mysqli
 	{
+		// Use external connection if set (for testing)
+		if ($this->externalConnection !== null)
+		{
+			return $this->externalConnection;
+		}
+
 		$connection = $connection ?? $this->connection;
 		return $this->getDatabase()->connect($connection);
 	}

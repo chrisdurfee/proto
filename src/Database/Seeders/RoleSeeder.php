@@ -23,12 +23,6 @@ class RoleSeeder extends Seeder
 	 */
 	public function run(): void
 	{
-		// Only seed if the table is empty
-		if (!$this->isEmpty('roles'))
-		{
-			return;
-		}
-
 		$roles = [
 			[
 				'name' => 'Administrator',
