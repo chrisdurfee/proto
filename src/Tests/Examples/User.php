@@ -38,13 +38,14 @@ class User extends Model
 	 */
 	protected static array $fields = [
 		'id',
-		'name',
-		'email',
+        'createdAt',
+		'updatedAt',
+		'firstName',
+		'lastName',
+		'username',
 		'password',
-		'status',
-		'role',
-		'createdAt',
-		'updatedAt'
+        'email',
+		'status'
 	];
 
 	/**

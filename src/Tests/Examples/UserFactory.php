@@ -32,13 +32,14 @@ class UserFactory extends Factory
 		$faker = $this->faker();
 
 		return [
-			'name' => $faker->name(),
-			'email' => $faker->email(),
+            'firstName' => $faker->firstName(),
+			'lastName' => $faker->lastName(),
+			'username' => $faker->email(),
 			'password' => password_hash('password', PASSWORD_BCRYPT),
+            'email' => $faker->email(),
 			'status' => 'active',
-			'role' => 'user',
-			'created_at' => $faker->dateTimeBetween('-1 year', 'now'),
-			'updated_at' => $faker->dateTimeBetween('-1 year', 'now')
+			'createdAt' => $faker->dateTimeBetween('-1 year', 'now'),
+			'updatedAt' => $faker->dateTimeBetween('-1 year', 'now')
 		];
 	}
 
