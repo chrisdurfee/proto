@@ -45,10 +45,10 @@ final class FactoryExampleTest extends Test
 
 		$this->assertInstanceOf(User::class, $user);
 		$this->assertNotNull($user->id);
-		$this->assertNotEmpty($user->name);
+		$this->assertNotEmpty($user->firstName);
+		$this->assertNotEmpty($user->lastName);
 		$this->assertNotEmpty($user->email);
 		$this->assertEquals('active', $user->status);
-		$this->assertEquals('user', $user->role);
 	}
 
 	/**
@@ -63,7 +63,7 @@ final class FactoryExampleTest extends Test
 
 		$this->assertInstanceOf(User::class, $user);
 		$this->assertNull($user->id); // Not saved, so no ID
-		$this->assertNotEmpty($user->name);
+		$this->assertNotEmpty($user->firstName);
 		$this->assertNotEmpty($user->email);
 	}
 
@@ -95,11 +95,13 @@ final class FactoryExampleTest extends Test
 	{
 		// Create user with specific attributes
 		$user = User::factory()->create([
-			'name' => 'John Doe',
+			'firstName' => 'John',
+			'lastName' => 'Doe',
 			'email' => 'john@example.com'
 		]);
 
-		$this->assertEquals('John Doe', $user->name);
+		$this->assertEquals('John', $user->firstName);
+		$this->assertEquals('Doe', $user->lastName);
 		$this->assertEquals('john@example.com', $user->email);
 		$this->assertEquals('active', $user->status); // Still uses factory default
 	}
@@ -111,12 +113,6 @@ final class FactoryExampleTest extends Test
 	 */
 	public function testFactoryStates(): void
 	{
-		// Create an admin user
-		$admin = User::factory()->state('admin')->create();
-
-		$this->assertEquals('admin', $admin->role);
-		$this->assertEquals('active', $admin->status);
-
 		// Create an inactive user
 		$inactiveUser = User::factory()->state('inactive')->create();
 
@@ -150,14 +146,14 @@ final class FactoryExampleTest extends Test
 	 */
 	public function testFactoryMultipleStates(): void
 	{
-		// Create a verified admin user
-		$admin = User::factory()
-			->state('admin')
+		// Create a verified user
+		$user = User::factory()
 			->state('verified')
+			->state('inactive')
 			->create();
 
-		$this->assertEquals('admin', $admin->role);
-		$this->assertNotNull($admin->email_verified_at ?? null);
+		$this->assertEquals('inactive', $user->status);
+		$this->assertNotNull($user->email_verified_at ?? null);
 	}
 
 	/**
@@ -171,14 +167,14 @@ final class FactoryExampleTest extends Test
 		$user = User::factory()
 			->state(function ($attributes) {
 				return [
-					'name' => strtoupper($attributes['name']),
-					'status' => 'premium'
+					'firstName' => strtoupper($attributes['firstName']),
+					'status' => 'online'
 				];
 			})
 			->make();
 
-		$this->assertEquals(strtoupper($user->name), $user->name);
-		$this->assertEquals('premium', $user->status);
+		$this->assertEquals(strtoupper($user->firstName), $user->firstName);
+		$this->assertEquals('online', $user->status);
 	}
 
 	/**
@@ -192,7 +188,7 @@ final class FactoryExampleTest extends Test
 		$attributes = User::factory()->raw();
 
 		$this->assertIsArray($attributes);
-		$this->assertArrayHasKey('name', $attributes);
+		$this->assertArrayHasKey('firstName', $attributes);
 		$this->assertArrayHasKey('email', $attributes);
 		$this->assertArrayHasKey('password', $attributes);
 
@@ -212,13 +208,15 @@ final class FactoryExampleTest extends Test
 	{
 		$user = User::factory()
 			->set([
-				'name' => 'Jane Smith',
-				'role' => 'moderator'
+				'firstName' => 'Jane',
+				'lastName' => 'Smith',
+				'status' => 'active'
 			])
 			->create();
 
-		$this->assertEquals('Jane Smith', $user->name);
-		$this->assertEquals('moderator', $user->role);
+		$this->assertEquals('Jane', $user->firstName);
+		$this->assertEquals('Smith', $user->lastName);
+		$this->assertEquals('active', $user->status);
 	}
 
 	/**
@@ -233,15 +231,16 @@ final class FactoryExampleTest extends Test
 			->count(3)
 			->sequence(function ($index) {
 				return [
-					'name' => "User {$index}",
+					'firstName' => "User",
+					'lastName' => "{$index}",
 					'email' => "user{$index}@example.com"
 				];
 			});
 
 		$this->assertCount(3, $users);
-		$this->assertEquals('User 1', $users[0]->name);
-		$this->assertEquals('User 2', $users[1]->name);
-		$this->assertEquals('User 3', $users[2]->name);
+		$this->assertEquals('1', $users[0]->lastName);
+		$this->assertEquals('2', $users[1]->lastName);
+		$this->assertEquals('3', $users[2]->lastName);
 	}
 
 	/**
@@ -256,7 +255,7 @@ final class FactoryExampleTest extends Test
 		$user = User::factory()
 			->afterMaking(function ($user) use (&$callbackExecuted) {
 				// This runs after making but before saving
-				$user->set('name', 'Modified Name');
+				$user->set('firstName', 'Modified');
 			})
 			->afterCreating(function ($user) use (&$callbackExecuted) {
 				// This runs after saving to database
@@ -264,7 +263,7 @@ final class FactoryExampleTest extends Test
 			})
 			->create();
 
-		$this->assertEquals('Modified Name', $user->name);
+		$this->assertEquals('Modified', $user->firstName);
 		$this->assertTrue($callbackExecuted);
 	}
 

@@ -51,8 +51,7 @@ class UserFactory extends Factory
 	public function stateAdmin(): array
 	{
 		return [
-			'role' => 'admin',
-			'status' => 'active'
+			'status' => 'online'
 		];
 	}
 
@@ -64,7 +63,7 @@ class UserFactory extends Factory
 	public function stateInactive(): array
 	{
 		return [
-			'status' => 'inactive'
+			'status' => 'offline'
 		];
 	}
 
@@ -76,7 +75,7 @@ class UserFactory extends Factory
 	public function stateSuspended(): array
 	{
 		return [
-			'status' => 'suspended'
+			'status' => 'busy'
 		];
 	}
 
