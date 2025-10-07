@@ -23,7 +23,7 @@ trait HasFactory
 		$factoryClass = static::factoryClass();
 
 		if (!class_exists($factoryClass))
-        {
+		{
 			throw new \RuntimeException(
 				"Factory class [{$factoryClass}] not found. " .
 				"Create a factory class or override the factoryClass() method."
@@ -46,7 +46,7 @@ trait HasFactory
 		// Try to find factory in same namespace
 		$factoryClass = $modelClass . 'Factory';
 		if (class_exists($factoryClass))
-        {
+		{
 			return $factoryClass;
 		}
 

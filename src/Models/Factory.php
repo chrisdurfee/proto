@@ -121,14 +121,14 @@ abstract class Factory
 	public function state(string|callable $state, ...$parameters): static
 	{
 		if (is_callable($state))
-        {
+		{
 			$this->states[] = ['callback' => $state, 'parameters' => $parameters];
 		}
-        else
-        {
+		else
+		{
 			$method = 'state' . ucfirst($state);
 			if (!method_exists($this, $method))
-            {
+			{
 				throw new \BadMethodCallException("State method [{$method}] not found on factory.");
 			}
 			$this->states[] = ['method' => $method, 'parameters' => $parameters];
@@ -195,7 +195,7 @@ abstract class Factory
 	{
 		$models = [];
 		for ($i = 0; $i < $this->count; $i++)
-        {
+		{
 			$models[] = $this->makeOne($attributes);
 		}
 
@@ -212,18 +212,18 @@ abstract class Factory
 	{
 		$models = [];
 		for ($i = 0; $i < $this->count; $i++)
-        {
+		{
 			$model = $this->makeOne($attributes);
 
 			// Persist to database
 			if (!$model->add())
-            {
+			{
 				throw new \RuntimeException("Failed to create model: " . $model->getLastError());
 			}
 
 			// Run afterCreating callback
 			if ($this->afterCreating)
-            {
+			{
 				call_user_func($this->afterCreating, $model);
 			}
 
@@ -246,13 +246,13 @@ abstract class Factory
 
 		// Apply states
 		foreach ($this->states as $state)
-        {
+		{
 			if (isset($state['method']))
-            {
+			{
 				$stateData = call_user_func_array([$this, $state['method']], $state['parameters']);
 			}
-            else
-            {
+			else
+			{
 				$stateData = call_user_func_array($state['callback'], array_merge([$data], $state['parameters']));
 			}
 			$data = array_merge($data, $stateData);
@@ -270,7 +270,7 @@ abstract class Factory
 
 		// Run afterMaking callback
 		if ($this->afterMaking)
-        {
+		{
 			call_user_func($this->afterMaking, $model);
 		}
 
@@ -287,7 +287,7 @@ abstract class Factory
 	{
 		$data = [];
 		for ($i = 0; $i < $this->count; $i++)
-        {
+		{
 			$data[] = $this->rawOne($attributes);
 		}
 
@@ -306,13 +306,13 @@ abstract class Factory
 
 		// Apply states
 		foreach ($this->states as $state)
-        {
+		{
 			if (isset($state['method']))
-            {
+			{
 				$stateData = call_user_func_array([$this, $state['method']], $state['parameters']);
 			}
-            else
-            {
+			else
+			{
 				$stateData = call_user_func_array($state['callback'], array_merge([$data], $state['parameters']));
 			}
 			$data = array_merge($data, $stateData);
@@ -341,7 +341,7 @@ abstract class Factory
 	{
 		$models = [];
 		for ($i = 0; $i < $this->count; $i++)
-        {
+		{
 			$sequenceAttributes = $callback($i + 1);
 			$models[] = $this->makeOne($sequenceAttributes);
 		}
@@ -358,16 +358,16 @@ abstract class Factory
 	{
 		$models = [];
 		for ($i = 0; $i < $this->count; $i++)
-        {
+		{
 			$sequenceAttributes = $callback($i + 1);
 			$model = $this->makeOne($sequenceAttributes);
 			if (!$model->add())
-            {
+			{
 				throw new \RuntimeException("Failed to create model: " . $model->getLastError());
 			}
 
 			if ($this->afterCreating)
-            {
+			{
 				call_user_func($this->afterCreating, $model);
 			}
 

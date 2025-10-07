@@ -2,19 +2,7 @@
 
 ## Installation
 
-### 1. Add HasFactory trait to your model
-
-```php
-use Proto\Models\Model;
-use Proto\Models\HasFactory;
-
-class User extends Model
-{
-    use HasFactory;
-}
-```
-
-### 2. Create a factory class
+### 1. Create a factory class
 
 ```php
 use Proto\Models\Factory;

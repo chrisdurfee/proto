@@ -15,21 +15,14 @@ Model factories provide a convenient way to generate fake data for your models d
 
 ## Basic Usage
 
-### Adding Factory Support to Models
-
-Add the `HasFactory` trait to your model:
-
 ```php
 <?php
 namespace Modules\User\Models;
 
 use Proto\Models\Model;
-use Proto\Models\HasFactory;
 
 class User extends Model
 {
-    use HasFactory;
-
     protected static ?string $tableName = 'users';
     protected static array $fields = ['id', 'name', 'email', 'status'];
 }

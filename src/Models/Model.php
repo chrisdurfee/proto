@@ -23,6 +23,8 @@ use Proto\Database\QueryBuilder\QueryHandler;
  */
 abstract class Model extends Base implements \JsonSerializable, ModelInterface
 {
+	use HasFactory;
+
 	/**
 	 * Table name for the model.
 	 *
