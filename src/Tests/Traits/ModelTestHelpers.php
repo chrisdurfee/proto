@@ -18,6 +18,19 @@ trait ModelTestHelpers
 	protected array $createdModels = [];
 
 	/**
+	 * Create a new factory instance for the given model.
+	 *
+	 * @param string $modelClass
+	 * @param int $count
+	 * @param array $attributes
+	 * @return \Proto\Models\Factory
+	 */
+	protected function factory(string $modelClass, int $count = 1, array $attributes = []): \Proto\Models\Factory
+	{
+		return $modelClass::factory($count, $attributes);
+	}
+
+	/**
 	 * Creates a model instance and persists it to the database.
 	 *
 	 * @param string $modelClass
