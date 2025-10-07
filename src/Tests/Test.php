@@ -81,19 +81,23 @@ abstract class Test extends TestCase
 	 */
 	protected function setupTestEnvironment(): void
 	{
-		// Setup database if needed
-		if ($this->useTransactions)
+		// Only setup database if BASE_PATH is defined (framework is initialized)
+		if (defined('BASE_PATH'))
 		{
-			$this->beginDatabaseTransaction();
+			// Setup database if needed
+			if ($this->useTransactions)
+			{
+				$this->beginDatabaseTransaction();
+			}
+
+			// Run seeders
+			if (!empty($this->seeders))
+			{
+				$this->seedDatabase($this->seeders);
+			}
 		}
 
-		// Run seeders
-		if (!empty($this->seeders))
-		{
-			$this->seedDatabase($this->seeders);
-		}
-
-		// Reset HTTP state
+		// Reset HTTP state (doesn't require BASE_PATH)
 		$this->resetHttpState();
 	}
 
@@ -104,14 +108,18 @@ abstract class Test extends TestCase
 	 */
 	protected function cleanupTestEnvironment(): void
 	{
-		// Cleanup database
-		if ($this->useTransactions)
+		// Only cleanup database if BASE_PATH is defined
+		if (defined('BASE_PATH'))
 		{
-			$this->cleanupDatabase();
-		}
+			// Cleanup database
+			if ($this->useTransactions)
+			{
+				$this->cleanupDatabase();
+			}
 
-		// Cleanup models
-		$this->cleanupModels();
+			// Cleanup models
+			$this->cleanupModels();
+		}
 
 		// Cleanup temporary files
 		$this->cleanupTempFiles();

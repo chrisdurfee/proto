@@ -16,6 +16,16 @@ use Proto\Tests\Seeders\TestUserSeeder;
 final class SeederExampleTest extends Test
 {
     /**
+     * Enable system initialization for seeder tests
+     *
+     * @return void
+     */
+    protected function setupSystem(): void
+    {
+        new \Proto\Base();
+    }
+
+    /**
      * Test using seeders defined in the seeders property.
      *
      * @return void
@@ -93,6 +103,16 @@ final class UserTestWithSeeders extends Test
         RoleSeeder::class,
         UserSeeder::class
     ];
+
+    /**
+     * Enable system initialization for seeder tests
+     *
+     * @return void
+     */
+    protected function setupSystem(): void
+    {
+        new \Proto\Base();
+    }
 
     public function testUsersExist(): void
     {

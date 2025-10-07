@@ -5,7 +5,16 @@ use Proto\Module\ModuleManager;
 use Proto\Providers\ServiceManager;
 
 // Define the base path constant
-define('BASE_PATH', realpath(__DIR__ . '/../../../../'));
+if (!defined('BASE_PATH'))
+{
+	// When used as a Composer package: vendor/protoframework/proto/src -> ../../../../ (project root)
+	// When developing the framework: proto/src -> ../ (framework root)
+	$vendorPath = realpath(__DIR__ . '/../../../../');
+	$frameworkPath = realpath(__DIR__ . '/../');
+
+	$basePath = (file_exists($vendorPath . '/vendor/autoload.php')) ? $vendorPath : $frameworkPath;
+	define('BASE_PATH', $basePath);
+}
 
 /**
  * Base class

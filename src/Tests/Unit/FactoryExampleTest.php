@@ -24,6 +24,16 @@ final class FactoryExampleTest extends Test
 	protected bool $useTransactions = false;
 
 	/**
+	 * Override to enable system initialization for factory tests
+	 *
+	 * @return void
+	 */
+	protected function setupSystem(): void
+	{
+		new \Proto\Base();
+	}
+
+	/**
 	 * Test basic factory usage - creating a single model.
 	 *
 	 * @return void
