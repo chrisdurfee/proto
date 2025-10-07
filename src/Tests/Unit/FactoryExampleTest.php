@@ -16,12 +16,12 @@ use Proto\Tests\Examples\UserFactory;
 final class FactoryExampleTest extends Test
 {
 	/**
-	 * Don't use database transactions for this example
+	 * Use database transactions for test isolation
 	 * (factories work with or without transactions)
 	 *
 	 * @var bool
 	 */
-	protected bool $useTransactions = false;
+	protected bool $useTransactions = true;
 
 	/**
 	 * Override to enable system initialization for factory tests
@@ -48,7 +48,7 @@ final class FactoryExampleTest extends Test
 		$this->assertNotEmpty($user->firstName);
 		$this->assertNotEmpty($user->lastName);
 		$this->assertNotEmpty($user->email);
-		$this->assertEquals('active', $user->status);
+		$this->assertEquals('offline', $user->status);
 	}
 
 	/**
@@ -103,7 +103,7 @@ final class FactoryExampleTest extends Test
 		$this->assertEquals('John', $user->firstName);
 		$this->assertEquals('Doe', $user->lastName);
 		$this->assertEquals('john@example.com', $user->email);
-		$this->assertEquals('active', $user->status); // Still uses factory default
+		$this->assertEquals('offline', $user->status); // Still uses factory default
 	}
 
 	/**
@@ -116,12 +116,12 @@ final class FactoryExampleTest extends Test
 		// Create an inactive user
 		$inactiveUser = User::factory()->state('inactive')->create();
 
-		$this->assertEquals('inactive', $inactiveUser->status);
+		$this->assertEquals('offline', $inactiveUser->status);
 
 		// Create a suspended user
 		$suspendedUser = User::factory()->state('suspended')->create();
 
-		$this->assertEquals('suspended', $suspendedUser->status);
+		$this->assertEquals('busy', $suspendedUser->status);
 	}
 
 	/**
@@ -152,8 +152,8 @@ final class FactoryExampleTest extends Test
 			->state('inactive')
 			->create();
 
-		$this->assertEquals('inactive', $user->status);
-		$this->assertNotNull($user->email_verified_at ?? null);
+		$this->assertEquals('offline', $user->status);
+		$this->assertNotNull($user->emailVerifiedAt);
 	}
 
 	/**
@@ -210,13 +210,13 @@ final class FactoryExampleTest extends Test
 			->set([
 				'firstName' => 'Jane',
 				'lastName' => 'Smith',
-				'status' => 'active'
+				'status' => 'online'
 			])
 			->create();
 
 		$this->assertEquals('Jane', $user->firstName);
 		$this->assertEquals('Smith', $user->lastName);
-		$this->assertEquals('active', $user->status);
+		$this->assertEquals('online', $user->status);
 	}
 
 	/**
@@ -303,10 +303,11 @@ final class FactoryExampleTest extends Test
 	{
 		// Create factory with new() method
 		$user = UserFactory::new()
-			->set(['name' => 'Test User'])
+			->set(['firstName' => 'Test', 'lastName' => 'User'])
 			->create();
 
-		$this->assertEquals('Test User', $user->name);
+		$this->assertEquals('Test', $user->firstName);
+		$this->assertEquals('User', $user->lastName);
 	}
 
 	/**
@@ -330,7 +331,8 @@ final class FactoryExampleTest extends Test
 		// Create a specific test user
 		$testUser = User::factory()->create([
 			'email' => 'test@example.com',
-			'name' => 'Test User'
+			'firstName' => 'Test',
+			'lastName' => 'User'
 		]);
 
 		// Create inactive users for testing activation flow
@@ -342,16 +344,17 @@ final class FactoryExampleTest extends Test
 		$this->assertCount(10, $users);
 		$this->assertCount(3, $admins);
 		$this->assertEquals('test@example.com', $testUser->email);
+		$this->assertEquals('Test', $testUser->firstName);
 		$this->assertCount(5, $inactiveUsers);
 
-		// Verify admin users have correct role
+		// Verify admin users have correct status (online)
 		foreach ($admins as $admin) {
-			$this->assertEquals('admin', $admin->role);
+			$this->assertEquals('online', $admin->status);
 		}
 
-		// Verify inactive users have correct status
+		// Verify inactive users have correct status (offline)
 		foreach ($inactiveUsers as $user) {
-			$this->assertEquals('inactive', $user->status);
+			$this->assertEquals('offline', $user->status);
 		}
 	}
 }

@@ -11,6 +11,12 @@ namespace Proto\Database\Seeders;
 class RoleSeeder extends Seeder
 {
 	/**
+	 * Connection key.
+	 * @var string
+	 */
+	protected string $connection = 'testing';
+
+	/**
 	 * Run the database seeder.
 	 *
 	 * @return void
@@ -28,22 +34,19 @@ class RoleSeeder extends Seeder
 				'name' => 'Administrator',
 				'slug' => 'administrator',
 				'description' => 'System administrator with full access',
-				'created_at' => date('Y-m-d H:i:s'),
-				'updated_at' => date('Y-m-d H:i:s')
+				'resource' => 'global'
 			],
 			[
 				'name' => 'User',
 				'slug' => 'user',
 				'description' => 'Regular user with basic access',
-				'created_at' => date('Y-m-d H:i:s'),
-				'updated_at' => date('Y-m-d H:i:s')
+				'resource' => 'global'
 			],
 			[
 				'name' => 'Moderator',
 				'slug' => 'moderator',
 				'description' => 'Content moderator with limited admin access',
-				'created_at' => date('Y-m-d H:i:s'),
-				'updated_at' => date('Y-m-d H:i:s')
+				'resource' => 'global'
 			]
 		];
 

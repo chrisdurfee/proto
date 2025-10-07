@@ -32,14 +32,20 @@ final class SeederExampleTest extends Test
      */
     public function testWithSeederProperty(): void
     {
+        // Rollback any existing transaction and start fresh
+        if ($this->useTransactions) {
+            $this->rollbackDatabaseTransaction();
+            $this->beginDatabaseTransaction();
+        }
+
         // Set seeders to run before this test
         $this->setSeeders([
             RoleSeeder::class,
             UserSeeder::class
         ]);
 
-        // Re-setup the test environment to run seeders
-        $this->setupTestEnvironment();
+        // Run the seeders
+        $this->seedDatabase($this->seeders);
 
         // Assert that seeded data exists
         $this->assertDatabaseCount('roles', 3);
@@ -66,7 +72,7 @@ final class SeederExampleTest extends Test
         // Assert seeded data
         $this->assertDatabaseCount('users', 3);
         $this->assertDatabaseHas('users', ['email' => 'test1@example.com']);
-        $this->assertDatabaseHas('users', ['status' => 'inactive']);
+        $this->assertDatabaseHas('users', ['status' => 'offline']);
     }
 
     /**

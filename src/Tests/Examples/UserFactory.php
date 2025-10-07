@@ -37,9 +37,7 @@ class UserFactory extends Factory
 			'username' => $faker->email(),
 			'password' => password_hash('password', PASSWORD_BCRYPT),
             'email' => $faker->email(),
-			'status' => 'active',
-			'createdAt' => $faker->dateTimeBetween('-1 year', 'now'),
-			'updatedAt' => $faker->dateTimeBetween('-1 year', 'now')
+			'status' => 'offline'
 		];
 	}
 

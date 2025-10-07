@@ -13,6 +13,12 @@ use Proto\Database\Seeders\Seeder;
 class TestUserSeeder extends Seeder
 {
 	/**
+	 * Connection key.
+	 * @var string
+	 */
+	protected string $connection = 'testing';
+
+	/**
 	 * Run the database seeder.
 	 *
 	 * @return void
@@ -21,28 +27,28 @@ class TestUserSeeder extends Seeder
 	{
 		$testUsers = [
 			[
-				'name' => 'Test User 1',
+				'username' => 'test.user1',
+				'first_name' => 'Test',
+				'last_name' => 'User 1',
 				'email' => 'test1@example.com',
 				'password' => password_hash('testpass', PASSWORD_DEFAULT),
-				'status' => 'active',
-				'created_at' => date('Y-m-d H:i:s'),
-				'updated_at' => date('Y-m-d H:i:s')
+				'status' => 'online'
 			],
 			[
-				'name' => 'Test User 2',
+				'username' => 'test.user2',
+				'first_name' => 'Test',
+				'last_name' => 'User 2',
 				'email' => 'test2@example.com',
 				'password' => password_hash('testpass', PASSWORD_DEFAULT),
-				'status' => 'active',
-				'created_at' => date('Y-m-d H:i:s'),
-				'updated_at' => date('Y-m-d H:i:s')
+				'status' => 'online'
 			],
 			[
-				'name' => 'Inactive Test User',
+				'username' => 'inactive.user',
+				'first_name' => 'Inactive',
+				'last_name' => 'Test User',
 				'email' => 'inactive@example.com',
 				'password' => password_hash('testpass', PASSWORD_DEFAULT),
-				'status' => 'inactive',
-				'created_at' => date('Y-m-d H:i:s'),
-				'updated_at' => date('Y-m-d H:i:s')
+				'status' => 'offline'
 			]
 		];
 
