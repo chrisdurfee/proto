@@ -84,6 +84,16 @@ abstract class Test extends TestCase
 		// Only setup database if BASE_PATH is defined (framework is initialized)
 		if (defined('BASE_PATH'))
 		{
+			// CRITICAL: Enable database connection caching for tests
+			// This ensures ALL database connections return the same instance
+			// which is essential for transaction isolation
+			setEnv('dbCaching', true);
+
+			// CRITICAL: Override the default database connection for ALL storage/model operations
+			// This ensures factories, seeders, and models use the same 'testing' connection
+			// that we're managing with transactions for test isolation
+			\Proto\Storage\TableStorage::setDefaultConnection('testing');
+
 			// Setup database if needed
 			if ($this->useTransactions)
 			{
@@ -99,9 +109,7 @@ abstract class Test extends TestCase
 
 		// Reset HTTP state (doesn't require BASE_PATH)
 		$this->resetHttpState();
-	}
-
-	/**
+	}	/**
 	 * Cleans up the test environment.
 	 *
 	 * @return void
@@ -116,6 +124,9 @@ abstract class Test extends TestCase
 			{
 				$this->cleanupDatabase();
 			}
+
+			// Reset the default connection back to 'default'
+			\Proto\Storage\TableStorage::setDefaultConnection(null);
 
 			// Cleanup models
 			$this->cleanupModels();

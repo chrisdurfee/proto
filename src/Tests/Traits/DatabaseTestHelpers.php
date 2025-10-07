@@ -31,8 +31,24 @@ trait DatabaseTestHelpers
 	 */
 	protected function createTestDatabase(): void
 	{
-		$database = new Database();
-		$this->testDatabase = $database->connect('testing');
+		// CRITICAL: Manually create non-persistent connection for tests
+		// Persistent connections cause transaction isolation issues
+		$settings = \Proto\Config::getInstance()->getDBSettings('testing');
+		$settings->persistent = false;
+
+		// Enable caching to prevent disconnect() calls which auto-commit transactions
+		$this->testDatabase = new Mysqli($settings, true);
+
+		// Force connection to open BEFORE setting autocommit
+		// This ensures autocommit is properly disabled from the start
+		$this->testDatabase->execute('SELECT 1');
+
+		// Disable autocommit for transaction control
+		$this->testDatabase->autoCommit(false);
+
+		// CRITICAL: Cache this connection so ALL 'testing' connections return the SAME instance
+		// This ensures factories/models/seeders all participate in the same transaction
+		\Proto\Database\ConnectionSettingsCache::set('testing', $this->testDatabase);
 	}
 
 	/**

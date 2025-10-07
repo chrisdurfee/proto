@@ -20,6 +20,11 @@ Sql::init();
 class Mysqli extends Adapter
 {
 	/**
+	 * @var int Transaction nesting level
+	 */
+	private int $transactionLevel = 0;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array|object $settings Raw connection settings.
@@ -43,8 +48,17 @@ class Mysqli extends Adapter
 	protected function startConnection() : bool
 	{
 		$settings = $this->settings;
+
+		// Use persistent connections by default, but allow disabling via settings
+		// Persistent connections can cause issues with transactions in tests
+		$host = $settings->host;
+		if (!isset($settings->persistent) || $settings->persistent !== false)
+		{
+			$host = 'p:' . $host;
+		}
+
 		$connection = new \mysqli(
-			'p:' . $settings->host,
+			$host,
 			$settings->username,
 			$settings->password,
 			$settings->database,
@@ -59,6 +73,13 @@ class Mysqli extends Adapter
 
 		$this->setConnection($connection);
 		$connection->set_charset('utf8mb4');
+
+		// For explicitly non-persistent connections used in testing, disable autocommit
+		// to support proper transaction isolation
+		if (isset($settings->persistent) && $settings->persistent === false)
+		{
+			$connection->autocommit(false);
+		}
 
 		return true;
 	}
@@ -156,6 +177,27 @@ class Mysqli extends Adapter
 			return false;
 		}
 
+		// Track transaction commands even when called via execute()
+		$sqlUpper = strtoupper(trim($sql));
+		if ($sqlUpper === 'START TRANSACTION' || $sqlUpper === 'BEGIN' || strpos($sqlUpper, 'BEGIN TRANSACTION') === 0)
+		{
+			$this->transactionLevel++;
+		}
+		elseif ($sqlUpper === 'COMMIT')
+		{
+			if ($this->transactionLevel > 0)
+			{
+				$this->transactionLevel--;
+			}
+		}
+		elseif ($sqlUpper === 'ROLLBACK')
+		{
+			if ($this->transactionLevel > 0)
+			{
+				$this->transactionLevel--;
+			}
+		}
+
 		$stmt = $this->prepareAndExecute($sql, $params);
 		if (!$stmt)
 		{
@@ -165,12 +207,15 @@ class Mysqli extends Adapter
 
 		$this->setLastId($db->insert_id);
 		$stmt->close();
-		$this->disconnect();
+
+		// Don't disconnect during transactions - it would auto-commit
+		if ($this->transactionLevel === 0)
+		{
+			$this->disconnect();
+		}
 
 		return true;
-	}
-
-	/**
+	}	/**
 	 * Fetches the results of a SQL query.
 	 *
 	 * @param string $sql The SQL query.
@@ -194,7 +239,11 @@ class Mysqli extends Adapter
 			$stmt->close();
 		}
 
-		$this->disconnect();
+		// Don't disconnect during transactions - it would auto-commit
+		if ($this->transactionLevel === 0)
+		{
+			$this->disconnect();
+		}
 		return $rows;
 	}
 
@@ -252,6 +301,10 @@ class Mysqli extends Adapter
 		}
 
 		$result = $this->connection->begin_transaction();
+		if ($result)
+		{
+			$this->transactionLevel++;
+		}
 		return $this->checkResult($result);
 	}
 
@@ -279,6 +332,13 @@ class Mysqli extends Adapter
 	 */
 	public function transaction(string $sql, array|object $params = []) : bool
 	{
+		// If we're already in a transaction, just execute without nesting
+		// This prevents committing the outer transaction prematurely
+		if ($this->transactionLevel > 0)
+		{
+			return $this->execute($sql, $params);
+		}
+
 		if (!$this->beginTransaction())
 		{
 			return false;
@@ -307,6 +367,10 @@ class Mysqli extends Adapter
 		}
 
 		$result = $this->connection->commit();
+		if ($result && $this->transactionLevel > 0)
+		{
+			$this->transactionLevel--;
+		}
 		return $this->checkResult($result);
 	}
 
@@ -323,6 +387,10 @@ class Mysqli extends Adapter
 		}
 
 		$result = $this->connection->rollback();
+		if ($result && $this->transactionLevel > 0)
+		{
+			$this->transactionLevel--;
+		}
 		return $this->checkResult($result);
 	}
 

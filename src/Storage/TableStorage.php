@@ -28,6 +28,12 @@ class TableStorage implements StorageInterface
 	protected string $connection = 'default';
 
 	/**
+	 * Default connection key for all new instances.
+	 * @var string|null
+	 */
+	protected static ?string $defaultConnection = null;
+
+	/**
 	 * Last error encountered.
 	 * @var \Throwable|null // Store Throwable for better error info
 	 */
@@ -48,7 +54,25 @@ class TableStorage implements StorageInterface
 		protected string $database = Database::class
 	)
 	{
+		// Use static default connection if set (for testing), otherwise use 'default'
+		if (self::$defaultConnection !== null)
+		{
+			$this->connection = self::$defaultConnection;
+		}
+
 		$this->setConnection();
+	}
+
+	/**
+	 * Set the default connection for all new Storage instances.
+	 * Useful for testing to ensure all operations use the test connection.
+	 *
+	 * @param string|null $connection Connection name, or null to reset to default
+	 * @return void
+	 */
+	public static function setDefaultConnection(?string $connection): void
+	{
+		self::$defaultConnection = $connection;
 	}
 
 	/**
