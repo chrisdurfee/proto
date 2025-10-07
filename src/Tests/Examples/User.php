@@ -2,7 +2,6 @@
 namespace Proto\Tests\Examples;
 
 use Proto\Models\Model;
-use Proto\Models\HasFactory;
 use Proto\Models\Joins\JoinBuilder;
 
 /**
@@ -24,8 +23,6 @@ use Proto\Models\Joins\JoinBuilder;
  */
 class User extends Model
 {
-	use HasFactory;
-
 	/**
 	 * @var string|null $tableName
 	 */
