@@ -68,30 +68,4 @@ class User extends Model
 		// Example: $builder->one(Profile::class);
 		// Example: $builder->many(Post::class);
 	}
-
-	/**
-	 * Format the user data.
-	 *
-	 * @param object|null $data
-	 * @return object|null
-	 */
-	protected static function format(?object $data): ?object
-	{
-		if (!$data) {
-			return $data;
-		}
-
-		// Example: Format dates, hide sensitive data, etc.
-		if (isset($data->created_at)) {
-			$data->createdAt = $data->created_at;
-			unset($data->created_at);
-		}
-
-		if (isset($data->updated_at)) {
-			$data->updatedAt = $data->updated_at;
-			unset($data->updated_at);
-		}
-
-		return $data;
-	}
 }
