@@ -14,19 +14,7 @@ A complete factory system for generating model instances with fake data in tests
 
 ## Quick Start
 
-### 1. Add trait to your model
-
-```php
-use Proto\Models\Model;
-use Proto\Models\HasFactory;
-
-class User extends Model
-{
-    use HasFactory;
-}
-```
-
-### 2. Create a factory
+### 1. Create a factory
 
 ```php
 use Proto\Models\Factory;

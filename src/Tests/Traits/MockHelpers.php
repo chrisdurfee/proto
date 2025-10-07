@@ -64,7 +64,7 @@ trait MockHelpers
 	 * @param array $methodReturns Array of method => return value
 	 * @return \PHPUnit\Framework\MockObject\MockObject
 	 */
-	protected function createStub(string $class, array $methodReturns = []): \PHPUnit\Framework\MockObject\MockObject
+	protected function createStubWithReturns(string $class, array $methodReturns = []): \PHPUnit\Framework\MockObject\MockObject
 	{
 		$stub = $this->createMock($class);
 

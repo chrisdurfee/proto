@@ -5,7 +5,7 @@
          colors="true"
 >
     <testsuites>
-        <testsuite name="Unit">`
+        <testsuite name="Unit">
             <!-- proto unit tests -->
             <directory suffix="Test.php">./src/Tests/Unit</directory>
         </testsuite>
@@ -16,11 +16,11 @@
         </testsuite>
     </testsuites>
 
-    <coverage includeUncoveredFiles="true">
+    <source>
         <include>
             <directory suffix=".php">./src</directory>
         </include>
-    </coverage>
+    </source>
 
     <php>
         <server name="APP_ENV" value="testing"/>

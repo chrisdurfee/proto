@@ -129,7 +129,7 @@ final class ExampleTest extends Test
 		// $this->expectMethodCall($mockService, 'someMethod', ['arg1'], 'return_value');
 
 		// Example: Create a stub with predefined returns
-		// $stub = $this->createStub(SomeService::class, [
+		// $stub = $this->createStubWithReturns(SomeService::class, [
 		//     'getName' => 'Test Name',
 		//     'getId' => 123
 		// ]);
