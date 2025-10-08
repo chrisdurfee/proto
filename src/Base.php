@@ -4,18 +4,6 @@ namespace Proto;
 use Proto\Module\ModuleManager;
 use Proto\Providers\ServiceManager;
 
-// Define the base path constant
-if (!defined('BASE_PATH'))
-{
-	// When used as a Composer package: vendor/protoframework/proto/src -> ../../../../ (project root)
-	// When developing the framework: proto/src -> ../ (framework root)
-	$vendorPath = realpath(__DIR__ . '/../../../../');
-	$frameworkPath = realpath(__DIR__ . '/../');
-
-	$basePath = (file_exists($vendorPath . '/vendor/autoload.php')) ? $vendorPath : $frameworkPath;
-	define('BASE_PATH', $basePath);
-}
-
 /**
  * Base class
  *
@@ -41,6 +29,27 @@ class Base
 	}
 
 	/**
+	 * Sets the base path for the application.
+	 *
+	 * @return void
+	 */
+	private static function setBasePath(): void
+	{
+		// Define the base path constant
+		if (!defined('BASE_PATH'))
+		{
+			// When used as a Composer package: vendor/protoframework/proto/src -> ../../../../ (project root)
+			$vendorPath = realpath(__DIR__ . '/../../../../');
+
+			// When developing the framework: proto/src -> ../ (framework root)
+			$frameworkPath = realpath(__DIR__ . '/../');
+
+			$basePath = (file_exists($vendorPath . '/vendor/autoload.php')) ? $vendorPath : $frameworkPath;
+			define('BASE_PATH', $basePath);
+		}
+	}
+
+	/**
 	 * Sets up the base settings and initializes the system.
 	 *
 	 * @return void
@@ -51,6 +60,11 @@ class Base
 		{
 			return;
 		}
+
+		self::setBasePath();
+
+		// Preload Error class to ensure global error() function is available
+		class_exists('Proto\Error\Error');
 
 		self::$system = new System();
 		ModuleManager::activate(env('modules') ?? []);
