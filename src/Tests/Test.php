@@ -109,7 +109,9 @@ abstract class Test extends TestCase
 
 		// Reset HTTP state (doesn't require BASE_PATH)
 		$this->resetHttpState();
-	}	/**
+	}
+
+	/**
 	 * Cleans up the test environment.
 	 *
 	 * @return void

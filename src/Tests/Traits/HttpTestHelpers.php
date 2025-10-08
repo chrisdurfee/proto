@@ -318,6 +318,11 @@ trait HttpTestHelpers
 			$this->sessionData['user'] = $this->authenticatedUser;
 		}
 
+		/**
+		 * This will set the session to file for testing.
+		 */
+		setEnv('session', 'file');
+
 		Session::init();
 
 		// Setup session with test data
