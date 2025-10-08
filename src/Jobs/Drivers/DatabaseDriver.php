@@ -54,15 +54,28 @@ class DatabaseDriver extends Base implements DriverInterface
 	}
 
 	/**
+	 * @var int $affectedRows Last affected rows count
+	 */
+	protected int $affectedRows = 0;
+
+	/**
 	 * Get database connection.
 	 *
 	 * @return Mysqli
+	 * @throws \RuntimeException
 	 */
 	protected function getConnection(): Mysqli
 	{
 		if ($this->connection === null)
         {
-			$this->connection = Database::getConnection($this->config['connection'], true);
+			try
+			{
+				$this->connection = Database::getConnection($this->config['connection'], true);
+			}
+			catch (\Exception $e)
+			{
+				throw new \RuntimeException('Could not establish database connection: ' . $e->getMessage(), 0, $e);
+			}
 		}
 
 		if ($this->connection === null)
@@ -466,14 +479,19 @@ class DatabaseDriver extends Base implements DriverInterface
 
 		$cutoffDate = date('Y-m-d H:i:s', time() - ($olderThanDays * 24 * 60 * 60));
 
-		$sql = "DELETE FROM {$this->jobsTable}
-				WHERE status = 'completed' AND processed_at < ?";
+		// First count the jobs to be deleted
+		$countSql = "SELECT COUNT(*) as count FROM {$this->jobsTable}
+					WHERE status = 'completed' AND processed_at < ?";
+		$countResult = $db->fetch($countSql, [$cutoffDate]);
+		$count = $countResult ? (int) $countResult[0]->count : 0;
+		if ($count > 0)
+		{
+			$sql = "DELETE FROM {$this->jobsTable}
+					WHERE status = 'completed' AND processed_at < ?";
+			$db->execute($sql, [$cutoffDate]);
+		}
 
-		$result = $db->execute($sql, [$cutoffDate]);
-
-		// Note: We'll need to implement a way to get affected rows count
-		// For now, return 0 as placeholder
-		return $result ? 0 : 0;
+		return $count;
 	}
 
 	/**
@@ -488,12 +506,16 @@ class DatabaseDriver extends Base implements DriverInterface
 
 		$cutoffDate = date('Y-m-d H:i:s', time() - ($olderThanDays * 24 * 60 * 60));
 
-		$sql = "DELETE FROM {$this->failedJobsTable} WHERE failed_at < ?";
+		// First count the jobs to be deleted
+		$countSql = "SELECT COUNT(*) as count FROM {$this->failedJobsTable} WHERE failed_at < ?";
+		$countResult = $db->fetch($countSql, [$cutoffDate]);
+		$count = $countResult ? (int) $countResult[0]->count : 0;
+		if ($count > 0)
+		{
+			$sql = "DELETE FROM {$this->failedJobsTable} WHERE failed_at < ?";
+			$db->execute($sql, [$cutoffDate]);
+		}
 
-		$result = $db->execute($sql, [$cutoffDate]);
-
-		// Note: We'll need to implement a way to get affected rows count
-		// For now, return 0 as placeholder
-		return $result ? 0 : 0;
+		return $count;
 	}
 }

@@ -145,6 +145,39 @@ abstract class Job extends Base implements JobInterface
 	}
 
 	/**
+	 * Set the maximum retry attempts (alias for setMaxRetries).
+	 *
+	 * @param int $maxRetries
+	 * @return self
+	 */
+	public function retries(int $maxRetries): self
+	{
+		return $this->setMaxRetries($maxRetries);
+	}
+
+	/**
+	 * Set the retry delay (alias for setRetryDelay).
+	 *
+	 * @param int $retryDelay
+	 * @return self
+	 */
+	public function retryAfter(int $retryDelay): self
+	{
+		return $this->setRetryDelay($retryDelay);
+	}
+
+	/**
+	 * Set the job timeout (alias for setTimeout).
+	 *
+	 * @param int $timeout
+	 * @return self
+	 */
+	public function timeout(int $timeout): self
+	{
+		return $this->setTimeout($timeout);
+	}
+
+	/**
 	 * Handle job failure (default implementation).
 	 *
 	 * @param \Throwable $exception

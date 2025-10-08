@@ -85,6 +85,7 @@ class JobQueue extends Base
 		return match ($this->config['driver'])
         {
 			'database' => new DatabaseDriver($this->config),
+			'kafka' => new Drivers\KafkaDriver($this->config),
 			default => throw new \InvalidArgumentException("Unsupported driver: {$this->config['driver']}")
 		};
 	}

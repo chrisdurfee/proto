@@ -91,10 +91,10 @@ class SendEmailJob extends Job
             'template' => ''
         ];
 
-        $bayload = (object)[
+        $payload = (object)[
             'body' => $body
         ];
 
-		return Dispatcher::email($settings, $bayload);
+		return Dispatcher::email($settings, $payload);
 	}
 }
