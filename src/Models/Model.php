@@ -976,6 +976,35 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+	 * Refresh the model instance from the database.
+	 *
+	 * Reloads the model's data from storage using the same connection.
+	 * This is transaction-safe and useful in tests.
+	 *
+	 * @return bool True if the model was refreshed, false if not found.
+	 */
+	public function refresh(): bool
+	{
+		$idKey = $this->getIdKeyName();
+		$idValue = $this->data->get(Strings::camelCase($idKey));
+		if ($idValue === null)
+		{
+			return false;
+		}
+
+		$row = static::get($idValue);
+		if (!$row)
+		{
+			return false;
+		}
+
+		$row = static::augment($row);
+		$this->data->set($row);
+
+		return true;
+	}
+
+	/**
 	 * Count records.
 	 *
 	 * @param array|object|null $filter Filter criteria.

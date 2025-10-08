@@ -18,6 +18,11 @@ use Proto\Tests\Traits\FileTestHelpers;
  * Ensures the system is properly initialized before running tests.
  * Provides comprehensive testing utilities through traits.
  *
+ * IMPORTANT: Uses database transactions for test isolation by default.
+ * All database changes are automatically rolled back after each test.
+ *
+ * @see docs/TESTING_BEST_PRACTICES.md
+ * @see docs/TEST_QUICK_REFERENCE.md
  * @package Proto\Tests
  */
 abstract class Test extends TestCase
