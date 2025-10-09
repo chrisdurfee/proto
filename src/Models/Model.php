@@ -496,7 +496,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			return false;
 		}
 
-		$rf = new \ReflectionMethod($this, $key);
+		$rf = (new \ReflectionClass($this))->getMethod($key);
 		return $rf->isPublic() && $rf->getNumberOfParameters() === 0;
 	}
 

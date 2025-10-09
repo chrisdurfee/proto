@@ -27,7 +27,6 @@ class Request
 		protected ?object $params = null
 	)
 	{
-
 	}
 
 	/**

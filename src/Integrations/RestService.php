@@ -115,11 +115,11 @@ abstract class RestService extends Service
 	 * Sets up a response object.
 	 *
 	 * @param string|null $code
-	 * @param object|null $result
+	 * @param mixed $result
 	 * @param string|null $format
 	 * @return object
 	 */
-	protected function setupResponse(?string $code = '200', $result = null, ?string $format = 'json'): object
+	protected function setupResponse(?string $code = '200', mixed $result = null, ?string $format = 'json'): object
 	{
 		if (!$result)
 		{
@@ -142,7 +142,7 @@ abstract class RestService extends Service
 	 * @param mixed $data
 	 * @return mixed
 	 */
-	protected function prepareResponse($data)
+	protected function prepareResponse(mixed $data): mixed
 	{
 		return $data;
 	}
