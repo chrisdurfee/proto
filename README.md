@@ -44,7 +44,7 @@ Proto includes a comprehensive set of features for creating complex applications
 - **Factories** for generating test data
 - **Testing** with PHPUnit, data faking, and robust utilities
 - **Automations** to create routine tasks
-- **File Storage** (Local, AWS S3 support)
+- **File Storage** (local, AWS S3 support)
 - **Integrations** to third-party services (REST, JWT, Oauth2 support)
 - **Utilities** for dates, strings, files, encryption, and more
 
