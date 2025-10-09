@@ -168,7 +168,7 @@ class ModelJoin
 	 * @param string|null $alias Optional alias for a subsequent join.
 	 * @return self
 	 */
-	public function multiple(string|array $tableName = null, ?string $alias = null): self
+	public function multiple(string|array|null $tableName = null, ?string $alias = null): self
 	{
 		$this->multiple = true;
 		if (empty($tableName))

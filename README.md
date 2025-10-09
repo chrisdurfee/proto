@@ -13,33 +13,40 @@ Distributed systems are great, except when they are not. Building large, team-ba
 Proto includes a comprehensive set of features for creating complex applications, including:
 
 - **Modules system** to encapsulate features
-- **API Systems** (Both Resource and REST Routers)
-- **Validation**
+- **API Systems** with REST Router
+- **Validation** with sanitization
 - **Server-Sent Events (SSE)**
 - **Websockets & Sockets**
 - **HTTP Resources**
 - **Security Gates and Policies**
-- **Authentication** using roles and permissions
+- **Error Tracking and Handling**
+- **Authentication** using roles, permissions, and organizations
 - **Controllers**
 - **Caching (Redis)**
-- **Configs**
-- **Models**
-- **Storage Layers**
-- **Session Management**
+- **Configs** with .env JSON support
+- **Models** with complex relationships (eager and lazy)
+- **Collections** for data manipulation
+- **Storage Layers** to abstract data storage from data sources
+- **Session Management** (database and file support)
 - **Services & Service Providers**
-- **Jobs & Routines**
+- **Events, Event Loops** with async support
+- **Jobs** with event queues (database, Kafka support)
 - **Design Patterns**
-- **HTML Templates**
-- **Email Rendering**
+- **HTML Templates** using components
+- **Email Rendering** with Templates
 - **Dispatching Email, SMS, and Web Push**
-- **Events**
-- **Resource Generators**
-- **Database Adapter**
+- **Resource Generators** for quick code scaffolding
+- **Database Abstractions**
+- **Database Adapters** with MySQLi support
 - **Query Builders**
-- **Migrations**
-- **File Storage** (Local, S3)
-- **Integrations**
-- **Utilities**
+- **Database Migrations** with seeding support
+- **Seeding** for testing
+- **Factories** for generating test data
+- **Testing** with PHPUnit, data faking, and robust utilities
+- **Automations** to create routine tasks
+- **File Storage** (Local, AWS S3 support)
+- **Integrations** to third-party services (REST, JWT, Oauth2 support)
+- **Utilities** for dates, strings, files, encryption, and more
 
 ## File Structure
 
