@@ -2,7 +2,7 @@
 
 ## Introduction to Proto
 
-Proto is an open-source modular monolith framework for building scalable server applications quickly and securely.
+Proto is an open-source modular monolith framework for building scalable server applications quickly and securely. It's secure, performant, and designed for developer productivity. It includes an AI document to help agents build with Proto.
 
 ## Overview
 
