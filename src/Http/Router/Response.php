@@ -78,7 +78,7 @@ class Response
 	 * @param string|null $contentType
 	 * @return self
 	 */
-	public function sendHeaders(int $code, string $contentType = null): self
+	public function sendHeaders(int $code, ?string $contentType = null): self
 	{
 		$contentType = $contentType ?? $this->contentType;
 		$message = $this->getResponseMessage($code);
@@ -96,7 +96,7 @@ class Response
 	 * @param string|null $contentType
 	 * @return self
 	 */
-	public function render(int $code, string $contentType = null): self
+	public function render(int $code, ?string $contentType = null): self
 	{
 		return $this->sendHeaders($code, $contentType);
 	}

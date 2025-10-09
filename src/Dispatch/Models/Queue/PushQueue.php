@@ -87,7 +87,7 @@ class PushQueue extends Queue
 	 * @param mixed $data
 	 * @return mixed
 	 */
-	protected static function augment($data = null): mixed
+	protected static function augment(mixed $data = null): mixed
 	{
 		if (!$data)
 		{

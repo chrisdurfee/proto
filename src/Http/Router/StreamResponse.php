@@ -24,7 +24,7 @@ class StreamResponse extends Response
 	 * @param string|null $contentType
 	 * @return self
 	 */
-	public function sendHeaders(int $code, string $contentType = null): self
+	public function sendHeaders(int $code, ?string $contentType = null): self
 	{
 		$contentType = $contentType ?? $this->contentType;
 

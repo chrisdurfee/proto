@@ -387,7 +387,7 @@ class ModelPolicy extends Policy
 	 * @param Request|null $request The request object.
 	 * @return string The generated cache parameters.
 	 */
-	protected function generateGenericCacheParams(string $method, $request = null): string
+	protected function generateGenericCacheParams(string $method, mixed $request = null): string
 	{
 		if (!$request || !($request instanceof Request))
 		{

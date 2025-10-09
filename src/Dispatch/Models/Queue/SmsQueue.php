@@ -63,7 +63,7 @@ class SmsQueue extends Queue
 	 * @param mixed $data
 	 * @return object
 	 */
-	protected static function augment($data = null): mixed
+	protected static function augment(mixed $data = null): mixed
 	{
 		if (!$data)
 		{

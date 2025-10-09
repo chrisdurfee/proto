@@ -61,7 +61,7 @@ abstract class SocketHandler extends EventEmitter
 	 * @param string|null $peerName The peer name (reference variable).
 	 * @return Connection|null The new connection instance, or null if failed.
 	 */
-	public function accept(?float $timeout = null, string &$peerName = null): ?Connection
+	public function accept(?float $timeout = null, ?string &$peerName = null): ?Connection
 	{
 		$socket = $this->socket->accept($timeout, $peerName);
 		if (!$socket)

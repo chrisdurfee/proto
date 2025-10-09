@@ -83,7 +83,7 @@ class CreateField extends Template
 	 * @param mixed $value Optional length or specification.
 	 * @return self
 	 */
-	public function setFieldType(string $type, $value = null): self
+	public function setFieldType(string $type, mixed $value = null): self
 	{
 		$type = strtoupper($type);
 		$this->fieldType = isset($value) ? "{$type}({$value})" : $type;

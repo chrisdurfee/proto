@@ -29,7 +29,7 @@ trait TestDataHelpers
 	 * @param mixed $default
 	 * @return mixed
 	 */
-	protected function getTestData(string $key, $default = null): mixed
+	protected function getTestData(string $key, mixed $default = null): mixed
 	{
 		return $this->getDataManager()->get($key, $default);
 	}
