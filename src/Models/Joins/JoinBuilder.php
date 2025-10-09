@@ -249,7 +249,7 @@ class JoinBuilder
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
 	 */
-	protected function getJoinByType(string $type, string $tableName, string $alias = null): ModelJoin
+	protected function getJoinByType(string $type, string $tableName, ?string $alias = null): ModelJoin
 	{
 		return match (strtolower($type))
 		{
