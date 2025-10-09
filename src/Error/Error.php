@@ -83,6 +83,7 @@ namespace Proto\Error
 
 		/**
 		 * Disables error tracking by restoring default handlers.
+		 * Also disables error logging to prevent stdout/stderr output.
 		 *
 		 * @return void
 		 */
@@ -94,6 +95,9 @@ namespace Proto\Error
 			// Restore default PHP error and exception handlers
 			restore_error_handler();
 			restore_exception_handler();
+
+			// Disable error logging to prevent stdout/stderr output during tests
+			ini_set('log_errors', '0');
 		}
 
 		/**

@@ -10,6 +10,8 @@ use Proto\Tests\Traits\AssertionHelpers;
 use Proto\Tests\Traits\TestDataHelpers;
 use Proto\Tests\Traits\MockHelpers;
 use Proto\Tests\Traits\FileTestHelpers;
+use Proto\Error\Error;
+use Proto\Storage\TableStorage;
 
 /**
  * Abstract Test Class
@@ -77,6 +79,10 @@ abstract class Test extends TestCase
 	protected function setupSystem(): void
 	{
 		new Base();
+
+		// Disable error tracking during tests to prevent stdout output
+		// that can break PHPUnit's output and assertion handling
+		Error::disable();
 	}
 
 	/**
@@ -97,7 +103,7 @@ abstract class Test extends TestCase
 			// CRITICAL: Override the default database connection for ALL storage/model operations
 			// This ensures factories, seeders, and models use the same 'testing' connection
 			// that we're managing with transactions for test isolation
-			\Proto\Storage\TableStorage::setDefaultConnection('testing');
+			TableStorage::setDefaultConnection('testing');
 
 			// Setup database if needed
 			if ($this->useTransactions)
@@ -133,7 +139,7 @@ abstract class Test extends TestCase
 			}
 
 			// Reset the default connection back to 'default'
-			\Proto\Storage\TableStorage::setDefaultConnection(null);
+			TableStorage::setDefaultConnection(null);
 
 			// Cleanup models
 			$this->cleanupModels();
