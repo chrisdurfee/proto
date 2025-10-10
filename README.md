@@ -279,7 +279,7 @@ class AuthController extends Controller
 }
 ```
 
-### Module Registration
+#### Module Registration
 
 For a module to be valid and loaded, it must be registered in your configuration file (e.g. in the common .env file) under the "modules" key. For example:
 
