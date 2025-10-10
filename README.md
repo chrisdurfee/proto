@@ -518,7 +518,7 @@ class SummaryController extends ApiController
 	 */
 	public function getSummary(Request $request): object
 	{
-		$userId = $request->getInt('userId');
+		$userId = $request->params()->userId ?? null;
 		if (!$userId)
 		{
 			return $this->error('User ID is required.');
