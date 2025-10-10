@@ -318,7 +318,18 @@ router()
 	->resource('user', UserController::class);
 ```
 
-Nested API route example:
+api.php files can be nested in subfolders for better organization. Here's a nested API route example:
+
+```
+// the structure of the api folder
+User/
+  Api/
+    Account/
+      api.php (nested account file)
+	api.php (root api file)
+```
+
+The file `User/Api/Account/api.php` contains:
 
 ```php
 <?php declare(strict_types=1);
@@ -335,7 +346,10 @@ router()
 	->resource('user/:userId/account', UserController::class);
 ```
 
-A complex example:
+This helps organize and manage API routes more effectively.
+
+#### Complex API Route Example
+Here is a more complex complex example of an api file with multiple routes and middleware applied:
 ```php
 <?php declare(strict_types=1);
 namespace Modules\Auth\Api;
@@ -396,6 +410,8 @@ router()
 	});
 
 ```
+
+The API router only loads the `api.php` files within each module's API directory or subdirectory if it matches the router's path. This makes it efficient, only registering routes that would trigger without loading all routes.
 
 ## Developer Tools
 
