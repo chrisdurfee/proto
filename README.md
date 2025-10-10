@@ -235,7 +235,7 @@ class Gateway
 To access a module's gateway, use the global `modules()` function followed by the module name and version:
 
 ```php
-modules()->user()->createUser($data);
+modules()->user()->add($data);
 
 
 // In another module anywhere. Usually in a controller
