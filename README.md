@@ -552,7 +552,7 @@ return $this->success(['items' => $data], 200);
 return $this->error('No user was found', 404);
 
 // Generic response wrapper (handles null checks)
-return $this->response($result, 'Custom error message');
+return $this->response($result, 'Custom message');
 ```
 
 Response examples:
