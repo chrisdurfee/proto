@@ -139,6 +139,9 @@ class UserModule extends Module
 	private function setConfigs(): void
 	{
 		setEnv('settingName', 'value');
+
+		// also read from the global configs
+		$domain = env('domain');
 	}
 
 	/**
