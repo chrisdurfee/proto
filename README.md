@@ -449,8 +449,8 @@ Resource controllers are used with the router's `resource()` method to automatic
 - `all(Request $request)`: GET all items
 - `get(Request $request)`: GET a single item by ID
 - `add(Request $request)`: POST to create a new item
-- `setup(Request $request)`: GET setup data for creating an item
-- `update(Request $request)`: PUT/PATCH to update an item
+- `setup(Request $request)`: PUT add or update
+- `update(Request $request)`: PATCH to update an item
 - `delete(Request $request)`: DELETE an item
 
 Example resource controller:
@@ -474,6 +474,9 @@ class UserController extends ResourceController
 
 	/**
 	 * Override the add method to include custom validation.
+	 *
+	 * @param Request $request
+	 * @return object
 	 */
 	public function add(Request $request): object
 	{
@@ -509,6 +512,9 @@ class SummaryController extends ApiController
 {
 	/**
 	 * Get user summary data.
+	 *
+	 * @param Request $request
+	 * @return object
 	 */
 	public function getSummary(Request $request): object
 	{
@@ -553,7 +559,7 @@ Response examples:
 
 ```php
 // Single row
-public function getByName(string $name): object
+protected function getByName(string $name): object
 {
 	$row = $this->model::getBy(['name' => $name]);
 	if ($row === null)
@@ -565,7 +571,7 @@ public function getByName(string $name): object
 }
 
 // Multiple rows
-public function getAllActive(): object
+protected function getAllActive(): object
 {
 	$rows = $this->model::fetchWhere(['status' => 'active']);
 	if (empty($rows))
@@ -577,7 +583,7 @@ public function getAllActive(): object
 }
 
 // Custom query
-public function getRecentByName(string $name): object
+protected function getRecentByName(string $name): object
 {
 	$rows = $this->model::where(['name' => $name])
 		->orderBy('id DESC')
