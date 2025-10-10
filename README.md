@@ -230,7 +230,7 @@ class Gateway
 }
 ```
 
-### Accessing a Module Gateway
+#### Accessing a Module Gateway
 
 To access a module's gateway, use the global `modules()` function followed by the module name and version:
 
