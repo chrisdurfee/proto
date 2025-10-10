@@ -620,9 +620,7 @@ public function resetPassword(Request $request): object
 
 	// Process the password reset action via the model
 	$result = $model->resetPassword();
-
-	// Wrap the result in a response object
-	return $this->response($result, 'Password reset failed.');
+	return (!$result) ? $this->error('Password reset failed.') : $this->response($result);
 }
 ```
 
