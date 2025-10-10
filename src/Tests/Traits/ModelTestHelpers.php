@@ -2,6 +2,7 @@
 namespace Proto\Tests\Traits;
 
 use Proto\Models\Model;
+use Proto\Models\Factory;
 
 /**
  * ModelTestHelpers
@@ -23,9 +24,9 @@ trait ModelTestHelpers
 	 * @param string $modelClass
 	 * @param int $count
 	 * @param array $attributes
-	 * @return \Proto\Models\Factory
+	 * @return Factory
 	 */
-	protected function factory(string $modelClass, int $count = 1, array $attributes = []): \Proto\Models\Factory
+	protected function factory(string $modelClass, int $count = 1, array $attributes = []): Factory
 	{
 		return $modelClass::factory($count, $attributes);
 	}

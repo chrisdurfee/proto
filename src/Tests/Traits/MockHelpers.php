@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Tests\Traits;
 
+use PHPUnit\Framework\MockObject\MockObject;
+
 /**
  * MockHelpers
  *
@@ -20,9 +22,9 @@ trait MockHelpers
 	 *
 	 * @param string $serviceClass
 	 * @param array $methods Methods to mock (empty for all)
-	 * @return \PHPUnit\Framework\MockObject\MockObject
+	 * @return MockObject
 	 */
-	protected function mockService(string $serviceClass, array $methods = []): \PHPUnit\Framework\MockObject\MockObject
+	protected function mockService(string $serviceClass, array $methods = []): MockObject
 	{
 		$mock = $this->createMock($serviceClass);
 		$this->mocks[] = $mock;
@@ -34,9 +36,9 @@ trait MockHelpers
 	 *
 	 * @param string $serviceClass
 	 * @param array $methods Methods to spy on (empty for all)
-	 * @return \PHPUnit\Framework\MockObject\MockObject
+	 * @return MockObject
 	 */
-	protected function spyService(string $serviceClass, array $methods = []): \PHPUnit\Framework\MockObject\MockObject
+	protected function spyService(string $serviceClass, array $methods = []): MockObject
 	{
 		$spy = $this->createPartialMock($serviceClass, $methods);
 		$this->mocks[] = $spy;
@@ -48,9 +50,9 @@ trait MockHelpers
 	 *
 	 * @param string $class
 	 * @param array $methods
-	 * @return \PHPUnit\Framework\MockObject\MockObject
+	 * @return MockObject
 	 */
-	protected function partialMock(string $class, array $methods = []): \PHPUnit\Framework\MockObject\MockObject
+	protected function partialMock(string $class, array $methods = []): MockObject
 	{
 		$mock = $this->createPartialMock($class, $methods);
 		$this->mocks[] = $mock;
@@ -62,9 +64,9 @@ trait MockHelpers
 	 *
 	 * @param string $class
 	 * @param array $methodReturns Array of method => return value
-	 * @return \PHPUnit\Framework\MockObject\MockObject
+	 * @return MockObject
 	 */
-	protected function createStubWithReturns(string $class, array $methodReturns = []): \PHPUnit\Framework\MockObject\MockObject
+	protected function createStubWithReturns(string $class, array $methodReturns = []): MockObject
 	{
 		$stub = $this->createMock($class);
 
@@ -79,7 +81,7 @@ trait MockHelpers
 	/**
 	 * Expects a method to be called with specific arguments.
 	 *
-	 * @param \PHPUnit\Framework\MockObject\MockObject $mock
+	 * @param MockObject $mock
 	 * @param string $method
 	 * @param array $arguments
 	 * @param mixed $returnValue
@@ -87,7 +89,7 @@ trait MockHelpers
 	 * @return void
 	 */
 	protected function expectMethodCall(
-		\PHPUnit\Framework\MockObject\MockObject $mock,
+		MockObject $mock,
 		string $method,
 		array $arguments = [],
 		mixed $returnValue = null,
@@ -109,11 +111,11 @@ trait MockHelpers
 	/**
 	 * Expects a method to never be called.
 	 *
-	 * @param \PHPUnit\Framework\MockObject\MockObject $mock
+	 * @param MockObject $mock
 	 * @param string $method
 	 * @return void
 	 */
-	protected function expectMethodNeverCalled(\PHPUnit\Framework\MockObject\MockObject $mock, string $method): void
+	protected function expectMethodNeverCalled(MockObject $mock, string $method): void
 	{
 		$mock->expects($this->never())->method($method);
 	}
@@ -123,9 +125,9 @@ trait MockHelpers
 	 *
 	 * @param string $class
 	 * @param callable $expectations
-	 * @return \PHPUnit\Framework\MockObject\MockObject
+	 * @return MockObject
 	 */
-	protected function mockWithExpectations(string $class, callable $expectations): \PHPUnit\Framework\MockObject\MockObject
+	protected function mockWithExpectations(string $class, callable $expectations): MockObject
 	{
 		$mock = $this->createMock($class);
 		$expectations($mock, $this);
