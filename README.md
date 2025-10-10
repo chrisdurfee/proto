@@ -87,6 +87,92 @@ Each feature or domain is encapsulated in its own module under the `modules/` fo
 
 Each module contains its own APIs, controllers, models, and gateways. Modules help isolate features and enable independent testing and deployment.
 
+The structure of a module:
+
+```
+modules/
+  User/
+    Api/
+    Controllers/
+    Models/
+    Gateway/
+```
+
+An example Module class:
+
+```php
+<?php declare(strict_types=1);
+<?php declare(strict_types=1);
+namespace Modules\User;
+
+use Proto\Module\Module;
+use Modules\User\Auth\Gates\RoleGate;
+
+/**
+ * UserModule
+ *
+ * This module handles user-related functionality.
+ *
+ * @package Modules\User
+ */
+class UserModule extends Module
+{
+	/**
+	 * This will activate the module.
+	 *
+	 * @return void
+	 */
+	public function activate(): void
+	{
+    $this->setConfigs();
+		$this->setAuthGates();
+	}
+
+  /**
+	 * Set the .env configs for the module
+   * to the global configs registry.
+	 *
+	 * @return void
+	 */
+	private function setConfigs(): void
+	{
+		setEnv('settingName', 'value');
+	}
+
+	/**
+	 * This will set the authentication gates.
+	 *
+	 * @return void
+	 */
+	private function setAuthGates(): void
+	{
+		$auth = auth();
+
+    /**
+     * This will register the role gate globally to be
+     * consumed by all modules.
+     */
+		$auth->role = new RoleGate();
+	}
+
+  /**
+	 * Add module events to the global events pub sub.
+	 *
+	 * @return void
+	 */
+	protected function addEvents(): void
+	{
+		/**
+		 * Add an event for when a ticket is added.
+		 */
+		$this->event('Ticket:add', function(object $ticket): void
+		{
+			var_dump($ticket);
+		});
+	}
+}
+```
+
 #### Gateways
 
 Gateways provide a public interface for module methods. They allow other modules to call functionality without exposing the internal workings of the module. Gateways can support versioning for backward compatibility.
