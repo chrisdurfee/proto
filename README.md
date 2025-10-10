@@ -242,6 +242,38 @@ modules()->example()->v2()->add();
 
 ```
 
+This is an example controller for the Auth module that calls the User module's gateway.
+
+```php
+<?php declare(strict_types=1);
+namespace Modules\Auth\Controllers;
+
+use Proto\Controllers\Controller;
+use Proto\Http\Router\Request;
+
+/**
+ * AuthController
+ *
+ * This controller handles authentication-related actions.
+ *
+ * @package Modules\Auth\Controllers
+ */
+class AuthController extends Controller
+{
+	/**
+	 * Register a new user.
+	 *
+	 * @return object
+	 */
+    public function register(): object
+    {
+		// Call the user module to add a new user.
+        $result = modules()->user()->add();
+		// do more things
+    }
+}
+```
+
 ## Module Registration
 
 For a module to be valid and loaded, it must be registered in your configuration file (e.g. in the common .env file) under the "modules" key. For example:
