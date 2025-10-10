@@ -141,7 +141,7 @@ class UserModule extends Module
 		setEnv('settingName', 'value');
 
 		// also read from the global configs
-		$domain = env('domain');
+		// $domain = env('domain');
 	}
 
 	/**
