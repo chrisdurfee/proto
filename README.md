@@ -93,10 +93,11 @@ The structure of a module:
 ```
 modules/
 	User/
-		Api/
-		Controllers/
-		Models/
-		Gateway/
+		Api/ // endpoints
+		Controllers/ // request handlers
+		Models/ // data models
+		Gateway/ // public interface
+		UserModule.php // main module class to activate module
 ```
 
 An example Module class:
