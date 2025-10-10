@@ -67,13 +67,9 @@ Proto auto bootstraps when interfacing with an API, Controller, Model, Storage, 
 
 ```php
 <?php declare(strict_types=1);
+require __DIR__ . '/../../vendor/autoload.php';
 
-// Bootstrap the application
-require_once __DIR__ . '/vendor/autoload.php';
-
-$data = (object)[];
-// Example: Create a user via the User module gateway
-modules()->user()->v1()->createUser($data);
+Proto\Api\ApiRouter::initialize();
 ```
 
 There is no need for extensive manual setup; Proto handles loading, event registration, and other behind-the-scenes tasks automatically.
