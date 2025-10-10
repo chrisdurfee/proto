@@ -71,6 +71,7 @@ Proto auto bootstraps when interfacing with an API, Controller, Model, Storage, 
 // Bootstrap the application
 require_once __DIR__ . '/vendor/autoload.php';
 
+$data = (object)[];
 // Example: Create a user via the User module gateway
 modules()->user()->v1()->createUser($data);
 ```
