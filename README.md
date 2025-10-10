@@ -53,13 +53,13 @@ Proto includes a comprehensive set of features for creating complex applications
 A typical Proto application is structured as follows:
 
 - **common/**
-  The root for your application code and shared components between modules.
+	The root for your application code and shared components between modules.
 - **proto/**
-  The core framework. This folder is accessible but should not be modified.
+	The core framework. This folder is accessible but should not be modified.
 - **modules/**
-  Contains self-contained modules for each major domain or feature.
+	Contains self-contained modules for each major domain or feature.
 - **public/**
-  Front-end assets and public resources (including the developer app in `public/developer`).
+	Front-end assets and public resources (including the developer app in `public/developer`).
 
 ## Bootstrapping
 
@@ -91,11 +91,11 @@ The structure of a module:
 
 ```
 modules/
-  User/
-    Api/
-    Controllers/
-    Models/
-    Gateway/
+	User/
+		Api/
+		Controllers/
+		Models/
+		Gateway/
 ```
 
 An example Module class:
@@ -124,13 +124,13 @@ class UserModule extends Module
 	 */
 	public function activate(): void
 	{
-    $this->setConfigs();
+		$this->setConfigs();
 		$this->setAuthGates();
 	}
 
-  /**
+	/**
 	 * Set the .env configs for the module
-   * to the global configs registry.
+	 * to the global configs registry.
 	 *
 	 * @return void
 	 */
@@ -148,14 +148,14 @@ class UserModule extends Module
 	{
 		$auth = auth();
 
-    /**
-     * This will register the role gate globally to be
-     * consumed by all modules.
-     */
+		/**
+		 * This will register the role gate globally to be
+		 * consumed by all modules.
+		 */
 		$auth->role = new RoleGate();
 	}
 
-  /**
+	/**
 	 * Add module events to the global events pub sub.
 	 *
 	 * @return void
@@ -183,22 +183,76 @@ Example gateway implementation:
 <?php declare(strict_types=1);
 namespace Modules\Example\Gateway;
 
+/**
+ * Gateway
+ *
+ * Gateways provide a public interface for module methods. They allow other modules to call functionality without exposing the internal workings of the module. Gateways can support
+ * versioning for backward compatibility.
+ *
+ * @package Modules\Example\Gateway
+ */
 class Gateway
 {
-    public function add(): void
-    {
-        // Implementation for adding an example.
-    }
+	/**
+	 * Add a new example.
+	 *
+	 * @return void
+	 */
+	public function add(): void
+	{
+		// Implementation for adding an example.
+	}
 
-    public function v1(): V1\Gateway
-    {
-        return new V1\Gateway();
-    }
+	/**
+	 * Get the v1 gateway.
+	 *
+	 * @return V1\Gateway
+	 */
+	public function v1(): V1\Gateway
+	{
+		return new V1\Gateway();
+	}
 
-    public function v2(): V2\Gateway
-    {
-        return new V2\Gateway();
-    }
+	/**
+	 * Get the v2 gateway.
+	 *
+	 * @return V2\Gateway
+	 */
+	public function v2(): V2\Gateway
+	{
+		return new V2\Gateway();
+	}
+}
+```
+
+### Accessing a Module Gateway
+
+To access a module's gateway, use the global `modules()` function followed by the module name and version:
+
+```php
+modules()->user()->createUser($data);
+
+
+// In another module anywhere. Usually in a controller
+modules()->example()->add();
+
+// To use versioned methods:
+modules()->example()->v1()->add();
+modules()->example()->v2()->add();
+
+```
+
+## Module Registration
+
+For a module to be valid and loaded, it must be registered in your configuration file (e.g. in the common .env file) under the "modules" key. For example:
+
+```json
+{
+	"modules": [
+		"Example\\ExampleModule",
+		"Product\\ProductModule",
+		"User\\UserModule"
+	]
 }
 ```
 
@@ -221,10 +275,10 @@ use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
  * This file contains the API routes for the User module.
  */
 router()
-    ->middleware([
-        CrossSiteProtectionMiddleware::class
-    ])
-    ->resource('user', UserController::class);
+	->middleware([
+		CrossSiteProtectionMiddleware::class
+	])
+	->resource('user', UserController::class);
 ```
 
 Nested API route example:
@@ -241,7 +295,7 @@ use Modules\User\Controllers\UserController;
  * This file handles API routes for user accounts.
  */
 router()
-    ->resource('user/:userId/account', UserController::class);
+	->resource('user/:userId/account', UserController::class);
 ```
 
 ## Developer Tools
