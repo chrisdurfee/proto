@@ -4,6 +4,11 @@ namespace Proto\Http\Middleware;
 use Proto\Http\Router\Request;
 
 /**
+ * This constant defines the default delay (in seconds) for throttling requests.
+ */
+const DEFAULT_THROTTLE_DELAY = 1;
+
+/**
  * ThrottleMiddleware
  *
  * Middleware to throttle requests by introducing a delay.
@@ -21,7 +26,7 @@ class ThrottleMiddleware
 	 */
 	public function handle(Request $request, callable $next): mixed
 	{
-		sleep(1);
+		sleep(DEFAULT_THROTTLE_DELAY);
 		return $next($request);
 	}
 }

@@ -59,20 +59,19 @@ class DomainMiddleware
 		return $next($request);
 	}
 
-	 /**
+	/**
 	 * This will exit the application with a 403 response.
 	 *
 	 * @return void
 	 */
 	protected function error(string $msg, int $responseCode): void
 	{
-		$response = new Response();
-		$response->render($responseCode);
-
-		JsonFormat::encodeAndRender([
+		$message = (object)[
 			'message' => 'The domain is not allowed.',
 			'success' => false
-		]);
+		];
+
+		(new Response())->json($message, $responseCode);
 
 		exit;
 	}
