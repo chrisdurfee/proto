@@ -413,6 +413,391 @@ router()
 
 The API router only loads the `api.php` files within each module's API directory or subdirectory if it matches the router's path. This makes it efficient, only registering routes that would trigger without loading all routes.
 
+### Controllers
+
+Controllers are classes used to manage data, handle HTTP requests, validate input, and return standardized responses. They can access models, integrations, or other controllers, and can dispatch email, text, and web push notifications. Proto provides parent controller classes with built-in CRUD methods so child controllers don't need to reimplement common functionality.
+
+#### Naming Convention
+
+Controller names should always be singular and followed by "Controller":
+
+```php
+<?php declare(strict_types=1);
+namespace Modules\User\Controllers;
+
+use Modules\User\Models\User;
+use Proto\Controllers\ModelController;
+
+class UserController extends ModelController
+{
+}
+```
+
+#### Controller Types
+
+Proto provides several controller base classes:
+
+- **Controller**: Basic controller for general use
+- **ApiController**: For handling HTTP requests with built-in request helpers and validation
+- **ResourceController**: Provides full RESTful CRUD functionality for a model
+- **ModelController**: For controllers that primarily interact with a single model
+
+#### Resource Controllers
+
+Resource controllers are used with the router's `resource()` method to automatically handle RESTful operations. They provide the following default methods:
+
+- `all(Request $request)`: GET all items
+- `get(Request $request)`: GET a single item by ID
+- `add(Request $request)`: POST to create a new item
+- `setup(Request $request)`: GET setup data for creating an item
+- `update(Request $request)`: PUT/PATCH to update an item
+- `delete(Request $request)`: DELETE an item
+
+Example resource controller:
+
+```php
+<?php declare(strict_types=1);
+namespace Modules\User\Controllers;
+
+use Modules\User\Models\User;
+use Proto\Controllers\ResourceController;
+use Proto\Http\Router\Request;
+
+class UserController extends ResourceController
+{
+	public function __construct(
+		protected ?string $model = User::class
+	)
+	{
+		parent::__construct();
+	}
+
+	/**
+	 * Override the add method to include custom validation.
+	 */
+	public function add(Request $request): object
+	{
+		$data = $this->getRequestItem($request);
+		if (empty($data) || empty($data->username))
+		{
+			return $this->error('No item provided.');
+		}
+
+		$isTaken = User::isUsernameTaken($data->username ?? '');
+		if ($isTaken)
+		{
+			return $this->error('Username is already taken.');
+		}
+
+		return $this->addItem($data);
+	}
+}
+```
+
+#### API Controllers
+
+API controllers handle custom HTTP endpoints that don't fit the standard CRUD pattern. They extend `ApiController` and receive the `Request` object:
+
+```php
+<?php declare(strict_types=1);
+namespace Modules\User\Controllers;
+
+use Proto\Controllers\ApiController;
+use Proto\Http\Router\Request;
+
+class SummaryController extends ApiController
+{
+	/**
+	 * Get user summary data.
+	 */
+	public function getSummary(Request $request): object
+	{
+		$userId = $request->getInt('userId');
+		if (!$userId)
+		{
+			return $this->error('User ID is required.');
+		}
+
+		// Fetch summary data
+		$summary = $this->getUserStats($userId);
+
+		return $this->success($summary);
+	}
+
+	private function getUserStats(int $userId): array
+	{
+		// Implementation here
+		return [];
+	}
+}
+```
+
+#### Controller Responses
+
+Controllers return standardized response objects that encapsulate data, success status, and error messages. This standardization is used by the API system.
+
+Available response methods:
+
+```php
+// Success response with data
+return $this->success(['items' => $data], 200);
+
+// Error response with message
+return $this->error('No user was found', 404);
+
+// Generic response wrapper (handles null checks)
+return $this->response($result, 'Custom error message');
+```
+
+Response examples:
+
+```php
+// Single row
+public function getByName(string $name): object
+{
+	$row = $this->model::getBy(['name' => $name]);
+	if ($row === null)
+	{
+		return $this->error('No user was found');
+	}
+
+	return $this->response($row);
+}
+
+// Multiple rows
+public function getAllActive(): object
+{
+	$rows = $this->model::fetchWhere(['status' => 'active']);
+	if (empty($rows))
+	{
+		return $this->error('No users were found');
+	}
+
+	return $this->success(['items' => $rows]);
+}
+
+// Custom query
+public function getRecentByName(string $name): object
+{
+	$rows = $this->model::where(['name' => $name])
+		->orderBy('id DESC')
+		->groupBy('id')
+		->limit(10)
+		->fetch();
+
+	if (empty($rows))
+	{
+		return $this->error('No users were found');
+	}
+
+	return $this->response($rows);
+}
+```
+
+#### Custom Methods
+
+Controllers can have custom methods to extend functionality:
+
+```php
+public function resetPassword(Request $request): object
+{
+	$data = $this->getRequestItem($request);
+
+	// Validate required fields
+	if (empty($data->token) || empty($data->password))
+	{
+		return $this->error('Token and password are required.');
+	}
+
+	// Create a model instance with the provided data
+	$model = $this->model($data);
+
+	// Process the password reset action via the model
+	$result = $model->resetPassword();
+
+	// Wrap the result in a response object
+	return $this->response($result, 'Password reset failed.');
+}
+```
+
+#### Request Data Handling
+
+Controllers provide methods for accessing request data:
+
+```php
+public function add(Request $request): object
+{
+	// Get the request item (by default looks for 'item' key)
+	$user = $this->getRequestItem($request);
+
+	// Or access request data directly
+	$username = $request->input('username');
+	$email = $request->input('email');
+	$status = $request->getInt('status');
+	$save = $request->getBool('save');
+	$user = $request->json('user');
+
+	// Params
+	$userId = $request->params()->userId;
+
+	// Do something with the data
+}
+```
+
+You can customize the request item key:
+
+```php
+class UserController extends ResourceController
+{
+	// Override default 'item' key
+	protected string $item = 'user';
+
+	public function add(Request $request): object
+	{
+		// Now looks for 'user' key in request
+		$user = $this->getRequestItem($request);
+	}
+}
+```
+
+#### Validation & Sanitization
+
+Proto includes a powerful validator that sanitizes and validates data by type. The `validate()` method defines validation rules:
+
+```php
+/**
+ * Validation rules for this controller.
+ */
+protected function validate(): array
+{
+	return [
+		'id' => 'int|required',
+		'name' => 'string:255|required',
+		'email' => 'email|required',
+		'phone' => 'phone',
+		'status' => 'int',
+		'website' => 'url',
+		'age' => 'int'
+	];
+}
+```
+
+Supported validation types:
+
+- `int`: Integer
+- `float`: Floating point number
+- `string`: String (with optional length limit using `:number`)
+- `email`: Email address
+- `ip`: IP address
+- `phone`: Phone number
+- `mac`: MAC address
+- `bool`: Boolean
+- `url`: URL
+- `domain`: Domain name
+
+Validation modifiers:
+
+- `required`: Field is required
+- `:number`: Set max length (e.g., `string:255`)
+
+Custom validation in methods:
+
+```php
+public function addUser(Request $request): object
+{
+	// Validate using custom rules
+	$data = $this->validateRules(
+		$this->getRequestItem($request),
+		[
+			'username' => 'string:50|required',
+			'email' => 'email|required',
+			'age' => 'int'
+		]
+	);
+
+	// Or use shorthand from request
+	$data = $request->validate([
+		'username' => 'string:50|required',
+		'email' => 'email|required',
+		'age' => 'int'
+	]);
+
+	// If validation passes, data is sanitized and validated
+	// If validation fails, error response is returned and execution stops
+
+	return $this->addItem($data);
+}
+```
+
+#### Getting Resource ID
+
+Resource controllers provide a helper to get the resource ID from request parameters:
+
+```php
+public function updateStatus(Request $request): object
+{
+	$id = $this->getResourceId($request);
+	$status = $request->input('status');
+
+	if ($id === null || $status === null)
+	{
+		return $this->error('ID and status are required.');
+	}
+
+	return $this->response(
+		$this->model((object) [
+			'id' => $id,
+			'status' => $status
+		])->updateStatus()
+	);
+}
+```
+
+#### Accessing Models and Storage
+
+Controllers can instantiate their associated model and access storage:
+
+```php
+// Create a model instance with data
+$model = $this->model($data);
+$result = $model->update();
+
+// Access model storage directly for complex queries
+$users = $this->storage()->findAll(function($sql, &$params) {
+	$params[] = 'active';
+	$sql->where('status = ?')
+		->orderBy('created_at DESC')
+		->groupBy('user_id')
+		->limit(50);
+});
+
+// Single row with custom query
+$user = $this->storage()->find(function($sql, &$params) {
+	$params[] = 'john@example.com';
+	$sql->where('email = ?')
+		->limit(1);
+});
+```
+
+#### Pass-Through Responses
+
+Controllers automatically wrap the result of any undeclared method called on their model or model's storage in a Response object. This allows empty controllers to automatically have access to the model's public methods:
+
+```php
+// If UserController doesn't define getUsersByRole(),
+// it will automatically call User::getUsersByRole() and wrap the response
+$result = $controller->getUsersByRole('admin');
+```
+
+To bypass response wrapping and get raw results, call the method statically:
+
+```php
+// Get raw result without response wrapper
+$result = static::$controllerType::methodName();
+```
+
+This feature makes it faster to add new resources without rewriting response logic for every method.
+
 ## Developer Tools
 
 Proto includes a developer application located in `public/developer` that offers:
