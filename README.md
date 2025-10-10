@@ -76,6 +76,10 @@ There is no need for extensive manual setup; Proto handles loading, event regist
 
 ## Core Concepts
 
+The core of Proto is its modular monolith design. Instead of a distributed system with many separate services, Proto encourages building a single application composed of isolated modules. This approach simplifies development, testing, and deployment while maintaining clear boundaries between features.
+
+The common code resides in the `common/` directory, which contains shared components and utilities used across modules.
+
 ### Modules & Gateways
 
 Each feature or domain is encapsulated in its own module under the `modules/` folder. Modules are self-contained but can communicate with other registered modules.
