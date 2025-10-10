@@ -54,12 +54,12 @@ A typical Proto application is structured as follows:
 
 - **common/**
 	The root for your application code and shared components between modules.
-- **proto/**
-	The core framework. This folder is accessible but should not be modified.
 - **modules/**
 	Contains self-contained modules for each major domain or feature.
 - **public/**
-	Front-end assets and public resources (including the developer app in `public/developer`).
+	Front-end assets and public resources.
+- **vendor/protoframework/proto/**
+	The core framework. This folder is accessible but should not be modified.
 
 ## Bootstrapping
 
