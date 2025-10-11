@@ -16,7 +16,7 @@ class TestUserSeeder extends Seeder
 	 * Connection key.
 	 * @var string
 	 */
-	protected string $connection = 'testing';
+	protected string $connection = 'default';
 
 	/**
 	 * Run the database seeder.
