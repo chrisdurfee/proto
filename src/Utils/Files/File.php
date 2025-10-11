@@ -47,16 +47,29 @@ class File extends Util
 	 * Ensures the directory exists; creates it if necessary.
 	 *
 	 * @param string $path The file path.
-	 * @return void
+	 * @return bool
 	 */
-	public static function checkDir(string $path): void
+	public static function checkDir(string $path): bool
 	{
 		$dir = dirname($path);
-		if (!is_dir($dir))
+		return static::makeDir($dir);
+	}
+
+	/**
+	 * Creates a directory if it doesn't exist.
+	 *
+	 * @param string $path The directory path.
+	 * @param int $permissions The permissions to set.
+	 * @return bool True if the directory exists or was created, false on failure.
+	 */
+	public static function makeDir(string $path, int $permissions = 0755): bool
+	{
+		if (!is_dir($path))
 		{
-            $PERMISSIONS = 0755;
-			mkdir($dir, $PERMISSIONS, true);
+			return mkdir($path, $permissions, true);
 		}
+
+		return true;
 	}
 
 	/**

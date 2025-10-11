@@ -2,6 +2,7 @@
 namespace Proto\Tests\Traits;
 
 use Proto\Tests\TestDataManager;
+use Proto\Utils\Files\File;
 
 /**
  * TestDataHelpers
@@ -82,7 +83,7 @@ trait TestDataHelpers
 	protected function createTempFile(string $content, string $extension = 'txt'): string
 	{
 		$tempPath = sys_get_temp_dir() . '/proto_test_' . uniqid() . '.' . $extension;
-		file_put_contents($tempPath, $content);
+		File::put($tempPath, $content);
 
 		$this->tempFiles[] = $tempPath;
 		return $tempPath;
