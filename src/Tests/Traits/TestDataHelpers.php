@@ -97,7 +97,8 @@ trait TestDataHelpers
 	protected function createTempDirectory(): string
 	{
 		$tempPath = sys_get_temp_dir() . '/proto_test_dir_' . uniqid();
-		mkdir($tempPath, 0777, true);
+		$PERMISSIONS = 0777;
+		File::makeDir($tempPath, $PERMISSIONS);
 
 		$this->tempFiles[] = $tempPath;
 		return $tempPath;
@@ -183,7 +184,7 @@ trait TestDataHelpers
 	 */
 	protected function loadJsonFixture(string $path): array
 	{
-		$content = file_get_contents($path);
+		$content = File::get($path);
 		$data = json_decode($content, true);
 
 		if (json_last_error() !== JSON_ERROR_NONE)

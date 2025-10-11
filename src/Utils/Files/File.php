@@ -60,13 +60,14 @@ class File extends Util
 	 *
 	 * @param string $path The directory path.
 	 * @param int $permissions The permissions to set.
+	 * @param bool $recursive Whether to create directories recursively.
 	 * @return bool True if the directory exists or was created, false on failure.
 	 */
-	public static function makeDir(string $path, int $permissions = 0755): bool
+	public static function makeDir(string $path, int $permissions = 0755, bool $recursive = true): bool
 	{
 		if (!is_dir($path))
 		{
-			return mkdir($path, $permissions, true);
+			return mkdir($path, $permissions, $recursive);
 		}
 
 		return true;
