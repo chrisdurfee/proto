@@ -88,7 +88,7 @@ class CrossSiteRequestForgeryGate extends Gate
 	}
 
 	/**
-	 * This will validate
+	 * This will validate the token.
 	 *
 	 * @param string $token
 	 * @return bool
@@ -98,7 +98,7 @@ class CrossSiteRequestForgeryGate extends Gate
 		$storedToken = $this->get(self::CSRF_TOKEN);
 		if (empty($storedToken))
 		{
-			return true;
+			return false;
 		}
 
 		return ($storedToken === $token);
