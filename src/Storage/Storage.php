@@ -654,7 +654,8 @@ class Storage extends TableStorage
 		}
 
 		$hasDeletedAt = $this->model->has('deletedAt');
-		if ($hasDeletedAt && !($modifiers['showDeleted'] ?? false))
+		$showDeleted = $modifiers['showDeleted'] ?? false;
+		if ($hasDeletedAt && !$showDeleted)
 		{
 			ModifierUtil::addDeletedAtModifier($where, $params, $isSnakeCase);
 		}
