@@ -54,6 +54,20 @@ class ModifierUtil
 	}
 
 	/**
+	 * Add a modifier to exclude soft-deleted records.
+	 *
+	 * @param array $where Where clause array.
+	 * @param array $params Parameter array.
+	 * @param bool $isSnakeCase Whether to convert field names to snake_case.
+	 * @return void
+	 */
+	public static function addDeletedAtModifier(array &$where, array &$params, bool $isSnakeCase = true): void
+	{
+		$field = self::prepareField('deletedAt', $isSnakeCase);
+		$where[] = "($field IS NULL)";
+	}
+
+	/**
 	 * Apply order-by conditions.
 	 *
 	 * @param object $sql Query builder instance.

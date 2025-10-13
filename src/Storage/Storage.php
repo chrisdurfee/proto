@@ -653,6 +653,12 @@ class Storage extends TableStorage
 			ModifierUtil::addDateModifier($dates, $where, $params, $isSnakeCase);
 		}
 
+		$hasDeletedAt = $this->model->has('deletedAt');
+		if ($hasDeletedAt && !($modifiers['showDeleted'] ?? false))
+		{
+			ModifierUtil::addDeletedAtModifier($where, $params, $isSnakeCase);
+		}
+
 		static::setModifiers($where, $modifiers, $params, $filter);
 	}
 
