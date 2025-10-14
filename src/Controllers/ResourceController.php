@@ -375,6 +375,7 @@ abstract class ResourceController extends ApiController
 		$dates = $this->setDateModifier($request);
 		$orderBy = $this->setOrderByModifier($request);
 		$groupBy = $this->setGroupByModifier($request);
+		$since = $request->input('since') ?? null;
 
 		$result = $this->model::all($filter, $offset, $limit, [
 			'search' => $search,
@@ -382,7 +383,8 @@ abstract class ResourceController extends ApiController
 			'dates' => $dates,
 			'orderBy' => $orderBy,
 			'groupBy' => $groupBy,
-			'cursor' => $lastCursor
+			'cursor' => $lastCursor,
+			'since' => $since
 		]);
 		return $this->response($result);
 	}
