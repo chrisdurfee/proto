@@ -189,6 +189,33 @@ class UploadFile
 	}
 
 	/**
+	 * Retrieves the dimensions of the uploaded image.
+	 *
+	 * @return array An array containing the width and height of the image.
+	 */
+	public function getDimensions(): array
+	{
+		if (!$this->isImageFile())
+		{
+			return [0, 0];
+		}
+
+		$path = $this->getFilePath();
+		if (!is_file($path))
+		{
+			return [0, 0];
+		}
+
+		$size = getimagesize($path);
+		if ($size === false)
+		{
+			return [0, 0];
+		}
+
+		return [$size[0], $size[1]];
+	}
+
+	/**
 	 * Moves the file to the specified path.
 	 *
 	 * @param string $destination The destination path.
