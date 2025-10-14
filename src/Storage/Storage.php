@@ -646,18 +646,19 @@ class Storage extends TableStorage
 	protected function setDefaultModifiers(array &$where = [], ?array $modifiers = null, array &$params = [], mixed $filter = null): void
 	{
 		$isSnakeCase = $this->model->isSnakeCase();
+		$alias = $this->model->getAlias();
 
 		$dates = $modifiers['dates'] ?? '';
 		if (is_object($dates))
 		{
-			ModifierUtil::addDateModifier($dates, $where, $params, $isSnakeCase);
+			ModifierUtil::addDateModifier($dates, $where, $params, $isSnakeCase, $alias);
 		}
 
 		$hasDeletedAt = $this->model->has('deletedAt');
 		$showDeleted = $modifiers['showDeleted'] ?? false;
 		if ($hasDeletedAt && !$showDeleted)
 		{
-			ModifierUtil::addDeletedAtModifier($where, $params, $isSnakeCase);
+			ModifierUtil::addDeletedAtModifier($where, $params, $isSnakeCase, $alias);
 		}
 
 		static::setModifiers($where, $modifiers, $params, $filter);

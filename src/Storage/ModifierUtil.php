@@ -38,10 +38,14 @@ class ModifierUtil
 	 * @param bool $isSnakeCase Whether to convert field names to snake_case.
 	 * @return void
 	 */
-	public static function addDateModifier(object $dates, array &$where, array &$params, bool $isSnakeCase = true): void
+	public static function addDateModifier(object $dates, array &$where, array &$params, bool $isSnakeCase = true, string $alias = ''): void
 	{
 		$field = $dates->field ?? 'createdAt';
 		$field = self::prepareField($field, $isSnakeCase);
+		if ($alias !== '')
+		{
+			$field = $alias . '.' . $field;
+		}
 
 		$start = $dates->start ?? '';
 		$start = (str_contains($start, ':')) ? $start : $start . ' 00:00:00';
@@ -59,11 +63,17 @@ class ModifierUtil
 	 * @param array $where Where clause array.
 	 * @param array $params Parameter array.
 	 * @param bool $isSnakeCase Whether to convert field names to snake_case.
+	 * @param string $alias Optional table alias.
 	 * @return void
 	 */
-	public static function addDeletedAtModifier(array &$where, array &$params, bool $isSnakeCase = true): void
+	public static function addDeletedAtModifier(array &$where, array &$params, bool $isSnakeCase = true, string $alias = ''): void
 	{
 		$field = self::prepareField('deletedAt', $isSnakeCase);
+		if ($alias !== '')
+		{
+			$field = $alias . '.' . $field;
+		}
+
 		$where[] = "($field IS NULL)";
 	}
 
