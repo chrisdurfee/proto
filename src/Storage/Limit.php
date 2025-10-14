@@ -32,6 +32,19 @@ class Limit
 		?array $modifiers = null
 	): void
 	{
+		// Check for 'since' parameter for fetching newer records
+		$since = $modifiers['since'] ?? null;
+		if ($since === '')
+		{
+			$since = null;
+		}
+
+		if ($since !== null)
+		{
+			self::since($sql, $params, $model, $limit, $since, $modifiers);
+			return;
+		}
+
 		// Cursor-based pagination support: when a cursor is provided, use keyset pagination
 		$cursor = $modifiers['cursor'] ?? null;
 		if ($cursor === '')
@@ -46,6 +59,43 @@ class Limit
 		else
 		{
 			self::limit($sql, $offset, $limit);
+		}
+	}
+
+	/**
+	 * Sets the limit and since marker for fetching newer records.
+	 *
+	 * @param object $sql Query builder instance.
+	 * @param array &$params Parameter array.
+	 * @param Model $model Model instance.
+	 * @param int|null $limit Limit count.
+	 * @param mixed $since Since value (fetch records after this ID).
+	 * @param array|null $modifiers Query modifiers.
+	 * @return void
+	 */
+	protected static function since(
+		object $sql,
+		array &$params,
+		Model $model,
+		?int $limit = null,
+		int|string|null $since = null,
+		?array $modifiers = null
+	): void
+	{
+		// Determine ID column and add a keyset condition for newer records
+		$qualifiedId = self::getCursorColumnName($model);
+
+		// For 'since', we always want records AFTER (greater than) the marker
+		// regardless of sort direction
+		$dir = self::getOrderByDirection($modifiers);
+		$operator = ($dir === 'DESC') ? '>' : '>';
+		$sql->where("{$qualifiedId} {$operator} ?");
+		$params[] = $since;
+
+		$rowCount = $limit;
+		if ($rowCount !== null)
+		{
+			$sql->limit((int)$rowCount);
 		}
 	}
 
@@ -65,7 +115,7 @@ class Limit
 		array &$params,
 		Model $model,
 		?int $limit = null,
-		mixed $cursor = null,
+		int|string|null $cursor = null,
 		?array $modifiers = null
 	): void
 	{
