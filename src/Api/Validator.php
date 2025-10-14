@@ -108,8 +108,8 @@ class Validator
 
 		$type = $this->getType($details);
 
-		// Skip sanitization for image files
-		if ($type[0] !== 'image')
+		// Skip sanitization for image and file uploads
+		if ($type[0] !== 'image' && $type[0] !== 'file')
 		{
 			$value = $this->sanitizeValue($key, $value, $type[0]);
 		}
@@ -186,6 +186,14 @@ class Validator
 			$maxSizeKb = $type[1] ?? null;
 			$maxSizeKb = ($maxSizeKb)? (int)$maxSizeKb : null;
 			return $this->validateImage($key, $value, $maxSizeKb, $details);
+		}
+
+		// Handle file validation specially
+		if ($method === 'file')
+		{
+			$maxSizeKb = $type[1] ?? null;
+			$maxSizeKb = ($maxSizeKb)? (int)$maxSizeKb : null;
+			return $this->validateFile($key, $value, $maxSizeKb, $details);
 		}
 
 		$isValid = Validate::$method($value);
@@ -297,6 +305,56 @@ class Validator
 			{
 				$mimeString = substr($part, 6); // Remove 'mimes:' prefix
 				return ImageValidator::parseMimeTypes($mimeString);
+			}
+		}
+
+		return null; // Use defaults
+	}
+
+	/**
+	 * Validates a file upload with specific rules.
+	 *
+	 * @param string $key The data key.
+	 * @param mixed $value The file value.
+	 * @param int $maxSizeKb Maximum file size in KB.
+	 * @param string $details The full validation rule string.
+	 * @return bool True if valid, false otherwise.
+	 */
+	protected function validateFile(string $key, mixed $value, int $maxSizeKb, string $details): bool
+	{
+		// Parse additional rules from details
+		$allowedMimes = $this->parseFileMimes($details);
+
+		// Use FileValidator for comprehensive validation
+		$validation = FileValidator::validate($value, $maxSizeKb, $allowedMimes);
+		if (!$validation['valid'])
+		{
+			foreach ($validation['errors'] as $error)
+			{
+				$this->addError("The file {$key}: {$error}");
+			}
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Parses MIME types from the validation details string for files.
+	 *
+	 * @param string $details The validation rule string.
+	 * @return array|null Array of allowed MIME types or null for defaults.
+	 */
+	protected function parseFileMimes(string $details): ?array
+	{
+		$parts = explode('|', $details);
+		foreach ($parts as $part)
+		{
+			$part = trim($part);
+			if (str_starts_with($part, 'mimes:'))
+			{
+				$mimeString = substr($part, 6); // Remove 'mimes:' prefix
+				return FileValidator::parseMimeTypes($mimeString);
 			}
 		}
 
