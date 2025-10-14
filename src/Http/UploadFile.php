@@ -29,6 +29,13 @@ class UploadFile
 	protected string $tmpDir;
 
 	/**
+	 * Cached MIME type.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $mime = null;
+
+	/**
 	 * Initializes an uploaded file instance.
 	 *
 	 * @param array $tmpFile PHP file upload array.
@@ -129,6 +136,46 @@ class UploadFile
 	public function getTmpName(): string
 	{
 		return $this->getValue('tmp_name') ?? '';
+	}
+
+	/**
+	 * Retrieves the MIME type of the uploaded file.
+	 *
+	 * @return string
+	 */
+	public function getMimeType(): string
+	{
+		if ($this->mime !== null)
+		{
+			return $this->mime;
+		}
+
+		$path = $this->getFilePath();
+		if (!is_file($path))
+		{
+			return $this->mime = '';
+		}
+
+		$finfo = new \finfo(FILEINFO_MIME_TYPE);
+		$mime = $finfo->file($path) ?: '';
+
+		// Normalize a few common misdetections
+		if ($mime === 'text/plain' || $mime === 'application/octet-stream')
+		{
+			$ext = strtolower(pathinfo($this->getOriginalName(), PATHINFO_EXTENSION));
+			$map = [
+				'svg' => 'image/svg+xml',
+				'webp' => 'image/webp',
+				'heic' => 'image/heic',
+				'heif' => 'image/heif',
+			];
+			if (isset($map[$ext]))
+			{
+				$mime = $map[$ext];
+			}
+		}
+
+		return $this->mime = $mime;
 	}
 
 	/**
