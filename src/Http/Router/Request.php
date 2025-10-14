@@ -5,6 +5,7 @@ use Proto\Http\Request as BaseRequest;
 use Proto\Utils\Sanitize;
 use Proto\Utils\Format\JsonFormat;
 use Proto\Api\Validator;
+use Proto\Http\UploadFile;
 
 /**
  * Request
@@ -129,6 +130,67 @@ class Request
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Validates the upload file.
+	 *
+	 * @param string $name
+	 * @param array $rules
+	 * @return UploadFile|null
+	 */
+	public function validateFile(string $name, array $rules = []): ?UploadFile
+	{
+		$file = $this->file($name);
+		if (!$file)
+		{
+			return null;
+		}
+
+		$data = [];
+		$data[$name] = $file;
+		$validator = Validator::create($data, $rules);
+		if (!$validator->isValid())
+		{
+			$statusCode = 400;
+			$response = new Response();
+			$response->sendHeaders($statusCode)->json([
+				"message"=> $validator->getMessage(),
+				"success"=> false
+			]);
+			die;
+		}
+
+		return $file;
+	}
+
+	/**
+	 * Validates multiple uploaded files.
+	 *
+	 * @param array $rules Validation rules for the files.
+	 * @return array Validated files.
+	 */
+	public function validateFiles(array $rules = []): array
+	{
+		$files = $this->files();
+		if (!$files)
+		{
+			return [];
+		}
+
+		$validator = Validator::create($files, $rules);
+		if (!$validator->isValid())
+		{
+			$statusCode = 400;
+			$response = new Response();
+			$response->sendHeaders($statusCode)->json([
+				"message"=> $validator->getMessage(),
+				"success"=> false
+			]);
+			die;
+		}
+
+		return $files;
 	}
 
 	/**
