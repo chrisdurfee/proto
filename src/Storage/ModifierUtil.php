@@ -58,6 +58,61 @@ class ModifierUtil
 	}
 
 	/**
+	 * Add a search modifier.
+	 *
+	 * @param string $search
+	 * @param array $where
+	 * @param array $params
+	 * @param bool $isSnakeCase
+	 * @param string $alias
+	 * @param array $searchableFields
+	 * @return void
+	 */
+	public static function addSearchModifier(
+		string $search,
+		array &$where,
+		array &$params,
+		bool $isSnakeCase = true,
+		string $alias = '',
+		array $searchableFields = []
+	): void
+	{
+		$term =  $search ?? '';
+		$fields = !empty($searchableFields) ? $searchableFields : [];
+		if ($term === '' || empty($fields))
+		{
+			return;
+		}
+
+		$term = '%' . strtolower($term) . '%';
+		$searchConditions = [];
+		foreach ($fields as $field)
+		{
+			// Check if the field is an array (e.g., ["CONCAT(last_name, ' ', first_name)"])
+			if (is_array($field))
+			{
+				$field = $field[0];
+			}
+			else
+			{
+				$field = self::prepareField($field, $isSnakeCase);
+				if ($alias !== '')
+				{
+					$field = $alias . '.' . $field;
+				}
+			}
+
+			$searchConditions[] = "LOWER($field) LIKE ?";
+			$params[] = $term;
+		}
+
+		if (!empty($searchConditions))
+		{
+			$where[] = '(' . implode(' OR ', $searchConditions) . ')';
+		}
+	}
+
+	/**
 	 * Add a modifier to exclude soft-deleted records.
 	 *
 	 * @param array $where Where clause array.

@@ -654,6 +654,13 @@ class Storage extends TableStorage
 			ModifierUtil::addDateModifier($dates, $where, $params, $isSnakeCase, $alias);
 		}
 
+		$searchableFields = $this->model->getSearchableFields() ?? [];
+		$search = $modifiers['search'] ?? null;
+		if (isset($search) && count($searchableFields) > 0)
+		{
+			ModifierUtil::addSearchModifier($search, $where, $params, $isSnakeCase, $alias, $searchableFields);
+		}
+
 		$hasDeletedAt = $this->model->has('deletedAt');
 		$showDeleted = $modifiers['showDeleted'] ?? false;
 		if ($hasDeletedAt && !$showDeleted)

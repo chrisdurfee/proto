@@ -168,6 +168,13 @@ class BelongsToMany
 			ModifierUtil::addDeletedAtModifier($where, $params, $isSnakeCase, $alias);
 		}
 
+		$searchableFields = $this->parent->getSearchableFields() ?? [];
+		$search = $modifiers['search'] ?? null;
+		if (isset($search) && count($searchableFields) > 0)
+		{
+			ModifierUtil::addSearchModifier($search, $where, $params, $isSnakeCase, $alias, $searchableFields);
+		}
+
 		$orderBy = $modifiers['orderBy'] ?? null;
 		if (is_object($orderBy))
 		{

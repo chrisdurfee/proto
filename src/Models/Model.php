@@ -1081,6 +1081,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+	 * Get searchable fields for the model.
+	 *
+	 * @return array
+	 */
+	public function getSearchableFields(): array
+	{
+		return [];
+	}
+
+	/**
 	 * Get rows from storage.
 	 *
 	 * @param array|object|null $filter Filter criteria.
