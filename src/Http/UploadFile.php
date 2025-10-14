@@ -179,6 +179,16 @@ class UploadFile
 	}
 
 	/**
+	 * Checks if the uploaded file is an image.
+	 *
+	 * @return bool True if the file is an image, false otherwise.
+	 */
+	public function isImageFile(): bool
+	{
+		return str_starts_with($this->getMimeType(), 'image/');
+	}
+
+	/**
 	 * Moves the file to the specified path.
 	 *
 	 * @param string $destination The destination path.
