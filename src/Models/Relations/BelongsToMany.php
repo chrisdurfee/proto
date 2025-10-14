@@ -148,11 +148,25 @@ class BelongsToMany
 		$parentId = $this->getParentId();
 		$instance = new $this->related();
 		$isSnakeCase = $this->parent->isSnakeCase();
+		$alias = $this->parent->getAlias();
 
 		$params = [$parentId];
 		$where = Filter::setup($filter, $params);
 		$sql = $this->getSelectQuery()
 			->where(...$where);
+
+		$dates = $modifiers['dates'] ?? '';
+		if (is_object($dates))
+		{
+			ModifierUtil::addDateModifier($dates, $where, $params, $isSnakeCase, $alias);
+		}
+
+		$hasDeletedAt = $this->parent->has('deletedAt');
+		$showDeleted = $modifiers['showDeleted'] ?? false;
+		if ($hasDeletedAt && !$showDeleted)
+		{
+			ModifierUtil::addDeletedAtModifier($where, $params, $isSnakeCase, $alias);
+		}
 
 		$orderBy = $modifiers['orderBy'] ?? null;
 		if (is_object($orderBy))
