@@ -224,7 +224,7 @@ abstract class Query extends Template
 			? ' ' . $join['using']
 			: (!empty($join['on']) ? ' ON ' . $this->getOnString($join['on']) . ' ' : '');
 
-		$sql = ' ' . $type . ' ' . $tableSql . ' ' . $alias . $on;
+		$sql = ' ' . $type . ' ' . $tableSql . ' ' . $tableAlias . $on;
 		$this->joins[] = $sql;
 
 		$fields = $join['fields'] ?? null;

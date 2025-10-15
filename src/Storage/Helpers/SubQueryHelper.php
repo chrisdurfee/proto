@@ -145,10 +145,16 @@ class SubQueryHelper
 	private static function collectJoinsForLevel(ModelJoin $startJoin, array &$joins): void
 	{
 		$currentLevelJoin = $startJoin->getMultipleJoin();
+		$isFirstJoin = true;
+
 		while ($currentLevelJoin)
 		{
 			$nextLevelJoinStartsAggregation = false;
 			$nestedLink = $currentLevelJoin->getMultipleJoin();
+
+			// Check if this is the final aggregation target (has fields but no nested aggregation)
+			$isFinalAggregationTarget = (count($currentLevelJoin->getFields()) > 0 && !$nestedLink);
+
 			if ($nestedLink)
 			{
 				$nestedAggregationTarget = $nestedLink->getMultipleJoin();
@@ -158,23 +164,29 @@ class SubQueryHelper
 				}
 			}
 
-			// Add the current join to this level's subquery
-			$joins[] = [
-				'table' => $currentLevelJoin->getTableName(),
-				'type' => $currentLevelJoin->getType(),
-				'alias' => $currentLevelJoin->getAlias(),
-				'on' => $currentLevelJoin->getOn(),
-				'using' => $currentLevelJoin->getUsing()
-			];
+			// Only add the join if it's not the final aggregation target
+			// (i.e., it's a bridge table or part of a longer chain)
+			if (!$isFinalAggregationTarget)
+			{
+				$joins[] = [
+					'table' => $currentLevelJoin->getTableName(),
+					'type' => $currentLevelJoin->getType(),
+					'alias' => $currentLevelJoin->getAlias(),
+					'on' => $currentLevelJoin->getOn(),
+					'using' => $currentLevelJoin->getUsing()
+				];
+			}
 
-			if ($nextLevelJoinStartsAggregation)
+			if ($nextLevelJoinStartsAggregation || $isFinalAggregationTarget)
 			{
 				// Stop adding joins for this level if the next one starts a nested subquery
+				// or if we've reached the final aggregation target
 				break;
 			}
 
 			// Move to the next join in the chain for *this* level
 			$currentLevelJoin = $currentLevelJoin->getMultipleJoin();
+			$isFirstJoin = false;
 		}
 	}
 

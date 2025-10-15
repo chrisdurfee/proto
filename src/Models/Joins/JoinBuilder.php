@@ -313,11 +313,19 @@ class JoinBuilder
 	 */
 	public function many(string $modelName, string $type = 'left', array $fields = []): ModelJoin
 	{
+		$tableName = $modelName::table();
+		$alias = $modelName::alias();
+
 		$join = $this->createModelJoin($modelName, $type, true);
+
+		// For 'many' joins, create a multipleJoin target to hold the aggregated data
+		// This allows the SubQueryHelper to generate JSON_ARRAYAGG subqueries
+		$targetJoin = new ModelJoin($this, $tableName, $alias, $this->isSnakeCase);
+		$join->setMultipleJoin($targetJoin);
 
 		if (count($fields))
 		{
-			$join->fields(...$fields);
+			$targetJoin->fields(...$fields);
 		}
 
 		return $join;

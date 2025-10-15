@@ -161,7 +161,7 @@ class ModelJoin
 	}
 
 	/**
-	 * Mark the join as representing a multiple relationship target,
+	 * Mark the join as representing a 'multiple' (one-to-many) relationship,
 	 * optionally setting up a subsequent join definition.
 	 *
 	 * @param string|array|null $tableName Optional table name for a subsequent join.
@@ -176,7 +176,7 @@ class ModelJoin
 			return $this;
 		}
 
-		$join = new ModelJoin($this->builder, $tableName, $alias);
+		$join = new ModelJoin($this->builder, $tableName, $alias, $this->isSnakeCase);
 		$this->setMultipleJoin($join);
 		return $this;
 	}
@@ -278,14 +278,23 @@ class ModelJoin
 	}
 
 	/**
-	 * Set the alias designation for the results of this join relationship.
+	 * Set an alias designation for the results.
+	 * For 'multiple' joins, this sets the alias on the aggregation target (multipleJoin).
 	 *
 	 * @param string $as Alias designation.
 	 * @return self
 	 */
 	public function as(string $as): self
 	{
-		$this->as = $as;
+		// For multiple joins, the alias should be set on the aggregation target
+		if ($this->multiple && $this->multipleJoin)
+		{
+			$this->multipleJoin->as = $as;
+		}
+		else
+		{
+			$this->as = $as;
+		}
 		return $this;
 	}
 
