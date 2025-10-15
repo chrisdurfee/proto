@@ -145,12 +145,32 @@ class SubQueryHelper
 	private static function collectJoinsForLevel(ModelJoin $startJoin, array &$joins): void
 	{
 		$currentLevelJoin = $startJoin->getMultipleJoin();
+
+		if (!$currentLevelJoin)
+		{
+			// No multipleJoin to process
+			return;
+		}
+
+		// For many-to-many relationships, the startJoin points to the bridge table (FROM clause),
+		// and the first multipleJoin points to the related table (needs JOIN).
+		// For one-to-many created by JoinBuilder->many(), both point to the same table (duplicate).
+		//
+		// We skip the join ONLY if it's BOTH a duplicate AND the final aggregation target.
+		$fromTable = $startJoin->getTableName();
+		$fromAlias = $startJoin->getAlias();
+
 		$isFirstJoin = true;
 
 		while ($currentLevelJoin)
 		{
 			$nextLevelJoinStartsAggregation = false;
 			$nestedLink = $currentLevelJoin->getMultipleJoin();
+
+			// Check if this join is a duplicate of the FROM table (one-to-many case)
+			$isDuplicateOfFrom = $isFirstJoin
+				&& $currentLevelJoin->getTableName() === $fromTable
+				&& $currentLevelJoin->getAlias() === $fromAlias;
 
 			// Check if this is the final aggregation target (has fields but no nested aggregation)
 			$isFinalAggregationTarget = (count($currentLevelJoin->getFields()) > 0 && !$nestedLink);
@@ -164,9 +184,12 @@ class SubQueryHelper
 				}
 			}
 
-			// Only add the join if it's not the final aggregation target
-			// (i.e., it's a bridge table or part of a longer chain)
-			if (!$isFinalAggregationTarget)
+			// Add the join unless it's BOTH a duplicate AND the final target
+			// This allows belongsToMany to work (different tables) while preventing
+			// duplicate JOINs for simple one-to-many (same table with fields)
+			$shouldSkip = $isDuplicateOfFrom && $isFinalAggregationTarget;
+
+			if (!$shouldSkip)
 			{
 				$joins[] = [
 					'table' => $currentLevelJoin->getTableName(),
@@ -177,14 +200,13 @@ class SubQueryHelper
 				];
 			}
 
-			if ($nextLevelJoinStartsAggregation || $isFinalAggregationTarget)
+			// Stop if we've reached the end of this level's chain
+			if ($nextLevelJoinStartsAggregation || $shouldSkip)
 			{
-				// Stop adding joins for this level if the next one starts a nested subquery
-				// or if we've reached the final aggregation target
 				break;
 			}
 
-			// Move to the next join in the chain for *this* level
+			// Move to the next join in the chain
 			$currentLevelJoin = $currentLevelJoin->getMultipleJoin();
 			$isFirstJoin = false;
 		}

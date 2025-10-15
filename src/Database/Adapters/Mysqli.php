@@ -215,7 +215,9 @@ class Mysqli extends Adapter
 		}
 
 		return true;
-	}	/**
+	}
+
+	/**
 	 * Fetches the results of a SQL query.
 	 *
 	 * @param string $sql The SQL query.
