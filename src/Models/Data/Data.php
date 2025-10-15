@@ -414,7 +414,7 @@ class Data
 
 				$keyName = $this->prepareKeyName($key);
 				$value = $row->{$keyName} ?? null;
-				if ($this->nestedDataHelper->isNestedKey(($keyName)))
+				if ($this->nestedDataHelper->isNestedKey($key))
 				{
 					$value = $this->nestedDataHelper->getGroupedData($value);
 				}
