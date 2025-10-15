@@ -194,6 +194,108 @@ class Request
 	}
 
 	/**
+	 * Retrieves an array of uploaded files from array-style input (e.g., attachments[]).
+	 *
+	 * @param string $name The input name (without [] suffix).
+	 * @return array Array of UploadFile instances.
+	 */
+	public function fileArray(string $name): array
+	{
+		$rawFiles = $_FILES[$name] ?? null;
+		if (!$rawFiles || empty($rawFiles['name']))
+		{
+			return [];
+		}
+
+		return $this->normalizeFileArray($rawFiles);
+	}
+
+	/**
+	 * Normalizes PHP's nested file array structure into UploadFile instances.
+	 *
+	 * @param array $rawFiles The raw $_FILES array.
+	 * @return array Array of UploadFile instances.
+	 */
+	protected function normalizeFileArray(array $rawFiles): array
+	{
+		$files = [];
+
+		// Check if this is a single file or multiple files
+		$isSingle = !is_array($rawFiles['name']);
+
+		if ($isSingle)
+		{
+			// Single file
+			if ($rawFiles['error'] === UPLOAD_ERR_OK)
+			{
+				$files[] = new UploadFile($rawFiles);
+			}
+			return $files;
+		}
+
+		// Multiple files - PHP nests them as arrays per property
+		$fileCount = count($rawFiles['name']);
+
+		for ($i = 0; $i < $fileCount; $i++)
+		{
+			// Skip files with errors
+			if ($rawFiles['error'][$i] !== UPLOAD_ERR_OK)
+			{
+				continue;
+			}
+
+			// Reconstruct individual file array
+			$fileData = [
+				'name' => $rawFiles['name'][$i],
+				'tmp_name' => $rawFiles['tmp_name'][$i],
+				'size' => $rawFiles['size'][$i],
+				'error' => $rawFiles['error'][$i],
+				'type' => $rawFiles['type'][$i]
+			];
+
+			$files[] = new UploadFile($fileData);
+		}
+
+		return $files;
+	}
+
+	/**
+	 * Validates multiple uploaded files from array-style input.
+	 *
+	 * @param string $name The input name (without [] suffix).
+	 * @param array $rules Validation rules for each file.
+	 * @return array Validated UploadFile instances.
+	 */
+	public function validateFileArray(string $name, array $rules = []): array
+	{
+		$files = $this->fileArray($name);
+		if (empty($files))
+		{
+			return [];
+		}
+
+		// Validate each file
+		foreach ($files as $index => $file)
+		{
+			$data = [$name => $file];
+			$validator = Validator::create($data, $rules);
+
+			if (!$validator->isValid())
+			{
+				$statusCode = 400;
+				$response = new Response();
+				$response->sendHeaders($statusCode)->json([
+					"message" => $validator->getMessage(),
+					"success" => false
+				]);
+				die;
+			}
+		}
+
+		return $files;
+	}
+
+	/**
 	 * Sanitizes input data, including arrays.
 	 *
 	 * @param mixed $data The data to sanitize.
