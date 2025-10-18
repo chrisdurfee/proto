@@ -3,7 +3,6 @@ namespace Proto\Generators\FileTypes;
 
 use Proto\Generators\AbstractFileGenerator;
 use Proto\Generators\Templates;
-use Proto\Utils\Strings;
 
 /**
  * PolicyGenerator
