@@ -239,18 +239,14 @@ class ModelPolicy extends Policy
 	 * @param mixed $filter The filter criteria.
 	 * @param int|null $offset The offset value.
 	 * @param int|null $limit The count value.
-	 * @param string|null $search The search query.
-	 * @param array|null $custom Custom parameters.
-	 * @param string|null $lastCursor The last cursor value.
+	 * @param array|null $modifiers The modifiers array.
 	 * @return string The generated parameter string.
 	 */
 	public function setupAllParams(
 		mixed $filter = null,
 		?int $offset = null,
 		?int $limit = null,
-		?string $search = null,
-		?array $custom = null,
-		?string $lastCursor = null
+		?array $modifiers = null
 	): string
 	{
 		$params = [];
@@ -270,19 +266,25 @@ class ModelPolicy extends Policy
 			$params[] = (string) $limit;
 		}
 
-		if (!empty($search))
+		if (!empty($modifiers))
 		{
-			$params[] = (string) $search;
-		}
-
-		if (!empty($custom))
-		{
-			$params[] = implode(':', $custom);
-		}
-
-		if (!empty($lastCursor))
-		{
-			$params[] = (string) $lastCursor;
+			$modParts = [];
+			foreach ($modifiers as $key => $value)
+			{
+				if (is_array($value))
+				{
+					$modParts[] = $key . '=' . implode(',', $value);
+				}
+				else if (is_object($value))
+				{
+					$modParts[] = $key . '=' . json_encode($value);
+				}
+				else
+				{
+					$modParts[] = $key . '=' . (string) $value;
+				}
+			}
+			$params[] = implode('|', $modParts);
 		}
 
 		return implode(':', $params);
@@ -296,12 +298,11 @@ class ModelPolicy extends Policy
 	 */
 	public function all(Request $request): object
 	{
-		$filter = $this->controller->getFilter($request);
-		$offset = $request->getInt('offset') ?? 0;
-		$limit = $request->getInt('limit') ?? 50;
-		$search = $request->input('search') ?? null;
-		$custom = $request->input('custom') ?? null;
-		$lastCursor = $request->input('lastCursor') ?? null;
+		$inputs = $this->controller->getAllInputs($request);
+		$filter = $inputs->filter;
+		$offset = $inputs->offset;
+		$limit = $inputs->limit;
+		$search = $inputs->modifiers['search'] ?? null;
 
 		// Skip caching for searches
 		if ($this->isSearching($search))
@@ -309,7 +310,7 @@ class ModelPolicy extends Policy
 			return $this->controller->all($request);
 		}
 
-		$params = $this->setupAllParams($filter, $offset, $limit, $search, $custom, $lastCursor);
+		$params = $this->setupAllParams($filter, $offset, $limit, $inputs->modifiers);
 		$key = $this->createKey('all', $params);
 		if ($this->hasKey($key))
 		{
@@ -404,13 +405,22 @@ class ModelPolicy extends Policy
 		}
 
 		// Include query parameters that might affect caching
-		$queryParams = ['filter', 'status', 'type', 'category', 'limit', 'offset', 'lastCursor'];
+		$queryParams = ['filter', 'status', 'type', 'category', 'limit', 'offset', 'lastCursor', 'orderBy', 'groupBy', 'search'];
 		foreach ($queryParams as $param)
 		{
 			$value = $request->input($param);
 			if ($value !== null)
 			{
-				$params[] = "{$param}:" . (is_array($value) ? implode(',', $value) : $value);
+				// handle array and object values
+				if (is_array($value))
+				{
+					$value = implode(',', $value);
+				}
+				else if (is_object($value))
+				{
+					$value = json_encode($value);
+				}
+				$params[] = "{$param}:" . $value;
 			}
 		}
 
@@ -420,7 +430,16 @@ class ModelPolicy extends Policy
 		{
 			if (!in_array($key, $queryParams) && $key !== 'id' && $value !== null)
 			{
-				$params[] = "{$key}:" . (is_array($value) ? implode(',', $value) : $value);
+				if (is_array($value))
+				{
+					$value = implode(',', $value);
+				}
+				else if (is_object($value))
+				{
+					$value = json_encode($value);
+				}
+
+				$params[] = "{$key}:" . $value;
 			}
 		}
 

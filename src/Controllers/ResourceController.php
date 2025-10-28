@@ -371,15 +371,12 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
-	 * Retrieve all records.
+	 * Retrieves all inputs from the list request.
 	 *
-	 * @param array|object|null $filter Filter criteria.
-	 * @param int|null $offset Offset.
-	 * @param int|null $limit Count.
-	 * @param array|null $modifiers Modifiers.
-	 * @return object
+	 * @param Request $request The request object.
+	 * @return object The collected inputs.
 	 */
-	public function all(Request $request): object
+	public function getAllInputs(Request $request): object
 	{
 		$filter = $this->getFilter($request);
 		$offset = $request->getInt('offset') ?? 0;
@@ -392,15 +389,42 @@ abstract class ResourceController extends ApiController
 		$groupBy = $this->setGroupByModifier($request);
 		$since = $request->input('since') ?? null;
 
-		$result = $this->model::all($filter, $offset, $limit, [
+		return (object) [
+			'filter' => $filter,
+			'offset' => $offset,
+			'limit' => $limit,
 			'search' => $search,
 			'custom' => $custom,
+			'lastCursor' => $lastCursor,
 			'dates' => $dates,
 			'orderBy' => $orderBy,
 			'groupBy' => $groupBy,
-			'cursor' => $lastCursor,
-			'since' => $since
-		]);
+			'since' => $since,
+			'modifiers' => [
+				'search' => $search,
+				'custom' => $custom,
+				'dates' => $dates,
+				'orderBy' => $orderBy,
+				'groupBy' => $groupBy,
+				'cursor' => $lastCursor,
+				'since' => $since
+			]
+		];
+	}
+
+	/**
+	 * Retrieve all records.
+	 *
+	 * @param array|object|null $filter Filter criteria.
+	 * @param int|null $offset Offset.
+	 * @param int|null $limit Count.
+	 * @param array|null $modifiers Modifiers.
+	 * @return object
+	 */
+	public function all(Request $request): object
+	{
+		$inputs = $this->getAllInputs($request);
+		$result = $this->model::all($inputs->filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
 		return $this->response($result);
 	}
 
