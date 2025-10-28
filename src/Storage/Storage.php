@@ -731,6 +731,10 @@ class Storage extends TableStorage
 		 */
 		$sql = $this->select()->where(...$where);
 
+		/**
+		 * If the default params is empty, we will use the adapter proxy params
+		 * for the modifiers.
+		 */
 		if (empty($params))
 		{
 			$params =& $sql->params();
