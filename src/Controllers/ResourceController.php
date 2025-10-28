@@ -102,14 +102,15 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function getAddUserData(Model $model): void
 	{
+		$userId = session()->user->id ?? null;
 		if ($model->has('createdBy') && !isset($model->createdBy))
 		{
-			$model->createdBy = session()->user->id ?? null;
+			$model->createdBy = $userId;
 		}
 
 		if ($model->has('authorId') && !isset($model->authorId))
 		{
-			$model->authorId = session()->user->id ?? null;
+			$model->authorId = $userId;
 		}
 	}
 
@@ -163,9 +164,15 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function getUpdateUserData(Model $model): void
 	{
+		$userId = session()->user->id ?? null;
 		if ($model->has('updatedBy') && !isset($model->updatedBy))
 		{
-			$model->updatedBy = session()->user->id ?? null;
+			$model->updatedBy = $userId;
+		}
+
+		if ($model->has('editedBy') && !isset($model->editedBy))
+		{
+			$model->editedBy = $userId;
 		}
 	}
 
@@ -331,6 +338,14 @@ abstract class ResourceController extends ApiController
 		if ($model->has('deletedBy') && !isset($model->deletedBy))
 		{
 			$model->deletedBy = session()->user->id ?? null;
+		}
+
+		if ($model->has('deletedAt') && !isset($model->deletedAt))
+		{
+			$model->deletedAt = date('Y-m-d H:i:s');
+			return $model->update()
+				? $this->response(['id' => $model->id])
+				: $this->error('Unable to delete the item.');
 		}
 
 		return $model->delete()
