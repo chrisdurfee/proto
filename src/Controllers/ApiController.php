@@ -110,6 +110,48 @@ abstract class ApiController extends Controller
 	}
 
 	/**
+	 * Retrieves all inputs from the list request.
+	 *
+	 * @param Request $request The request object.
+	 * @return object The collected inputs.
+	 */
+	public function getAllInputs(Request $request): object
+	{
+		$filter = $this->getFilter($request);
+		$offset = $request->getInt('offset') ?? 0;
+		$limit = $request->getInt('limit') ?? 50;
+		$search = $request->input('search');
+		$custom = $request->input('custom');
+		$lastCursor = $request->input('lastCursor') ?? null;
+		$dates = $this->setDateModifier($request);
+		$orderBy = $this->setOrderByModifier($request);
+		$groupBy = $this->setGroupByModifier($request);
+		$since = $request->input('since') ?? null;
+
+		return (object) [
+			'filter' => $filter,
+			'offset' => $offset,
+			'limit' => $limit,
+			'search' => $search,
+			'custom' => $custom,
+			'lastCursor' => $lastCursor,
+			'dates' => $dates,
+			'orderBy' => $orderBy,
+			'groupBy' => $groupBy,
+			'since' => $since,
+			'modifiers' => [
+				'search' => $search,
+				'custom' => $custom,
+				'dates' => $dates,
+				'orderBy' => $orderBy,
+				'groupBy' => $groupBy,
+				'cursor' => $lastCursor,
+				'since' => $since
+			]
+		];
+	}
+
+	/**
 	 * Modifies the filter object based on the request.
 	 *
 	 * @param mixed $filter
