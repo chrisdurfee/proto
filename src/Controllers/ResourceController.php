@@ -340,7 +340,7 @@ abstract class ResourceController extends ApiController
 			$model->deletedBy = session()->user->id ?? null;
 		}
 
-		if ($model->has('deletedAt') && !isset($model->deletedAt))
+		if ($model->has('deletedAt'))
 		{
 			$model->deletedAt = date('Y-m-d H:i:s');
 			return $model->update()
