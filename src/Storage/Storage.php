@@ -703,12 +703,12 @@ class Storage extends TableStorage
 	/**
 	 * Build where clauses using filters and modifiers.
 	 *
-	 * @param array &$params Parameter array.
+	 * @param array|null &$params Parameter array.
 	 * @param array|object|null $filter Filter criteria.
 	 * @param array|null $modifiers Modifiers.
 	 * @return array
 	 */
-	protected function getWhere(array &$params, $filter, ?array $modifiers = null): array
+	protected function getWhere(?array &$params = null, mixed $filter = null, ?array $modifiers = null): array
 	{
 		$where = static::setFilters($filter, $params);
 		$this->setDefaultModifiers($where, $modifiers, $params, $filter);
@@ -719,11 +719,11 @@ class Storage extends TableStorage
 	 * Create a where-based query.
 	 *
 	 * @param array|object|null $filter Filter criteria.
-	 * @param array &$params Parameter array.
+	 * @param array|null &$params Parameter array.
 	 * @param array|null $modifiers Modifiers.
 	 * @return object
 	 */
-	public function where(mixed $filter, array &$params, ?array $modifiers = null): object
+	public function where(mixed $filter = null, ?array &$params = null, ?array $modifiers = null): object
 	{
 		$where = $this->getWhere($params, $filter, $modifiers);
 		/**
