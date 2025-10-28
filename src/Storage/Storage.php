@@ -729,7 +729,18 @@ class Storage extends TableStorage
 		/**
 		 * @SuppressWarnings PHP0408,PHP0423
 		 */
-		return $this->select()->where(...$where);
+		$sql = $this->select()->where(...$where);
+
+		if (empty($params))
+		{
+			$params =& $sql->params();
+		}
+
+		$this->setCustomWhere($sql, $modifiers, $params);
+		$this->setOrderBy($sql, $modifiers, $params);
+		$this->setGroupBy($sql, $modifiers, $params);
+
+		return $sql;
 	}
 
 	/**
@@ -745,10 +756,6 @@ class Storage extends TableStorage
 	{
 		$params = [];
 		$sql = $this->where($filter, $params, $modifiers);
-
-		$this->setCustomWhere($sql, $modifiers, $params);
-		$this->setOrderBy($sql, $modifiers, $params);
-		$this->setGroupBy($sql, $modifiers, $params);
 
 		/**
 		 * This will add a limit by cursor or offset.
