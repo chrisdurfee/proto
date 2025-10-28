@@ -76,6 +76,68 @@ class HasMany
 
 		return ($this->related)::fetchWhere([
 			[$this->foreignKey, $localValue]
-		]) ?? null;
+		]);
+	}
+
+	/**
+	 * Get all related rows with filters, offsets, and limits.
+	 *
+	 * @param mixed $filter Filter conditions.
+	 * @param int|null $offset Offset for pagination.
+	 * @param int|null $limit Limit for pagination.
+	 * @param array|null $modifiers Additional query modifiers.
+	 * @return object|false
+	 */
+	public function all(mixed $filter = null, int|null $offset = null, int|null $limit = null, array|null $modifiers = null): object|false
+	{
+		$localValue = $this->parent->{$this->localKey};
+		if ($localValue === null)
+		{
+			return false;
+		}
+
+		// Add the relationship constraint to the filter
+		$relationFilter = [[$this->foreignKey, $localValue]];
+
+		if ($filter === null)
+		{
+			$filter = $relationFilter;
+		}
+		elseif (is_array($filter))
+		{
+			$filter = array_merge($relationFilter, $filter);
+		}
+
+		return ($this->related)::all($filter, $offset, $limit, $modifiers);
+	}
+
+	/**
+	 * Count related records.
+	 *
+	 * @param mixed $filter Filter conditions.
+	 * @param array|null $modifiers Additional query modifiers.
+	 * @return object|false
+	 */
+	public function count(mixed $filter = null, array|null $modifiers = null): object|false
+	{
+		$localValue = $this->parent->{$this->localKey};
+		if ($localValue === null)
+		{
+			return false;
+		}
+
+		// Add the relationship constraint to the filter
+		$relationFilter = [[$this->foreignKey, $localValue]];
+
+		if ($filter === null)
+		{
+			$filter = $relationFilter;
+		}
+		elseif (is_array($filter))
+		{
+			$filter = array_merge($relationFilter, $filter);
+		}
+
+		return ($this->related)::count($filter, $modifiers);
 	}
 }

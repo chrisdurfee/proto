@@ -141,14 +141,14 @@ class BelongsToMany
 	 * @param int|null $offset Offset for pagination.
 	 * @param int|null $limit Limit for pagination.
 	 * @param array|null $modifiers Additional query modifiers.
-	 * @return object
+	 * @return object Returns object with 'rows' array and optional 'lastCursor' for pagination.
 	 */
 	public function all(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
 	{
 		$parentId = $this->getParentId();
 		$instance = new $this->related();
-		$isSnakeCase = $this->parent->isSnakeCase();
-		$alias = $this->parent->getAlias();
+		$isSnakeCase = $instance->isSnakeCase();
+		$alias = $instance->getAlias();
 
 		$params = [$parentId];
 		$where = Filter::setup($filter, $params);
@@ -161,14 +161,14 @@ class BelongsToMany
 			ModifierUtil::addDateModifier($dates, $where, $params, $isSnakeCase, $alias);
 		}
 
-		$hasDeletedAt = $this->parent->has('deletedAt');
+		$hasDeletedAt = $instance->has('deletedAt');
 		$showDeleted = $modifiers['showDeleted'] ?? false;
 		if ($hasDeletedAt && !$showDeleted)
 		{
 			ModifierUtil::addDeletedAtModifier($where, $params, $isSnakeCase, $alias);
 		}
 
-		$searchableFields = $this->parent->getSearchableFields() ?? [];
+		$searchableFields = $instance->getSearchableFields() ?? [];
 		$search = $modifiers['search'] ?? null;
 		if (isset($search) && count($searchableFields) > 0)
 		{
@@ -187,21 +187,20 @@ class BelongsToMany
 			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase);
 		}
 
-		/**
-		 * This will add a limit by cursor or offset.
-		 */
-		Limit::add($sql, $params, $this->parent, $offset, $limit, $modifiers);
+        /**
+         * This will add a limit by cursor or offset.
+         */
+        Limit::add($sql, $params, $instance, $offset, $limit, $modifiers);
 
-		$rows = $sql->fetch($params);
-		$rows = $instance->convertRows($rows);
+        $rows = $sql->fetch($params);
+        $rows = $instance->convertRows($rows);
 
-		$result = [ 'rows' => $rows ];
-		if (!empty($rows))
-		{
-			$idKey = $this->parent->getIdKeyName();
-			$result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
-		}
-
+        $result = [ 'rows' => $rows ];
+        if (!empty($rows))
+        {
+            $idKey = $instance->getIdKeyName();
+            $result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
+        }
 		return (object)$result;
 	}
 

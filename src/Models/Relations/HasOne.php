@@ -74,6 +74,10 @@ class HasOne
 			return null;
 		}
 
-		return ($this->related)::get($localValue);
+		$results = ($this->related)::fetchWhere([
+			[$this->foreignKey, $localValue]
+		]);
+
+		return $results[0] ?? null;
 	}
 }
