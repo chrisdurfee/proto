@@ -31,12 +31,21 @@ class FieldHelper
 		$cols = [];
 		foreach ($fields as $field)
 		{
-			if ($alias)
+			// If field is an array, it might be [fieldName, alias] or [[raw_sql], alias]
+			// Pass the table alias to formatField so it can handle prepending correctly
+			if (is_array($field))
 			{
-				$field = "{$alias}.{$field}";
+				$cols[] = self::formatField($field, $isSnakeCase, $alias);
 			}
-
-			$cols[] = self::formatField($field, $isSnakeCase);
+			else
+			{
+				// Simple string field - prepend alias if provided
+				if ($alias)
+				{
+					$field = "{$alias}.{$field}";
+				}
+				$cols[] = self::formatField($field, $isSnakeCase);
+			}
 		}
 
 		return $cols;
@@ -47,10 +56,11 @@ class FieldHelper
 	 *
 	 * @param mixed $field The field definition.
 	 * @param bool $isSnakeCase Indicates whether to convert to snake_case.
+	 * @param string|null $tableAlias Optional table alias to prepend to field names.
 	 *
 	 * @return mixed
 	 */
-	public static function formatField(mixed $field, bool $isSnakeCase = false): mixed
+	public static function formatField(mixed $field, bool $isSnakeCase = false, ?string $tableAlias = null): mixed
 	{
 		if (!is_array($field))
 		{
@@ -66,8 +76,16 @@ class FieldHelper
 		// sql with alias
 		if (!is_array($field[0]))
 		{
+			// This is [fieldName, alias] format
+			// Prepend table alias to field name if provided
+			$fieldName = $field[0];
+			if ($tableAlias && strpos($fieldName, '.') === false)
+			{
+				$fieldName = "{$tableAlias}.{$fieldName}";
+			}
+
 			return [
-				self::prepareFieldName($field[0], $isSnakeCase),
+				self::prepareFieldName($fieldName, $isSnakeCase),
 				self::prepareFieldName($field[1], $isSnakeCase)
 			];
 		}

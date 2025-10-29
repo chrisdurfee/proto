@@ -98,9 +98,23 @@ class SubQueryHelper
 		$directFields = FieldHelper::formatFields($aggregationTargetJoin->getFields(), $isSnakeCase, $alias);
 		foreach ($directFields as $field)
 		{
-			// Use alias.field_name as value, field_name as key
-			$key = self::removeTablePrefix($field);
-			$jsonObjectMap[$key] = $field;
+			// Handle array fields [fieldName, alias] or [[raw_sql], alias]
+			if (is_array($field))
+			{
+				// For array fields, use the alias as the key and the field/raw SQL as the value
+				if (count($field) >= 2)
+				{
+					$key = $field[1]; // The alias is already formatted (snake_case if needed)
+					$value = is_array($field[0]) ? $field[0][0] : $field[0]; // Get raw SQL or field name
+					$jsonObjectMap[$key] = $value;
+				}
+			}
+			else
+			{
+				// Simple string field: use field_name as key, alias.field_name as value
+				$key = self::removeTablePrefix($field);
+				$jsonObjectMap[$key] = $field;
+			}
 		}
 
 		$currentNestedLink = $aggregationTargetJoin->getMultipleJoin();
@@ -228,8 +242,23 @@ class SubQueryHelper
 			$bridgeFields = FieldHelper::formatFields($bridgeJoin->getFields(), $isSnakeCase, $bridgeJoin->getAlias());
 			foreach ($bridgeFields as $field)
 			{
-				$key = self::removeTablePrefix($field);
-				$jsonObjectMap[$key] = $field;
+				// Handle array fields [fieldName, alias] or [[raw_sql], alias]
+				if (is_array($field))
+				{
+					// For array fields, use the alias as the key and the field/raw SQL as the value
+					if (count($field) >= 2)
+					{
+						$key = $field[1]; // The alias is already formatted (snake_case if needed)
+						$value = is_array($field[0]) ? $field[0][0] : $field[0]; // Get raw SQL or field name
+						$jsonObjectMap[$key] = $value;
+					}
+				}
+				else
+				{
+					// Simple string field
+					$key = self::removeTablePrefix($field);
+					$jsonObjectMap[$key] = $field;
+				}
 			}
 		}
 	}
