@@ -358,13 +358,20 @@ class ModelJoin
 	 *
 	 * @param string $modelClass The target model class for the 'many' side.
 	 * @param string $type Join type.
+	 * @param array $fields Optional fields to select from the 'many' side.
 	 * @return ModelJoin Returns the newly created ModelJoin representing the 'many' side.
 	 */
-	public function many(string $modelClass, string $type = 'left'): ModelJoin
+	public function many(string $modelClass, string $type = 'left', array $fields = []): ModelJoin
 	{
 		$builder = $this->join($modelClass);
 		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 		$this->setMultipleJoin($modelJoin);
+
+		if (count($fields))
+		{
+			$modelJoin->fields(...$fields);
+		}
+
 		return $modelJoin;
 	}
 
@@ -403,15 +410,21 @@ class ModelJoin
 	 *
 	 * @param string $modelClass The target model class for the 'one' side.
 	 * @param string $type Join type.
+	 * @param array $fields Optional fields to select from the 'one' side.
 	 * @return ModelJoin Returns the newly created ModelJoin representing the 'one' side.
 	 */
-	public function one(string $modelClass, string $type = 'left'): ModelJoin
+	public function one(string $modelClass, string $type = 'left', array $fields = []): ModelJoin
 	{
 		$builder = $this->join($modelClass);
 		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 
 		$this->multipleJoin = $modelJoin;
 		$modelJoin->references($this->tableName, $this->alias);
+
+		if (count($fields))
+		{
+			$modelJoin->fields(...$fields);
+		}
 
 		return $modelJoin;
 	}
