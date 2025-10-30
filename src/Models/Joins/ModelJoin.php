@@ -192,9 +192,7 @@ class ModelJoin
 	{
 		$this->multipleJoin = $join;
 		$join->references($this->tableName, $this->alias);
-		// Note: We do NOT call $join->multiple() here anymore.
-		// The aggregation target should NOT be marked as multiple itself.
-		// Only the bridge join that initiates the aggregation should be marked as multiple.
+		$join->multiple();
 	}
 
 	/**

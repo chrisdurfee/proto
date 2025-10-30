@@ -192,7 +192,6 @@ class SubQueryHelper
 	private static function collectJoinsForLevel(ModelJoin $startJoin, array &$joins): void
 	{
 		$currentLevelJoin = $startJoin->getMultipleJoin();
-
 		if (!$currentLevelJoin)
 		{
 			// No multipleJoin to process
@@ -233,9 +232,7 @@ class SubQueryHelper
 			// of the FROM table and should be skipped. It's recognizable because:
 			// - It's the first join in the chain
 			// - It has the same table/alias as the FROM clause
-			// - It's NOT marked as multiple (it's the aggregation target, not another bridge)
-			$shouldSkip = $isDuplicateOfFrom && !$currentLevelJoin->isMultiple();
-
+			$shouldSkip = $isDuplicateOfFrom;
 			if (!$shouldSkip)
 			{
 				$joins[] = [
