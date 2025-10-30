@@ -599,12 +599,7 @@ class Storage extends TableStorage
 	public function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object
 	{
 		$params = [];
-		$where = $this->getWhere($params, $filter, $modifiers);
-		$sql = $this->select()->where(...$where);
-
-		$this->setCustomWhere($sql, $modifiers, $params);
-		$this->setOrderBy($sql, $modifiers, $params);
-		$this->setGroupBy($sql, $modifiers, $params);
+		$sql = $this->where($filter, $params, $modifiers);
 
 		/**
 		 * This will add a limit by cursor or offset.
@@ -613,13 +608,25 @@ class Storage extends TableStorage
 
 		$rows = $sql->fetch($params);
 		$result = [ 'rows' => $rows ];
+		$this->setLastCursor($result, $rows);
+
+		return (object)$result;
+	}
+
+	/**
+	 * Sets the last cursor.
+	 *
+	 * @param array $result
+	 * @param array $rows
+	 * @return void
+	 */
+	protected function setLastCursor(array &$result, array $rows): void
+	{
 		if (!empty($rows))
 		{
 			$idKey = $this->model->getIdKeyName();
 			$result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
 		}
-
-		return (object)$result;
 	}
 
 	/**
@@ -725,7 +732,7 @@ class Storage extends TableStorage
 	 */
 	public function where(mixed $filter = null, ?array &$params = null, ?array $modifiers = null): object
 	{
-		$where = $this->getWhere($params, $filter, $modifiers);
+		$where = $this->getWhere(params: $params, $filter, $modifiers);
 		/**
 		 * @SuppressWarnings PHP0408,PHP0423
 		 */
@@ -768,10 +775,7 @@ class Storage extends TableStorage
 
 		$rows = $sql->fetch($params);
 		$result = [ 'rows' => $rows ];
-		if (!empty($rows))
-		{
-			$result['lastCursor'] = Limit::getLastCursor($rows, $this->model->getIdKeyName());
-		}
+		$this->setLastCursor($result, $rows);
 
 		return (object)$result;
 	}
