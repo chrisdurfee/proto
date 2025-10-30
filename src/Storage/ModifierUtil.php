@@ -138,9 +138,10 @@ class ModifierUtil
 	 * @param object $sql Query builder instance.
 	 * @param array|object|null $orderBy Order-by conditions.
 	 * @param bool $isSnakeCase Whether to convert field names to snake_case.
+	 * @param string $alias Optional table alias.
 	 * @return void
 	 */
-	public static function setOrderBy(object $sql, array|object|null $orderBy, bool $isSnakeCase = true): void
+	public static function setOrderBy(object $sql, array|object|null $orderBy, bool $isSnakeCase = true, string $alias = ''): void
 	{
 		if (empty($orderBy))
 		{
@@ -156,6 +157,11 @@ class ModifierUtil
 				continue;
 			}
 
+			if ($alias !== '')
+			{
+				$field = $alias . '.' . $field;
+			}
+
 			$direction = strtoupper((string)$rawDir) === 'DESC' ? 'DESC' : 'ASC';
 			$sql->orderBy("{$field} {$direction}");
 		}
@@ -167,9 +173,11 @@ class ModifierUtil
 	 * @param object $sql Query builder instance.
 	 * @param array|null $modifiers Modifiers.
 	 * @param array|null $params Parameter array.
+	 * @param bool $isSnakeCase Whether to convert field names to snake_case.
+	 * @param string $alias Optional table alias.
 	 * @return void
 	 */
-	public static function setGroupBy(object $sql, ?array $groupBy, bool $isSnakeCase = true): void
+	public static function setGroupBy(object $sql, ?array $groupBy, bool $isSnakeCase = true, string $alias = ''): void
 	{
 		if (empty($groupBy))
 		{
@@ -184,6 +192,11 @@ class ModifierUtil
 			{
 				// skip empty or entirely‐stripped names
 				continue;
+			}
+
+			if ($alias !== '')
+			{
+				$field = $alias . '.' . $field;
 			}
 			$fields[] = $field;
 		}

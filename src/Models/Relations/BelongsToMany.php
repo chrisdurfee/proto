@@ -178,13 +178,13 @@ class BelongsToMany
 		$orderBy = $modifiers['orderBy'] ?? null;
 		if (is_object($orderBy))
 		{
-			ModifierUtil::setOrderBy($sql, $orderBy, $isSnakeCase);
+			ModifierUtil::setOrderBy($sql, $orderBy, $isSnakeCase, $alias);
 		}
 
 		$groupBy = $modifiers['groupBy'] ?? null;
 		if (is_array($groupBy))
 		{
-			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase);
+			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase, $alias);
 		}
 
         /**

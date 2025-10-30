@@ -564,8 +564,9 @@ class Storage extends TableStorage
 		$orderBy = $modifiers['orderBy'] ?? null;
 		if (is_object($orderBy))
 		{
+			$alias = $this->model->getAlias();
 			$isSnakeCase = $this->model->isSnakeCase();
-			ModifierUtil::setOrderBy($sql, $orderBy, $isSnakeCase);
+			ModifierUtil::setOrderBy($sql, $orderBy, $isSnakeCase, $alias);
 		}
 	}
 
@@ -582,8 +583,9 @@ class Storage extends TableStorage
 		$groupBy = $modifiers['groupBy'] ?? null;
 		if (is_array($groupBy))
 		{
+			$alias = $this->model->getAlias();
 			$isSnakeCase = $this->model->isSnakeCase();
-			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase);
+			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase, $alias);
 		}
 	}
 
