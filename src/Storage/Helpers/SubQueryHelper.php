@@ -120,30 +120,63 @@ class SubQueryHelper
 		$currentNestedLink = $aggregationTargetJoin->getMultipleJoin();
 		while ($currentNestedLink)
 		{
-			$nextAggregationTarget = $currentNestedLink->getMultipleJoin();
-			if (!$nextAggregationTarget || count($nextAggregationTarget->getFields()) === 0)
+			// Check if this is a 'multiple' join (another aggregation level)
+			if ($currentNestedLink->isMultiple())
 			{
-				// If the next link isn't an aggregation target, just move to the next link
-				$currentNestedLink = $currentNestedLink->getMultipleJoin();
-				continue;
+				// This is a nested .many() - handle it as a recursive aggregation
+				$nextAggregationTarget = $currentNestedLink->getMultipleJoin();
+				if ($nextAggregationTarget && count($nextAggregationTarget->getFields()) > 0)
+				{
+					// *** RECURSIVE CALL for nested .many() ***
+					$nestedSubQuerySql = self::setupSubQueryForLevel($currentNestedLink, $builderCallback, $isSnakeCase);
+					if ($nestedSubQuerySql)
+					{
+						$nestedAlias = $nextAggregationTarget->getAs() ?? $nextAggregationTarget->getTableName();
+
+						// Remove potential alias prefix if table name was used
+						$nestedAlias = self::removeTablePrefix($nestedAlias);
+						$nestedAlias = $isSnakeCase ? Strings::snakeCase($nestedAlias) : $nestedAlias;
+
+						// Add the raw SQL string as the value for the nested key
+						$jsonObjectMap[$nestedAlias] = $nestedSubQuerySql;
+					}
+
+					// Move to the join *after* the one we just processed for aggregation
+					$currentNestedLink = $nextAggregationTarget->getMultipleJoin();
+					continue;
+				}
+			}
+			else
+			{
+				// This is a .one() join - add its fields directly to this level
+				if (count($currentNestedLink->getFields()) > 0)
+				{
+					$nestedAlias = $currentNestedLink->getAlias();
+					$nestedFields = FieldHelper::formatFields($currentNestedLink->getFields(), $isSnakeCase, $nestedAlias);
+
+					foreach ($nestedFields as $field)
+					{
+						// Handle array fields [fieldName, alias] or [[raw_sql], alias]
+						if (is_array($field))
+						{
+							if (count($field) >= 2)
+							{
+								$key = $field[1];
+								$value = is_array($field[0]) ? $field[0][0] : $field[0];
+								$jsonObjectMap[$key] = $value;
+							}
+						}
+						else
+						{
+							$key = self::removeTablePrefix($field);
+							$jsonObjectMap[$key] = $field;
+						}
+					}
+				}
 			}
 
-			// *** RECURSIVE CALL ***
-			$nestedSubQuerySql = self::setupSubQueryForLevel($currentNestedLink, $builderCallback, $isSnakeCase);
-			if ($nestedSubQuerySql)
-			{
-				$nestedAlias = $nextAggregationTarget->getAs() ?? $nextAggregationTarget->getTableName();
-
-				// Remove potential alias prefix if table name was used
-				$nestedAlias = self::removeTablePrefix($nestedAlias);
-				$nestedAlias = $isSnakeCase ? Strings::snakeCase($nestedAlias) : $nestedAlias;
-
-				// Add the raw SQL string as the value for the nested key
-				$jsonObjectMap[$nestedAlias] = $nestedSubQuerySql;
-			}
-
-			// Move to the join *after* the one we just processed for aggregation
-			$currentNestedLink = $nextAggregationTarget->getMultipleJoin();
+			// Move to the next link in the chain
+			$currentNestedLink = $currentNestedLink->getMultipleJoin();
 		}
 
 		return $jsonObjectMap;
@@ -189,9 +222,10 @@ class SubQueryHelper
 			// Check if this is the final aggregation target (has fields but no nested aggregation)
 			$isFinalAggregationTarget = (count($currentLevelJoin->getFields()) > 0 && !$nestedLink);
 
-			if ($nestedLink)
+			// Check if this join is marked as 'multiple' - if so, it starts a nested aggregation
+			if ($currentLevelJoin->isMultiple())
 			{
-				$nestedAggregationTarget = $nestedLink->getMultipleJoin();
+				$nestedAggregationTarget = $currentLevelJoin->getMultipleJoin();
 				if ($nestedAggregationTarget && count($nestedAggregationTarget->getFields()) > 0)
 				{
 					$nextLevelJoinStartsAggregation = true;
@@ -214,8 +248,14 @@ class SubQueryHelper
 				];
 			}
 
-			// Stop if we've reached the end of this level's chain
-			if ($nextLevelJoinStartsAggregation || $shouldSkip)
+			// Stop if we've reached the end of this level's chain (nested aggregation starts)
+			if ($nextLevelJoinStartsAggregation)
+			{
+				break;
+			}
+
+			// If this was the final aggregation target AND it was skipped, stop
+			if ($shouldSkip && $isFinalAggregationTarget)
 			{
 				break;
 			}

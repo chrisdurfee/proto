@@ -363,6 +363,15 @@ class ModelJoin
 	 */
 	public function many(string $modelClass, string $type = 'left', array $fields = []): ModelJoin
 	{
+		// If this join is already marked as 'multiple' and has a multipleJoin,
+		// we need to chain onto the existing aggregation target, not replace it.
+		// This allows: ->many(...)->many(...) to work correctly for nested aggregations.
+		if ($this->multiple && $this->multipleJoin !== null)
+		{
+			// Chain the .many() onto the aggregation target
+			return $this->multipleJoin->many($modelClass, $type, $fields);
+		}
+
 		$builder = $this->join($modelClass);
 		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 		$this->setMultipleJoin($modelJoin);
@@ -415,6 +424,15 @@ class ModelJoin
 	 */
 	public function one(string $modelClass, string $type = 'left', array $fields = []): ModelJoin
 	{
+		// If this join is already marked as 'multiple' and has a multipleJoin,
+		// we need to chain onto the existing aggregation target, not replace it.
+		// This allows: ->many(...)->one(...) to work correctly.
+		if ($this->multiple && $this->multipleJoin !== null)
+		{
+			// Chain the .one() onto the aggregation target
+			return $this->multipleJoin->one($modelClass, $type, $fields);
+		}
+
 		$builder = $this->join($modelClass);
 		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
 
