@@ -744,7 +744,7 @@ class Storage extends TableStorage
 		 */
 		if (empty($params))
 		{
-			$params =& $sql->params();
+			$params = $sql->params();
 		}
 
 		$this->setCustomWhere($sql, $modifiers, $params);
