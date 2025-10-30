@@ -732,7 +732,7 @@ class Storage extends TableStorage
 	 */
 	public function where(mixed $filter = null, ?array &$params = null, ?array $modifiers = null): object
 	{
-		$where = $this->getWhere(params: $params, $filter, $modifiers);
+		$where = $this->getWhere( $params, $filter, $modifiers);
 		/**
 		 * @SuppressWarnings PHP0408,PHP0423
 		 */
