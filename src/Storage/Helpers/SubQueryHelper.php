@@ -219,9 +219,6 @@ class SubQueryHelper
 				&& $currentLevelJoin->getTableName() === $fromTable
 				&& $currentLevelJoin->getAlias() === $fromAlias;
 
-			// Check if this is the final aggregation target (has fields but no nested aggregation)
-			$isFinalAggregationTarget = (count($currentLevelJoin->getFields()) > 0 && !$nestedLink);
-
 			// Check if this join is marked as 'multiple' - if so, it starts a nested aggregation
 			if ($currentLevelJoin->isMultiple())
 			{
@@ -232,10 +229,12 @@ class SubQueryHelper
 				}
 			}
 
-			// Add the join unless it's BOTH a duplicate AND the final target
-			// This allows belongsToMany to work (different tables) while preventing
-			// duplicate JOINs for simple one-to-many (same table with fields)
-			$shouldSkip = $isDuplicateOfFrom && $isFinalAggregationTarget;
+			// For one-to-many (simple ->many()), the first join in the chain is a duplicate
+			// of the FROM table and should be skipped. It's recognizable because:
+			// - It's the first join in the chain
+			// - It has the same table/alias as the FROM clause
+			// - It's NOT marked as multiple (it's the aggregation target, not another bridge)
+			$shouldSkip = $isDuplicateOfFrom && !$currentLevelJoin->isMultiple();
 
 			if (!$shouldSkip)
 			{
@@ -250,12 +249,6 @@ class SubQueryHelper
 
 			// Stop if we've reached the end of this level's chain (nested aggregation starts)
 			if ($nextLevelJoinStartsAggregation)
-			{
-				break;
-			}
-
-			// If this was the final aggregation target AND it was skipped, stop
-			if ($shouldSkip && $isFinalAggregationTarget)
 			{
 				break;
 			}
