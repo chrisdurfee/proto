@@ -236,7 +236,8 @@ class SubQueryHelper
 			// Add the join unless it's BOTH a duplicate AND the final target
 			// This allows belongsToMany to work (different tables) while preventing
 			// duplicate JOINs for simple one-to-many (same table with fields)
-			$shouldSkip = $isDuplicateOfFrom && $isFinalAggregationTarget;
+			// For .many() joins, always skip duplicates of FROM table regardless of target status
+			$shouldSkip = $isDuplicateOfFrom && ($isFinalAggregationTarget || $currentLevelJoin->isMultiple());
 			if (!$shouldSkip)
 			{
 				$joins[] = [
