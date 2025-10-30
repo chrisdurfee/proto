@@ -225,7 +225,9 @@ class SubQueryHelper
 			if ($currentLevelJoin->isMultiple())
 			{
 				$nestedAggregationTarget = $currentLevelJoin->getMultipleJoin();
-				if ($nestedAggregationTarget && count($nestedAggregationTarget->getFields()) > 0)
+				// Only treat as nested aggregation if the target itself is also multiple
+				// This allows .one() joins to be included in the current subquery
+				if ($nestedAggregationTarget && count($nestedAggregationTarget->getFields()) > 0 && $nestedAggregationTarget->isMultiple())
 				{
 					$nextLevelJoinStartsAggregation = true;
 				}
