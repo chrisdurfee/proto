@@ -221,15 +221,18 @@ class SubQueryHelper
 			// Check if this is the final aggregation target (has fields but no nested aggregation)
 			$isFinalAggregationTarget = (count($currentLevelJoin->getFields()) > 0 && !$nestedLink);
 
-			// Check if this join is marked as 'multiple' - if so, it starts a nested aggregation
-			if ($currentLevelJoin->isMultiple())
+			if ($nestedLink)
 			{
-				$nestedAggregationTarget = $currentLevelJoin->getMultipleJoin();
-				// Only treat as nested aggregation if the target itself is also multiple
-				// This allows .one() joins to be included in the current subquery
-				if ($nestedAggregationTarget && count($nestedAggregationTarget->getFields()) > 0 && $nestedAggregationTarget->isMultiple())
+				$nestedAggregationTarget = $nestedLink->getMultipleJoin();
+				if ($nestedAggregationTarget && count($nestedAggregationTarget->getFields()) > 0)
 				{
-					$nextLevelJoinStartsAggregation = true;
+					// Only treat as nested aggregation if the target is multiple
+					// This allows .one() joins (like User) to be included in current subquery
+					// while .belongsToMany() joins (like Permission) create separate subqueries
+					if ($nestedAggregationTarget->isMultiple())
+					{
+						$nextLevelJoinStartsAggregation = true;
+					}
 				}
 			}
 
