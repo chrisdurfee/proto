@@ -69,11 +69,22 @@ class Filter
 		$filters = [];
 		if (Arrays::isAssoc($filter))
 		{
-			foreach ($filter as $key => $val)
+			foreach ($filter as $key => $item)
 			{
 				$key = self::prepareColumn($key, $isSnakeCase);
-				$filters[] = [$key, '?'];
-				$params[] = $val;
+
+				/**
+				 * This will get the last element of the array and assign it to $param
+				 * to replace it with a placeholder.
+				 */
+				$end = count($item) - 1;
+				$param = $item[$end];
+				$item[$end] = '?';
+
+				$value = [$key, ...$item];
+
+				$filters[] = $value;
+				$params[] = $param;
 			}
 		}
 		else
@@ -96,9 +107,15 @@ class Filter
 				else
 				{
 					$item[0] = self::prepareColumn($item[0], $isSnakeCase);
+
+					/**
+					 * This will get the last element of the array and assign it to $param
+					 * to replace it with a placeholder.
+					 */
 					$end = count($item) - 1;
 					$param = $item[$end];
 					$item[$end] = '?';
+
 					$value = [...$item];
 					$params[] = $param;
 				}
