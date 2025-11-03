@@ -47,6 +47,102 @@ class Filter
 	}
 
 	/**
+	 * Retrieves the value for a filter entry.
+	 *
+	 * @param mixed $value
+	 * @param array $params
+	 * @param bool $isSnakeCase
+	 * @return mixed
+	 */
+	protected static function getValue(mixed $value, array &$params, bool $isSnakeCase): mixed
+	{
+		/**
+		 * This is a raw sql.
+		 */
+		if (!is_array($value))
+		{
+			return $value;
+		}
+
+		/**
+		 * If a first item is an array, this is not to be modified, just merge the params
+		 * and return the raw SQL.
+		 */
+		$firstItem = $value[1] ?? null;
+		if (is_array($firstItem))
+		{
+			$params = array_merge($params, $firstItem);
+			return $value[0];
+		}
+
+		/**
+		 * This will handle the array [key, value] or [key, operator, value] and replace
+		 * the key with a prepared column name and the value with a placeholder.
+		 */
+		$value[0] = self::prepareColumn($value[0], $isSnakeCase);
+
+		/**
+		 * This will get the last element of the array and assign it to $param
+		 * to replace it with a placeholder.
+		 */
+		$valueCount = count($value);
+		$end = $valueCount - 1;
+		$param = $value[$end];
+		$value[$end] = '?';
+
+		if ($valueCount === 3)
+		{
+			$value[1] = self::filterOperator((string)$value[1]);
+		}
+		else if ($valueCount > 3)
+		{
+			// Invalid format, reset value
+			$value = [];
+		}
+
+		$params[] = $param;
+		return [...$value];
+	}
+
+	/**
+	 * Filters the operator to ensure it's allowed.
+	 *
+	 * @param string $operator
+	 * @return string
+	 */
+	protected static function filterOperator(string $operator): string
+	{
+		return (in_array($operator, self::allowedOperators(), true))
+			? $operator
+			: '=';
+	}
+
+	/**
+	 * Returns the list of allowed operators.
+	 *
+	 * @return array
+	 */
+	protected static function allowedOperators(): array
+	{
+		return [
+			'=',
+			'!=',
+			'<',
+			'>',
+			'<=',
+			'>=',
+			'LIKE',
+			'NOT LIKE',
+			'IN',
+			'NOT IN',
+			'IS NULL',
+			'IS NOT NULL',
+			'BETWEEN',
+			'NOT BETWEEN'
+		];
+	}
+
+	/**
 	 * Sets up the filter.
 	 *
 	 * @param mixed $filter
@@ -73,53 +169,17 @@ class Filter
 			{
 				$key = self::prepareColumn($key, $isSnakeCase);
 
-				/**
-				 * This will get the last element of the array and assign it to $param
-				 * to replace it with a placeholder.
-				 */
-				$end = count($item) - 1;
-				$param = $item[$end];
-				$item[$end] = '?';
-
-				$value = [$key, ...$item];
+				$value = (is_array($item)) ? [$key, ...$item] : [$key, $item];
+				$value = self::getValue($value, $params, $isSnakeCase);
 
 				$filters[] = $value;
-				$params[] = $param;
 			}
 		}
 		else
 		{
 			foreach ($filter as $item)
 			{
-				if (!is_array($item))
-				{
-					$filters[] = $item;
-					continue;
-				}
-
-				$value = null;
-				$firstItem = $item[1] ?? null;
-				if (is_array($firstItem))
-				{
-					$params = array_merge($params, $firstItem);
-					$value = $item[0];
-				}
-				else
-				{
-					$item[0] = self::prepareColumn($item[0], $isSnakeCase);
-
-					/**
-					 * This will get the last element of the array and assign it to $param
-					 * to replace it with a placeholder.
-					 */
-					$end = count($item) - 1;
-					$param = $item[$end];
-					$item[$end] = '?';
-
-					$value = [...$item];
-					$params[] = $param;
-				}
-
+				$value = self::getValue($item, $params, $isSnakeCase);
 				$filters[] = $value;
 			}
 		}
