@@ -50,10 +50,36 @@ class Message
 		if ($this->formatted)
 		{
 			echo (string)$this->data;
-			return;
+		}
+		else
+		{
+			echo "data: " . self::json($this->data) . "\n\n";
 		}
 
-		echo "data: " . self::json($this->data) . "\n\n";
+		// Use aggressive flushing like StreamResponse
+		$this->aggressiveFlush();
+	}
+
+	/**
+	 * Aggressively flushes all output buffers to ensure real-time delivery.
+	 *
+	 * @return void
+	 */
+	protected function aggressiveFlush(): void
+	{
+		// Multiple flush attempts for different environments
+		if (function_exists('ob_flush'))
+		{
+			@ob_flush();
+		}
+
+		// Force flush all output buffers
+		while (ob_get_level())
+		{
+			@ob_flush();
+		}
+
+		// System flush
 		flush();
 	}
 }
