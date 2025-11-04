@@ -73,13 +73,17 @@ class Message
 			@ob_flush();
 		}
 
-		// Force flush all output buffers
-		while (ob_get_level())
+		// Force flush all output buffers with safety limit
+		$maxLevels = 10; // Prevent infinite loops
+		while (ob_get_level() && $maxLevels-- > 0)
 		{
 			@ob_flush();
 		}
 
 		// System flush
 		flush();
+
+		// Add a small delay to help with timing in some environments
+		usleep(1000); // 1ms delay
 	}
 }
