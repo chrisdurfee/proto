@@ -78,31 +78,20 @@ class StreamResponse extends Response
 	 */
 	public function flush(): self
 	{
-		// Multiple flush attempts for different environments
-		if (function_exists('ob_flush'))
+		// Only flush if output buffering is active
+		$levels = ob_get_level();
+		if ($levels > 0)
 		{
-			@ob_flush();
+			// Flush each buffer level with safety limit
+			$maxLevels = min($levels, 10); // Prevent infinite loops
+			for ($i = 0; $i < $maxLevels; $i++)
+			{
+				@ob_flush();
+			}
 		}
 
-		// Force flush all output buffers with safety limit
-		$maxLevels = 10; // Prevent infinite loops
-		while (ob_get_level() && $maxLevels-- > 0)
-		{
-			@ob_flush();
-		}
-
-		// System flush
+		// System flush - always safe to call
 		flush();
-
-		// FPM specific flush (doesn't end request, just flushes)
-		if (function_exists('fastcgi_finish_request'))
-		{
-			// Note: We don't call fastcgi_finish_request() here as it would end the connection
-			// We just ensure output is flushed
-		}
-
-		// Add a small delay to help with timing in some environments
-		usleep(1000); // 1ms delay
 
 		return $this;
 	}
