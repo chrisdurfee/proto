@@ -79,7 +79,18 @@ namespace
 		$server = new ServerEvents($interval);
 		$server->start(function(EventLoop $loop) use($callback)
 		{
-			$loop->addEvent(new UpdateEvent($callback));
+			// Wrap the callback so returning `false` ends the loop (useful for timeboxed SSE).
+			$loop->addEvent(new UpdateEvent(function($event) use ($callback, $loop)
+			{
+				$result = $callback($event);
+				if ($result === false)
+				{
+					$loop->end();
+					return null; // don't emit any payload on termination
+				}
+
+				return $result; // emit payload (if non-empty) this tick
+			}));
 		});
 	}
 
