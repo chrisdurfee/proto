@@ -368,6 +368,7 @@ class Router
 			$statusCode = (is_int($result->code ?? '')) ? $result->code : HttpStatus::OK->value;
 			$this->sendResponse($statusCode, $result);
 		}
+		exit;
 	}
 
 	/**
