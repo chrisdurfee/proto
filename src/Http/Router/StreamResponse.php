@@ -27,11 +27,13 @@ class StreamResponse extends Response
 	public function sendHeaders(int $code, ?string $contentType = null): self
 	{
 		$contentType = $contentType ?? $this->contentType;
+		$message = parent::getResponseMessage($code);
 
-		// Use parent method to ensure consistency.
-		parent::sendHeaders($code, $contentType);
+		// Send status line
+		header("HTTP/2.0 {$code} {$message}");
 
-		// Additional headers for SSE.
+		// Send SSE-specific headers (no charset for text/event-stream)
+		header("Content-Type: {$contentType}");
 		header('Cache-Control: no-cache');
 		header('Connection: keep-alive');
 		header('X-Accel-Buffering: no'); // For Nginx, prevents buffering.
