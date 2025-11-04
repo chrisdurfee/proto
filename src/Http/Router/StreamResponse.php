@@ -36,7 +36,8 @@ class StreamResponse extends Response
 		header("HTTP/2.0 {$code} {$message}");
 
 		// Send SSE-specific headers (no charset for text/event-stream)
-		header("Content-Type: {$contentType}");
+		// Force explicit Content-Type without charset
+		header("Content-Type: {$contentType}", true);
 		header('Cache-Control: no-cache');
 		header('Connection: keep-alive');
 		header('X-Accel-Buffering: no'); // For Nginx, prevents buffering.
