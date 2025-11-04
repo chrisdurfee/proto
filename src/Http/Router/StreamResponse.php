@@ -32,18 +32,42 @@ class StreamResponse extends Response
 		$contentType = $contentType ?? $this->contentType;
 		$message = parent::getResponseMessage($code);
 
+		// Disable all output buffering before sending headers
+		while (ob_get_level()) {
+			ob_end_flush();
+		}
+
 		// Send status line
 		header("HTTP/2.0 {$code} {$message}");
 
 		// Send SSE-specific headers (no charset for text/event-stream)
 		// Force explicit Content-Type without charset
 		header("Content-Type: {$contentType}", true);
-		header('Cache-Control: no-cache');
+		header('Cache-Control: no-cache, no-store, must-revalidate');
+		header('Pragma: no-cache');
+		header('Expires: 0');
 		header('Connection: keep-alive');
 		header('X-Accel-Buffering: no'); // For Nginx, prevents buffering.
 
-		// Disable output buffering for real-time streaming.
-		while (@ob_end_flush());
+		// PHP-FPM and Apache specific headers to prevent buffering
+		header('X-Content-Type-Options: nosniff');
+		header('Content-Encoding: identity'); // Prevent gzip compression
+
+		// Force immediate header sending
+		if (function_exists('fastcgi_finish_request'))
+		{
+			// This doesn't finish the request, just flushes headers in FPM
+			flush();
+		}
+
+		// Disable implicit output buffering
+		ini_set('output_buffering', 'off');
+		ini_set('zlib.output_compression', 'off');
+
+		// Send initial SSE comment to establish connection
+		echo ": SSE Connection Established\n\n";
+		$this->flush();
+
 		return $this;
 	}
 
@@ -54,12 +78,31 @@ class StreamResponse extends Response
 	 */
 	public function flush(): self
 	{
+		// Multiple flush attempts for different environments
 		if (function_exists('ob_flush'))
 		{
 			@ob_flush();
 		}
 
+		// Force flush all output buffers
+		while (ob_get_level())
+		{
+			@ob_flush();
+		}
+
+		// System flush
 		flush();
+
+		// FPM specific flush (doesn't end request, just flushes)
+		if (function_exists('fastcgi_finish_request'))
+		{
+			// Note: We don't call fastcgi_finish_request() here as it would end the connection
+			// We just ensure output is flushed
+		}
+
+		// Add a small delay to help with timing in some environments
+		usleep(1000); // 1ms delay
+
 		return $this;
 	}
 
@@ -77,8 +120,19 @@ class StreamResponse extends Response
 			echo "event: {$event}\n";
 		}
 
-		echo "data: {$data}\n\n";
+		// Split multi-line data into multiple data: lines (SSE spec requirement)
+		$lines = explode("\n", $data);
+		foreach ($lines as $line)
+		{
+			echo "data: {$line}\n";
+		}
+
+		// Send the required empty line to complete the event
+		echo "\n";
+
+		// Aggressive flushing
 		$this->flush();
+
 		return $this;
 	}
 }

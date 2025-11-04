@@ -55,10 +55,38 @@ class ServerEvents extends EventEmitter
 	 */
 	protected function initialize(int $interval): void
 	{
+		// Configure PHP for real-time streaming
+		$this->configureStreaming();
+
 		$this->setupResponse();
 		$this->loop = new EventLoop($interval);
 
 		$this->emit('connection', $this->loop);
+	}
+
+	/**
+	 * Configure PHP settings for optimal SSE streaming
+	 *
+	 * @return void
+	 */
+	protected function configureStreaming(): void
+	{
+		// Disable output buffering
+		ini_set('output_buffering', 'off');
+		ini_set('zlib.output_compression', 'off');
+		ini_set('implicit_flush', '1');
+
+		// Set unlimited execution time
+		set_time_limit(0);
+
+		// Continue processing even if client disconnects
+		//ignore_user_abort(true);
+
+		// Disable gzip compression if possible
+		if (function_exists('apache_setenv'))
+		{
+			apache_setenv('no-gzip', '1');
+		}
 	}
 
 	/**
