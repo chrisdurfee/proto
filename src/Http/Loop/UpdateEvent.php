@@ -46,9 +46,7 @@ class UpdateEvent extends Event
 	{
 		// Call the callback and handle the result.
 		$result = ($this->callback)($this);
-
-		// Send message if the result is valid.
-		if (!empty($result))
+		if ($result)
 		{
 			$this->message($result);
 		}

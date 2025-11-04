@@ -32,7 +32,7 @@ abstract class Event implements EventInterface
 	 */
 	public function message(mixed $data): void
 	{
-		$message = new Message($data);
+		new Message($data);
 		$this->flush();
 	}
 
@@ -43,10 +43,10 @@ abstract class Event implements EventInterface
 	 */
 	public function flush(): self
 	{
+		flush();
 		if (ob_get_length() > 0)
 		{
 			ob_flush();
-			flush();
 		}
 
 		return $this;
