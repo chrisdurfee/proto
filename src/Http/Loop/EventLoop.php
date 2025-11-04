@@ -72,6 +72,16 @@ class EventLoop
 			}
 
 			$this->tick();
+
+			/**
+			 * This will check to stop if an event has
+			 * stopped the loop.
+			 */
+			if (!$this->isActive())
+			{
+				break;
+			}
+
 			$this->timer->tick();
 		}
 	}
@@ -105,6 +115,11 @@ class EventLoop
 	 */
 	protected function tick(): void
 	{
+		if (count($this->events) < 1)
+		{
+			return;
+		}
+
 		foreach ($this->events as $event)
 		{
 			$event->tick();
