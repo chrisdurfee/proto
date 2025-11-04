@@ -79,9 +79,17 @@ namespace
 		$server = new ServerEvents($interval);
 		$server->start(function(EventLoop $loop) use($callback)
 		{
-			// Use UpdateEvent so the callback runs every tick (at the given interval).
-			// Note: The callback should return a value to push to the SSE stream, or null to skip.
-			$loop->addEvent(new UpdateEvent($callback));
+			// Wrap to allow returning `false` to terminate the loop gracefully.
+			$loop->addEvent(new UpdateEvent(function($event) use ($callback, $loop)
+			{
+				$result = $callback($event);
+				if ($result === false)
+				{
+					$loop->end();
+					return null;
+				}
+				return $result;
+			}));
 		});
 	}
 

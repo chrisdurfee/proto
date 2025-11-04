@@ -154,7 +154,11 @@ class FileSession extends Adapter
 	public function __get(string $key): mixed
 	{
 		$this->open();
-		return $_SESSION[$key] ?? null;
+		$value = $_SESSION[$key] ?? null;
+		// Important: release the session lock after reading so long-running
+		// requests (like SSE) don't block other requests in the same session.
+		$this->close();
+		return $value;
 	}
 
 	/**
@@ -166,7 +170,10 @@ class FileSession extends Adapter
 	public function __isset(string $key): bool
 	{
 		$this->open();
-		return isset($_SESSION[$key]);
+		$exists = isset($_SESSION[$key]);
+		// Release the lock after the check
+		$this->close();
+		return $exists;
 	}
 
 	/**
