@@ -11,11 +11,14 @@ namespace Proto\Http\Router;
 class StreamResponse extends Response
 {
 	/**
-	 * Content type of the stream response.
+	 * Constructor.
 	 *
-	 * @var string
+	 * @param string $contentType Default response content type.
 	 */
-	protected string $contentType = 'text/event-stream';
+	public function __construct(string $contentType = 'text/event-stream')
+	{
+		parent::__construct($contentType);
+	}
 
 	/**
 	 * Sends headers for the stream response.
