@@ -318,7 +318,7 @@ abstract class ResourceController extends ApiController
 
 		if ($id === null)
 		{
-			return $this->error('The ID is required.');
+			return $this->error('The ID is required to delete.');
 		}
 
 		return $this->deleteItem((object) ['id' => $id]);
@@ -364,7 +364,7 @@ abstract class ResourceController extends ApiController
 		$id = $this->getResourceId($request);
 		if ($id === null)
 		{
-			return $this->error('The ID is required.');
+			return $this->error('The ID is required to get the item.');
 		}
 
 		return $this->response(['row' => $this->model::get($id)]);
