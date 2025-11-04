@@ -32,6 +32,11 @@ class Message
 	 */
 	public static function json(mixed $data): string
 	{
+		if (!isset($data))
+		{
+			return '';
+		}
+
 		return json_encode($data ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 	}
 
@@ -42,8 +47,13 @@ class Message
 	 */
 	protected function render(): void
 	{
-		$output = $this->formatted ? (string)$this->data : "data: " . self::json($this->data) . "\n\n";
-		echo $output;
+		if ($this->formatted)
+		{
+			echo (string)$this->data;
+			return;
+		}
+
+		echo "data: " . self::json($this->data) . "\n\n";
 		flush();
 	}
 }
