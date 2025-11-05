@@ -397,6 +397,38 @@ abstract class Query extends Template
 	}
 
 	/**
+	 * Adds AND conditions to the WHERE clause.
+	 *
+	 * @param mixed ...$where One or more conditions, each as a string or array.
+	 * @return self Returns the current instance.
+	 */
+	public function andWhere(mixed ...$where): self
+	{
+		if (!empty($this->conditions))
+		{
+			$this->conditions[] = 'AND ';
+		}
+
+		return $this->where(...$where);
+	}
+
+	/**
+	 * Adds OR conditions to the WHERE clause.
+	 *
+	 * @param mixed ...$where One or more conditions, each as a string or array.
+	 * @return self Returns the current instance.
+	 */
+	public function orWhere(mixed ...$where): self
+	{
+		if (!empty($this->conditions))
+		{
+			$this->conditions[] = 'OR ';
+		}
+
+		return $this->where(...$where);
+	}
+
+	/**
 	 * This will add a JSON condition to the WHERE clause.
 	 *
 	 * @param string $columnName
