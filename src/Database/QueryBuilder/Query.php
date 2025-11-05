@@ -397,22 +397,6 @@ abstract class Query extends Template
 	}
 
 	/**
-	 * Adds AND conditions to the WHERE clause.
-	 *
-	 * @param mixed ...$where One or more conditions, each as a string or array.
-	 * @return self Returns the current instance.
-	 */
-	public function andWhere(mixed ...$where): self
-	{
-		if (!empty($this->conditions))
-		{
-			$this->conditions[] = 'AND ';
-		}
-
-		return $this->where(...$where);
-	}
-
-	/**
 	 * Adds OR conditions to the WHERE clause.
 	 *
 	 * @param mixed ...$where One or more conditions, each as a string or array.
@@ -420,12 +404,19 @@ abstract class Query extends Template
 	 */
 	public function orWhere(mixed ...$where): self
 	{
-		if (!empty($this->conditions))
+		$conditions = [];
+		foreach ($where as $conditionSpec)
 		{
-			$this->conditions[] = 'OR ';
+			$condition = $this->getCompareString($conditionSpec);
+			$conditions[] = $condition;
 		}
 
-		return $this->where(...$where);
+		if (!empty($conditions))
+		{
+			$this->conditions[] = '(' . implode(' OR ', $conditions) . ')';
+		}
+
+		return $this;
 	}
 
 	/**
