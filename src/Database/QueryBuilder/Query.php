@@ -443,6 +443,21 @@ abstract class Query extends Template
 	}
 
 	/**
+	 * This will add a BETWEEN condition to the WHERE clause.
+	 *
+	 * @param string $columnName
+	 * @param mixed $start
+	 * @param mixed $end
+	 * @return self
+	 */
+	public function whereBetween(string $columnName, mixed $start, mixed $end): self
+	{
+		$condition = "{$columnName} BETWEEN {$start} AND {$end}";
+		$this->conditions[] = $condition;
+		return $this;
+	}
+
+	/**
 	 * This will add a JSON condition to the WHERE clause.
 	 *
 	 * @param string $columnName
