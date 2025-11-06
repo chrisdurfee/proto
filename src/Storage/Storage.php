@@ -734,11 +734,10 @@ class Storage extends TableStorage
 	 */
 	public function where(mixed $filter = null, ?array &$params = null, ?array $modifiers = null): object
 	{
-		$where = $this->getWhere( $params, $filter, $modifiers);
 		/**
 		 * @SuppressWarnings PHP0408,PHP0423
-		 */
-		$sql = $this->select()->where(...$where);
+		*/
+		$sql = $this->select();
 
 		/**
 		 * If the default params is empty, we will use the adapter proxy params
@@ -748,6 +747,9 @@ class Storage extends TableStorage
 		{
 			$params = $sql->params();
 		}
+
+		$where = $this->getWhere( $params, $filter, $modifiers);
+		$sql->where(...$where);
 
 		$this->setCustomWhere($sql, $modifiers, $params);
 		$this->setOrderBy($sql, $modifiers, $params);
