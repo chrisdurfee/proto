@@ -824,7 +824,7 @@ class Storage extends TableStorage
 	 * Find multiple records using a callback.
 	 *
 	 * @param callable|null $callBack Callback function.
-	 * @return array|bool|AdapterProxy
+	 * @return array|bool|object
 	 */
 	public function findAll(?callable $callBack = null)
 	{
