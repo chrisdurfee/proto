@@ -2,7 +2,6 @@
 namespace Proto\Models;
 
 use Proto\Base;
-use Proto\Database\QueryBuilder\AdapterProxy;
 use Proto\Models\Data\Data;
 use Proto\Storage\Storage;
 use Proto\Storage\StorageProxy;
@@ -1055,9 +1054,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 *
 	 * @param array|object|null $filter Filter criteria.
 	 * @param array|null $modifiers Query modifiers.
-	 * @return AdapterProxy
+	 * @return object
 	 */
-	public static function where(mixed $filter = null, ?array $modifiers = null): AdapterProxy
+	public static function where(mixed $filter = null, ?array $modifiers = null): object
 	{
 		$instance = new static();
 		/**
