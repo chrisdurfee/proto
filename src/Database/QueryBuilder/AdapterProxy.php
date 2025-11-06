@@ -236,12 +236,12 @@ class AdapterProxy
 	}
 
 	/**
-	 * Adds WHERE conditions to the query with filter support.
+	 * Filters WHERE conditions.
 	 *
-	 * @param mixed ...$where One or more conditions, each as a string or array.
-	 * @return self Returns the current instance.
+	 * @param array $where The conditions to filter.
+	 * @return array The filtered conditions.
 	 */
-	public function where(mixed ...$where): self
+	protected function filterWhereConditions(array $where): array
 	{
 		$filteredWhere = [];
 		foreach ($where as $condition)
@@ -254,7 +254,74 @@ class AdapterProxy
 			$filteredWhere[] = $condition;
 		}
 
+		return $filteredWhere;
+	}
+
+	/**
+	 * Adds WHERE conditions to the query with filter support.
+	 *
+	 * @param mixed ...$where One or more conditions, each as a string or array.
+	 * @return self Returns the current instance.
+	 */
+	public function where(mixed ...$where): self
+	{
+		$filteredWhere = $this->filterWhereConditions($where);
 		$this->sql->where(...$filteredWhere);
+
+		return $this;
+	}
+
+	/**
+	 * Adds AND conditions to the WHERE clause.
+	 *
+	 * @param mixed ...$where One or more conditions, each as a string or array.
+	 * @return self Returns the current instance.
+	 */
+	public function andWhere(mixed ...$where): self
+	{
+		$filteredWhere = $this->filterWhereConditions($where);
+		$this->sql->andWhere(...$filteredWhere);
+
+		return $this;
+	}
+
+	/**
+	 * Adds OR conditions to the WHERE clause.
+	 *
+	 * @param mixed ...$where One or more conditions, each as a string or array.
+	 * @return self Returns the current instance.
+	 */
+	public function orWhere(mixed ...$where): self
+	{
+		$filteredWhere = $this->filterWhereConditions($where);
+		$this->sql->orWhere(...$filteredWhere);
+
+		return $this;
+	}
+
+	/**
+	 * This will add a BETWEEN condition to the WHERE clause.
+	 *
+	 * @param string $columnName
+	 * @param mixed $start
+	 * @param mixed $end
+	 * @return self
+	 */
+	public function whereBetween(string $columnName, mixed $start, mixed $end): self
+	{
+		if ($start !== "?")
+		{
+			$this->addParam($start);
+			$start = "?";
+		}
+
+		if ($end !== "?")
+		{
+			$this->addParam($end);
+			$end = "?";
+		}
+
+		$this->sql->whereBetween($columnName, $start, $end);
 		return $this;
 	}
 

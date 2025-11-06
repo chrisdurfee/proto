@@ -799,31 +799,45 @@ class Storage extends TableStorage
 	}
 
 	/**
-	 * Find a single record using a callback.
+	 * Find a single record using a callback or return the query builder
+	 * if no callback is provided.
 	 *
-	 * @param callable $callBack Callback function.
+	 * @param callable|null $callBack Callback function.
 	 * @return mixed
 	 */
-	public function find(callable $callBack)
+	public function find(?callable $callBack = null)
 	{
 		$params = [];
-		$sql = $this->select();
-		$this->callBack($callBack, $sql, $params);
-		return $sql->first($params);
+		$sql = $this->select()
+			->limit(1);
+
+		if ($callBack)
+		{
+			$this->callBack($callBack, $sql, $params);
+			return $sql->first($params);
+		}
+
+		return $sql;
 	}
 
 	/**
 	 * Find multiple records using a callback.
 	 *
-	 * @param callable $callBack Callback function.
-	 * @return array|bool
+	 * @param callable|null $callBack Callback function.
+	 * @return array|bool|AdapterProxy
 	 */
-	public function findAll(callable $callBack)
+	public function findAll(?callable $callBack = null)
 	{
 		$params = [];
 		$sql = $this->select();
-		$this->callBack($callBack, $sql, $params);
-		return $sql->fetch($params);
+
+		if ($callBack)
+		{
+			$this->callBack($callBack, $sql, $params);
+			return $sql->fetch($params);
+		}
+
+		return $sql;
 	}
 
 	/**
