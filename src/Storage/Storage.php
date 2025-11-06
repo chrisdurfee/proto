@@ -805,7 +805,7 @@ class Storage extends TableStorage
 	 * @param callable|null $callBack Callback function.
 	 * @return mixed
 	 */
-	public function find(?callable $callBack = null)
+	public function find(?callable $callBack = null): mixed
 	{
 		$params = [];
 		$sql = $this->select()
@@ -826,7 +826,7 @@ class Storage extends TableStorage
 	 * @param callable|null $callBack Callback function.
 	 * @return array|bool|object
 	 */
-	public function findAll(?callable $callBack = null)
+	public function findAll(?callable $callBack = null): mixed
 	{
 		$params = [];
 		$sql = $this->select();
