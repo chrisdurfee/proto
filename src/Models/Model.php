@@ -1062,9 +1062,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		/**
 		 * @SuppressWarnings PHP0408,PHP0423
 		 */
-		$params = [];
 		$adapterProxy = $instance->storage->where($filter, $params, $modifiers);
-		$adapterProxy->addParams($params);
 		return $adapterProxy;
 	}
 
