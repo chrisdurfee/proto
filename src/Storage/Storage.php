@@ -743,9 +743,9 @@ class Storage extends TableStorage
 		 * If the default params is empty, we will use the adapter proxy params
 		 * for the modifiers.
 		 */
-		if (empty($params))
+		if (!isset($params))
 		{
-			$params = $sql->params();
+			$params =& $sql->params();
 		}
 
 		$where = $this->getWhere( $params, $filter, $modifiers);
