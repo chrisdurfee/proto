@@ -44,7 +44,7 @@ class AdapterProxy
 	 *
 	 * @return array
 	 */
-	public function params(): array
+	public function &params(): array
 	{
 		return $this->params;
 	}
