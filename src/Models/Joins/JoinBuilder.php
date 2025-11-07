@@ -328,7 +328,7 @@ class JoinBuilder
 		$tableName = $modelName::table();
 		$alias = $alias ?? $modelName::alias();
 
-		$join = $this->createModelJoin($modelName, $type, true);
+		$join = $this->createModelJoin($modelName, $type, true, $alias);
 
 		// For 'many' joins, create a multipleJoin target to hold the aggregated data
 		// This allows the SubQueryHelper to generate JSON_ARRAYAGG subqueries
