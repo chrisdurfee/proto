@@ -266,12 +266,13 @@ class JoinBuilder
 	 * @param string $modelName Model class name.
 	 * @param string $type Join type (default is 'left').
 	 * @param bool $isMultiple True for a 'many' relationship, false for 'one'.
+	 * @param string|null $alias Optional alias for the joined table.
 	 * @return ModelJoin
 	 */
-	private function createModelJoin(string $modelName, string $type = 'left', bool $isMultiple = false): ModelJoin
+	private function createModelJoin(string $modelName, string $type = 'left', bool $isMultiple = false, ?string $alias = null): ModelJoin
 	{
 		$tableName = $modelName::table();
-		$alias = $modelName::alias();
+		$alias = $alias ?? $modelName::alias();
 
 		$join = $this->getJoinByType($type, $tableName, $alias);
 
@@ -291,9 +292,14 @@ class JoinBuilder
 	 * @param array $fields Optional fields to select from the related model.
 	 * @return ModelJoin
 	 */
-	public function one(string $modelName, string $type = 'left', array $fields = []): ModelJoin
+	public function one(
+		string $modelName,
+		string $type = 'left',
+		array $fields = [],
+		?string $alias = null
+	): ModelJoin
 	{
-		$join = $this->createModelJoin($modelName, $type, false);
+		$join = $this->createModelJoin($modelName, $type, false, $alias);
 
 		if (count($fields))
 		{
@@ -309,12 +315,18 @@ class JoinBuilder
 	 * @param string $modelName The related model class name.
 	 * @param string $type Join type (default is 'left').
 	 * @param array $fields Optional fields to select from the related model.
+	 * @param string|null $alias Optional alias for the joined table.
 	 * @return ModelJoin
 	 */
-	public function many(string $modelName, string $type = 'left', array $fields = []): ModelJoin
+	public function many(
+		string $modelName,
+		string $type = 'left',
+		array $fields = [],
+		?string $alias = null
+	): ModelJoin
 	{
 		$tableName = $modelName::table();
-		$alias = $modelName::alias();
+		$alias = $alias ?? $modelName::alias();
 
 		$join = $this->createModelJoin($modelName, $type, true);
 
