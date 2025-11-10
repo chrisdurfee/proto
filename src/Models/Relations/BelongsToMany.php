@@ -102,7 +102,7 @@ class BelongsToMany
 	 */
 	protected function getSelectQuery(): object
 	{
-		$alias = ($this->related)::getAlias();
+		$alias = ($this->related)::alias();
 		$query = $this->buildBaseQuery();
 		$on = "p.{$this->relatedPivot} = {$alias}.{$this->relatedKey}";
 
@@ -188,20 +188,20 @@ class BelongsToMany
 			ModifierUtil::setGroupBy($sql, $groupBy, $isSnakeCase, $alias);
 		}
 
-        /**
-         * This will add a limit by cursor or offset.
-         */
-        Limit::add($sql, $params, $instance, $offset, $limit, $modifiers);
+		/**
+		 * This will add a limit by cursor or offset.
+		 */
+		Limit::add($sql, $params, $instance, $offset, $limit, $modifiers);
 
-        $rows = $sql->fetch($params);
-        $rows = $instance->convertRows($rows);
+		$rows = $sql->fetch($params);
+		$rows = $instance->convertRows($rows);
 
-        $result = [ 'rows' => $rows ];
-        if (!empty($rows))
-        {
-            $idKey = $instance->getIdKeyName();
-            $result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
-        }
+		$result = [ 'rows' => $rows ];
+		if (!empty($rows))
+		{
+			$idKey = $instance->getIdKeyName();
+			$result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
+		}
 		return (object)$result;
 	}
 
