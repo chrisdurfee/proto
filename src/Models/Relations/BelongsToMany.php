@@ -102,8 +102,9 @@ class BelongsToMany
 	 */
 	protected function getSelectQuery(): object
 	{
+		$alias = ($this->related)::getAlias();
 		$query = $this->buildBaseQuery();
-		$on = "p.{$this->relatedPivot} = r.{$this->relatedKey}";
+		$on = "p.{$this->relatedPivot} = {$alias}.{$this->relatedKey}";
 
 		$joinDef = [
 			'table' => $this->pivotTable,
@@ -367,10 +368,11 @@ class BelongsToMany
 	protected function buildBaseQuery(): object
 	{
 		$relatedTable = ($this->related)::table();
+		$relatedAlias = ($this->related)::getAlias();
 		return $this->parent
 			->storage
-			->table($relatedTable, 'r')
-			->select(['r.*']);
+			->table($relatedTable, $relatedAlias)
+			->select(["{$relatedAlias}.*"]);
 	}
 
 	/**
