@@ -182,7 +182,7 @@ class JoinBuilder
 	/**
 	 * Creates and adds a join of a specific type.
 	 *
-	 * @param string $type The join type ('left', 'right', 'outer', 'cross').
+	 * @param string $type The join type ('inner', 'left', 'right', 'outer', 'cross').
 	 * @param string|array $tableName Base table name.
 	 * @param string|null $alias Table alias.
 	 * @return ModelJoin
@@ -191,6 +191,18 @@ class JoinBuilder
 	{
 		$join = $this->addJoin($tableName, $alias);
 		return $join->$type();
+	}
+
+	/**
+	 * Creates an inner join.
+	 *
+	 * @param string|array $tableName Base table name.
+	 * @param string|null $alias Table alias.
+	 * @return ModelJoin
+	 */
+	public function inner(string|array $tableName, ?string $alias = null): ModelJoin
+	{
+		return $this->addTypedJoin('inner', $tableName, $alias);
 	}
 
 	/**
@@ -253,6 +265,7 @@ class JoinBuilder
 	{
 		return match (strtolower($type))
 		{
+			'inner' => $this->inner($tableName, $alias),
 			'right' => $this->right($tableName, $alias),
 			'outer' => $this->outer($tableName, $alias),
 			'cross' => $this->cross($tableName, $alias),
@@ -276,7 +289,7 @@ class JoinBuilder
 
 		$join = $this->getJoinByType($type, $tableName, $alias);
 
-		if ($isMultiple)
+		if ($isMultiple === true)
 		{
 			$join->multiple();
 		}
@@ -301,7 +314,7 @@ class JoinBuilder
 	{
 		$join = $this->createModelJoin($modelName, $type, false, $alias);
 
-		if (count($fields))
+		if (count($fields) > 0)
 		{
 			$join->fields(...$fields);
 		}
