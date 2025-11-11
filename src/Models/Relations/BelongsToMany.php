@@ -368,7 +368,7 @@ class BelongsToMany
 	protected function buildBaseQuery(): object
 	{
 		$relatedTable = ($this->related)::table();
-		$relatedAlias = ($this->related)::getAlias();
+		$relatedAlias = ($this->related)::alias();
 		return $this->parent
 			->storage
 			->table($relatedTable, $relatedAlias)
