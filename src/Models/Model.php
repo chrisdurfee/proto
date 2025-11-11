@@ -1052,17 +1052,14 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * This will get a new query builder instance for the model.
 	 *
-	 * @param array|object|null $filter Filter criteria.
-	 * @param array|null $modifiers Query modifiers.
+	 * @param string|null $table Table name.
+	 * @param string|null $alias Table alias.
 	 * @return object
 	 */
 	public static function builder(?string $table = null, ?string $alias = null): object
 	{
 		$instance = new static();
 
-		/**
-		 * @SuppressWarnings PHP0408,PHP0423
-		 */
 		return $instance->storage->table(
 			$table ?? static::$tableName,
 			$alias ?? static::$alias
