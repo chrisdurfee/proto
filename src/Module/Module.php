@@ -1,13 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Module;
 
-use Proto\Events\Events;
 use Proto\Providers\ServiceManager;
-
-/**
- * preload events.
- */
-class_exists('Proto\Events\Events');
 
 /**
  * Module
