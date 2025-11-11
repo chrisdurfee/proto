@@ -5,6 +5,11 @@ use Proto\Events\Events;
 use Proto\Providers\ServiceManager;
 
 /**
+ * preload events.
+ */
+class_exists('Proto\Events\Events');
+
+/**
  * Module
  *
  * This will create a module that can be used by the application.
@@ -27,7 +32,7 @@ abstract class Module implements ModuleInterface
 	 */
 	protected function event(string $key, callable $callBack): string
 	{
-		return Events::on($key, $callBack);
+		return events()->on($key, $callBack);
 	}
 
 	/**
