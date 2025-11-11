@@ -2,6 +2,7 @@
 namespace Proto\Events;
 
 use Proto\Http\Loop\Event;
+use Proto\Http\Loop\AsyncEventInterface;
 
 /**
  * RedisAsyncEvent
