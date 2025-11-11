@@ -290,6 +290,17 @@ namespace
 	}
 
 	/**
+	 * Retrieves the global Events instance for event-driven functionality.
+	 * Supports both local and distributed (Redis) events via prefix-based routing.
+	 *
+	 * @return \Proto\Events\Events The Events singleton instance
+	 */
+	function events(): \Proto\Events\Events
+	{
+		return \Proto\Events\Events::getInstance();
+	}
+
+	/**
 	 * Sets the base URL for the current environment.
 	 */
 	define('ENV_URL', envUrl());

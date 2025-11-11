@@ -9,6 +9,7 @@ namespace
 	use Proto\Http\Session;
 	use Proto\Http\Session\SessionInterface;
 	use Proto\Http\ServerEvents\ServerEvents;
+	use Proto\Events\RedisAsyncEvent;
 
 	/**
 	 * @var Base $base This will boostrap the application.
@@ -104,6 +105,36 @@ namespace
 	{
 		$server = new ServerEvents();
         $server->stream($callback);
+	}
+
+	/**
+	 * Creates a Redis-based SSE stream that subscribes to one or more Redis channels.
+	 * Messages published to the channels are automatically sent to the client.
+	 *
+	 * @param array|string $channels The Redis channel(s) to subscribe to (without 'redis:' prefix).
+	 * @param callable $callback Optional callback to process messages before sending.
+	 * Receives ($channel, $message, $event) as parameters.
+	 * Return a value to send as SSE message, false to terminate.
+	 * If not provided, messages are sent as-is.
+	 * @param int $interval The interval between event loop ticks in milliseconds (default: 300).
+	 * @return void
+	 */
+	function redisEvent(array|string $channels, ?callable $callback = null, int $interval = 300): void
+	{
+		$server = new ServerEvents($interval);
+		$server->start(function(EventLoop $loop) use($channels, $callback)
+		{
+			// If no callback provided, just send messages as-is
+			if ($callback === null)
+			{
+				$callback = function($channel, $message, $event)
+				{
+					return $message; // Send message directly to client
+				};
+			}
+
+			$loop->addEvent(RedisAsyncEvent::create($channels, $callback));
+		});
 	}
 }
 

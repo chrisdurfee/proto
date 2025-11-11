@@ -173,4 +173,80 @@ class RedisDriver extends Driver
 	{
 		return $this->db->flushDB();
 	}
+
+	/**
+	 * Publishes a message to a Redis channel.
+	 *
+	 * @param string $channel The channel name.
+	 * @param string $message The message to publish.
+	 * @return int The number of clients that received the message.
+	 */
+	public function publish(string $channel, string $message): int
+	{
+		return $this->db->publish($channel, $message);
+	}
+
+	/**
+	 * Subscribes to one or more Redis channels and executes a callback for each message.
+	 *
+	 * @param array|string $channels The channel(s) to subscribe to.
+	 * @param callable $callback The callback function to execute for each message.
+	 *                          Receives ($channel, $message) as parameters.
+	 * @return void
+	 */
+	public function subscribe(array|string $channels, callable $callback): void
+	{
+		$channels = is_array($channels) ? $channels : [$channels];
+
+		$this->db->subscribe($channels, function ($redis, $channel, $message) use ($callback) {
+			$callback($channel, $message);
+		});
+	}
+
+	/**
+	 * Subscribes to Redis channels using pattern matching.
+	 *
+	 * @param array|string $patterns The pattern(s) to subscribe to.
+	 * @param callable $callback The callback function to execute for each message.
+	 *                          Receives ($pattern, $channel, $message) as parameters.
+	 * @return void
+	 */
+	public function psubscribe(array|string $patterns, callable $callback): void
+	{
+		$patterns = is_array($patterns) ? $patterns : [$patterns];
+
+		$this->db->psubscribe($patterns, function ($redis, $pattern, $channel, $message) use ($callback) {
+			$callback($pattern, $channel, $message);
+		});
+	}
+
+	/**
+	 * Unsubscribes from Redis channels.
+	 * Note: This must be called from within a subscribe callback.
+	 *
+	 * @param array|string|null $channels The channel(s) to unsubscribe from, or null for all.
+	 * @return void
+	 */
+	public function unsubscribe(array|string|null $channels = null): void
+	{
+		if ($channels === null)
+		{
+			$this->db->unsubscribe();
+		}
+		else
+		{
+			$channels = is_array($channels) ? $channels : [$channels];
+			$this->db->unsubscribe($channels);
+		}
+	}
+
+	/**
+	 * Gets the underlying Redis connection instance.
+	 *
+	 * @return Redis The Redis instance.
+	 */
+	public function getConnection(): Redis
+	{
+		return $this->db;
+	}
 }
