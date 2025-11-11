@@ -109,7 +109,8 @@ class RedisPubSubAdapter
 		$this->listening = true;
 		$channels = array_keys($this->subscriptions);
 
-		$this->redis->subscribe($channels, function ($channel, $message) {
+		$this->redis->subscribe($channels, function ($channel, $message)
+        {
 			$this->handleMessage($channel, $message);
 		});
 	}

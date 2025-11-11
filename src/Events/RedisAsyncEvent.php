@@ -157,7 +157,7 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 			$this->connection->subscribe($this->channels, function ($redis, $channel, $message)
             {
 				// Decode JSON if applicable
-				$payload = json_decode($message, true) ?? $message;
+				$payload = json_decode($message) ?? $message;
 
 				// Call the user callback with channel, message, and event instance
 				$result = ($this->callback)($channel, $payload, $this);
