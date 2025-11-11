@@ -63,9 +63,8 @@ class Base
 
 		self::setBasePath();
 
-		// Preload Error and Events class to ensure global error() function is available
+		// Preload Error class to ensure global error() function is available
 		class_exists('Proto\Error\Error');
-		class_exists('Proto\Events\Events');
 
 		self::$system = new System();
 		ModuleManager::activate(env('modules') ?? []);
