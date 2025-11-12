@@ -209,12 +209,10 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 		}
 		catch (\RedisException $e)
 		{
-			error_log("Redis subscription error: " . $e->getMessage());
 			$this->terminate();
 		}
 		catch (\Exception $e)
 		{
-			error_log("Redis subscription failed: " . $e->getMessage());
 			$this->terminate();
 		}
 	}
