@@ -5,10 +5,11 @@ use Proto\Http\Loop\Event;
 use Proto\Http\Loop\AsyncEventInterface;
 
 /**
- * RedisAsyncEvent
+ * RedisAsyncEvent (Safe Non-Blocking Version)
  *
- * Integrates Redis pub/sub with the EventLoop for asynchronous event handling.
- * Ideal for Server-Sent Events (SSE) and real-time streaming applications.
+ * Keeps a dedicated Redis connection open for the lifetime of an SSE stream.
+ * Prevents premature closing by deferring cleanup until the client actually
+ * disconnects. Uses a short read timeout to yield control back to the event loop.
  *
  * This class uses a dedicated Redis connection for non-blocking pub/sub operations.
  * The reason for a separate connection is that Redis SUBSCRIBE is a blocking operation
@@ -59,9 +60,9 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 	protected bool $initialSubscribed = false;
 
 	/**
-	 * @var int Read timeout in seconds for non-blocking operations.
+	 * @var mixed The pubSubLoop iterator.
 	 */
-	protected int $readTimeout = 1;
+	protected $pubSubLoop = null;
 
 	/**
 	 * Constructor.
@@ -123,10 +124,6 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				throw new \RuntimeException('Redis authentication failed.');
 			}
 
-			// Set read timeout for non-blocking pub/sub operations
-			// This prevents the subscribe() call from blocking indefinitely
-			$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, (string)$this->readTimeout);
-
 			$this->subscribed = true;
 		}
 		catch (\Exception $e)
@@ -171,51 +168,59 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 			return;
 		}
 
-		// Subscribe once and stay in the subscription loop
-		// The subscribe() call will use the read timeout to return periodically
+		// Set up pubSubLoop iterator once
 		if (!$this->initialSubscribed)
 		{
 			$this->initialSubscribed = true;
-			$this->startSubscription();
+			$this->setupSubscription();
+		}
+
+		// Process one message per tick
+		if ($this->pubSubLoop !== null)
+		{
+			$this->processNextMessage();
 		}
 	}
 
 	/**
-	 * Starts the Redis subscription and processes messages.
-	 * This method uses a read timeout to periodically return control to the event loop,
-	 * allowing for connection status checks.
+	 * Sets up the Redis pubSubLoop iterator and subscribes to channels.
 	 *
 	 * @return void
 	 */
-	protected function startSubscription(): void
+	protected function setupSubscription(): void
 	{
 		try
 		{
-			// The subscribe() call will timeout after readTimeout seconds if no messages arrive
-			// This allows the event loop to check connection_aborted() periodically
-			$this->connection->subscribe($this->channels, function ($redis, $channel, $message) {
-				// Check if connection is still alive before processing
-				if (connection_aborted())
-				{
-					$this->terminate();
-					$redis->unsubscribe();
-					return;
-				}
+			$this->pubSubLoop = $this->connection->pubSubLoop();
+			$this->pubSubLoop->subscribe(...$this->channels);
+			$this->pubSubLoop->next(); // prime the iterator
+		}
+		catch (\Throwable $e)
+		{
+			$this->terminate();
+		}
+	}
 
-				// Verify the Redis connection is still valid
-				try
-				{
-					$redis->ping();
-				}
-				catch (\RedisException $e)
-				{
-					$this->terminate();
-					$redis->unsubscribe();
-					return;
-				}
+	/**
+	 * Processes the next message from the pubSubLoop iterator.
+	 *
+	 * @return void
+	 */
+	protected function processNextMessage(): void
+	{
+		try
+		{
+			// Get current message
+			$message = $this->pubSubLoop->current();
+
+			// Only process actual messages (not subscription confirmations)
+			if ($message && ($message['type'] ?? null) === 'message')
+			{
+				$channel = $message['channel'];
+				$rawPayload = $message['payload'];
 
 				// Decode JSON if applicable
-				$payload = json_decode($message, true) ?? $message;
+				$payload = json_decode($rawPayload, true) ?? $rawPayload;
 
 				// Call the user callback with channel, message, and event instance
 				$result = ($this->callback)($channel, $payload, $this);
@@ -224,7 +229,6 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				if ($result === false)
 				{
 					$this->terminate();
-					$redis->unsubscribe();
 					return;
 				}
 
@@ -233,18 +237,12 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				{
 					$this->message($result);
 				}
-			});
-		}
-		catch (\RedisException $e)
-		{
-			// This is expected when the read timeout occurs or connection is lost
-			if (!$this->terminated)
-			{
-				// Re-subscribe on the next tick if not manually terminated
-				$this->initialSubscribed = false;
 			}
+
+			// Advance to next message
+			$this->pubSubLoop->next();
 		}
-		catch (\Exception $e)
+		catch (\Throwable $e)
 		{
 			$this->terminate();
 		}
@@ -262,6 +260,7 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 
 	/**
 	 * Terminates the event and unsubscribes from Redis channels.
+	 * Defers actual Redis cleanup until script shutdown to allow SSE to finish flushing.
 	 *
 	 * @return void
 	 */
@@ -274,20 +273,27 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 
 		$this->terminated = true;
 
-		try
-		{
-			if ($this->subscribed)
+		// Defer cleanup until script shutdown so SSE can finish flushing
+		register_shutdown_function(function()
+        {
+			try
 			{
-				$this->connection->unsubscribe($this->channels);
-				$this->connection->close();
+				if ($this->pubSubLoop !== null)
+				{
+					$this->pubSubLoop->unsubscribe();
+					$this->pubSubLoop = null;
+				}
+				if ($this->subscribed)
+				{
+					$this->connection->close();
+				}
 			}
-		}
-		catch (\Exception $e)
-		{
-			// Ignore errors during cleanup
-		}
-
-		$this->subscribed = false;
+			catch (\Throwable $e)
+			{
+				// Ignore errors during shutdown
+			}
+			$this->subscribed = false;
+		});
 	}
 
 	/**
