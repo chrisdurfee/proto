@@ -118,14 +118,12 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				throw new \RuntimeException('Redis authentication failed.');
 			}
 
-			// Set very short timeout for non-blocking behavior
-			// This makes subscribe() return after timeout instead of blocking forever
-			$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, 0.001);
 			$this->subscribed = true;
 		}
 		catch (\Exception $e)
 		{
 			$this->terminated = true;
+			error_log("RedisAsyncEvent initialization failed: " . $e->getMessage());
 		}
 	}
 
@@ -158,11 +156,36 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 			return;
 		}
 
+		// Subscribe once and stay in the subscription loop
+		// The subscribe() call will block and process messages as they arrive
+		if (!$this->initialSubscribed)
+		{
+			$this->initialSubscribed = true;
+			$this->startSubscription();
+		}
+	}
+
+	/**
+	 * Starts the Redis subscription and processes messages.
+	 * This method blocks while listening for messages.
+	 *
+	 * @return void
+	 */
+	protected function startSubscription(): void
+	{
 		try
 		{
-			// With OPT_READ_TIMEOUT set to 0.001, subscribe() will timeout quickly
-			// allowing the EventLoop to continue. This creates a polling effect.
+			// The subscribe() call blocks and processes messages via the callback
+			// It will continue running until unsubscribed or connection is closed
 			$this->connection->subscribe($this->channels, function ($redis, $channel, $message) {
+				// Check if connection is still alive
+				if (connection_aborted())
+				{
+					$this->terminate();
+					$redis->unsubscribe();
+					return;
+				}
+
 				// Decode JSON if applicable
 				$payload = json_decode($message, true) ?? $message;
 
@@ -173,7 +196,6 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				if ($result === false)
 				{
 					$this->terminate();
-					// Unsubscribe to break out of the subscribe loop
 					$redis->unsubscribe();
 					return;
 				}
@@ -187,22 +209,12 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 		}
 		catch (\RedisException $e)
 		{
-			// Timeout is expected and normal - it means no messages arrived
-			// The subscribe() call returns after the read timeout, allowing
-			// the EventLoop to continue to the next tick
-			$errorMsg = $e->getMessage();
-
-			// Only terminate on critical errors, not timeouts
-			if (strpos($errorMsg, 'read error on connection') === false &&
-				strpos($errorMsg, 'Redis server went away') !== false)
-			{
-				$this->terminate();
-			}
-			// Otherwise, timeout is normal - continue on next tick
+			error_log("Redis subscription error: " . $e->getMessage());
+			$this->terminate();
 		}
 		catch (\Exception $e)
 		{
-			// Critical error - terminate
+			error_log("Redis subscription failed: " . $e->getMessage());
 			$this->terminate();
 		}
 	}
