@@ -5,11 +5,10 @@ use Proto\Http\Loop\Event;
 use Proto\Http\Loop\AsyncEventInterface;
 
 /**
- * RedisAsyncEvent (Safe Non-Blocking Version)
+ * RedisAsyncEvent
  *
- * Keeps a dedicated Redis connection open for the lifetime of an SSE stream.
- * Prevents premature closing by deferring cleanup until the client actually
- * disconnects. Uses a short read timeout to yield control back to the event loop.
+ * Integrates Redis pub/sub with the EventLoop for asynchronous event handling.
+ * Ideal for Server-Sent Events (SSE) and real-time streaming applications.
  *
  * This class uses a dedicated Redis connection for non-blocking pub/sub operations.
  * The reason for a separate connection is that Redis SUBSCRIBE is a blocking operation
@@ -60,9 +59,9 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 	protected bool $initialSubscribed = false;
 
 	/**
-	 * @var mixed The pubSubLoop iterator.
+	 * @var int Read timeout in seconds for non-blocking operations.
 	 */
-	protected $pubSubLoop = null;
+	protected int $readTimeout = 1;
 
 	/**
 	 * Constructor.
@@ -168,59 +167,42 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 			return;
 		}
 
-		// Set up pubSubLoop iterator once
+		// Subscribe once and stay in the subscription loop
+		// The subscribe() call will use the read timeout to return periodically
 		if (!$this->initialSubscribed)
 		{
 			$this->initialSubscribed = true;
-			$this->setupSubscription();
-		}
-
-		// Process one message per tick
-		if ($this->pubSubLoop !== null)
-		{
-			$this->processNextMessage();
+			$this->startSubscription();
 		}
 	}
 
 	/**
-	 * Sets up the Redis pubSubLoop iterator and subscribes to channels.
+	 * Starts the Redis subscription and processes messages.
+	 * This method uses a read timeout to periodically return control to the event loop,
+	 * allowing for connection status checks.
 	 *
 	 * @return void
 	 */
-	protected function setupSubscription(): void
+	protected function startSubscription(): void
 	{
 		try
 		{
-			$this->pubSubLoop = $this->connection->pubSubLoop();
-			$this->pubSubLoop->subscribe(...$this->channels);
-			$this->pubSubLoop->next(); // prime the iterator
-		}
-		catch (\Throwable $e)
-		{
-			$this->terminate();
-		}
-	}
+			$this->connection->subscribe($this->channels, function ($redis, $channel, $message) {
+				// Only check termination flag, don't close Redis here
+				if ($this->terminated)
+				{
+					return;
+				}
 
-	/**
-	 * Processes the next message from the pubSubLoop iterator.
-	 *
-	 * @return void
-	 */
-	protected function processNextMessage(): void
-	{
-		try
-		{
-			// Get current message
-			$message = $this->pubSubLoop->current();
-
-			// Only process actual messages (not subscription confirmations)
-			if ($message && ($message['type'] ?? null) === 'message')
-			{
-				$channel = $message['channel'];
-				$rawPayload = $message['payload'];
+				// Stop only if the HTTP client has gone away
+				if (connection_aborted())
+				{
+					$this->terminate();
+					return;
+				}
 
 				// Decode JSON if applicable
-				$payload = json_decode($rawPayload, true) ?? $rawPayload;
+				$payload = json_decode($message, true) ?? $message;
 
 				// Call the user callback with channel, message, and event instance
 				$result = ($this->callback)($channel, $payload, $this);
@@ -237,10 +219,7 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				{
 					$this->message($result);
 				}
-			}
-
-			// Advance to next message
-			$this->pubSubLoop->next();
+			});
 		}
 		catch (\Throwable $e)
 		{
@@ -260,7 +239,6 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 
 	/**
 	 * Terminates the event and unsubscribes from Redis channels.
-	 * Defers actual Redis cleanup until script shutdown to allow SSE to finish flushing.
 	 *
 	 * @return void
 	 */
@@ -278,13 +256,9 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
         {
 			try
 			{
-				if ($this->pubSubLoop !== null)
-				{
-					$this->pubSubLoop->unsubscribe();
-					$this->pubSubLoop = null;
-				}
 				if ($this->subscribed)
 				{
+					$this->connection->unsubscribe($this->channels);
 					$this->connection->close();
 				}
 			}
