@@ -54,6 +54,11 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 	protected array $settings;
 
 	/**
+	 * @var bool Whether the initial subscription has been set up.
+	 */
+	protected bool $initialSubscribed = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array|string $channels The channel(s) to subscribe to (without redis: prefix).
@@ -101,8 +106,8 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 			 */
 			$this->connection = new \Redis();
 
-			// Connect to Redis
-			if (!$this->connection->pconnect($this->settings['host'], $this->settings['port']))
+			// Connect to Redis (use connect instead of pconnect for pub/sub)
+			if (!$this->connection->connect($this->settings['host'], $this->settings['port']))
 			{
 				throw new \RuntimeException('Failed to connect to Redis server.');
 			}
@@ -113,8 +118,9 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				throw new \RuntimeException('Redis authentication failed.');
 			}
 
-			// Set non-blocking mode with short timeout for async operations
-			$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, 0.1);
+			// Set very short timeout for non-blocking behavior
+			// This makes subscribe() return after timeout instead of blocking forever
+			$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, 0.001);
 			$this->subscribed = true;
 		}
 		catch (\Exception $e)
@@ -134,8 +140,8 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 			return;
 		}
 
-		// This will be called once when the event is added to the loop
-		// The actual message handling happens in tick()
+		// The subscription will be set up on the first tick()
+		// to avoid blocking during initialization
 	}
 
 	/**
@@ -154,11 +160,11 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 
 		try
 		{
-			// Use a very short timeout to check for messages without blocking
-			$this->connection->subscribe($this->channels, function ($redis, $channel, $message)
-            {
+			// With OPT_READ_TIMEOUT set to 0.001, subscribe() will timeout quickly
+			// allowing the EventLoop to continue. This creates a polling effect.
+			$this->connection->subscribe($this->channels, function ($redis, $channel, $message) {
 				// Decode JSON if applicable
-				$payload = json_decode($message) ?? $message;
+				$payload = json_decode($message, true) ?? $message;
 
 				// Call the user callback with channel, message, and event instance
 				$result = ($this->callback)($channel, $payload, $this);
@@ -167,6 +173,8 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 				if ($result === false)
 				{
 					$this->terminate();
+					// Unsubscribe to break out of the subscribe loop
+					$redis->unsubscribe();
 					return;
 				}
 
@@ -179,14 +187,18 @@ class RedisAsyncEvent extends Event implements AsyncEventInterface
 		}
 		catch (\RedisException $e)
 		{
-			// Timeout is normal - it means no messages arrived this tick
-			// Only terminate on critical errors
+			// Timeout is expected and normal - it means no messages arrived
+			// The subscribe() call returns after the read timeout, allowing
+			// the EventLoop to continue to the next tick
 			$errorMsg = $e->getMessage();
-			if (strpos($errorMsg, 'read error') === false &&
+
+			// Only terminate on critical errors, not timeouts
+			if (strpos($errorMsg, 'read error on connection') === false &&
 				strpos($errorMsg, 'Redis server went away') !== false)
 			{
 				$this->terminate();
 			}
+			// Otherwise, timeout is normal - continue on next tick
 		}
 		catch (\Exception $e)
 		{
