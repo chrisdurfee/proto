@@ -3,7 +3,6 @@ namespace Proto\Http\ServerEvents;
 
 use Proto\Events\EventEmitter;
 use Proto\Http\Loop\AsyncEvent;
-use Proto\Http\Router\StreamResponse;
 use Proto\Http\Loop\EventLoop;
 
 /**
@@ -15,12 +14,7 @@ use Proto\Http\Loop\EventLoop;
  */
 class ServerEvents extends EventEmitter
 {
-	/**
-	 * The StreamResponse instance.
-	 *
-	 * @var StreamResponse
-	 */
-	protected StreamResponse $response;
+	use ServerEventsTrait;
 
 	/**
 	 * The connection status.
@@ -55,38 +49,10 @@ class ServerEvents extends EventEmitter
 	 */
 	protected function initialize(int $interval): void
 	{
-		// Configure PHP for real-time streaming
 		$this->configureStreaming();
-
 		$this->setupResponse();
 		$this->loop = new EventLoop($interval);
-
 		$this->emit('connection', $this->loop);
-	}
-
-	/**
-	 * Configure PHP settings for optimal SSE streaming
-	 *
-	 * @return void
-	 */
-	protected function configureStreaming(): void
-	{
-		// Disable output buffering
-		ini_set('output_buffering', 'off');
-		ini_set('zlib.output_compression', 'off');
-		ini_set('implicit_flush', '1');
-
-		// Set unlimited execution time
-		set_time_limit(0);
-
-		// Continue processing even if client disconnects
-		//ignore_user_abort(true);
-
-		// Disable gzip compression if possible
-		if (function_exists('apache_setenv'))
-		{
-			apache_setenv('no-gzip', '1');
-		}
 	}
 
 	/**
@@ -101,18 +67,6 @@ class ServerEvents extends EventEmitter
 		$this->runLoop();
 
 		return $this;
-	}
-
-	/**
-	 * Sets up the StreamResponse instance.
-	 *
-	 * @return void
-	 */
-	protected function setupResponse(): void
-	{
-		$SUCCESS_CODE = 200;
-		$this->response = new StreamResponse();
-		$this->response->sendHeaders($SUCCESS_CODE);
 	}
 
 	/**
