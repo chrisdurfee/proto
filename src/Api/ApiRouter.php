@@ -116,10 +116,11 @@ namespace
 	 * Receives ($channel, $message, $event) as parameters.
 	 * Return a value to send as SSE message, false to terminate.
 	 * If not provided, messages are sent as-is.
-	 * @param int $interval The interval between event loop ticks in milliseconds (default: 200).
+	 * @param int $interval The interval between event loop ticks in milliseconds (default: 10).
+	 * Lower values = more responsive message processing. 10ms = 100 ticks/second.
 	 * @return void
 	 */
-	function redisEvent(array|string $channels, ?callable $callback = null, int $interval = 200): void
+	function redisEvent(array|string $channels, ?callable $callback = null, int $interval = 10): void
 	{
 		$server = new ServerEvents($interval);
 		$server->start(function(EventLoop $loop) use($channels, $callback)
