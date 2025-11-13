@@ -133,7 +133,19 @@ abstract class ResourceController extends ApiController
 			return $this->error('Invalid item data.');
 		}
 
+		$this->modifiyAddItem($data, $request);
 		return $this->addItem($data);
+	}
+
+	/**
+	 * Modifies a model entry.
+	 *
+	 * @param Request $request The request object.
+	 * @return void
+	 */
+	protected function modifiyAddItem(object &$data, Request $request): void
+	{
+
 	}
 
 	/**
@@ -276,7 +288,19 @@ abstract class ResourceController extends ApiController
 		}
 
 		$data->id = $data->id ?? $this->getResourceId($request);
+		$this->modifiyUpdateItem($data, $request);
 		return $this->updateItem($data);
+	}
+
+	/**
+	 * Modifies a model entry.
+	 *
+	 * @param Request $request The request object.
+	 * @return void
+	 */
+	protected function modifiyUpdateItem(object &$data, Request $request): void
+	{
+
 	}
 
 	/**
@@ -338,14 +362,6 @@ abstract class ResourceController extends ApiController
 		if ($model->has('deletedBy') && !isset($model->deletedBy))
 		{
 			$model->deletedBy = session()->user->id ?? null;
-		}
-
-		if ($model->has('deletedAt'))
-		{
-			$model->deletedAt = date('Y-m-d H:i:s');
-			return $model->update()
-				? $this->response(['id' => $model->id])
-				: $this->error('Unable to delete the item.');
 		}
 
 		return $model->delete()
