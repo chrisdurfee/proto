@@ -80,37 +80,44 @@ Events::off('redis:notification', $token);
 
 ## Server-Sent Events (SSE) Integration
 
-For real-time streaming applications, use `RedisAsyncEvent` with the `EventLoop`:
+For real-time streaming applications, use `redisEvent`:
 
 ```php
-use Proto\Events\RedisAsyncEvent;
-use Proto\Http\Loop\EventLoop;
+$conversationId = 1;
 
-// Create an event loop
-$loop = new EventLoop();
+// Subscribe to conversation's message updates channel
+$channel = "conversation:{$conversationId}:messages";
+redisEvent($channel, function($channel, $message): array|null
+{
+  // Message contains message ID from Redis publish
+  $messageId = $message['id'] ?? $message['messageId'] ?? null;
+  if (!$messageId)
+  {
+    return null;
+  }
 
-// Create a Redis async event for SSE
-$redisEvent = new RedisAsyncEvent(
-    channels: ['notifications', 'updates'],
-    callback: function ($channel, $message) {
-        // Send SSE message to client
-        return [
-            'channel' => $channel,
-            'message' => $message
-        ];
-    }
-);
+  $action = $message['action'] ?? 'merge';
+  if ($action === 'delete')
+  {
+    return [
+      'merge' => [],
+      'deleted' => [$messageId]
+    ];
+  }
 
-// Add to event loop
-$loop->addEvent($redisEvent);
+  // Fetch the updated message data
+  $messageData = Message::get($messageId);
+  if (!$messageData)
+  {
+    // Message not found
+    return null;
+  }
 
-// Set SSE headers
-header('Content-Type: text/event-stream');
-header('Cache-Control: no-cache');
-header('Connection: keep-alive');
-
-// Start the loop (blocks until connection closes)
-$loop->loop();
+  return [
+    'merge' => [$messageData],
+    'deleted' => []
+  ];
+});
 ```
 
 ## Controller Example (SSE Endpoint)
@@ -130,38 +137,16 @@ class NotificationController extends ApiController
      */
     public function stream(Request $req): void
     {
-        // Set SSE headers
-        header('Content-Type: text/event-stream');
-        header('Cache-Control: no-cache');
-        header('Connection: keep-alive');
-        header('X-Accel-Buffering: no'); // Disable nginx buffering
-
         // Get user ID from authentication
         $userId = $req->input('user_id');
 
-        // Create event loop
-        $loop = new EventLoop(tickInterval: 50);
-
         // Subscribe to user-specific Redis channel
-        $redisEvent = new RedisAsyncEvent(
-            channels: "user:{$userId}:notifications",
-            callback: function ($channel, $message)
+        $redisEvent = redisEvent("user:{$userId}:notifications", function($channel, $message)
             {
                 echo "event: notification\n";
                 return $message;
             }
         );
-
-        $loop->addEvent($redisEvent);
-
-        // Send initial connection message
-        echo "event: connected\n";
-        echo "data: {\"status\":\"connected\"}\n\n";
-        ob_flush();
-        flush();
-
-        // Start the event loop
-        $loop->loop();
     }
 }
 ```
@@ -228,24 +213,6 @@ if ($adapter !== null) {
         $adapter->startListening(); // Blocking operation
     }
 }
-```
-
-### Custom Redis Connection
-
-Create a `RedisAsyncEvent` with custom settings:
-
-```php
-$redisEvent = new RedisAsyncEvent(
-    channels: ['channel1', 'channel2'],
-    callback: function ($channel, $message) {
-        // Handle message
-    },
-    settings: [
-        'host' => 'redis.example.com',
-        'port' => 6380,
-        'password' => 'secret'
-    ]
-);
 ```
 
 ## Best Practices

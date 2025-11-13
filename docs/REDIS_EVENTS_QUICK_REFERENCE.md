@@ -44,29 +44,41 @@ Events::off('redis:channel', $token);
 ## SSE (Server-Sent Events)
 
 ```php
-use Proto\Events\RedisAsyncEvent;
-use Proto\Http\Loop\EventLoop;
+$conversationId = 1;
 
-// Setup SSE headers
-header('Content-Type: text/event-stream');
-header('Cache-Control: no-cache');
-header('Connection: keep-alive');
+// Subscribe to conversation's message updates channel
+$channel = "conversation:{$conversationId}:messages";
+redisEvent($channel, function($channel, $message): array|null
+{
+  // Message contains message ID from Redis publish
+  $messageId = $message['id'] ?? $message['messageId'] ?? null;
+  if (!$messageId)
+  {
+    return null;
+  }
 
-// Create event loop
-$loop = new EventLoop();
+  $action = $message['action'] ?? 'merge';
+  if ($action === 'delete')
+  {
+    return [
+      'merge' => [],
+      'deleted' => [$messageId]
+    ];
+  }
 
-// Add Redis event
-$redisEvent = new RedisAsyncEvent(
-    channels: 'channel-name',
-    callback: function ($channel, $message) {
-        echo "data: " . json_encode($message) . "\n\n";
-        ob_flush();
-        flush();
-    }
-);
+  // Fetch the updated message data
+  $messageData = Message::get($messageId);
+  if (!$messageData)
+  {
+    // Message not found
+    return null;
+  }
 
-$loop->addEvent($redisEvent);
-$loop->loop();
+  return [
+    'merge' => [$messageData],
+    'deleted' => []
+  ];
+});
 ```
 
 ## Common Patterns
