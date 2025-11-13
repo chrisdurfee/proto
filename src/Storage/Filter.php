@@ -54,7 +54,7 @@ class Filter
 	 * @param bool $isSnakeCase
 	 * @return mixed
 	 */
-	protected static function getValue(mixed $value, array &$params, bool $isSnakeCase): mixed
+	public static function format(mixed $value, array &$params, bool $isSnakeCase = true): mixed
 	{
 		/**
 		 * This is a raw sql.
@@ -170,7 +170,7 @@ class Filter
 				$key = self::prepareColumn($key, $isSnakeCase);
 
 				$value = (is_array($item)) ? [$key, ...$item] : [$key, $item];
-				$value = self::getValue($value, $params, $isSnakeCase);
+				$value = self::format($value, $params, $isSnakeCase);
 
 				$filters[] = $value;
 			}
@@ -179,7 +179,7 @@ class Filter
 		{
 			foreach ($filter as $item)
 			{
-				$value = self::getValue($item, $params, $isSnakeCase);
+				$value = self::format($item, $params, $isSnakeCase);
 				$filters[] = $value;
 			}
 		}

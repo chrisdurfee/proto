@@ -225,7 +225,7 @@ class AdapterProxy
 		{
 			if (is_array($field))
 			{
-				$field = Filter::setup($field, $this->params);
+				$field = Filter::format($field, $this->params);
 			}
 
 			$filteredFields[] = $field;
@@ -248,7 +248,7 @@ class AdapterProxy
 		{
 			if (is_array($condition))
 			{
-				$condition = Filter::setup($condition, $this->params);
+				$condition = Filter::format($condition, $this->params);
 			}
 
 			$filteredWhere[] = $condition;
