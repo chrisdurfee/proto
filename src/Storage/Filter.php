@@ -101,7 +101,7 @@ class Filter
 		}
 
 		$params[] = $param;
-		return [...$value];
+		return join(' ', [...$value]);
 	}
 
 	/**
