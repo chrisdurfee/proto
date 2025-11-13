@@ -94,6 +94,11 @@ class Filter
 		{
 			$value[1] = self::filterOperator((string)$value[1]);
 		}
+		else if ($valueCount === 2)
+		{
+			// Default operator
+			$value = [$value[0], '=', $value[1]];
+		}
 		else if ($valueCount > 3)
 		{
 			// Invalid format, reset value
