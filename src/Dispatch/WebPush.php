@@ -60,7 +60,7 @@ class WebPush extends Dispatch
 			return [];
 		}
 
-		$auth = (array)$settings->push->auth;
+		$auth = (array)$settings->auth;
 		$auth['VAPID'] = (array)$auth['VAPID'];
 		return $auth;
 	}
