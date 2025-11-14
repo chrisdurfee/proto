@@ -74,6 +74,18 @@ class AdapterProxy
 	}
 
 	/**
+	 * Prepends query parameters.
+	 *
+	 * @param array $values The parameter values.
+	 * @return self
+	 */
+	public function prependParams(array $values): self
+	{
+		$this->params = array_merge($values, $this->params);
+		return $this;
+	}
+
+	/**
 	 * Magic method to handle dynamic method calls.
 	 *
 	 * Checks if the method is callable on the SQL object and calls it,
