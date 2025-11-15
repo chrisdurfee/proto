@@ -755,8 +755,6 @@ class Storage extends TableStorage
 		$this->setOrderBy($sql, $modifiers, $params);
 		$this->setGroupBy($sql, $modifiers, $params);
 
-		$this->model->applyCustomSearch($sql, $modifiers);
-
 		return $sql;
 	}
 

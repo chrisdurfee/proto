@@ -1095,18 +1095,6 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
-	 * Apply custom search logic to the query builder.
-	 *
-	 * @param object $sql Query builder instance.
-	 * @param array|null $modifiers Modifiers.
-	 * @return void
-	 */
-	public function applyCustomSearch(object $sql, ?array $modifiers = null): void
-	{
-
-	}
-
-	/**
 	 * Get searchable fields for the model.
 	 *
 	 * @return array
