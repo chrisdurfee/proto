@@ -33,7 +33,8 @@ class StreamResponse extends Response
 		$message = parent::getResponseMessage($code);
 
 		// Disable all output buffering before sending headers
-		while (ob_get_level()) {
+		while (ob_get_level())
+		{
 			ob_end_flush();
 		}
 
