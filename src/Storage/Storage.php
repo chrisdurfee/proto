@@ -694,6 +694,46 @@ class Storage extends TableStorage
 	}
 
 	/**
+	 * Search within a joined table using an EXISTS subquery.
+	 * This allows searching nested/aggregated data efficiently.
+	 *
+	 * @param string $joinAlias The alias of the join to search in (e.g., 'participants')
+	 * @param array $searchFields Field names to search (e.g., ['firstName', 'lastName'])
+	 * @param string $searchValue The search value
+	 * @param array &$params Parameter array to append to
+	 * @return string The EXISTS subquery SQL
+	 */
+	protected function searchByJoin(
+		string $joinAlias,
+		array $searchFields,
+		string $searchValue,
+		array &$params
+	): string
+	{
+		$result = Helpers\JoinSearchHelper::buildSearchSubquery(
+			$joinAlias,
+			$searchFields,
+			$searchValue,
+			$this->model->getJoins(),
+			$this->model->getAlias(),
+			$this->model->isSnakeCase()
+		);
+
+		if ($result === null)
+		{
+			return '1=1'; // No-op if join not found
+		}
+
+		// Append params
+		foreach ($result['params'] as $param)
+		{
+			$params[] = $param;
+		}
+
+		return $result['sql'];
+	}
+
+	/**
 	 * Prepare a field name for use in queries.
 	 *
 	 * @param string $field Field name.
