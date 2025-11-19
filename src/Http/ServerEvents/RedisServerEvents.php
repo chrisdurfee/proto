@@ -172,6 +172,19 @@ class RedisServerEvents
 	}
 
 	/**
+	 * Gets session data by key using Proto's session system.
+	 * Safe to call during SSE stream (automatically handles session locking).
+	 *
+	 * @param string $key Session key.
+	 * @return mixed
+	 */
+	protected function getSessionData(string $key): mixed
+	{
+		// Proto's session system automatically opens/closes to prevent blocking
+		return $this->session->{$key} ?? null;
+	}
+
+	/**
 	 * Destructor - ensures cleanup.
 	 */
 	public function __destruct()

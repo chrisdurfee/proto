@@ -17,9 +17,11 @@ class Headers
 	 */
 	protected static array $defaultHeaders =
 	[
-		'Access-Control-Allow-Origin' => '*',
-		'Access-Control-Allow-Headers' => '*',
+		'Access-Control-Allow-Origin' => null, // Will be set dynamically based on request origin
+		'Access-Control-Allow-Credentials' => 'true',
+		'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, Cache-Control',
 		'Access-Control-Allow-Methods' => null, // placeholder
+		'Access-Control-Max-Age' => '86400',
 		'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0'
 	];
 
@@ -44,6 +46,20 @@ class Headers
 	{
 		$headers = self::$defaultHeaders;
 		$headers['Access-Control-Allow-Methods'] = self::convertMethodsToString($methods);
+
+		// Set origin from request (required for credentials)
+		$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+		if ($origin !== '')
+		{
+			$headers['Access-Control-Allow-Origin'] = $origin;
+		}
+		else
+		{
+			// Fallback for non-CORS requests
+			unset($headers['Access-Control-Allow-Origin']);
+			unset($headers['Access-Control-Allow-Credentials']);
+		}
+
 		return $headers;
 	}
 
