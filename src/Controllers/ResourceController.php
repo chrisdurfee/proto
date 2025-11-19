@@ -112,6 +112,11 @@ abstract class ResourceController extends ApiController
 		{
 			$model->authorId = $userId;
 		}
+
+		if ($model->has('userId') && !isset($model->userId))
+		{
+			$model->userId = $userId;
+		}
 	}
 
 	/**
