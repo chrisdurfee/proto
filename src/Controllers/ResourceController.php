@@ -133,12 +133,12 @@ abstract class ResourceController extends ApiController
 			return $this->error('No item provided.');
 		}
 
+		$this->modifiyAddItem($data, $request);
 		if (!$this->validateItem($data, false))
 		{
 			return $this->error('Invalid item data.');
 		}
 
-		$this->modifiyAddItem($data, $request);
 		return $this->addItem($data);
 	}
 
@@ -287,13 +287,13 @@ abstract class ResourceController extends ApiController
 			return $this->error('No item provided.');
 		}
 
+		$data->id = $data->id ?? $this->getResourceId($request);
+		$this->modifiyUpdateItem($data, $request);
 		if (!$this->validateItem($data, true))
 		{
 			return $this->error('Invalid item data.');
 		}
 
-		$data->id = $data->id ?? $this->getResourceId($request);
-		$this->modifiyUpdateItem($data, $request);
 		return $this->updateItem($data);
 	}
 
