@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Router;
 
+use Proto\Utils\Filter\Input;
+
 /**
  * Headers
  *
@@ -48,7 +50,7 @@ class Headers
 		$headers['Access-Control-Allow-Methods'] = self::convertMethodsToString($methods);
 
 		// Set origin from request (required for credentials)
-		$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+		$origin = Input::server('HTTP_ORIGIN');
 		if ($origin !== '')
 		{
 			$headers['Access-Control-Allow-Origin'] = $origin;
