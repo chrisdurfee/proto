@@ -47,19 +47,31 @@ class JoinSearchHelper
 			return null;
 		}
 
-		// Include nested joins within the target join (e.g., User join inside cpp)
-		$nestedJoin = $targetJoin->getMultipleJoin();
-		while ($nestedJoin)
+		// For aggregated joins (many), include the nested chain that gets aggregated
+		// The last item in joinChain is the target. If it's a "many" join,
+		// walk its multipleJoin chain to get the actual data joins
+		if ($targetJoin->isMultiple())
 		{
-			$lastJoin = end($joinChain);
-			$joinChain[] = [
-				'table' => $nestedJoin->getTableName(),
-				'alias' => $nestedJoin->getAlias(),
-				'on' => $nestedJoin->getOn(),
-				'parentAlias' => $lastJoin['alias'],
-				'isSnakeCase' => $isSnakeCase
-			];
-			$nestedJoin = $nestedJoin->getMultipleJoin();
+			$nestedJoin = $targetJoin->getMultipleJoin();
+			$usedAliases = [$targetJoin->getAlias() => true];
+
+			while ($nestedJoin)
+			{
+				// Only add if this is a different alias (to avoid duplicates)
+				if (!isset($usedAliases[$nestedJoin->getAlias()]))
+				{
+					$lastInChain = end($joinChain);
+					$joinChain[] = [
+						'table' => $nestedJoin->getTableName(),
+						'alias' => $nestedJoin->getAlias(),
+						'on' => $nestedJoin->getOn(),
+						'parentAlias' => $lastInChain['alias'],
+						'isSnakeCase' => $isSnakeCase
+					];
+					$usedAliases[$nestedJoin->getAlias()] = true;
+				}
+				$nestedJoin = $nestedJoin->getMultipleJoin();
+			}
 		}
 
 		// Wrap search value with wildcards for LIKE
@@ -199,10 +211,21 @@ class JoinSearchHelper
 		$parts[] = "  SELECT 1";
 		$parts[] = "  FROM {$firstJoin['table']} {$firstJoin['alias']}";
 
+		// Track used aliases to avoid duplicates
+		$usedAliases = [$firstJoin['alias'] => true];
+
 		// Add additional joins in the chain
 		for ($i = 1; $i < count($joinChain); $i++)
 		{
 			$join = $joinChain[$i];
+
+			// Skip if this alias was already used
+			if (isset($usedAliases[$join['alias']]))
+			{
+				continue;
+			}
+
+			$usedAliases[$join['alias']] = true;
 			$parts[] = "  INNER JOIN {$join['table']} {$join['alias']}";
 			$parts[] = "    ON " . self::formatOnClause($join['on'], $join['parentAlias'], $join['alias'], $join['isSnakeCase'] ?? true);
 		}
@@ -246,19 +269,27 @@ class JoinSearchHelper
 			return "{$on[0]} {$on[1]} {$on[2]}";
 		}
 
-		// Check if first element already contains table alias (contains a dot)
-		if (is_string($on[0]) && strpos($on[0], '.') !== false)
-		{
-			// Already fully qualified, return as is
-			return isset($on[1]) ? "{$on[0]} = {$on[1]}" : $on[0];
-		}
-
-		// Standard format: [localField, foreignField]
+		// Standard format: [localField, foreignField] - can be simple or fully qualified
 		if (!isset($on[1]))
 		{
 			return "1=1";
 		}
 
+		// Check if first element already contains table alias (contains a dot)
+		if (is_string($on[0]) && strpos($on[0], '.') !== false)
+		{
+			// Extract just the field names from fully qualified format
+			// ON format from ModelJoin: [joinTable.field, baseTable.field]
+			$leftParts = explode('.', $on[0]);
+			$rightParts = explode('.', $on[1]);
+			$leftField = end($leftParts);  // field from join table
+			$rightField = end($rightParts); // field from base table
+
+			// leftAlias is the base/parent, rightAlias is the join
+			return "{$leftAlias}.{$rightField} = {$rightAlias}.{$leftField}";
+		}
+
+		// Simple field names - apply snake_case conversion and aliases
 		$leftField = $isSnakeCase ? Strings::snakeCase($on[0]) : $on[0];
 		$rightField = $isSnakeCase ? Strings::snakeCase($on[1]) : $on[1];
 		return "{$leftAlias}.{$leftField} = {$rightAlias}.{$rightField}";
