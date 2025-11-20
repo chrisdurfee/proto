@@ -47,6 +47,21 @@ class JoinSearchHelper
 			return null;
 		}
 
+		// Include nested joins within the target join (e.g., User join inside cpp)
+		$nestedJoin = $targetJoin->getMultipleJoin();
+		while ($nestedJoin)
+		{
+			$lastJoin = end($joinChain);
+			$joinChain[] = [
+				'table' => $nestedJoin->getTableName(),
+				'alias' => $nestedJoin->getAlias(),
+				'on' => $nestedJoin->getOn(),
+				'parentAlias' => $lastJoin['alias'],
+				'isSnakeCase' => $isSnakeCase
+			];
+			$nestedJoin = $nestedJoin->getMultipleJoin();
+		}
+
 		// Wrap search value with wildcards for LIKE
 		$searchPattern = '%' . $searchValue . '%';
 
