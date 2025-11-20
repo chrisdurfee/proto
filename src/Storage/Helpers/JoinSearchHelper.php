@@ -41,7 +41,7 @@ class JoinSearchHelper
 		}
 
 		// Build the chain of joins needed to reach the search fields
-		$joinChain = self::buildJoinChain($targetJoin, $joins, $parentAlias);
+		$joinChain = self::buildJoinChain($targetJoin, $joins, $parentAlias, $isSnakeCase);
 		if (empty($joinChain))
 		{
 			return null;
@@ -109,9 +109,10 @@ class JoinSearchHelper
 	 * @param ModelJoin $targetJoin
 	 * @param array $allJoins
 	 * @param string $parentAlias
+	 * @param bool $isSnakeCase
 	 * @return array
 	 */
-	protected static function buildJoinChain(ModelJoin $targetJoin, array $allJoins, string $parentAlias): array
+	protected static function buildJoinChain(ModelJoin $targetJoin, array $allJoins, string $parentAlias, bool $isSnakeCase): array
 	{
 		$chain = [];
 
@@ -125,7 +126,8 @@ class JoinSearchHelper
 					'table' => $join->getTableName(),
 					'alias' => $join->getAlias(),
 					'on' => $join->getOn(),
-					'parentAlias' => $parentAlias
+					'parentAlias' => $parentAlias,
+					'isSnakeCase' => $isSnakeCase
 				];
 				return $chain;
 			}
@@ -140,7 +142,8 @@ class JoinSearchHelper
 					'table' => $nestedJoin->getTableName(),
 					'alias' => $nestedJoin->getAlias(),
 					'on' => $nestedJoin->getOn(),
-					'parentAlias' => empty($nestedChain) ? $join->getAlias() : end($nestedChain)['alias']
+					'parentAlias' => empty($nestedChain) ? $join->getAlias() : end($nestedChain)['alias'],
+					'isSnakeCase' => $isSnakeCase
 				];
 
 				if ($nestedJoin === $targetJoin)
@@ -150,7 +153,8 @@ class JoinSearchHelper
 						'table' => $join->getTableName(),
 						'alias' => $join->getAlias(),
 						'on' => $join->getOn(),
-						'parentAlias' => $parentAlias
+						'parentAlias' => $parentAlias,
+						'isSnakeCase' => $isSnakeCase
 					];
 					$chain = array_merge($chain, $nestedChain);
 					return $chain;
@@ -185,11 +189,11 @@ class JoinSearchHelper
 		{
 			$join = $joinChain[$i];
 			$parts[] = "  INNER JOIN {$join['table']} {$join['alias']}";
-			$parts[] = "    ON " . self::formatOnClause($join['on'], $join['parentAlias'], $join['alias']);
+			$parts[] = "    ON " . self::formatOnClause($join['on'], $join['parentAlias'], $join['alias'], $join['isSnakeCase'] ?? true);
 		}
 
 		// Main WHERE: connect first join to parent and add search conditions
-		$parts[] = "  WHERE " . self::formatOnClause($firstJoin['on'], $firstJoin['parentAlias'], $firstJoin['alias']);
+		$parts[] = "  WHERE " . self::formatOnClause($firstJoin['on'], $firstJoin['parentAlias'], $firstJoin['alias'], $firstJoin['isSnakeCase'] ?? true);
 
 		// Add deleted_at check if applicable
 		$parts[] = "  AND {$firstJoin['alias']}.deleted_at IS NULL";
@@ -207,10 +211,41 @@ class JoinSearchHelper
 	 * @param array $on ON clause [local, foreign]
 	 * @param string $leftAlias
 	 * @param string $rightAlias
+	 * @param bool $isSnakeCase Whether to convert field names to snake_case
 	 * @return string
 	 */
-	protected static function formatOnClause(array $on, string $leftAlias, string $rightAlias): string
+	protected static function formatOnClause(array $on, string $leftAlias, string $rightAlias, bool $isSnakeCase = true): string
 	{
-		return "{$leftAlias}.{$on[0]} = {$rightAlias}.{$on[1]}";
+		// Validate ON clause has both fields
+		if (!isset($on[0]))
+		{
+			// Fallback: if ON clause is malformed, return a basic condition
+			return "1=1";
+		}
+
+		// Check if ON clause is already fully qualified (e.g., 'table.column = othertable.column')
+		// or if it's an array with comparison operator (3 elements)
+		if (count($on) === 3)
+		{
+			// Format: [leftField, operator, rightField]
+			return "{$on[0]} {$on[1]} {$on[2]}";
+		}
+
+		// Check if first element already contains table alias (contains a dot)
+		if (is_string($on[0]) && strpos($on[0], '.') !== false)
+		{
+			// Already fully qualified, return as is
+			return isset($on[1]) ? "{$on[0]} = {$on[1]}" : $on[0];
+		}
+
+		// Standard format: [localField, foreignField]
+		if (!isset($on[1]))
+		{
+			return "1=1";
+		}
+
+		$leftField = $isSnakeCase ? Strings::snakeCase($on[0]) : $on[0];
+		$rightField = $isSnakeCase ? Strings::snakeCase($on[1]) : $on[1];
+		return "{$leftAlias}.{$leftField} = {$rightAlias}.{$rightField}";
 	}
 }
