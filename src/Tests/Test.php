@@ -77,6 +77,10 @@ abstract class Test extends TestCase
 	 */
 	protected function setupSystem(): void
 	{
+		// Disable error tracking during tests to prevent stdout output
+		// that can break PHPUnit's output and assertion handling
+		Error::disable();
+
 		/**
 		 * CRITICAL: Set the env to testing BEFORE initializing Base
 		 * This ensures the testing database/cache connections are used
@@ -90,10 +94,6 @@ abstract class Test extends TestCase
 		 * This will set the env to testing to use the testing connection settings.
 		 */
 		setEnv('env', 'testing');
-
-		// Disable error tracking during tests to prevent stdout output
-		// that can break PHPUnit's output and assertion handling
-		Error::disable();
 	}
 
 	/**
