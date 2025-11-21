@@ -74,6 +74,20 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected static array $fieldsBlacklist = [];
 
 	/**
+	 * Custom data type handlers for specific fields.
+	 * Maps field names to DataType class instances.
+	 *
+	 * Example:
+	 * protected static array $dataTypes = [
+	 *     'position' => PointType::class,
+	 *     'metadata' => JsonType::class
+	 * ];
+	 *
+	 * @var array
+	 */
+	protected static array $dataTypes = [];
+
+	/**
 	 * Storage connection instance.
 	 *
 	 * @var StorageProxy|null
@@ -765,6 +779,43 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public function getJoins(): array
 	{
 		return $this->compiledJoins;
+	}
+
+	/**
+	 * Get the data type handler for a specific field.
+	 *
+	 * @param string $field Field name.
+	 * @return \Proto\Storage\DataTypes\DataType|null
+	 */
+	public function getDataType(string $field): ?\Proto\Storage\DataTypes\DataType
+	{
+		$className = static::$dataTypes[$field] ?? null;
+		if (!$className)
+		{
+			return null;
+		}
+
+		if (is_string($className))
+		{
+			return new $className();
+		}
+
+		if (is_object($className))
+		{
+			return $className;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get all data type mappings.
+	 *
+	 * @return array
+	 */
+	public function getDataTypes(): array
+	{
+		return static::$dataTypes;
 	}
 
 	/**

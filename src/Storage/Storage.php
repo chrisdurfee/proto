@@ -7,6 +7,7 @@ use Proto\Database\Database;
 use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Storage\Helpers\FieldHelper;
 use Proto\Storage\Helpers\SubQueryHelper;
+use Proto\Storage\Helpers\ParamsBuilder;
 use Proto\Utils\Sanitize;
 use Proto\Utils\Strings;
 
@@ -108,6 +109,24 @@ class Storage extends TableStorage
 	 */
 	public function insert(object $data): bool
 	{
+		// Check if model has custom data types
+		if (!empty($this->model->getDataTypes()))
+		{
+			$params = ParamsBuilder::forInsert($data, $this->model);
+			$result = $this->table()
+				->insert()
+				->fields($params->cols)
+				->values($params->placeholders)
+				->execute($params->params);
+
+			if (!isset($data->id))
+			{
+				$this->setModelId($result);
+			}
+			return $result;
+		}
+
+		// Standard insert
 		$result = $this->db->insert($this->tableName, $data);
 		if (!isset($data->id))
 		{
@@ -208,6 +227,18 @@ class Storage extends TableStorage
 	{
 		$data = $this->getUpdateData();
 		$key = $this->getModelIdKeyName();
+
+		// Check if model has custom data types
+		if (!empty($this->model->getDataTypes()))
+		{
+			$params = ParamsBuilder::forUpdate($data, $this->model, $key);
+			return $this->table()
+				->update(...$params->cols)
+				->where("{$key} = ?")
+				->execute($params->params);
+		}
+
+		// Standard update
 		return $this->db->update($this->tableName, $data, $key);
 	}
 
