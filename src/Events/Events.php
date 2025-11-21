@@ -58,23 +58,24 @@ class Events extends Singleton
 		{
 			$cacheDriver = env('cache')?->driver ?? null;
 
-			// Support both 'redis' and 'RedisDriver' as config values
-			// Or just check if the actual driver instance is RedisDriver
-			if ($cacheDriver === 'redis' || $cacheDriver === 'RedisDriver' || $cacheDriver)
+			// Only check Redis if the driver is explicitly set to redis/RedisDriver
+			if ($cacheDriver !== 'redis' && $cacheDriver !== 'RedisDriver')
 			{
-				$cache = Cache::getInstance();
-				if ($cache->isSupported() === false)
-				{
-					return;
-				}
+				return;
+			}
 
-				$driver = $cache->getDriver();
+			$cache = Cache::getInstance();
+			if (Cache::isSupported() === false)
+			{
+				return;
+			}
 
-				// Only initialize if we actually have a RedisDriver instance
-				if ($driver instanceof RedisDriver)
-				{
-					$this->redisAdapter = new RedisPubSubAdapter($driver);
-				}
+			$driver = $cache->getDriver();
+
+			// Only initialize if we actually have a RedisDriver instance
+			if ($driver instanceof RedisDriver)
+			{
+				$this->redisAdapter = new RedisPubSubAdapter($driver);
 			}
 		}
 		catch (\Exception $e)
