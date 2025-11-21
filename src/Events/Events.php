@@ -63,6 +63,11 @@ class Events extends Singleton
 			if ($cacheDriver === 'redis' || $cacheDriver === 'RedisDriver' || $cacheDriver)
 			{
 				$cache = Cache::getInstance();
+				if ($cache->isSupported() === false)
+				{
+					return;
+				}
+
 				$driver = $cache->getDriver();
 
 				// Only initialize if we actually have a RedisDriver instance
