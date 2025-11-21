@@ -77,6 +77,13 @@ abstract class Test extends TestCase
 	 */
 	protected function setupSystem(): void
 	{
+		/**
+		 * CRITICAL: Set the env to testing BEFORE initializing Base
+		 * This ensures the testing database/cache connections are used
+		 */
+		$_SERVER['APP_ENV'] = 'testing';
+		$_ENV['APP_ENV'] = 'testing';
+
 		new Base();
 
 		/**
