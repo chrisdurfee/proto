@@ -89,6 +89,7 @@ class Session
 		catch (\Exception $e)
 		{
 			self::$type = FileSession::class;
+			self::$type::reset();
 			self::$instance = self::$type::getInstance();
 			return self::$type::init();
 		}

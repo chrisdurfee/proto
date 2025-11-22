@@ -41,6 +41,18 @@ abstract class Singleton
 	}
 
 	/**
+	 * Resets the Singleton instance.
+	 *
+	 * Primarily used for testing purposes to ensure a fresh instance.
+	 *
+	 * @return void
+	 */
+	public static function reset(): void
+	{
+		static::$instance = null;
+	}
+
+	/**
 	 * Prevents cloning of the singleton instance.
 	 */
 	protected function __clone(): void
