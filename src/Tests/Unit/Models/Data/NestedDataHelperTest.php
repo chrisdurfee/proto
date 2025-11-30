@@ -181,4 +181,34 @@ class NestedDataHelperTest extends TestCase
 		$this->assertEquals(2, $result[1]->id);
 		$this->assertEquals('superman', $result[1]->displayName);
 	}
+
+	/**
+	 * Test with actual JSON from database (starting with key "1" not "0")
+	 */
+	public function testActualDatabaseJsonStructure(): void
+	{
+		$helper = new NestedDataHelper();
+		$helper->addKey('participants');
+
+		// Actual JSON structure from your database
+		$jsonString = '{"1":{"id":1,"userId":221,"role":"member","joinedAt":"2025-10-31 23:23:22","lastReadAt":"2025-11-29 18:17:48","lastReadMessageId":514,"createdAt":"2025-10-31 17:23:22","updatedAt":"2025-11-29 18:17:48","deletedAt":null,"displayName":"batman","firstName":"bruce","lastName":"w","email":"test@email.com","image":null,"status":"offline"}}';
+
+		$decoded = json_decode($jsonString, true);
+		$result = $helper->getGroupedData($decoded);
+
+		// Should be a numeric array starting from 0
+		$this->assertIsArray($result);
+		$this->assertCount(1, $result);
+		$this->assertArrayHasKey(0, $result);
+
+		// Item should be an object
+		$this->assertIsObject($result[0]);
+
+		// Can access properties
+		$this->assertEquals(1, $result[0]->id);
+		$this->assertEquals(221, $result[0]->userId);
+		$this->assertEquals('member', $result[0]->role);
+		$this->assertEquals('batman', $result[0]->displayName);
+		$this->assertEquals('bruce', $result[0]->firstName);
+	}
 }
