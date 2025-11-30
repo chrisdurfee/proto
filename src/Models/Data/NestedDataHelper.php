@@ -207,6 +207,12 @@ class NestedDataHelper
 	 */
 	protected function convertKeysToCamelCase(array $data): array
 	{
+		// Check if this should be re-indexed as a numeric array
+		if ($this->shouldBeNumericArray($data))
+		{
+			$data = array_values($data); // Re-index to 0, 1, 2...
+		}
+
 		$result = [];
 		foreach ($data as $key => $value)
 		{
