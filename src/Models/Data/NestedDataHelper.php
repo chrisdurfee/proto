@@ -106,8 +106,8 @@ class NestedDataHelper
 
 	/**
 	 * Determines if an array should be treated as a numeric array.
-	 * This handles cases where JSON objects with numeric-string keys (e.g., {"1":{...},"2":{...}})
-	 * should be converted to numeric arrays ([{...},{...}]).
+	 * This handles cases where JSON objects with numeric keys (e.g., {"1":{...},"2":{...}})
+	 * should be converted to properly indexed numeric arrays ([{...},{...}]).
 	 *
 	 * @param array $array Input array.
 	 * @return bool
@@ -119,16 +119,26 @@ class NestedDataHelper
 			return false;
 		}
 
-		// Check if all keys are numeric strings and all values are associative arrays (objects)
-		$allKeysNumericStrings = true;
+		// Check if all keys are numeric (int or numeric string) and all values are associative arrays (objects)
+		$allKeysNumeric = true;
 		$allValuesAreObjects = true;
+		$keysNotSequential = false;
+
+		$keys = array_keys($array);
+		$expectedSequence = range(0, count($array) - 1);
+
+		// Check if keys are not in sequential order starting from 0
+		if ($keys !== $expectedSequence)
+		{
+			$keysNotSequential = true;
+		}
 
 		foreach ($array as $key => $value)
 		{
-			// Check if key is a numeric string (like "1", "2", "3")
-			if (!is_string($key) || !ctype_digit($key))
+			// Check if key is numeric (int or numeric string like "1", "2", "3")
+			if (!is_int($key) && (!is_string($key) || !ctype_digit($key)))
 			{
-				$allKeysNumericStrings = false;
+				$allKeysNumeric = false;
 			}
 
 			// Check if value is an associative array (representing an object)
@@ -138,8 +148,9 @@ class NestedDataHelper
 			}
 		}
 
-		// If all keys are numeric strings and all values are objects, treat as numeric array
-		return $allKeysNumericStrings && $allValuesAreObjects;
+		// If all keys are numeric, keys are not sequential from 0, and all values are objects,
+		// then re-index to create a proper numeric array
+		return $allKeysNumeric && $keysNotSequential && $allValuesAreObjects;
 	}
 
 	/**
