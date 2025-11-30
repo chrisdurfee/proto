@@ -50,7 +50,7 @@ class NestedDataHelper
 	{
 		if (is_array($group))
 		{
-			return $group;
+			return $this->convertArrayItemsToObjects($group);
 		}
 
 		if (!$group)
@@ -69,6 +69,81 @@ class NestedDataHelper
 	}
 
 	/**
+	 * Converts array items to objects if they are associative arrays.
+	 *
+	 * @param array $data Input array.
+	 * @return array
+	 */
+	protected function convertArrayItemsToObjects(array $data): array
+	{
+		$result = [];
+		foreach ($data as $key => $item)
+		{
+			if (is_array($item) && $this->isAssociativeArray($item))
+			{
+				// Convert associative array to object and recursively process nested arrays
+				$result[$key] = $this->arrayToObject($item);
+			}
+			elseif (is_array($item))
+			{
+				// Recursively process nested arrays
+				$result[$key] = $this->convertArrayItemsToObjects($item);
+			}
+			else
+			{
+				$result[$key] = $item;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * Checks if an array is associative (has string keys).
+	 *
+	 * @param array $array Input array.
+	 * @return bool
+	 */
+	protected function isAssociativeArray(array $array): bool
+	{
+		if (empty($array))
+		{
+			return false;
+		}
+		return array_keys($array) !== range(0, count($array) - 1);
+	}
+
+	/**
+	 * Recursively converts an array to an object.
+	 *
+	 * @param array $array Input array.
+	 * @return object
+	 */
+	protected function arrayToObject(array $array): object
+	{
+		$object = (object)[];
+		foreach ($array as $key => $value)
+		{
+			if (is_array($value))
+			{
+				if ($this->isAssociativeArray($value))
+				{
+					$object->{$key} = $this->arrayToObject($value);
+				}
+				else
+				{
+					// Keep numeric arrays as arrays but convert nested items
+					$object->{$key} = $this->convertArrayItemsToObjects($value);
+				}
+			}
+			else
+			{
+				$object->{$key} = $value;
+			}
+		}
+		return $object;
+	}
+
+	/**
 	 * Recursively converts array keys to camelCase.
 	 *
 	 * @param array $data Input array.
@@ -76,28 +151,36 @@ class NestedDataHelper
 	 */
 	protected function convertKeysToCamelCase(array $data): array
 	{
+		$result = [];
 		foreach ($data as $key => $value)
 		{
 			if (is_array($value))
 			{
-				$data[$key] = $this->convertKeysToCamelCase($value);
-			}
-			elseif (is_string($key))
-			{
-				$newKey = $this->camelCase($key);
-				if ($newKey !== $key)
+				if ($this->isAssociativeArray($value))
 				{
-					$data[$newKey] = $value;
-					unset($data[$key]);
+					// Convert to object and recursively process
+					$newKey = is_string($key) ? $this->camelCase($key) : $key;
+					$result[$newKey] = $this->arrayToObject($this->convertKeysToCamelCase($value));
 				}
-
-				if ($this->isNestedKey($newKey))
+				else
 				{
-					$data[$newKey] = $this->getGroupedData($value);
+					// Numeric array - keep as array but process items
+					$newKey = is_string($key) ? $this->camelCase($key) : $key;
+					$result[$newKey] = $this->convertKeysToCamelCase($value);
+				}
+			}
+			else
+			{
+				$newKey = is_string($key) ? $this->camelCase($key) : $key;
+				$result[$newKey] = $value;
+
+				if (is_string($key) && $this->isNestedKey($newKey))
+				{
+					$result[$newKey] = $this->getGroupedData($value);
 				}
 			}
 		}
-		return $data;
+		return $result;
 	}
 
 	/**
