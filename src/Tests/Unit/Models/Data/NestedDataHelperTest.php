@@ -137,4 +137,48 @@ class NestedDataHelperTest extends TestCase
 		$this->assertIsArray($result);
 		$this->assertEquals([1, 2, 3, 4, 5], $result);
 	}
+
+	/**
+	 * Test that arrays with numeric string keys are converted to numeric arrays
+	 * This handles the case where JSON like {"1":{...},"2":{...}} is decoded
+	 */
+	public function testNumericStringKeysConvertedToNumericArray(): void
+	{
+		$helper = new NestedDataHelper();
+		$helper->addKey('participants');
+
+		// Simulate what comes from JSON decode of {"1":{...},"2":{...}}
+		$input = [
+			"1" => [  // string key "1"
+				'id' => 1,
+				'userId' => 221,
+				'role' => 'member',
+				'displayName' => 'batman'
+			],
+			"2" => [  // string key "2"
+				'id' => 2,
+				'userId' => 456,
+				'role' => 'admin',
+				'displayName' => 'superman'
+			]
+		];
+
+		$result = $helper->getGroupedData($input);
+
+		// Should be a numeric array (re-indexed to 0, 1)
+		$this->assertIsArray($result);
+		$this->assertCount(2, $result);
+		$this->assertArrayHasKey(0, $result);
+		$this->assertArrayHasKey(1, $result);
+
+		// Each item should be an object
+		$this->assertIsObject($result[0]);
+		$this->assertIsObject($result[1]);
+
+		// Can access by numeric index
+		$this->assertEquals(1, $result[0]->id);
+		$this->assertEquals('batman', $result[0]->displayName);
+		$this->assertEquals(2, $result[1]->id);
+		$this->assertEquals('superman', $result[1]->displayName);
+	}
 }

@@ -76,6 +76,13 @@ class NestedDataHelper
 	 */
 	protected function convertArrayItemsToObjects(array $data): array
 	{
+		// Check if this looks like it should be a numeric array with object items
+		// (e.g., from JSON like {"1":{...},"2":{...}} which should be [{...},{...}])
+		if ($this->shouldBeNumericArray($data))
+		{
+			$data = array_values($data); // Re-index to 0, 1, 2...
+		}
+
 		$result = [];
 		foreach ($data as $key => $item)
 		{
@@ -95,6 +102,44 @@ class NestedDataHelper
 			}
 		}
 		return $result;
+	}
+
+	/**
+	 * Determines if an array should be treated as a numeric array.
+	 * This handles cases where JSON objects with numeric-string keys (e.g., {"1":{...},"2":{...}})
+	 * should be converted to numeric arrays ([{...},{...}]).
+	 *
+	 * @param array $array Input array.
+	 * @return bool
+	 */
+	protected function shouldBeNumericArray(array $array): bool
+	{
+		if (empty($array))
+		{
+			return false;
+		}
+
+		// Check if all keys are numeric strings and all values are associative arrays (objects)
+		$allKeysNumericStrings = true;
+		$allValuesAreObjects = true;
+
+		foreach ($array as $key => $value)
+		{
+			// Check if key is a numeric string (like "1", "2", "3")
+			if (!is_string($key) || !ctype_digit($key))
+			{
+				$allKeysNumericStrings = false;
+			}
+
+			// Check if value is an associative array (representing an object)
+			if (!is_array($value) || !$this->isAssociativeArray($value))
+			{
+				$allValuesAreObjects = false;
+			}
+		}
+
+		// If all keys are numeric strings and all values are objects, treat as numeric array
+		return $allKeysNumericStrings && $allValuesAreObjects;
 	}
 
 	/**
