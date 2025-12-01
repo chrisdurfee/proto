@@ -15,16 +15,16 @@ class DatabaseManager
 	/**
 	 * Retrieves database connection settings.
 	 *
-     * @param object $connections
+	 * @param object $connections
 	 * @param string|null $connection
-     * @param string|null $env
+	 * @param string|null $env
 	 * @return object
 	 * @throws \Exception
 	 */
 	public static function getDBSettings(
-        object $connections,
-        ?string $connection = 'default',
-        ?string $env = 'dev'): object
+		object $connections,
+		?string $connection = 'default',
+		?string $env = 'dev'): object
 	{
 		$settings = self::getConnectionSettings($connections, $connection, $env);
 		if ($settings === null)
@@ -38,9 +38,9 @@ class DatabaseManager
 	/**
 	 * Retrieves the correct connection settings for the given environment.
 	 *
-     * @param object $connections
+	 * @param object $connections
 	 * @param string $connection
-     * @param string $env
+	 * @param string $env
 	 * @return object|null
 	 */
 	private static function getConnectionSettings(object $connections, string $connection, string $env): ?object
@@ -57,7 +57,7 @@ class DatabaseManager
 	 * Retrieves the correct environment-specific database settings.
 	 *
 	 * @param object $settings
-     * @param string $env
+	 * @param string $env
 	 * @return object
 	 */
 	private static function resolveEnvironmentSettings(object $settings, string $env): object
