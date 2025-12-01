@@ -43,7 +43,7 @@ class Database
 		$caching = $this->isCaching($caching);
 		if ($caching)
 		{
-			$cachedConnection = ConnectionSettingsCache::get($connection);
+			$cachedConnection = ConnectionCache::get($connection);
 			if ($cachedConnection instanceof Mysqli)
 			{
 				return $cachedConnection;
@@ -54,7 +54,7 @@ class Database
 
 		if ($caching)
 		{
-			ConnectionSettingsCache::set($connection, $db);
+			ConnectionCache::set($connection, $db);
 		}
 
 		return $db;
