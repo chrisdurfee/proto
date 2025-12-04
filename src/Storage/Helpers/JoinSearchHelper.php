@@ -247,8 +247,8 @@ class JoinSearchHelper
 	 * Format an ON clause for the query.
 	 *
 	 * @param array $on ON clause [local, foreign]
-	 * @param string $leftAlias
-	 * @param string $rightAlias
+	 * @param string $leftAlias Left table alias (parent/base table)
+	 * @param string $rightAlias Right table alias (join table)
 	 * @param bool $isSnakeCase Whether to convert field names to snake_case
 	 * @return string
 	 */
@@ -290,8 +290,11 @@ class JoinSearchHelper
 		}
 
 		// Simple field names - apply snake_case conversion and aliases
-		$leftField = $isSnakeCase ? Strings::snakeCase($on[0]) : $on[0];
-		$rightField = $isSnakeCase ? Strings::snakeCase($on[1]) : $on[1];
-		return "{$leftAlias}.{$leftField} = {$rightAlias}.{$rightField}";
+		// ON format is [localFieldOnJoinTable, foreignFieldOnParentTable]
+		$localField = $isSnakeCase ? Strings::snakeCase($on[0]) : $on[0];
+		$foreignField = $isSnakeCase ? Strings::snakeCase($on[1]) : $on[1];
+
+		// rightAlias is the join table (has localField), leftAlias is parent table (has foreignField)
+		return "{$rightAlias}.{$localField} = {$leftAlias}.{$foreignField}";
 	}
 }
