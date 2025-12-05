@@ -254,6 +254,31 @@ class JoinSearchHelper
 	 */
 	protected static function formatOnClause(array $on, string $leftAlias, string $rightAlias, bool $isSnakeCase = true): string
 	{
+		// Handle array of conditions (ModelJoin::getOn() returns array of arrays)
+		if (isset($on[0]) && is_array($on[0]))
+		{
+			$conditions = [];
+			foreach ($on as $condition)
+			{
+				$conditions[] = self::formatSingleOnClause($condition, $leftAlias, $rightAlias, $isSnakeCase);
+			}
+			return implode(' AND ', $conditions);
+		}
+
+		return self::formatSingleOnClause($on, $leftAlias, $rightAlias, $isSnakeCase);
+	}
+
+	/**
+	 * Format a single ON condition.
+	 *
+	 * @param array $on
+	 * @param string $leftAlias
+	 * @param string $rightAlias
+	 * @param bool $isSnakeCase
+	 * @return string
+	 */
+	protected static function formatSingleOnClause(array $on, string $leftAlias, string $rightAlias, bool $isSnakeCase = true): string
+	{
 		// Validate ON clause has both fields
 		if (!isset($on[0]))
 		{
@@ -279,14 +304,16 @@ class JoinSearchHelper
 		if (is_string($on[0]) && strpos($on[0], '.') !== false)
 		{
 			// Extract just the field names from fully qualified format
-			// ON format from ModelJoin: [joinTable.field, baseTable.field]
+			// ON format from ModelJoin: [parentTable.field, joinTable.field]
 			$leftParts = explode('.', $on[0]);
 			$rightParts = explode('.', $on[1]);
-			$leftField = end($leftParts);  // field from join table
-			$rightField = end($rightParts); // field from base table
+			$leftField = end($leftParts);  // field from parent table
+			$rightField = end($rightParts); // field from join table
 
 			// leftAlias is the base/parent, rightAlias is the join
-			return "{$leftAlias}.{$rightField} = {$rightAlias}.{$leftField}";
+			// We map the first element (parent field) to leftAlias
+			// And the second element (join field) to rightAlias
+			return "{$leftAlias}.{$leftField} = {$rightAlias}.{$rightField}";
 		}
 
 		// Simple field names - apply snake_case conversion and aliases
