@@ -22,15 +22,32 @@ class DomainMiddleware
 	 */
 	protected function isSupportedDomain(Request $request): bool
 	{
-		$allowed = (array)env('domain');
+		$domainConfig = (array)env('domain');
 
-		$allowedHosts = array_map(fn($u) =>
+		// Get base domains (strings only)
+		$baseDomains = array_map(fn($u) =>
 			parse_url($u, PHP_URL_HOST) ?: strtolower($u),
-			$allowed
+			array_filter($domainConfig, 'is_string')
 		);
 
+		// Get subdomains if defined
+		$subdomains = isset($domainConfig['subdomains']) ? (array)$domainConfig['subdomains'] : [];
+
+		// Build full list of allowed hosts
+		$allowedHosts = $baseDomains;
+		foreach ($baseDomains as $domain)
+		{
+			foreach ($subdomains as $sub)
+			{
+				if (is_string($sub))
+				{
+					$allowedHosts[] = strtolower($sub . '.' . $domain);
+				}
+			}
+		}
+
 		$hostHeader = $request->header('host');
-		$hostOnly = strtolower(explode(':',$hostHeader)[0]);
+		$hostOnly = strtolower(explode(':', $hostHeader)[0]);
 
 		return in_array($hostOnly, $allowedHosts, true);
 	}
