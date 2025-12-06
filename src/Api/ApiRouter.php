@@ -230,7 +230,6 @@ namespace Proto\Api
 				ResourceHelper::includeResource($resourcePath);
 			}, $middleware);
 
-
 			/**
 			 * This will add the default route which will be used if no route was matched.
 			 */
