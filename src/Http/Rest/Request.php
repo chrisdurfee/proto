@@ -116,6 +116,18 @@ class Request
 			return $this->baseUrl;
 		}
 
+		// If URL is already a full URL (starts with http:// or https://), return it as-is
+		if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://'))
+		{
+			return $url;
+		}
+
+		// If baseUrl is empty, return the URL as-is (assume it's a full URL without protocol)
+		if (empty($this->baseUrl))
+		{
+			return $url;
+		}
+
 		$base = rtrim($this->baseUrl, '/');
 		$endpoint = ltrim($url, '/');
 

@@ -138,6 +138,14 @@ class Curl
 	protected function executeRequest(): mixed
 	{
 		$response = curl_exec($this->curl);
+		if ($response === false)
+		{
+			error(
+				curl_error($this->curl),
+				__FILE__,
+				__LINE__
+			);
+		}
 		return $response ?: null;
 	}
 
