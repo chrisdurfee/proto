@@ -141,7 +141,15 @@ class Email extends Dispatch
 		 * Enable or disable email sending using the environment configuration.
 		 */
 		$settings = env('email')->smtp ?? (object) [];
-		$this->sendingEnabled = $settings->sendingEnabled ?? true;
+		// Check for testing environment or array driver
+		if (env('env') === 'testing')
+		{
+			$this->sendingEnabled = false;
+		}
+		else
+		{
+			$this->sendingEnabled = $settings->sendingEnabled ?? true;
+		}
 
 		try
 		{
