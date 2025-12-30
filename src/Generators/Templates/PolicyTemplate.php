@@ -11,6 +11,17 @@ namespace Proto\Generators\Templates;
 class PolicyTemplate extends ClassTemplate
 {
 	/**
+	 * Retrieves the directory path for the class.
+	 *
+	 * @return string
+	 */
+	protected function getDir(): string
+	{
+		$moduleDir = $this->getModuleDir();
+		return "{$moduleDir}\\Auth\\" . $this->get('dir');
+	}
+
+	/**
 	 * This will get the className.
 	 *
 	 * @return string
