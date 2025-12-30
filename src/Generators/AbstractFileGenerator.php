@@ -26,7 +26,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	{
 		$path = $this->convertSlashes($dir . '/' . $fileName);
 		if (file_exists($path))
-        {
+		{
 			return false;
 		}
 		File::put($path, (string)$content);
