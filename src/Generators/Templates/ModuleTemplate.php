@@ -23,15 +23,15 @@ class ModuleTemplate extends ClassTemplate
 		return 'extends Module';
 	}
 
-    /**
-     * Retrieves the module name.
-     *
-     * @return string
-     */
-    protected function getModuleName(): string
-    {
-        return Strings::pascalCase($this->get('name') ?? '');
-    }
+	/**
+	 * Retrieves the module name.
+	 *
+	 * @return string
+	 */
+	protected function getModuleName(): string
+	{
+		return Strings::pascalCase($this->get('name') ?? '');
+	}
 
 	/**
 	 * Retrieves the module class name.
@@ -40,18 +40,18 @@ class ModuleTemplate extends ClassTemplate
 	 */
 	protected function getClassName(): string
 	{
-        $moduleName = $this->getModuleName();
+		$moduleName = $this->getModuleName();
 		return $moduleName . 'Module';
 	}
 
-    /**
+	/**
 	 * Retrieves the directory path for the class.
 	 *
 	 * @return string
 	 */
 	protected function getDir(): string
 	{
-        $moduleName = $this->getModuleName();
+		$moduleName = $this->getModuleName();
 		return $this->get('dir') . "\\" . $moduleName;
 	}
 
