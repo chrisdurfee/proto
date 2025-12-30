@@ -25,14 +25,14 @@ class GatewayTemplate extends ClassTemplate
 	}
 
 	/**
-     * Retrieves the module name.
-     *
-     * @return string
-     */
-    protected function getModuleName(): string
-    {
-        return Strings::pascalCase($this->get('moduleName') ?? '');
-    }
+	 * Retrieves the module name.
+	 *
+	 * @return string
+	 */
+	protected function getModuleName(): string
+	{
+		return Strings::pascalCase($this->get('moduleName') ?? '');
+	}
 
 	/**
 	 * Retrieves the gateway class name.
@@ -61,7 +61,7 @@ class GatewayTemplate extends ClassTemplate
 	 */
 	protected function getDir(): string
 	{
-        $moduleName = $this->getModuleName();
+		$moduleName = $this->getModuleName();
 		return "Modules\\" . $moduleName . "\\Gateway";
 	}
 

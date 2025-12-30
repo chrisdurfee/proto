@@ -10,28 +10,28 @@ namespace Proto\Generators\Templates;
  */
 class PolicyTemplate extends ClassTemplate
 {
-    /**
-     * This will get the className.
-     *
-     * @return string
-     */
-    protected function getClassName(): string
-    {
-        return $this->get('className') . 'Policy';
-    }
+	/**
+	 * This will get the className.
+	 *
+	 * @return string
+	 */
+	protected function getClassName(): string
+	{
+		return $this->get('className') . 'Policy';
+	}
 
-    /**
-     * This will get the extends string.
-     *
-     * @return string
-     */
-    protected function getExtends(): string
-    {
-        $extends = $this->get('extends');
-        return 'extends ' . (($extends)? $extends : 'Policy');
-    }
+	/**
+	 * This will get the extends string.
+	 *
+	 * @return string
+	 */
+	protected function getExtends(): string
+	{
+		$extends = $this->get('extends');
+		return 'extends ' . (($extends)? $extends : 'Policy');
+	}
 
-    /**
+	/**
 	 * Retrieves the use statement for the model.
 	 *
 	 * @return string
@@ -41,15 +41,15 @@ class PolicyTemplate extends ClassTemplate
 		return "use Proto\\Auth\\Policies\\Policy;";
 	}
 
-    /**
-     * This will get the class content.
-     *
-     * @return string
-     */
-    protected function getClassContent(): string
-    {
-        return <<<EOT
+	/**
+	 * This will get the class content.
+	 *
+	 * @return string
+	 */
+	protected function getClassContent(): string
+	{
+		return <<<EOT
 
 EOT;
-    }
+	}
 }

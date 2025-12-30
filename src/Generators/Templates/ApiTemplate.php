@@ -63,7 +63,7 @@ class ApiTemplate extends ClassTemplate
  * This file contains the API routes for the {$className} module.
  */
 router()
-    ->resource('{$path}', {$controllerName}::class);
+	->resource('{$path}', {$controllerName}::class);
 EOT;
 	}
 }
