@@ -323,6 +323,25 @@ class JoinBuilder
 	}
 
 	/**
+	 * Alias for one() - defines an inverse relationship (BelongsTo).
+	 *
+	 * @param string $modelName The related model class name.
+	 * @param string $type Join type (default is 'left').
+	 * @param array $fields Optional fields to select from the related model.
+	 * @param string|null $alias Optional alias for the joined table.
+	 * @return ModelJoin
+	 */
+	public function belongsTo(
+		string $modelName,
+		string $type = 'left',
+		array $fields = [],
+		?string $alias = null
+	): ModelJoin
+	{
+		return $this->one($modelName, $type, $fields, $alias);
+	}
+
+	/**
 	 * Creates a one-to-many (where this model is the 'many') or many-to-many join based on a model definition.
 	 *
 	 * @param string $modelName The related model class name.

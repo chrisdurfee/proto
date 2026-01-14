@@ -448,6 +448,19 @@ class ModelJoin
 	}
 
 	/**
+	 * Alias for one() - defines an inverse relationship (BelongsTo).
+	 *
+	 * @param string $modelClass The related model class.
+	 * @param string $type Join type.
+	 * @param array $fields Optional fields to select.
+	 * @return ModelJoin
+	 */
+	public function belongsTo(string $modelClass, string $type = 'left', array $fields = []): ModelJoin
+	{
+		return $this->one($modelClass, $type, $fields);
+	}
+
+	/**
 	 * Creates a ModelJoin instance representing a child relationship join.
 	 *
 	 * @param JoinBuilder $builder The builder context (usually linked or created).
