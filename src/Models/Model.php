@@ -990,12 +990,21 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Remove model record from storage.
 	 *
-	 * @param object|null $data Data object.
+	 * @param object|int|string|null $data Data object.
 	 * @return bool
 	 */
-	public static function remove(?object $data = null): bool
+	public static function remove(object|int|string|null $data = null): bool
 	{
-		$model = new static($data);
+		if (is_object($data))
+		{
+			$model = new static($data);
+		}
+		else
+		{
+			$model = new static();
+			$idKey = $model->getIdKeyName();
+			$model->set($idKey, $data);
+		}
 		return $model->storage->delete();
 	}
 
