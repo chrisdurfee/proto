@@ -132,9 +132,15 @@ class Generator
 	public function createTable(object $settings): bool
 	{
 		$query = new Create($settings->tableName, $settings->callBack);
-		$connection = $settings->connection ?? null;
+		$connection = $settings->connection ?? 'default';
 
-		$db = (new Database())->connect($connection);
+		// Use static method with caching enabled for test isolation
+		$db = Database::getConnection($connection, true);
+		if (!$db)
+		{
+			return false;
+		}
+		
 		return $db->execute((string)$query);
 	}
 

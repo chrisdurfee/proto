@@ -66,8 +66,8 @@ class Guide
 	 */
 	public function getConnection(string $connection) : ?Adapter
 	{
-		$db = new Database();
-		return $db->connect($connection);
+		// Use static method with caching enabled for test isolation
+		return Database::getConnection($connection, true);
 	}
 
 	/**

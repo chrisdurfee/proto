@@ -94,8 +94,18 @@ class TableStorage implements StorageInterface
 	public function setConnection(): object|false
 	{
 		$conn = $this->getConnection();
-		$db = new $this->database();
-		return $this->db = $db->connect($conn);
+		
+		// Use static getConnection method to ensure proper caching
+		// This is critical for test transaction isolation
+		$db = $this->database::getConnection($conn, true);
+		
+		if (!$db)
+		{
+			$this->createNewError('Failed to establish database connection');
+			return false;
+		}
+		
+		return $this->db = $db;
 	}
 
 	/**

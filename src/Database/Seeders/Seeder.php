@@ -77,7 +77,8 @@ abstract class Seeder
 		}
 
 		$connection = $connection ?? $this->connection;
-		return $this->getDatabase()->connect($connection);
+		// Use static method with caching enabled for test isolation
+		return Database::getConnection($connection, true);
 	}
 
 	/**

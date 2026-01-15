@@ -105,8 +105,8 @@ abstract class Migration
 	 */
 	protected function db(): ?Adapter
 	{
-		$db = new Database();
-		return $db->connect($this->connection);
+		// Use static method with caching enabled for test isolation
+		return Database::getConnection($this->connection, true);
 	}
 
 	/**
