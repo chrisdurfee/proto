@@ -108,9 +108,8 @@ class CreateForeignKey extends Template
 	 */
 	public function on(string $on): self
 	{
-		$randomSuffix = $this->references . random_int(0, 1000);
 		$this->on = $on;
-		$this->name .= '_' . $on . '_' . $randomSuffix;
+		$this->name .= '_' . $on;
 		return $this;
 	}
 
