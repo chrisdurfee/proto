@@ -140,7 +140,7 @@ class Generator
 		{
 			return false;
 		}
-		
+
 		return $db->execute((string)$query);
 	}
 

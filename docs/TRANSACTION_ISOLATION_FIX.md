@@ -52,17 +52,17 @@ public function setConnection(): object|false
 public function setConnection(): object|false
 {
     $conn = $this->getConnection();
-    
+
     // Use static getConnection method to ensure proper caching
     // This is critical for test transaction isolation
     $db = $this->database::getConnection($conn, true);
-    
+
     if (!$db)
     {
         $this->createNewError('Failed to establish database connection');
         return false;
     }
-    
+
     return $this->db = $db;
 }
 ```
@@ -123,7 +123,7 @@ public function createTable(object $settings): bool
     {
         return false;
     }
-    
+
     return $db->execute((string)$query);
 }
 ```
@@ -257,27 +257,27 @@ public function testTransactionIsolation(): void
 {
     // Create a model
     $model = Model::factory()->create(['name' => 'Test']);
-    
+
     // Verify it exists using different query methods
     $this->assertDatabaseHas('models', ['name' => 'Test']);
-    
+
     $found = Model::getBy(['name' => 'Test']);
     $this->assertNotNull($found);
-    
+
     $byId = Model::getById($model->id);
     $this->assertEquals('Test', $byId->name);
-    
+
     // All should work because they share the same connection/transaction
 }
 ```
 
 ## Benefits
 
-✅ **Complete transaction isolation** - All operations share the same transaction  
-✅ **Faster tests** - No need to manually cleanup data  
-✅ **Reliable tests** - No flaky tests due to connection issues  
-✅ **Foreign key safety** - Constraints work properly within transactions  
-✅ **Better debugging** - Easier to understand what's happening  
+✅ **Complete transaction isolation** - All operations share the same transaction
+✅ **Faster tests** - No need to manually cleanup data
+✅ **Reliable tests** - No flaky tests due to connection issues
+✅ **Foreign key safety** - Constraints work properly within transactions
+✅ **Better debugging** - Easier to understand what's happening
 
 ## Important Notes
 
