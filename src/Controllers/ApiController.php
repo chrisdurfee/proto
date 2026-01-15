@@ -92,10 +92,21 @@ abstract class ApiController extends Controller
 	 */
 	protected function errorValidating(Validator $validator): void
     {
-		$error = $this->error($validator->getMessage());
-        JsonFormat::encodeAndRender($error);
-        die;
+        $this->setError($validator->getMessage());
     }
+
+	/**
+	 * Sets a successful response and renders it as JSON.
+	 *
+	 * @param mixed $data The response data.
+	 * @return void
+	 */
+	protected function setError(?string $message = null, int $code = 400): array
+	{
+		$error = $this->error($message ?? 'An error occurred', $code);
+		JsonFormat::encodeAndRender($error);
+        die;
+	}
 
 	/**
 	 * Retrieves the resource ID from the request.
