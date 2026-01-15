@@ -16,9 +16,9 @@ trait HasFactory
 	 *
 	 * @param int $count
 	 * @param array $attributes
-	 * @return static
+	 * @return Factory
 	 */
-	public static function factory(int $count = 1, array $attributes = []): static
+	public static function factory(int $count = 1, array $attributes = []): Factory
 	{
 		$factoryClass = static::factoryClass();
 
