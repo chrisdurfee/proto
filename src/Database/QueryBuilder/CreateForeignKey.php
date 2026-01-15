@@ -109,7 +109,7 @@ class CreateForeignKey extends Template
 	public function on(string $on): self
 	{
 		$this->on = $on;
-		$this->name .= '_' . $on;
+		$this->name .= '_' . $on . '_' . $this->references;
 		return $this;
 	}
 
