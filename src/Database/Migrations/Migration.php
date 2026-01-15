@@ -19,7 +19,7 @@ abstract class Migration
 	/**
 	 * @var string $connection The database connection name.
 	 */
-	protected string $connection = '';
+	protected string $connection = 'default';
 
 	/**
 	 * @var string $fileName The migration file name.
