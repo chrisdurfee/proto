@@ -88,6 +88,25 @@ class Filter
 		$valueCount = count($value);
 		$end = $valueCount - 1;
 		$param = $value[$end];
+
+		// CRITICAL FIX: Handle NULL values with IS NULL / IS NOT NULL
+		if ($param === null)
+		{
+			// Determine operator based on format
+			if ($valueCount === 3)
+			{
+				$operator = strtoupper(trim((string)$value[1]));
+				// If operator is != or <>, use IS NOT NULL, otherwise IS NULL
+				if (in_array($operator, ['!=', '<>', 'NOT']))
+				{
+					return $value[0] . ' IS NOT NULL';
+				}
+			}
+			// Default to IS NULL for null values
+			return $value[0] . ' IS NULL';
+		}
+
+		// Replace value with placeholder for non-null values
 		$value[$end] = '?';
 
 		if ($valueCount === 3)
