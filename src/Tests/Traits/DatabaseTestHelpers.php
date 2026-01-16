@@ -4,6 +4,8 @@ namespace Proto\Tests\Traits;
 use Proto\Database\Database;
 use Proto\Database\Adapters\Mysqli;
 use Proto\Models\Model;
+use Proto\Database\ConnectionCache;
+use Proto\Config;
 
 /**
  * DatabaseTestHelpers
@@ -31,7 +33,19 @@ trait DatabaseTestHelpers
 	 */
 	protected function createTestDatabase(): void
 	{
+		// CRITICAL FIX: Clear any existing connection cache before tests
+		// This ensures we start fresh and don't reuse a connection from
+		// a previous test with different transaction state
+		ConnectionCache::clear();
+
+		// CRITICAL FIX: For tests, we must ensure non-persistent connections
+		// Persistent connections can maintain autocommit=true across tests,
+		// breaking transaction isolation. We need to modify the connection
+		// settings BEFORE creating the connection.
+		$this->ensureNonPersistentConnection();
+
 		// Get the default connection which will automatically use 'testing' env settings
+		// CRITICAL: Use caching=true to ensure this is the SAME connection used by models/storage
 		$db = Database::getConnection('default', true);
 		if (!$db)
 		{
@@ -39,9 +53,35 @@ trait DatabaseTestHelpers
 		}
 
 		// Disable autocommit for transaction control
+		// This MUST happen before any queries are executed
 		$db->autoCommit(false);
 
 		$this->testDatabase = $db;
+	}
+
+	/**
+	 * Ensures test database uses non-persistent connections.
+	 * This is critical for proper transaction isolation in tests.
+	 *
+	 * @return void
+	 */
+	protected function ensureNonPersistentConnection(): void
+	{
+		// Modify the config to ensure testing connection is non-persistent
+		$config = Config::getInstance();
+		$connections = $config->get('connections');
+		if (isset($connections->default->testing))
+		{
+			$connections->default->testing->persistent = false;
+		}
+		elseif (isset($connections->default))
+		{
+			// If no specific testing config, modify the default
+			if (is_object($connections->default))
+			{
+				$connections->default->persistent = false;
+			}
+		}
 	}
 
 	/**
@@ -227,6 +267,13 @@ trait DatabaseTestHelpers
 		if ($this->testDatabase !== null)
 		{
 			$this->rollbackDatabaseTransaction();
+
+			// Clear connection cache after rolling back to ensure
+			// the next test gets a fresh connection
+			\Proto\Database\ConnectionCache::clear();
+
+			// Reset test database reference
+			$this->testDatabase = null;
 		}
 	}
 }
