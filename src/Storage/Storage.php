@@ -328,8 +328,10 @@ class Storage extends TableStorage
 
 		if ($this->model->has('deletedAt'))
 		{
+			$dateTime = date('Y-m-d H:i:s');
+			$this->model->deletedAt = $dateTime;
 			return $this->db->update($this->tableName, [
-				'deleted_at' => date('Y-m-d H:i:s'),
+				'deleted_at' => $dateTime,
 				$key => $id
 			]);
 		}
