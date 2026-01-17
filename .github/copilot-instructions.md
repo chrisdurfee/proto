@@ -3,7 +3,7 @@
 These notes teach AI agents how to be productive in this framework codebase quickly. Stick to the patterns and files referenced below.
 
 ## Big picture
-- This is the Proto framework (modular monolith for PHP ≥ 8.1). Core lives under `src/` and is installed as a Composer package; apps using Proto keep app code in `modules/` and shared config in `common/Config/.env` (JSON).
+- This is the Proto framework (modular monolith for PHP ≥ 8.4). Core lives under `src/` and is installed as a Composer package; apps using Proto keep app code in `modules/` and shared config in `common/Config/.env` (JSON).
 - Bootstrapping happens via `Proto\Base` → `Proto\System` + `Config`, then `ModuleManager::activate(env('modules'))` and `ServiceManager::activate(env('services'))`.
 - HTTP stack: `src/Http/Router/*` implements a lightweight router with middleware, request/response wrappers, and a resource pattern that maps HTTP verbs to controller methods.
 - API front door: `src/Api/ApiRouter.php` sets up global helpers and routes. It dynamically includes `modules/<Module>/Api/**/api.php` via `ResourceHelper` for URLs like `/user/account/...`.
