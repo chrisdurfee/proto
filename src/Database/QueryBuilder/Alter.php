@@ -169,6 +169,7 @@ class Alter extends Blueprint
 			return null;
 		}
 
+		$this->adding[] = $field;
 		$args = array_slice($arguments, 1);
 		return call_user_func_array($callable, $args);
 	}
