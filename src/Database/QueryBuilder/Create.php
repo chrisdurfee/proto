@@ -328,7 +328,7 @@ class Create extends Blueprint
 	 */
 	public function foreign(string $field): CreateForeignKey
 	{
-		$foreignKey = new CreateForeignKey($field);
+		$foreignKey = new CreateForeignKey($field, $this->tableName);
 		$this->foreign[] = $foreignKey;
 		return $foreignKey;
 	}

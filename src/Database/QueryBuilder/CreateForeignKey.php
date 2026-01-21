@@ -25,6 +25,13 @@ class CreateForeignKey extends Template
 	protected string $name;
 
 	/**
+	 * The source table name.
+	 *
+	 * @var string
+	 */
+	protected string $tableName = '';
+
+	/**
 	 * The referenced field in the foreign table.
 	 *
 	 * @var string
@@ -56,12 +63,14 @@ class CreateForeignKey extends Template
 	 * Constructor.
 	 *
 	 * @param string $field The local field name.
+	 * @param string $tableName The source table name for unique constraint naming.
 	 * @return void
 	 */
-	public function __construct(string $field)
+	public function __construct(string $field, string $tableName = '')
 	{
 		$this->field = $field;
-		$this->name = 'fk_' . $field;
+		$this->tableName = $tableName;
+		$this->name = $tableName ? 'fk_' . $tableName . '_' . $field : 'fk_' . $field;
 	}
 
 	/**
@@ -109,7 +118,16 @@ class CreateForeignKey extends Template
 	public function on(string $on): self
 	{
 		$this->on = $on;
-		$this->name .= '_' . $on . '_' . $this->references;
+		// Generate globally unique constraint name: {source_table}_{field}_{target_table}_{target_field}
+		if ($this->tableName)
+		{
+			$this->name = 'fk_' . $this->tableName . '_' . $this->field . '_' . $on . '_' . $this->references;
+		}
+		else
+		{
+			// Backward compatibility: fk_{field}_{target_table}_{target_field}
+			$this->name = 'fk_' . $this->field . '_' . $on . '_' . $this->references;
+		}
 		return $this;
 	}
 
