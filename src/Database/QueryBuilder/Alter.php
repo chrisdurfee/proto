@@ -154,6 +154,26 @@ class Alter extends Blueprint
 	}
 
 	/**
+	 * Magic method to pass calls to a child field.
+	 *
+	 * @param string $method The method name.
+	 * @param array $arguments The method arguments.
+	 * @return CreateField|null
+	 */
+	public function __call(string $method, array $arguments): ?CreateField
+	{
+		$field = $this->getType($method, 'field');
+		$callable = [$field, $method];
+		if (!is_callable($callable))
+		{
+			return null;
+		}
+
+		$args = array_slice($arguments, 1);
+		return call_user_func_array($callable, $args);
+	}
+
+	/**
 	 * Creates a foreign key.
 	 *
 	 * @param string $field The local field for the foreign key.
