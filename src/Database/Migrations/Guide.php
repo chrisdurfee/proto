@@ -107,23 +107,40 @@ class Guide
 	/**
 	 * Retrieves all migration files from the configured directories.
 	 *
-	 * @return array List of migration file paths indexed by a unique key.
+	 * @return array List of migration file paths with directory context.
 	 */
 	protected function getMigrationFiles() : array
 	{
 		$migrationFiles = [];
-		foreach ($this->migrationDirs as $dir)
+		$dirOrder = ['proto' => 0, 'common' => 1, 'module' => 2];
+
+		foreach ($this->migrationDirs as $index => $dir)
 		{
 			if (is_dir($dir))
 			{
+				// Determine directory type
+				$dirType = 'module'; // default
+				if (strpos($dir, '/vendor/protoframework/proto/') !== false || strpos($dir, '\\vendor\\protoframework\\proto\\') !== false)
+				{
+					$dirType = 'proto';
+				}
+				elseif (strpos($dir, '/common/Migrations') !== false || strpos($dir, '\\common\\Migrations') !== false)
+				{
+					$dirType = 'common';
+				}
+
 				$files = array_diff(scandir($dir) ?: [], ['.', '..']);
 				foreach ($files as $file)
 				{
 					$fullPath = $dir . '/' . $file;
 					if (is_file($fullPath) && pathinfo($file, PATHINFO_EXTENSION) === 'php')
 					{
-						// Using the full path as key ensures uniqueness.
-						$migrationFiles[$fullPath] = $file;
+						$migrationFiles[] = [
+							'fullPath' => $fullPath,
+							'file' => $file,
+							'dirType' => $dirType,
+							'dirOrder' => $dirOrder[$dirType]
+						];
 					}
 				}
 			}
@@ -142,16 +159,26 @@ class Guide
 		$prevMigrations = array_column($this->getPreviousMigrations(), 'migration');
 
 		$newMigrations = [];
-		foreach ($files as $fullPath => $file)
+		foreach ($files as $fileData)
 		{
-			if (!in_array($file, $prevMigrations, true))
+			if (!in_array($fileData['file'], $prevMigrations, true))
 			{
-				$this->loadMigration($fullPath, $newMigrations);
+				$this->loadMigration($fileData['fullPath'], $newMigrations, null, $fileData['dirOrder']);
 			}
 		}
 
-		ksort($newMigrations);
-		return $newMigrations;
+		// Sort by directory order first, then by timestamp
+		uasort($newMigrations, function($a, $b)
+		{
+			if ($a['dirOrder'] !== $b['dirOrder'])
+			{
+				return $a['dirOrder'] <=> $b['dirOrder'];
+			}
+			return $a['timestamp'] <=> $b['timestamp'];
+		});
+
+		// Extract just the migration objects
+		return array_column($newMigrations, 'migration');
 	}
 
 	/**
@@ -199,9 +226,10 @@ class Guide
 	 * @param string $filePath Full path to the migration file.
 	 * @param array $migrations List of migration instances.
 	 * @param int|null $id Migration ID (if applicable).
+	 * @param int|null $dirOrder Directory order for sorting (proto=0, common=1, module=2).
 	 * @return void
 	 */
-	protected function loadMigration(string $filePath, array &$migrations, ?int $id = null) : void
+	protected function loadMigration(string $filePath, array &$migrations, ?int $id = null, ?int $dirOrder = null) : void
 	{
 		if (!file_exists($filePath))
 		{
@@ -223,7 +251,20 @@ class Guide
 			$migration->setId($id);
 		}
 
-		$migrations[$date] = $migration;
+		if ($dirOrder !== null)
+		{
+			// Store with metadata for sorting
+			$migrations[] = [
+				'migration' => $migration,
+				'timestamp' => $date,
+				'dirOrder' => $dirOrder
+			];
+		}
+		else
+		{
+			// Backward compatibility for getLastMigrations
+			$migrations[$date] = $migration;
+		}
 	}
 
 	/**
