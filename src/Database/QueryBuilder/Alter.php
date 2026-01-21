@@ -162,7 +162,8 @@ class Alter extends Blueprint
 	 */
 	public function __call(string $method, array $arguments): ?CreateField
 	{
-		$field = $this->getType($method, 'field');
+		$name = $arguments[0] ?? '';
+		$field = $this->getType($name, 'field');
 		$callable = [$field, $method];
 		if (!is_callable($callable))
 		{
