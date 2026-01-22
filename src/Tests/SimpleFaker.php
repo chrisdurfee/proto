@@ -457,6 +457,46 @@ class SimpleFaker
 	}
 
 	/**
+	 * Generates a random latitude coordinate.
+	 *
+	 * @param float $min Minimum latitude (-90.0)
+	 * @param float $max Maximum latitude (90.0)
+	 * @param int $decimals Number of decimal places
+	 * @return float
+	 */
+	public function latitude(float $min = -90.0, float $max = 90.0, int $decimals = 6): float
+	{
+		return $this->floatBetween($min, $max, $decimals);
+	}
+
+	/**
+	 * Generates a random longitude coordinate.
+	 *
+	 * @param float $min Minimum longitude (-180.0)
+	 * @param float $max Maximum longitude (180.0)
+	 * @param int $decimals Number of decimal places
+	 * @return float
+	 */
+	public function longitude(float $min = -180.0, float $max = 180.0, int $decimals = 6): float
+	{
+		return $this->floatBetween($min, $max, $decimals);
+	}
+
+	/**
+	 * Generates a random float (Faker-compatible signature).
+	 * This is an alias for floatBetween with parameter order matching FakerPHP.
+	 *
+	 * @param int $decimals Number of decimal places
+	 * @param float $min Minimum value
+	 * @param float $max Maximum value
+	 * @return float
+	 */
+	public function randomFloat(int $decimals = 2, float $min = 0.0, float $max = 100.0): float
+	{
+		return $this->floatBetween($min, $max, $decimals);
+	}
+
+	/**
 	 * Generates a random boolean.
 	 *
 	 * @param int $chanceOfTrue Percentage chance of returning true (0-100)
@@ -481,6 +521,16 @@ class SimpleFaker
 
 		$randomTimestamp = rand($startTimestamp, $endTimestamp);
 		return date('Y-m-d H:i:s', $randomTimestamp);
+	}
+
+	/**
+	 * Generates a random date/time within the current month.
+	 *
+	 * @return string
+	 */
+	public function dateTimeThisMonth(): string
+	{
+		return $this->dateTimeBetween('-1 month', 'now');
 	}
 
 	/**
@@ -510,6 +560,25 @@ class SimpleFaker
 		$protocol = $this->arrayRandom($protocols);
 		$domain = $this->arrayRandom($this->domains);
 		return $protocol . '://' . $domain;
+	}
+
+	/**
+	 * Generates a placeholder image URL.
+	 *
+	 * @param int $width Image width in pixels
+	 * @param int $height Image height in pixels
+	 * @param string|null $category Optional category (e.g., 'nature', 'people', 'technology')
+	 * @return string
+	 */
+	public function imageUrl(int $width = 640, int $height = 480, ?string $category = null): string
+	{
+		// Use picsum.photos for realistic placeholder images
+		$url = "https://picsum.photos/{$width}/{$height}";
+		if ($category)
+		{
+			$url .= '?category=' . urlencode($category);
+		}
+		return $url;
 	}
 
 	/**
@@ -692,6 +761,17 @@ class SimpleFaker
 		} while ($tries < $maxRetries);
 
 		throw new \RuntimeException('Could not generate unique value after ' . $maxRetries . ' attempts');
+	}
+
+	/**
+	 * Returns an optional value proxy that returns null based on probability.
+	 *
+	 * @param float $weight Probability of returning a value (0.0 to 1.0, default 0.5)
+	 * @return OptionalProxy
+	 */
+	public function optional(float $weight = 0.5): OptionalProxy
+	{
+		return new OptionalProxy($this, $weight);
 	}
 
 	/**
