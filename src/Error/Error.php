@@ -35,6 +35,9 @@ namespace Proto\Error
 		/** @var bool */
 		private static bool $manuallyDisabled = false;
 
+		/** @var bool */
+		private static bool $silentMode = false;
+
 		/**
 		 * Checks if a message indicates the error log table is missing.
 		 *
@@ -91,6 +94,7 @@ namespace Proto\Error
 		{
 			static::$trackingEnabled = false;
 			static::$manuallyDisabled = true;
+			static::$silentMode = false;
 
 			// Restore default PHP error and exception handlers
 			restore_error_handler();
@@ -98,6 +102,44 @@ namespace Proto\Error
 
 			// Disable error logging to prevent stdout/stderr output during tests
 			ini_set('log_errors', '0');
+		}
+
+		/**
+		 * Enables silent mode - errors are logged to database but not displayed.
+		 * This keeps error tracking active while suppressing all screen output.
+		 *
+		 * @return void
+		 */
+		public static function silent(): void
+		{
+			static::$silentMode = true;
+			static::$manuallyDisabled = false;
+			static::$errorLoggingFailed = false;
+			static::$databaseChecked = false;
+
+			// Suppress all error display
+			error_reporting(0);
+			ini_set('display_errors', '0');
+			ini_set('display_startup_errors', '0');
+
+			// Enable tracking
+			static::$trackingEnabled = env('errorTracking');
+			if (!static::$trackingEnabled)
+			{
+				return;
+			}
+
+			// Test database connectivity before enabling error tracking
+			if (!static::$databaseChecked && !static::isDatabaseAvailable())
+			{
+				static::$errorLoggingFailed = true;
+				static::$databaseChecked = true;
+				// In silent mode, just log to PHP error log, don't fail
+				error_log("Error tracking disabled - database tables not available");
+				return;
+			}
+
+			static::trackErrors();
 		}
 
 		/**
