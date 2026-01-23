@@ -51,6 +51,13 @@ namespace Proto\Error
 		private static bool $silentMode = false;
 
 		/**
+		 * Flag to prevent re-entry into error handler while processing.
+		 *
+		 * @var bool
+		 */
+		private static bool $isHandling = false;
+
+		/**
 		 * Checks if a message indicates the error log table is missing.
 		 *
 		 * @param string $message The error message to check.
@@ -123,6 +130,7 @@ namespace Proto\Error
 		{
 			static::$errorLoggingFailed = false;
 			static::$databaseChecked = false;
+			static::$isHandling = false;
 		}
 
 		/**
@@ -196,13 +204,23 @@ namespace Proto\Error
 				return true;
 			}
 
-			if (static::isErrorLogTableMissing($errstr))
-			{
-				return static::handleMissingTable("Error log table missing: $errstr in $errfile:$errline");
-			}
+			// Set re-entry guard
+			static::$isHandling = true;
 
-			$data = static::buildErrorData($errno, $errstr, $errfile, $errline);
-			return static::logError($data);
+			try
+			{
+				if (static::isErrorLogTableMissing($errstr))
+				{
+					return static::handleMissingTable("Error log table missing: $errstr in $errfile:$errline");
+				}
+
+				$data = static::buildErrorData($errno, $errstr, $errfile, $errline);
+				return static::logError($data);
+			}
+			finally
+			{
+				static::$isHandling = false;
+			}
 		}
 
 		/**
@@ -218,16 +236,26 @@ namespace Proto\Error
 				return true;
 			}
 
-			if (static::isErrorLogTableMissing($exception->getMessage()))
-			{
-				return static::handleMissingTable(
-					"Error log table missing exception: " . $exception->getMessage() .
-					" in " . $exception->getFile() . ":" . $exception->getLine()
-				);
-			}
+			// Set re-entry guard
+			static::$isHandling = true;
 
-			$data = static::buildExceptionData($exception);
-			return static::logError($data);
+			try
+			{
+				if (static::isErrorLogTableMissing($exception->getMessage()))
+				{
+					return static::handleMissingTable(
+						"Error log table missing exception: " . $exception->getMessage() .
+						" in " . $exception->getFile() . ":" . $exception->getLine()
+					);
+				}
+
+				$data = static::buildExceptionData($exception);
+				return static::logError($data);
+			}
+			finally
+			{
+				static::$isHandling = false;
+			}
 		}
 
 		/**
@@ -237,7 +265,7 @@ namespace Proto\Error
 		 */
 		protected static function shouldHandle(): bool
 		{
-			return !static::$errorLoggingFailed && static::$trackingEnabled;
+			return !static::$isHandling && !static::$errorLoggingFailed && static::$trackingEnabled;
 		}
 
 		/**
