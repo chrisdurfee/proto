@@ -77,9 +77,8 @@ abstract class Test extends TestCase
 	 */
 	protected function setupSystem(): void
 	{
-		// Disable error tracking during tests to prevent stdout output
-		// that can break PHPUnit's output and assertion handling
-		Error::disable();
+		// Suppress error output during tests
+		Error::silent();
 
 		/**
 		 * CRITICAL: Set the env to testing BEFORE initializing Base

@@ -29,13 +29,25 @@ namespace Proto\Error
 		 */
 		private static bool $databaseChecked = false;
 
-		/** @var bool */
+		/**
+		 * Whether error tracking is enabled.
+		 *
+		 * @var bool
+		 */
 		private static bool $trackingEnabled = false;
 
-		/** @var bool */
+		/**
+		 * Whether error tracking has been manually disabled.
+		 *
+		 * @var bool
+		 */
 		private static bool $manuallyDisabled = false;
 
-		/** @var bool */
+		/**
+		 * Whether silent mode is enabled (log to database only, no output).
+		 *
+		 * @var bool
+		 */
 		private static bool $silentMode = false;
 
 		/**
@@ -50,43 +62,27 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Enables or disables displaying errors.
+		 * Enables error tracking with optional error display.
 		 *
 		 * @param bool $displayErrors Whether to display errors.
 		 * @return void
 		 */
 		public static function enable(bool $displayErrors = false): void
 		{
+			static::$silentMode = false;
 			static::setErrorReporting($displayErrors);
-			static::$errorLoggingFailed = false;
-			static::$databaseChecked = false;
+			static::resetState();
 
-			// Respect manual disable - don't override if manually disabled
 			if (static::$manuallyDisabled)
 			{
 				return;
 			}
 
-			static::$trackingEnabled = env('errorTracking');
-			if (!static::$trackingEnabled)
-			{
-				return;
-			}
-
-			// Test database connectivity before enabling error tracking
-			if (!static::$databaseChecked && !static::isDatabaseAvailable())
-			{
-				static::$errorLoggingFailed = true;
-				static::$databaseChecked = true;
-				static::failDatabaseUnavailable("Error tracking disabled - database tables not available");
-			}
-
-			static::trackErrors();
+			static::initializeTracking(false);
 		}
 
 		/**
-		 * Disables error tracking by restoring default handlers.
-		 * Also disables error logging to prevent stdout/stderr output.
+		 * Disables error tracking completely.
 		 *
 		 * @return void
 		 */
@@ -96,17 +92,16 @@ namespace Proto\Error
 			static::$manuallyDisabled = true;
 			static::$silentMode = false;
 
-			// Restore default PHP error and exception handlers
 			restore_error_handler();
 			restore_exception_handler();
 
-			// Disable error logging to prevent stdout/stderr output during tests
 			ini_set('log_errors', '0');
 		}
 
 		/**
 		 * Enables silent mode - errors are logged to database but not displayed.
-		 * This keeps error tracking active while suppressing all screen output.
+		 * This keeps error tracking active while suppressing all screen output
+		 * and preventing script termination on errors.
 		 *
 		 * @return void
 		 */
@@ -114,28 +109,45 @@ namespace Proto\Error
 		{
 			static::$silentMode = true;
 			static::$manuallyDisabled = false;
+			static::setErrorReporting(false);
+			static::resetState();
+			static::initializeTracking(true);
+		}
+
+		/**
+		 * Resets internal state flags.
+		 *
+		 * @return void
+		 */
+		protected static function resetState(): void
+		{
 			static::$errorLoggingFailed = false;
 			static::$databaseChecked = false;
+		}
 
-			// Suppress all error display
-			error_reporting(0);
-			ini_set('display_errors', '0');
-			ini_set('display_startup_errors', '0');
-
-			// Enable tracking
+		/**
+		 * Initializes error tracking if enabled.
+		 *
+		 * @param bool $silent Whether to suppress output on initialization failure.
+		 * @return void
+		 */
+		protected static function initializeTracking(bool $silent): void
+		{
 			static::$trackingEnabled = env('errorTracking');
 			if (!static::$trackingEnabled)
 			{
 				return;
 			}
 
-			// Test database connectivity before enabling error tracking
 			if (!static::$databaseChecked && !static::isDatabaseAvailable())
 			{
 				static::$errorLoggingFailed = true;
 				static::$databaseChecked = true;
-				// In silent mode, just log to PHP error log, don't fail
-				error_log("Error tracking disabled - database tables not available");
+
+				if (!$silent)
+				{
+					static::outputError("Error tracking disabled - database tables not available");
+				}
 				return;
 			}
 
@@ -170,7 +182,7 @@ namespace Proto\Error
 		 * @param string $errstr Error message.
 		 * @param string $errfile File where the error occurred.
 		 * @param int $errline Line number where the error occurred.
-		 * @return bool Whether the error was logged successfully.
+		 * @return bool Whether the error was handled.
 		 */
 		public static function errorHandler(
 			int $errno,
@@ -179,21 +191,90 @@ namespace Proto\Error
 			int $errline
 		): bool
 		{
-			// Prevent infinite loops if error logging has already failed
-			if (static::$errorLoggingFailed || !static::$trackingEnabled)
+			if (!static::shouldHandle())
 			{
 				return true;
 			}
 
-			// Check if this is the error log table missing - this is the only table we care about for error logging
 			if (static::isErrorLogTableMissing($errstr))
 			{
-				static::$errorLoggingFailed = true;
-				// Error log table is missing - this is a fatal configuration issue for error tracking
-				static::failDatabaseUnavailable("Error log table missing: $errstr in $errfile:$errline");
+				return static::handleMissingTable("Error log table missing: $errstr in $errfile:$errline");
 			}
 
-			$data = (object)[
+			$data = static::buildErrorData($errno, $errstr, $errfile, $errline);
+			return static::logError($data);
+		}
+
+		/**
+		 * Handles exception logging.
+		 *
+		 * @param \Throwable $exception The exception object.
+		 * @return bool Whether the exception was handled.
+		 */
+		public static function exceptionHandler(\Throwable $exception): bool
+		{
+			if (!static::shouldHandle())
+			{
+				return true;
+			}
+
+			if (static::isErrorLogTableMissing($exception->getMessage()))
+			{
+				return static::handleMissingTable(
+					"Error log table missing exception: " . $exception->getMessage() .
+					" in " . $exception->getFile() . ":" . $exception->getLine()
+				);
+			}
+
+			$data = static::buildExceptionData($exception);
+			return static::logError($data);
+		}
+
+		/**
+		 * Checks if error handling should proceed.
+		 *
+		 * @return bool Whether to handle the error.
+		 */
+		protected static function shouldHandle(): bool
+		{
+			return !static::$errorLoggingFailed && static::$trackingEnabled;
+		}
+
+		/**
+		 * Handles missing error log table scenario.
+		 *
+		 * @param string $message The error message.
+		 * @return bool Always returns true.
+		 */
+		protected static function handleMissingTable(string $message): bool
+		{
+			static::$errorLoggingFailed = true;
+
+			if (!static::$silentMode)
+			{
+				static::outputError($message);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Builds error data object for logging.
+		 *
+		 * @param int $errno Error number.
+		 * @param string $errstr Error message.
+		 * @param string $errfile File where the error occurred.
+		 * @param int $errline Line number where the error occurred.
+		 * @return object The error data object.
+		 */
+		protected static function buildErrorData(
+			int $errno,
+			string $errstr,
+			string $errfile,
+			int $errline
+		): object
+		{
+			return (object)[
 				'errorNumber' => $errno,
 				'errorMessage' => $errstr,
 				'errorFile' => $errfile,
@@ -205,76 +286,123 @@ namespace Proto\Error
 				'query' => JsonFormat::encode(Request::all()),
 				'errorIp' => Request::ip()
 			];
+		}
 
+		/**
+		 * Builds exception data object for logging.
+		 *
+		 * @param \Throwable $exception The exception object.
+		 * @return object The exception data object.
+		 */
+		protected static function buildExceptionData(\Throwable $exception): object
+		{
+			return (object)[
+				'errorNumber' => $exception->getCode(),
+				'errorMessage' => $exception->getMessage(),
+				'errorFile' => $exception->getFile(),
+				'errorLine' => $exception->getLine(),
+				'errorTrace' => $exception->getTraceAsString(),
+				'backTrace' => JsonFormat::encode(debug_backtrace()),
+				'env' => env('env'),
+				'url' => Request::fullUrlWithScheme(),
+				'query' => JsonFormat::encode(Request::all()),
+				'errorIp' => Request::ip()
+			];
+		}
+
+		/**
+		 * Logs error data to the database.
+		 *
+		 * @param object $data The error data to log.
+		 * @return bool Whether the error was logged successfully.
+		 */
+		protected static function logError(object $data): bool
+		{
 			try
 			{
 				return ErrorLog::create($data);
 			}
 			catch (\Throwable $e)
 			{
-				static::$errorLoggingFailed = true;
-				// Check if this is the error log table missing - this is the only table we care about for error logging
-				if (static::isErrorLogTableMissing($e->getMessage()))
-				{
-					static::failDatabaseUnavailable("Error log table missing: " . $e->getMessage());
-				}
-				static::fail($data);
-				return true;
+				return static::handleLoggingFailure($e, $data);
 			}
 		}
 
 		/**
-		 * Outputs debug information and terminates the script.
+		 * Handles failure to log an error.
 		 *
-		 * @param object $data The data to output.
-		 * @return void
+		 * @param \Throwable $e The exception that occurred during logging.
+		 * @param object $data The original error data.
+		 * @return bool Always returns true.
 		 */
-		protected static function fail(object $data): void
+		protected static function handleLoggingFailure(\Throwable $e, object $data): bool
 		{
-			Response::error(
-				'Error tracker error: ' . json_encode($data),
-				500
-			);
-			die;
+			static::$errorLoggingFailed = true;
+
+			if (static::isErrorLogTableMissing($e->getMessage()))
+			{
+				if (!static::$silentMode)
+				{
+					static::outputError("Error log table missing: " . $e->getMessage());
+				}
+				return true;
+			}
+
+			if (!static::$silentMode)
+			{
+				static::outputErrorData($data);
+			}
+
+			return true;
 		}
 
 		/**
-		 * Handles database unavailable errors and terminates the script.
+		 * Outputs an error message and terminates the script.
 		 *
-		 * @param string $message The error message to display.
+		 * @param string $message The error message.
 		 * @return void
 		 */
-		protected static function failDatabaseUnavailable(string $message): void
+		protected static function outputError(string $message): void
 		{
-			// Log to PHP error log first
 			error_log($message);
 
-			// Clear any output that might have been started
 			if (ob_get_level())
 			{
 				ob_clean();
 			}
 
-			// Send JSON error response using Proto Response class
 			Response::error(
 				'Database Configuration Error: The application cannot continue because required database tables are missing. Please contact your system administrator to resolve this issue.',
 				500
 			);
 
-			// Terminate the application
+			die();
+		}
+
+		/**
+		 * Outputs error data and terminates the script.
+		 *
+		 * @param object $data The error data to output.
+		 * @return void
+		 */
+		protected static function outputErrorData(object $data): void
+		{
+			Response::error(
+				'Error tracker error: ' . json_encode($data),
+				500
+			);
+
 			die();
 		}
 
 		/**
 		 * Resets the error logging failed flag.
-		 * Call this after fixing database issues to re-enable error logging.
 		 *
 		 * @return void
 		 */
 		public static function resetErrorLogging(): void
 		{
-			static::$errorLoggingFailed = false;
-			static::$databaseChecked = false;
+			static::resetState();
 		}
 
 		/**
@@ -286,15 +414,7 @@ namespace Proto\Error
 		{
 			try
 			{
-				// Check if ErrorLog class exists and has the create method
-				if (!class_exists(ErrorLog::class) || !method_exists(ErrorLog::class, 'create'))
-				{
-					return false;
-				}
-
-				// Simply return true for now - we'll catch actual database errors during logging
-				// The real protection happens in errorHandler and exceptionHandler methods
-				return true;
+				return class_exists(ErrorLog::class) && method_exists(ErrorLog::class, 'create');
 			}
 			catch (\Throwable $e)
 			{
@@ -311,8 +431,7 @@ namespace Proto\Error
 		{
 			$env = env('env');
 
-			// Disable error logs in production
-			if ($env !== 'prod')
+			if ($env !== 'prod' && !static::$silentMode)
 			{
 				static::setErrorLogging();
 			}
@@ -332,25 +451,27 @@ namespace Proto\Error
 			register_shutdown_function(function(): void
 			{
 				$err = error_get_last();
-				if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR]))
+				if (!$err || !in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR]))
 				{
-					if (!static::$trackingEnabled || static::$errorLoggingFailed)
-					{
-						return;
-					}
-
-					static::errorHandler(
-						$err['type'],
-						$err['message'],
-						$err['file'],
-						$err['line']
-					);
+					return;
 				}
+
+				if (!static::shouldHandle())
+				{
+					return;
+				}
+
+				static::errorHandler(
+					$err['type'],
+					$err['message'],
+					$err['file'],
+					$err['line']
+				);
 			});
 		}
 
 		/**
-		 * Enables error logging.
+		 * Enables error logging to file.
 		 *
 		 * @return void
 		 */
@@ -379,59 +500,6 @@ namespace Proto\Error
 		public static function setErrorHandler(): void
 		{
 			set_error_handler(static::getErrorCallBack());
-		}
-
-		/**
-		 * Handles exception logging.
-		 *
-		 * @param \Throwable $exception The exception object.
-		 * @return bool Whether the exception was logged successfully.
-		 */
-		public static function exceptionHandler(\Throwable $exception): bool
-		{
-			// Prevent infinite loops if error logging has already failed
-			if (static::$errorLoggingFailed || !static::$trackingEnabled)
-			{
-				return true;
-			}
-
-			// Check if this is the error log table missing to prevent infinite loops
-			if (static::isErrorLogTableMissing($exception->getMessage()))
-			{
-				static::$errorLoggingFailed = true;
-				// Error log table is missing - this is a fatal configuration issue for error tracking
-				static::failDatabaseUnavailable("Error log table missing exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
-			}
-
-			$backtrace = debug_backtrace();
-			$data = (object)[
-				'errorNumber' => $exception->getCode(),
-				'errorMessage' => $exception->getMessage(),
-				'errorFile' => $exception->getFile(),
-				'errorLine' => $exception->getLine(),
-				'errorTrace' => $exception->getTraceAsString(),
-				'backTrace' => JsonFormat::encode($backtrace),
-				'env' => env('env'),
-				'url' => Request::fullUrlWithScheme(),
-				'query' => JsonFormat::encode(Request::all()),
-				'errorIp' => Request::ip()
-			];
-
-			try
-			{
-				return ErrorLog::create($data);
-			}
-			catch (\Throwable $e)
-			{
-				static::$errorLoggingFailed = true;
-				// Check if this is the error log table missing - this is the only table we care about for error logging
-				if (static::isErrorLogTableMissing($e->getMessage()))
-				{
-					static::failDatabaseUnavailable("Error log table missing: " . $e->getMessage());
-				}
-				static::fail($data);
-				return true;
-			}
 		}
 
 		/**
