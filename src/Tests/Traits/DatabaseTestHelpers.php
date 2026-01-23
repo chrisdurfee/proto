@@ -3,7 +3,6 @@ namespace Proto\Tests\Traits;
 
 use Proto\Database\Database;
 use Proto\Database\Adapters\Mysqli;
-use Proto\Models\Model;
 use Proto\Database\ConnectionCache;
 use Proto\Config;
 
@@ -270,7 +269,7 @@ trait DatabaseTestHelpers
 
 			// Clear connection cache after rolling back to ensure
 			// the next test gets a fresh connection
-			\Proto\Database\ConnectionCache::clear();
+			ConnectionCache::clear();
 
 			// Reset test database reference
 			$this->testDatabase = null;
