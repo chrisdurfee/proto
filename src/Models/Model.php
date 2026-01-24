@@ -847,7 +847,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function getMappedData(): object
 	{
-		return $this->augment($this->data->map());
+		return $this->data->map();
 	}
 
 	/**
