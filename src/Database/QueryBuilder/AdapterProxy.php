@@ -235,6 +235,13 @@ class AdapterProxy
 		// update the fields to use filter if is array
 		foreach ($fields as $field)
 		{
+			if (is_string($field))
+			{
+				$fieldList = explode(',', $field);
+				$filteredFields[] = array_merge($filteredFields, $fieldList);
+				continue;
+			}
+
 			if (is_array($field))
 			{
 				$field = Filter::format($field, $this->params);
