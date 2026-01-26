@@ -4,6 +4,7 @@ namespace Proto\Tests\Traits;
 use Proto\Database\Database;
 use Proto\Database\Adapters\Mysqli;
 use Proto\Database\ConnectionCache;
+use Proto\Utils\Strings;
 use Proto\Config;
 
 /**
@@ -154,7 +155,7 @@ trait DatabaseTestHelpers
 	 * @param array $data
 	 * @return void
 	 */
-	protected function assertDatabaseHas(string $table, array $data): void
+	protected function assertDatabaseHas(string $table, array $data, bool $useSnakeCase = true): void
 	{
 		$db = $this->getTestDatabase();
 		$conditions = [];
@@ -162,6 +163,8 @@ trait DatabaseTestHelpers
 
 		foreach ($data as $column => $value)
 		{
+			$column = self::prepareColName($column, $useSnakeCase);
+
 			$conditions[] = "`{$column}` = ?";
 			$params[] = $value;
 		}
@@ -179,9 +182,10 @@ trait DatabaseTestHelpers
 	 *
 	 * @param string $table
 	 * @param array $data
+	 * @param bool $useSnakeCase
 	 * @return void
 	 */
-	protected function assertDatabaseMissing(string $table, array $data): void
+	protected function assertDatabaseMissing(string $table, array $data, bool $useSnakeCase = true): void
 	{
 		$db = $this->getTestDatabase();
 		$conditions = [];
@@ -189,6 +193,8 @@ trait DatabaseTestHelpers
 
 		foreach ($data as $column => $value)
 		{
+			$column = self::prepareColName($column, $useSnakeCase);
+
 			$conditions[] = "`{$column}` = ?";
 			$params[] = $value;
 		}
@@ -199,6 +205,18 @@ trait DatabaseTestHelpers
 		$this->assertEquals(0, $result->count ?? 0,
 			"Failed asserting that table [{$table}] does not contain " . json_encode($data)
 		);
+	}
+
+	/**
+	 * Prepares the column name.
+	 *
+	 * @param string $colName
+	 * @param bool $useSnakeCase
+	 * @return string
+	 */
+	protected static function prepareColName(string $colName, bool $useSnakeCase): string
+	{
+		return $useSnakeCase ? Strings::snakeCase($colName) : $colName;
 	}
 
 	/**
