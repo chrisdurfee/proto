@@ -119,7 +119,7 @@ class Create extends Blueprint
 		$field->varchar($length)->default("UUID()");
 
 		$this->unique('users_uuid_unique')
-    		->fields('uuid');
+			->fields('uuid');
 
 		return $field;
 	}
