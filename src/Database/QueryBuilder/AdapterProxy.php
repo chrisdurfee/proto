@@ -244,7 +244,7 @@ class AdapterProxy
 
 			if (is_array($field))
 			{
-				$field = Filter::format($field, $this->params);
+				$field = Filter::formatForSet($field, $this->params);
 			}
 
 			$filteredFields[] = $field;

@@ -212,6 +212,41 @@ class Filter
 	}
 
 	/**
+	 * Formats an associative array for SET clause in UPDATE queries.
+	 *
+	 * @param array $data The key-value pairs to set.
+	 * @param array $params The params array (passed by reference).
+	 * @param bool $isSnakeCase Whether to convert keys to snake_case.
+	 * @return array The formatted set clauses.
+	 */
+	public static function formatForSet(
+		array $data,
+		array &$params = [],
+		bool $isSnakeCase = true
+	): array
+	{
+		$setClauses = [];
+
+		foreach ($data as $key => $value)
+		{
+			$columnName = self::prepareColumn($key, $isSnakeCase);
+
+			// Handle NOW() and other SQL functions
+			if (is_string($value) && preg_match('/^[A-Z_]+\(\)$/i', $value))
+			{
+				$setClauses[$columnName] = $value;
+				continue;
+			}
+
+			// Regular values use placeholders
+			$setClauses[$columnName] = '?';
+			$params[] = $value;
+		}
+
+		return $setClauses;
+	}
+
+	/**
 	 * Prepares the column name.
 	 *
 	 * @param string $field
