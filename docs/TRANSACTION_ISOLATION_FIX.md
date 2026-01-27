@@ -340,7 +340,7 @@ If you have custom storage classes that extend `TableStorage` or implement their
 
 ## Conclusion
 
-This fix ensures that all database operations in tests use the same cached connection, which is essential for proper transaction isolation. The changes are minimal and focused, affecting only the connection creation logic without changing any API or functionality.
+This fix ensures that all database operations in tests use the same cached connection, which is essential for proper transaction isolation. The changes ensure connection caching is used consistently throughout the framework.
 
 **All Model methods work transparently in tests:**
 - `Model::get($id)` ✅
@@ -348,6 +348,10 @@ This fix ensures that all database operations in tests use the same cached conne
 - `Model::fetchWhere([...])` ✅
 - `Model::builder()` ✅
 - `Model::create()` / `$model->add()` ✅
-- Custom static methods using builder() ✅
+- Custom static methods using Model methods or builder() ✅
 
-**No workarounds needed** - the framework handles transaction isolation automatically when `dbCaching` is enabled (which Test class does automatically).
+**No workarounds needed** - the framework handles transaction isolation automatically when `dbCaching` is enabled (which the Test base class does automatically).
+
+### Recent Enhancements (January 2026)
+
+**Fixed field name conversion in filters** - `Storage::setFilters()` is now an instance method that properly uses the model's `isSnakeCase` property, ensuring camelCase field names in filters are correctly converted to snake_case database columns. This prevents issues where custom queries might not properly convert field names.

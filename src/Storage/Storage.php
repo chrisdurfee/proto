@@ -566,7 +566,7 @@ class Storage extends TableStorage
 	public function getBy(object|array $filter): mixed
 	{
 		$params = [];
-		$where = static::setFilters($filter, $params);
+		$where = $this->setFilters($filter, $params);
 		return $this->select()
 			->where(...$where)
 			->first($params);
@@ -671,9 +671,10 @@ class Storage extends TableStorage
 	 * @param array &$params Parameter array.
 	 * @return array
 	 */
-	protected static function setFilters($filter = null, array &$params = []): array
+	protected function setFilters($filter = null, array &$params = []): array
 	{
-		return Filter::setup($filter, $params);
+		$isSnakeCase = $this->model->isSnakeCase();
+		return Filter::setup($filter, $params, $isSnakeCase);
 	}
 
 	/**
@@ -792,7 +793,7 @@ class Storage extends TableStorage
 	 */
 	protected function getWhere(?array &$params = null, mixed $filter = null, ?array $modifiers = null): array
 	{
-		$where = static::setFilters($filter, $params);
+		$where = $this->setFilters($filter, $params);
 		$this->setDefaultModifiers($where, $modifiers, $params, $filter);
 		return $where;
 	}
