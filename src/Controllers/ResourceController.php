@@ -354,6 +354,33 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
+	 * Adds user data to the model for deletions.
+	 *
+	 * This method sets the `deletedBy` field to the current user's ID if it is not already set.
+	 *
+	 * @param Model $model The model instance to which user data will be added.
+	 * @return void
+	 */
+	protected function getDeleteUserData(Model $model): void
+	{
+		$userId = session()->user->id ?? null;
+		if ($model->has('deletedBy') && !isset($model->deletedBy))
+		{
+			$model->deletedBy = $userId;
+		}
+
+		if ($model->has('removedBy') && !isset($model->removedBy))
+		{
+			$model->removedBy = $userId;
+		}
+
+		if ($model->has('archivedBy') && !isset($model->archivedBy))
+		{
+			$model->archivedBy = $userId;
+		}
+	}
+
+	/**
 	 * Deletes a model item.
 	 *
 	 * This method initializes the model with the provided data and adds user data for deletion.
@@ -364,10 +391,7 @@ abstract class ResourceController extends ApiController
 	protected function deleteItem(object $data): object
 	{
 		$model = $this->model($data);
-		if ($model->has('deletedBy') && !isset($model->deletedBy))
-		{
-			$model->deletedBy = session()->user->id ?? null;
-		}
+		$this->getDeleteUserData($model);
 
 		return $model->delete()
 			? $this->response(['id' => $model->id])
