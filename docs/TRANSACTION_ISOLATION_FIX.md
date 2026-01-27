@@ -341,3 +341,13 @@ If you have custom storage classes that extend `TableStorage` or implement their
 ## Conclusion
 
 This fix ensures that all database operations in tests use the same cached connection, which is essential for proper transaction isolation. The changes are minimal and focused, affecting only the connection creation logic without changing any API or functionality.
+
+**All Model methods work transparently in tests:**
+- `Model::get($id)` ✅
+- `Model::getBy([...])` ✅
+- `Model::fetchWhere([...])` ✅
+- `Model::builder()` ✅
+- `Model::create()` / `$model->add()` ✅
+- Custom static methods using builder() ✅
+
+**No workarounds needed** - the framework handles transaction isolation automatically when `dbCaching` is enabled (which Test class does automatically).
