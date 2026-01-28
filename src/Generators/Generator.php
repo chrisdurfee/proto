@@ -205,6 +205,7 @@ class Generator
 	 * @param object $settings The settings for the resource generation.
 	 *                         Expected properties may include:
 	 *                         - namespace: Optional namespace for generated files.
+	 *                         - featurePath: Optional feature path for nested modules (e.g., "Group" or "Group/Forum").
 	 *                         - table: Settings for creating a database table.
 	 *                         - model: Settings for the model file.
 	 *                         - controller: Settings for the controller file.
@@ -223,6 +224,7 @@ class Generator
 
 		$namespace = $settings->namespace ?? null;
 		$moduleName = $settings->moduleName ?? null;
+		$featurePath = $settings->featurePath ?? null;
 
 		// Setup and generate the model file.
 		if (!isset($settings->model))
@@ -231,6 +233,7 @@ class Generator
 		}
 
 		$settings->model->moduleName = $moduleName;
+		$settings->model->featurePath = $featurePath;
 		$this->setupClassNamespace($settings->model, "Models", $namespace);
 		$result = $this->generateFileResource('model', $settings->model);
 		if (!$result)
@@ -241,6 +244,7 @@ class Generator
 		// Setup and generate the controller file.
 		$controller = $this->getObject($settings, 'controller');
 		$controller->moduleName = $moduleName;
+		$controller->featurePath = $featurePath;
 		$this->setupClassNamespace($controller, "Controllers", $namespace);
 		$result = $this->generateFileResource('controller', $controller);
 		if (!$result)
@@ -251,6 +255,7 @@ class Generator
 		// Setup and generate the API file.
 		$api = $this->getObject($settings, 'api');
 		$api->moduleName = $moduleName;
+		$api->featurePath = $featurePath;
 		$this->setupClassNamespace($api, "Api", $namespace);
 		$result = $this->generateFileResource('api', $api);
 		if (!$result)
@@ -263,6 +268,7 @@ class Generator
 		// if (!empty($policySettings))
 		// {
 		// 	$policySettings->moduleName = $moduleName;
+		// 	$policySettings->featurePath = $featurePath;
 		// 	$policy = $this->getObject($settings, 'policy');
 		// 	$this->setupClassNamespace($policy, "Auth\\Policies", $namespace);
 		// 	$result = $this->generateFileResource('policy', $policy);
@@ -281,6 +287,7 @@ class Generator
 		// Setup and generate the storage file.
 		$storage = $this->getObject($settings, 'storage');
 		$storage->moduleName = $moduleName;
+		$storage->featurePath = $featurePath;
 		$this->setupClassNamespace($storage, "Storage", $namespace);
 		return $this->generateFileResource('storage', $storage);
 	}

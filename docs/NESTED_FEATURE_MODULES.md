@@ -263,6 +263,67 @@ class GroupPolicy extends Policy
 5. **Migrations per feature** - keep migrations in the feature that owns the tables
 6. **Tests per feature** - organize tests alongside feature code in `Feature/Tests/`
 
+## Code Generation
+
+The `Generator` class supports the `featurePath` setting for generating files in nested feature directories:
+
+```php
+use Proto\Generators\Generator;
+
+$generator = new Generator();
+
+// Generate a resource in a nested feature
+$settings = (object)[
+    'moduleName' => 'Community',
+    'featurePath' => 'Group',           // Creates in modules/Community/Group/
+    'model' => (object)[
+        'className' => 'GroupMember',
+        'tableName' => 'group_members'
+    ]
+];
+
+$generator->createResource($settings);
+// Creates:
+// - modules/Community/Group/Models/GroupMember.php
+// - modules/Community/Group/Controllers/GroupMemberController.php
+// - modules/Community/Group/Api/api.php
+// - modules/Community/Group/Storage/GroupMemberStorage.php
+
+// Generate in a deep nested feature
+$settings = (object)[
+    'moduleName' => 'Community',
+    'featurePath' => 'Group/Forum',     // Creates in modules/Community/Group/Forum/
+    'model' => (object)[
+        'className' => 'ForumPost',
+        'tableName' => 'forum_posts'
+    ]
+];
+
+$generator->createResource($settings);
+// Creates files in modules/Community/Group/Forum/
+
+// Generate individual files with featurePath
+$generator->generateFileResource('migration', (object)[
+    'moduleName' => 'Community',
+    'featurePath' => 'Group',
+    'className' => 'CreateGroupMembersTable'
+]);
+// Creates: modules/Community/Group/Migrations/YYYY-MM-DDTHH.mm.ss.uuuuuu_CreateGroupMembersTable.php
+```
+
+The generated files will have proper namespaces:
+```php
+// Generated file: modules/Community/Group/Models/GroupMember.php
+namespace Modules\Community\Group\Models;
+
+use Proto\Models\Model;
+
+class GroupMember extends Model
+{
+    // ...
+}
+```
+
 ## Migration Guide
 
 ### From Flat to Nested
