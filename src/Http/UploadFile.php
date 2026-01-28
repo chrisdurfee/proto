@@ -162,7 +162,7 @@ class UploadFile
 		// Normalize a few common misdetections
 		if ($mime === 'text/plain' || $mime === 'application/octet-stream')
 		{
-			$ext = strtolower(pathinfo($this->getOriginalName(), PATHINFO_EXTENSION));
+			$ext = $this->getExtension();
 			$map = [
 				'svg' => 'image/svg+xml',
 				'webp' => 'image/webp',
@@ -176,6 +176,16 @@ class UploadFile
 		}
 
 		return $this->mime = $mime;
+	}
+
+	/**
+	 * Retrieves the file extension.
+	 *
+	 * @return string
+	 */
+	public function getExtension(): string
+	{
+		return strtolower(pathinfo($this->getOriginalName(), PATHINFO_EXTENSION));
 	}
 
 	/**

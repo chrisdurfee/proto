@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Utils\Files;
 
+use Proto\Http\UploadFile;
 use Proto\Utils\Util;
 
 /**
@@ -230,6 +231,18 @@ class File extends Util
 	public static function createTmpName(string $prefix = 'proto'): string|false
 	{
 		return \tempnam(sys_get_temp_dir(), $prefix);
+	}
+
+	/**
+	 * Generates a unique file name for an UploadFile instance.
+	 *
+	 * @param UploadFile $file The UploadFile instance.
+	 * @return string The generated file name.
+	 */
+	public function generateFileName(UploadFile $file, string $prefix = ''): string
+	{
+		$ext = strtolower(pathinfo($file->getOriginalName(), PATHINFO_EXTENSION));
+		return uniqid($prefix) . '.' . $ext;
 	}
 
 	/**
