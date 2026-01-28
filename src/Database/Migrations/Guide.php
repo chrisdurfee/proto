@@ -46,14 +46,64 @@ class Guide
 		$modulesDir = $projectRoot . '/modules';
 		if (is_dir($modulesDir))
 		{
-			$modules = array_diff(scandir($modulesDir) ?: [], ['.', '..']);
-			foreach ($modules as $module)
+			$this->scanModulesForMigrations($modulesDir);
+		}
+	}
+
+	/**
+	 * Recursively scans modules directory for migration folders.
+	 *
+	 * Supports both flat and nested feature module structures:
+	 * - modules/User/Migrations/
+	 * - modules/Community/Group/Migrations/
+	 * - modules/Community/Group/Forum/Migrations/
+	 *
+	 * @param string $dir The directory to scan.
+	 * @param int $depth Current recursion depth (max 3 levels).
+	 * @return void
+	 */
+	protected function scanModulesForMigrations(string $dir, int $depth = 0): void
+	{
+		// Limit recursion depth to prevent infinite loops
+		// Level 0: modules/
+		// Level 1: modules/Community/
+		// Level 2: modules/Community/Group/
+		// Level 3: modules/Community/Group/Forum/
+		if ($depth > 3)
+		{
+			return;
+		}
+
+		$entries = array_diff(scandir($dir) ?: [], ['.', '..']);
+
+		foreach ($entries as $entry)
+		{
+			$fullPath = $dir . '/' . $entry;
+
+			// Skip if not a directory
+			if (!is_dir($fullPath))
 			{
-				$moduleMigrationDir = $modulesDir . '/' . $module . '/Migrations';
-				if (is_dir($moduleMigrationDir))
-				{
-					$this->migrationDirs[] = $moduleMigrationDir;
-				}
+				continue;
+			}
+
+			// Skip common framework directories that shouldn't contain migrations
+			$skipDirs = ['Api', 'Controllers', 'Models', 'Services', 'Storage', 'Gateway', 'Auth', 'Tests', 'Factories', 'Seeders', 'Main'];
+			if (in_array($entry, $skipDirs))
+			{
+				continue;
+			}
+
+			// Check if this directory has a Migrations folder
+			$migrationsDir = $fullPath . '/Migrations';
+			if (is_dir($migrationsDir))
+			{
+				$this->migrationDirs[] = $migrationsDir;
+			}
+
+			// Recursively scan for nested features (but not into Migrations folder itself)
+			if ($entry !== 'Migrations')
+			{
+				$this->scanModulesForMigrations($fullPath, $depth + 1);
 			}
 		}
 	}
