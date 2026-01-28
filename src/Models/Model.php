@@ -17,8 +17,34 @@ use Proto\Database\QueryBuilder\QueryHandler;
  *
  * Base model class for handling data persistence and mapping.
  *
+ * This class uses magic methods (__get, __set, __isset, __unset) to provide
+ * dynamic property access for model attributes. All properties are stored
+ * internally in the Data object and accessed via these magic methods.
+ *
+ * For static analysis tools (PHPStan, Psalm), child classes should define
+ * @property annotations for each database field to enable proper type checking:
+ *
+ * @example
+ * ```php
+ * /**
+ *  * @property int $id
+ *  * @property string $name
+ *  * @property string|null $email
+ *  * /
+ * class User extends Model
+ * {
+ *     protected static ?string $tableName = 'users';
+ *     protected static array $fields = ['id', 'name', 'email'];
+ * }
+ * ```
+ *
  * @package Proto\Models
  * @abstract
+ *
+ * @method mixed __get(string $key) Magic getter for model properties
+ * @method void __set(string $key, mixed $value) Magic setter for model properties
+ * @method bool __isset(string $key) Magic isset checker for model properties
+ * @method void __unset(string $key) Magic unset for model properties
  */
 abstract class Model extends Base implements \JsonSerializable, ModelInterface
 {
