@@ -75,6 +75,27 @@ class Request
 	}
 
 	/**
+	 * Retrieves a single uploaded file as an UploadFile object.
+	 *
+	 * @param string $name The file input name.
+	 * @return UploadFile|null The UploadFile instance or null if not found.
+	 */
+	public function file(string $name): ?UploadFile
+	{
+		return BaseRequest::file($name);
+	}
+
+	/**
+	 * Retrieves all uploaded files as an array of UploadFile objects.
+	 *
+	 * @return array Array of UploadFile instances keyed by input name.
+	 */
+	public function files(): array
+	{
+		return BaseRequest::files();
+	}
+
+	/**
 	 * Retrieves all request inputs and sanitizes them.
 	 *
 	 * @return array

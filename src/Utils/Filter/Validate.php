@@ -132,18 +132,23 @@ class Validate extends Filter
 	/**
 	 * Validates an image file.
 	 *
-	 * @param mixed $image
+	 * Accepts either a raw $_FILES array or an UploadFile object.
+	 * For UploadFile objects, verifies the file exists at its temp path.
+	 * For arrays, validates the upload structure and checks is_uploaded_file().
+	 *
+	 * @param mixed $image Either a $_FILES array or UploadFile instance
 	 * @return bool
 	 */
 	public static function image(mixed $image): bool
 	{
-		// Basic check - if it's not an array or UploadFile, it's not valid
-		if (!is_array($image) && !($image instanceof UploadFile))
+		// UploadFile objects: verify file exists and is readable at temp path
+		if ($image instanceof UploadFile)
 		{
-			return false;
+			$path = $image->getFilePath();
+			return file_exists($path) && is_readable($path) && filesize($path) > 0;
 		}
 
-		// If it's an array, check if it has the required upload file structure
+		// Raw array: validate upload structure and verify is_uploaded_file()
 		if (is_array($image))
 		{
 			return isset($image['tmp_name']) &&
@@ -153,8 +158,8 @@ class Validate extends Filter
 				   is_uploaded_file($image['tmp_name']);
 		}
 
-		// If it's an UploadFile, it should be valid
-		return true;
+		// Neither UploadFile nor valid array
+		return false;
 	}
 
 	/**

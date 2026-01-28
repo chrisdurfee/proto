@@ -1228,21 +1228,107 @@ if (!empty($users))
 }
 ```
 
-### Usage
+### File Upload Handling
+
+**CRITICAL**: Use Request methods to access uploaded files, NOT `$_FILES` directly.
+
+**Accessing Files**:
+```php
+// Single file upload
+$avatar = $request->file('avatar'); // Returns UploadFile|null
+
+// Multiple files (array upload like attachments[])
+$attachments = $request->fileArray('attachments'); // Returns UploadFile[]
+
+// All uploaded files
+$allFiles = $request->files(); // Returns array keyed by input name
+```
+
+**Validation with UploadFile Objects**:
+```php
+// In controller - validate before storing
+public function upload(Request $request): object
+{
+    $data = [
+        'name' => $request->input('name'),
+        'avatar' => $request->file('avatar') // UploadFile object
+    ];
+
+    $rules = [
+        'name' => 'string:100|required',
+        'avatar' => 'image:2048|required|mimes:jpeg,png'
+    ];
+
+    $this->validateRules($data, $rules);
+
+    // Store validated file
+    $data['avatar']->store('local', 'avatars');
+    return $this->success(['filename' => $data['avatar']->getNewName()]);
+}
+
+// With file arrays
+public function uploadMultiple(Request $request): object
+{
+    $attachments = $request->fileArray('attachments');
+
+    foreach ($attachments as $file)
+    {
+        // Validate each file
+        $validator = Validator::create(['file' => $file], [
+            'file' => 'image:5120|mimes:jpeg,png,gif'
+        ]);
+
+        if ($validator->isValid())
+        {
+            $file->store('local', 'attachments');
+        }
+    }
+
+    return $this->success(['count' => count($attachments)]);
+}
+```
+
+**Request File Validation Methods**:
+```php
+// Validate single file with rules
+$avatar = $request->validateFile('avatar', [
+    'avatar' => 'image:2048|required|mimes:jpeg,png'
+]);
+
+// Validate file array
+$attachments = $request->validateFileArray('attachments', [
+    'attachments' => 'file:5120|mimes:pdf,doc,docx'
+]);
+```
+
+### Storage Operations
 ```php
 use Proto\Utils\Files\Vault;
+use Proto\Http\UploadFile;
 
 // In controller - store uploaded file
-$uploadFile = $this->file('upload');
+$uploadFile = $request->file('upload');
 $uploadFile->store('local', 'attachments');
 
-// Or via Vault directly
+// Get file metadata
+$originalName = $uploadFile->getOriginalName();
+$newName = $uploadFile->getNewName();
+$size = $uploadFile->getSize();
+$mimeType = $uploadFile->getMimeType();
+
+// Image-specific methods
+if ($uploadFile->isImageFile())
+{
+    [$width, $height] = $uploadFile->getDimensions();
+}
+
+// Via Vault directly
 Vault::disk('local', 'attachments')->add('/tmp/file.txt');
 
 // Download file
 Vault::disk('local', 'attachments')->download('file.txt');
 
-// Get file
+// Get file content
 $content = Vault::disk('local')->get('/tmp/file.txt');
 
 // Delete file
@@ -1285,6 +1371,8 @@ Vault::disk('s3')->delete('/tmp/file.txt');
 | `$userId = session()->user->id ?? null;` | `$userId = session()->user->id;` after policy |
 | `throw new \Exception()` in controller | `$this->setError()` or `$this->error()` |
 | `$m = new Model(); $m->x = 1; $m->add();` | `$m = new Model((object)['x' => 1]); $m->add();` |
+| `$_FILES['upload']` in controller | `$request->file('upload')` |
+| `new UploadFile($_FILES['upload'])` | `$request->file('upload')` or `$request->validateFile('upload', [...])` |
 
 ## 18. Configuration & Gotchas
 

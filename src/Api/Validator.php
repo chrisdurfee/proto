@@ -8,6 +8,34 @@ use Proto\Utils\Filter\Sanitize;
  * Class Validator
  *
  * Provides functionality for validating and sanitizing data based on a set of rules.
+ * Supports validation of standard inputs (strings, emails, integers) and file uploads
+ * via UploadFile objects or raw $_FILES arrays.
+ *
+ * Example with UploadFile objects:
+ * ```php
+ * $data = [
+ *     'name' => $request->input('name'),
+ *     'email' => $request->input('email'),
+ *     'avatar' => $request->file('avatar') // UploadFile object
+ * ];
+ *
+ * $rules = [
+ *     'name' => 'string:100|required',
+ *     'email' => 'email:255|required',
+ *     'avatar' => 'image:2048|required|mimes:jpeg,png'
+ * ];
+ *
+ * $validator = Validator::create($data, $rules);
+ * if (!$validator->isValid()) {
+ *     return ['errors' => $validator->getErrors()];
+ * }
+ * ```
+ *
+ * Example with raw $_FILES:
+ * ```php
+ * $data = array_merge($request->all(), $_FILES);
+ * $validator = Validator::create($data, $rules);
+ * ```
  *
  * @package Proto\Api
  */
