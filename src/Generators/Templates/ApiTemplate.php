@@ -43,6 +43,7 @@ class ApiTemplate extends ClassTemplate
 	 * Builds the resource path including module name and feature path or namespace.
 	 *
 	 * Uses featurePath if available, otherwise falls back to namespace.
+	 * Excludes "Main" from the path as it represents the root level.
 	 *
 	 * @return string
 	 */
@@ -55,6 +56,12 @@ class ApiTemplate extends ClassTemplate
 		$featurePath = $this->get('featurePath') ?? '';
 		if (!empty($featurePath))
 		{
+			// Skip "Main" as it represents the root level
+			if (strtolower($featurePath) === 'main')
+			{
+				return $path;
+			}
+
 			// Convert feature path to lowercase with forward slashes
 			$featurePath = strtolower($featurePath);
 			$featurePath = str_replace('\\', '/', $featurePath);
@@ -65,6 +72,12 @@ class ApiTemplate extends ClassTemplate
 		$namespace = $this->get('namespace') ?? '';
 		if (!empty($namespace))
 		{
+			// Skip "Main" as it represents the root level
+			if (strtolower($namespace) === 'main')
+			{
+				return $path;
+			}
+
 			// Convert namespace to lowercase with forward slashes
 			$namespace = strtolower($namespace);
 			$namespace = str_replace('\\', '/', $namespace);
