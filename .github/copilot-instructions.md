@@ -236,7 +236,7 @@ Do not throw exceptions in controllers. Use `$this->setError('message')` in hook
 
 ```php
 // ✅ CORRECT - Graceful error handling in hook
-protected function modifiyUpdateItem(object &$data, Request $request): void
+protected function modifyUpdateItem(object &$data, Request $request): void
 {
     $post = GroupPost::get($data->id);
     if (!$post)
@@ -265,7 +265,7 @@ public function customAction(Request $request): object
 }
 
 // ❌ WRONG - Throwing exceptions
-protected function modifiyUpdateItem(object &$data, Request $request): void
+protected function modifyUpdateItem(object &$data, Request $request): void
 {
     if (!$post)
     {
@@ -335,15 +335,15 @@ public function all(Request $request): object
 - `deleteItem(object $data)` - performs the actual delete operation
 
 **Hook Methods** (receive `Request $request` parameter):
-- `modifiyAddItem(object &$data, Request $request)` - called BEFORE `addItem()`, modifies data by reference
-- `modifiyUpdateItem(object &$data, Request $request)` - called BEFORE `updateItem()`, modifies data by reference
+- `modifyAddItem(object &$data, Request $request)` - called BEFORE `addItem()`, modifies data by reference
+- `modifyUpdateItem(object &$data, Request $request)` - called BEFORE `updateItem()`, modifies data by reference
 - `modifyFilter(?object $filter, Request $request)` - called in `all()` to customize filter
 
 ### Hook Method Examples
 
 ```php
 // Add route parameter to data
-protected function modifiyAddItem(object &$data, Request $request): void
+protected function modifyAddItem(object &$data, Request $request): void
 {
     $clientId = $request->getInt('clientId');
     if ($clientId)
@@ -359,7 +359,7 @@ protected function modifiyAddItem(object &$data, Request $request): void
 }
 
 // Restrict fields that shouldn't be modified
-protected function modifiyUpdateItem(object &$data, Request $request): void
+protected function modifyUpdateItem(object &$data, Request $request): void
 {
     $id = $data->id ?? null;
     $restrictedFields = ['id', 'clientId', 'createdAt', 'createdBy'];
@@ -381,7 +381,7 @@ protected function modifyFilter(?object $filter, Request $request): ?object
 
 ### When to Use Each Pattern
 
-1. **Use hook methods** (`modifiyAddItem`, `modifiyUpdateItem`) when:
+1. **Use hook methods** (`modifyAddItem`, `modifyUpdateItem`) when:
    - Injecting route parameters into data
    - Sanitizing/transforming input data
    - Setting default values
@@ -1362,9 +1362,9 @@ Vault::disk('s3')->delete('/tmp/file.txt');
 | `$user = User::create($data);` | `$user = new User(); $user->add();` |
 | `->where('a')->where('b')` | `->where('a', 'b')` |
 | `->fetchOne()` | `->first()` |
-| `$this->request` in `addItem()` | Use `modifiyAddItem($data, $request)` hook |
-| Override `addItem()` for route params | Use `modifiyAddItem()` or override `add()` |
-| `protected function modifyAddItem()` | `protected function modifiyAddItem()` (typo) |
+| `$this->request` in `addItem()` | Use `modifyAddItem($data, $request)` hook |
+| Override `addItem()` for route params | Use `modifyAddItem()` or override `add()` |
+| `protected function modifyAddItem()` | `protected function modifyAddItem()` (typo) |
 | `\Modules\User\Models\User::get()` | `use Modules\User\Models\User; User::get()` |
 | `$request->route('id')` | `$request->getInt('id')` or `$request->input('id')` |
 | `if (!$userId) return error()` in controller | Remove check - policy handles auth |
