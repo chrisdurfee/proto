@@ -40,7 +40,9 @@ class ApiTemplate extends ClassTemplate
 	}
 
 	/**
-	 * Builds the resource path including module name and feature path.
+	 * Builds the resource path including module name and feature path or namespace.
+	 *
+	 * Uses featurePath if available, otherwise falls back to namespace.
 	 *
 	 * @return string
 	 */
@@ -49,19 +51,28 @@ class ApiTemplate extends ClassTemplate
 		$className = $this->getClassName();
 		$path = Strings::hyphen($className);
 
-		// Get the feature path from settings
+		// Prefer feature path over namespace
 		$featurePath = $this->get('featurePath') ?? '';
-		if (empty($featurePath))
+		if (!empty($featurePath))
 		{
-			return $path;
+			// Convert feature path to lowercase with forward slashes
+			$featurePath = strtolower($featurePath);
+			$featurePath = str_replace('\\', '/', $featurePath);
+			return "{$path}/{$featurePath}";
 		}
 
-		// Convert feature path to lowercase with forward slashes
-		$featurePath = strtolower($featurePath);
-		$featurePath = str_replace('\\', '/', $featurePath);
+		// Fallback to namespace if no feature path
+		$namespace = $this->get('namespace') ?? '';
+		if (!empty($namespace))
+		{
+			// Convert namespace to lowercase with forward slashes
+			$namespace = strtolower($namespace);
+			$namespace = str_replace('\\', '/', $namespace);
+			return "{$path}/{$namespace}";
+		}
 
-		// Build the full path: moduleName/featurePath
-		return "{$path}/{$featurePath}";
+		// No additional path segments
+		return $path;
 	}
 
 	/**
