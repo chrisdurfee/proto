@@ -40,6 +40,31 @@ class ApiTemplate extends ClassTemplate
 	}
 
 	/**
+	 * Builds the resource path including module name and feature path.
+	 *
+	 * @return string
+	 */
+	protected function getResourcePath(): string
+	{
+		$className = $this->getClassName();
+		$path = Strings::hyphen($className);
+
+		// Get the feature path from settings
+		$featurePath = $this->get('featurePath') ?? '';
+		if (empty($featurePath))
+		{
+			return $path;
+		}
+
+		// Convert feature path to lowercase with forward slashes
+		$featurePath = strtolower($featurePath);
+		$featurePath = str_replace('\\', '/', $featurePath);
+
+		// Build the full path: moduleName/featurePath
+		return "{$path}/{$featurePath}";
+	}
+
+	/**
 	 * Generates the class body.
 	 *
 	 * @return string
@@ -50,7 +75,7 @@ class ApiTemplate extends ClassTemplate
 		$use = $this->getUse();
 		$className = $this->getClassName();
 		$controllerName = $this->getControllerName();
-		$path = Strings::hyphen($className);
+		$path = $this->getResourcePath();
 
 		return <<<EOT
 <?php declare(strict_types=1);
