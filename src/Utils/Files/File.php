@@ -239,7 +239,7 @@ class File extends Util
 	 * @param UploadFile $file The UploadFile instance.
 	 * @return string The generated file name.
 	 */
-	public function generateFileName(UploadFile $file, string $prefix = ''): string
+	public static function generateFileName(UploadFile $file, string $prefix = ''): string
 	{
 		$ext = strtolower(pathinfo($file->getOriginalName(), PATHINFO_EXTENSION));
 		return uniqid($prefix) . '.' . $ext;
