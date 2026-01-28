@@ -22,7 +22,8 @@ use Proto\Database\QueryBuilder\QueryHandler;
  * internally in the Data object and accessed via these magic methods.
  *
  * For static analysis tools (PHPStan, Psalm), child classes should define
- * @property \annotations for each database field to enable proper type checking:
+ * @suppresswarnings PHP0413,6507
+ * @property annotations for each database field to enable proper type checking:
  *
  * @example
  * ```php
