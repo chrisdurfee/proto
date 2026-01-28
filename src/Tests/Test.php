@@ -77,9 +77,6 @@ abstract class Test extends TestCase
 	 */
 	protected function setupSystem(): void
 	{
-		// Suppress error output during tests
-		Error::silent();
-
 		/**
 		 * CRITICAL: Set the env to testing BEFORE initializing Base
 		 * This ensures the testing database/cache connections are used
@@ -88,6 +85,9 @@ abstract class Test extends TestCase
 		$_ENV['APP_ENV'] = 'testing';
 
 		new Base();
+
+		// Suppress error output during tests (must be AFTER Base initializes env())
+		Error::silent();
 
 		/**
 		 * This will set the env to testing to use the testing connection settings.

@@ -86,8 +86,10 @@ class Guide
 				continue;
 			}
 
-			// Skip common framework directories that shouldn't contain migrations
-			$skipDirs = ['Api', 'Controllers', 'Models', 'Services', 'Storage', 'Gateway', 'Auth', 'Tests', 'Factories', 'Seeders', 'Main'];
+			// Skip common framework subdirectories that shouldn't contain migrations
+			// Note: Only skip these as subdirectories within modules, not at the module level
+			// This allows modules/Auth/Migrations to exist while skipping modules/User/Auth
+			$skipDirs = ['Api', 'Controllers', 'Models', 'Services', 'Storage', 'Gateway', 'Tests', 'Factories', 'Seeders', 'Integrations', 'Automation', 'Http', 'Email', 'Text', 'Push', 'Jobs', 'Services', 'ServiceProviders', 'Actions'];
 			if (in_array($entry, $skipDirs))
 			{
 				continue;
