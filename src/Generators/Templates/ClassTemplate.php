@@ -70,7 +70,35 @@ abstract class ClassTemplate extends Template
 	}
 
 	/**
-	 * Retrieves the module for the class.
+	 * Retrieves the feature path for the class namespace.
+	 *
+	 * Converts feature paths like "Group" or "Group/Forum" to namespace format.
+	 *
+	 * @return string
+	 */
+	protected function getFeaturePath(): string
+	{
+		$featurePath = $this->get('featurePath') ?? '';
+		if (empty($featurePath))
+		{
+			return '';
+		}
+
+		// Convert forward slashes to backslashes for namespace
+		$featurePath = str_replace('/', '\\', $featurePath);
+
+		// Ensure each segment is PascalCase
+		$parts = explode('\\', $featurePath);
+		$parts = array_map(fn($part) => Strings::pascalCase($part), $parts);
+
+		return '\\' . implode('\\', $parts);
+	}
+
+	/**
+	 * Retrieves the module directory for namespace.
+	 *
+	 * Includes the feature path if specified.
+	 * Example: "Modules\Community\Group" for featurePath "Group"
 	 *
 	 * @return string
 	 */
@@ -88,7 +116,8 @@ abstract class ClassTemplate extends Template
 			return 'Proto';
 		}
 
-		return "Modules\\{$module}";
+		$featurePath = $this->getFeaturePath();
+		return "Modules\\{$module}{$featurePath}";
 	}
 
 	/**

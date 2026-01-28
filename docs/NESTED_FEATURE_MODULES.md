@@ -175,7 +175,7 @@ Migrations are discovered recursively throughout the module structure:
 - `modules/Community/Group/Migrations/`
 - `modules/Community/Group/Forum/Migrations/`
 
-All migration directories up to 3 levels deep are automatically scanned.
+All migration directories up to 6 levels deep are automatically scanned.
 
 ## Namespacing
 

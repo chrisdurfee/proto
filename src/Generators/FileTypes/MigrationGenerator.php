@@ -24,7 +24,8 @@ class MigrationGenerator extends AbstractFileGenerator
 		$dateTime = $this->getFileDate();
 		$fileName = $dateTime . '_' . $this->getFileName($settings->className);
 		$template = new Templates\MigrationTemplate($settings);
-		$dir = $this->getDir('', $settings->moduleName);
+		$featurePath = $settings->featurePath ?? null;
+		$dir = $this->getDir('', $settings->moduleName, $featurePath);
 		return $this->saveFile($dir, $fileName, $template);
 	}
 
@@ -33,12 +34,13 @@ class MigrationGenerator extends AbstractFileGenerator
 	 *
 	 * @param string $dir The relative directory.
 	 * @param string $module The module name.
+	 * @param string|null $featurePath Optional feature path within the module.
 	 * @return string The full directory path.
 	 */
-	protected function getDir(string $dir, string $module): string
+	protected function getDir(string $dir, string $module, ?string $featurePath = null): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		$moduleDir = $this->getModuleDir($module);
+		$moduleDir = $this->getModuleDir($module, $featurePath);
 		return $moduleDir . $this->convertSlashes('/Migrations');
 	}
 

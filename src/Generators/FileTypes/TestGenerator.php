@@ -22,7 +22,8 @@ class TestGenerator extends AbstractFileGenerator
 	 */
 	public function generate(object $settings): bool
 	{
-		$dir = $this->getDir($settings->dir, $settings->moduleName);
+		$featurePath = $settings->featurePath ?? null;
+		$dir = $this->getDir($settings->dir, $settings->moduleName, $featurePath);
 		$fileName = $this->getFileName($settings->className . 'Test');
 		$template = new Templates\TestTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
@@ -33,12 +34,13 @@ class TestGenerator extends AbstractFileGenerator
 	 *
 	 * @param string $dir The relative directory.
 	 * @param string $module The module name.
+	 * @param string|null $featurePath Optional feature path within the module.
 	 * @return string The full directory path.
 	 */
-	protected function getDir(string $dir, string $module): string
+	protected function getDir(string $dir, string $module, ?string $featurePath = null): string
 	{
 		$dir = str_replace('\\', '/', $dir);
-		$moduleDir = $this->getModuleDir($module);
+		$moduleDir = $this->getModuleDir($module, $featurePath);
 		return $moduleDir . $this->convertSlashes('/Tests/' . $dir);
 	}
 }

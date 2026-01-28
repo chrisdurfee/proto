@@ -24,7 +24,8 @@ class ModuleGenerator extends AbstractFileGenerator
 	public function generate(object $settings): bool
 	{
 		$moduleName = Strings::pascalCase($settings->name);
-		$dir = $this->getDir($moduleName, '');
+		$featurePath = $settings->featurePath ?? null;
+		$dir = $this->getDir($moduleName, '', $featurePath);
 		$fileName = $this->getFileName($moduleName . 'Module');
 		$template = new Templates\ModuleTemplate($settings);
 		return $this->saveFile($dir, $fileName, $template);
@@ -36,9 +37,10 @@ class ModuleGenerator extends AbstractFileGenerator
 	 *
 	 * @param string $dir The relative directory.
 	 * @param string $module The module name (unused in this implementation).
+	 * @param string|null $featurePath Optional feature path within the module.
 	 * @return string The full directory path.
 	 */
-	protected function getDir(string $dir, string $module): string
+	protected function getDir(string $dir, string $module, ?string $featurePath = null): string
 	{
 		$dir = str_replace('\\', '/', $dir);
 		$folderName = $this->convertSlashes($dir);
@@ -49,6 +51,10 @@ class ModuleGenerator extends AbstractFileGenerator
 		{
 			$basePath = $this->getBasePath();
 			$targetDir = $basePath . '/modules/' . $folderName;
+			if (!empty($featurePath))
+			{
+				$targetDir .= '/' . str_replace('\\', '/', $featurePath);
+			}
 			File::checkDir($targetDir);
 
 			return $targetDir;
@@ -57,7 +63,12 @@ class ModuleGenerator extends AbstractFileGenerator
 		{
 			// Local environment
 			$modulesBasePath = realpath(BASE_PATH . '/modules');
-			return $modulesBasePath . DIRECTORY_SEPARATOR . $folderName;
+			$targetDir = $modulesBasePath . DIRECTORY_SEPARATOR . $folderName;
+			if (!empty($featurePath))
+			{
+				$targetDir .= DIRECTORY_SEPARATOR . $this->convertSlashes($featurePath);
+			}
+			return $targetDir;
 		}
 	}
 }

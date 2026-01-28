@@ -69,7 +69,7 @@ class Guide
 		// Level 1: modules/Community/
 		// Level 2: modules/Community/Group/
 		// Level 3: modules/Community/Group/Forum/
-		if ($depth > 3)
+		if ($depth > 6)
 		{
 			return;
 		}

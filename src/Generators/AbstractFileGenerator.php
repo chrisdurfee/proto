@@ -68,19 +68,25 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	/**
 	 * Gets the full directory path for a module with Docker environment support.
 	 *
+	 * Supports nested feature modules by accepting a feature path.
+	 * Example: getModuleDir('User') -> modules/User/
+	 * Example: getModuleDir('Community', 'Group') -> modules/Community/Group/
+	 * Example: getModuleDir('Community', 'Group/Forum') -> modules/Community/Group/Forum/
+	 *
 	 * @param string $module The module name.
+	 * @param string|null $featurePath Optional feature path within the module.
 	 * @return string The full directory path.
 	 */
-	protected function getModuleDir(string $module): string
+	protected function getModuleDir(string $module, ?string $featurePath = null): string
 	{
 		// Check if we're running in Docker container
 		if ($this->isDockerEnvironment())
 		{
-			return $this->getDockerModuleDir($module);
+			return $this->getDockerModuleDir($module, $featurePath);
 		}
 
 		// Standard local environment behavior
-		return $this->getLocalModuleDir($module);
+		return $this->getLocalModuleDir($module, $featurePath);
 	}
 
 	/**
@@ -97,9 +103,10 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	 * Gets the module directory for Docker environments.
 	 *
 	 * @param string $module The module name.
+	 * @param string|null $featurePath Optional feature path within the module.
 	 * @return string The full directory path.
 	 */
-	protected function getDockerModuleDir(string $module): string
+	protected function getDockerModuleDir(string $module, ?string $featurePath = null): string
 	{
 		$basePath = $this->getBasePath();
 
@@ -113,6 +120,10 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 				break;
 			default:
 				$path = $basePath . '/modules/' . $module;
+				if (!empty($featurePath))
+				{
+					$path .= '/' . str_replace('\\', '/', $featurePath);
+				}
 		}
 
 		// Ensure the directory exists
@@ -125,9 +136,10 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	 * Gets the module directory for local environments.
 	 *
 	 * @param string $module The module name.
+	 * @param string|null $featurePath Optional feature path within the module.
 	 * @return string The full directory path.
 	 */
-	protected function getLocalModuleDir(string $module): string
+	protected function getLocalModuleDir(string $module, ?string $featurePath = null): string
 	{
 		switch (strtolower($module))
 		{
@@ -136,7 +148,12 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 			case 'proto':
 				return realpath(BASE_PATH . '/vendor/protoframework/proto/src');
 			default:
-				return (realpath(BASE_PATH . '/modules') . DIRECTORY_SEPARATOR . $module);
+				$path = realpath(BASE_PATH . '/modules') . DIRECTORY_SEPARATOR . $module;
+				if (!empty($featurePath))
+				{
+					$path .= DIRECTORY_SEPARATOR . $this->convertSlashes($featurePath);
+				}
+				return $path;
 		}
 	}
 
@@ -147,7 +164,8 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 	 *
 	 * @param string $dir A relative directory name.
 	 * @param string $module The module name.
+	 * @param string|null $featurePath Optional feature path within the module.
 	 * @return string The full directory path.
 	 */
-	abstract protected function getDir(string $dir, string $module): string;
+	abstract protected function getDir(string $dir, string $module, ?string $featurePath = null): string;
 }
