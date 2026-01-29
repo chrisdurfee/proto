@@ -261,4 +261,15 @@ class Strings
 	{
 		return http_build_query((array) $params);
 	}
+
+	/**
+	 * Prepares content by decoding HTML entities and trimming whitespace.
+	 *
+	 * @param string $content
+	 * @return string
+	 */
+	public static function prepareContent(string $content): string
+	{
+		return trim(html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+	}
 }
