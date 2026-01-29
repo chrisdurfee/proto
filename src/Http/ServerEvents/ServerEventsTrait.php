@@ -40,6 +40,10 @@ trait ServerEventsTrait
 		ini_set('implicit_flush', '1');
 		set_time_limit(0);
 
+		// Enable detection of client disconnection.
+		// When false, PHP will abort the script when the client disconnects.
+		ignore_user_abort(false);
+
 		if (function_exists('apache_setenv'))
 		{
 			apache_setenv('no-gzip', '1');

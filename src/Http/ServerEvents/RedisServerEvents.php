@@ -79,6 +79,12 @@ class RedisServerEvents
 		{
 			throw new \RuntimeException('Redis authentication failed.');
 		}
+
+		// Set a read timeout so subscribe() periodically returns, allowing us
+		// to check if the client is still connected. Without this, subscribe()
+		// blocks indefinitely and doesn't detect client disconnection until
+		// a message arrives, causing requests to hang on page refresh.
+		$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, 5);
 	}
 
 	/**
@@ -101,41 +107,62 @@ class RedisServerEvents
 			};
 		}
 
-		try
+		// Loop to handle Redis read timeouts and check for client disconnection.
+		// When read timeout expires, subscribe() throws an exception. We catch it,
+		// check if client is still connected, and re-subscribe if so.
+		while ($this->active && !connection_aborted())
 		{
-			$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback)
+			try
 			{
-				// Check if client disconnected
-				if (connection_aborted())
+				$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback)
 				{
-					$this->active = false;
-					return;
-				}
+					// Check if client disconnected
+					if (connection_aborted())
+					{
+						$this->active = false;
+						return;
+					}
 
-				// Decode JSON if applicable
-				$payload = json_decode($message, true) ?? $message;
+					// Decode JSON if applicable
+					$payload = json_decode($message, true) ?? $message;
 
-				// Call the user callback
-				$result = $callback($channel, $payload);
+					// Call the user callback
+					$result = $callback($channel, $payload);
 
-				// If callback returns false, stop subscription
-				if ($result === false)
+					// If callback returns false, stop subscription
+					if ($result === false)
+					{
+						$this->active = false;
+						return;
+					}
+
+					// Send result as SSE message
+					if ($result !== null)
+					{
+						$this->sendMessage($result);
+					}
+				});
+			}
+			catch (\RedisException $e)
+			{
+				// Read timeout - this is expected. Send a heartbeat comment to
+				// detect client disconnection (output will fail if client gone).
+				if (strpos($e->getMessage(), 'read error') !== false)
 				{
-					$this->active = false;
-					return;
+					$this->sendHeartbeat();
+					$this->reconnectToRedis();
+					continue;
 				}
-
-				// Send result as SSE message
-				if ($result !== null)
-				{
-					$this->sendMessage($result);
-				}
-			});
+				// Other Redis error - exit the loop
+				break;
+			}
+			catch (\Throwable $e)
+			{
+				break;
+			}
 		}
-		catch (\Throwable $e)
-		{
-			$this->close();
-		}
+
+		$this->close();
 	}
 
 	/**
@@ -148,6 +175,43 @@ class RedisServerEvents
 	{
 		$json = json_encode($data);
 		$this->response->sendEvent($json, 'message');
+	}
+
+	/**
+	 * Sends a heartbeat comment to detect client disconnection.
+	 * SSE comments (lines starting with :) are ignored by the client
+	 * but will cause output to fail if the client has disconnected.
+	 *
+	 * @return void
+	 */
+	protected function sendHeartbeat(): void
+	{
+		echo ": heartbeat\n\n";
+		if (ob_get_level() > 0)
+		{
+			ob_flush();
+		}
+		flush();
+	}
+
+	/**
+	 * Reconnects to Redis after a read timeout.
+	 * After a timeout, the subscribe connection is broken and must be re-established.
+	 *
+	 * @return void
+	 */
+	protected function reconnectToRedis(): void
+	{
+		try
+		{
+			$this->connection->close();
+		}
+		catch (\Throwable $e)
+		{
+			// Ignore close errors
+		}
+
+		$this->connectToRedis();
 	}
 
 	/**
