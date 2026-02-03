@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\ServerEvents;
 
+use Proto\Cache\Cache;
+
 /**
  * RedisServerEvents
  *
@@ -30,6 +32,11 @@ class RedisServerEvents
 	protected bool $active = true;
 
 	/**
+	 * @var string Unique identifier for this connection.
+	 */
+	protected string $connectionId;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array|null $settings Optional Redis connection settings.
@@ -37,8 +44,11 @@ class RedisServerEvents
 	public function __construct(?array $settings = null)
 	{
 		$this->settings = $settings ?? $this->getDefaultSettings();
+		$this->connectionId = $this->generateConnectionId();
 		$this->configureStreaming();
 		$this->setupResponse();
+		$this->closeStaleConnections();
+		$this->registerConnection();
 		$this->connectToRedis();
 	}
 
@@ -56,6 +66,68 @@ class RedisServerEvents
 			'port' => $connection?->port ?? 6379,
 			'password' => $connection?->password ?? null,
 		];
+	}
+
+	/**
+	 * Generates a unique connection identifier.
+	 *
+	 * @return string
+	 */
+	protected function generateConnectionId(): string
+	{
+		return uniqid('sse_', true);
+	}
+
+	/**
+	 * Gets the cache key for tracking connections by user/session.
+	 *
+	 * @return string
+	 */
+	protected function getConnectionKey(): string
+	{
+		$userId = $this->session->user->id ?? 'guest';
+		$sessionId = session_id();
+		return "sse:connection:{$userId}:{$sessionId}";
+	}
+
+	/**
+	 * Closes stale connections for the same user/session.
+	 * When a user refreshes the page, this signals the old connection to close
+	 * immediately instead of waiting for timeout.
+	 *
+	 * @return void
+	 */
+	protected function closeStaleConnections(): void
+	{
+		$key = $this->getConnectionKey();
+		$oldConnectionId = Cache::get($key);
+
+		if ($oldConnectionId && $oldConnectionId !== $this->connectionId)
+		{
+			Cache::set("sse:close:{$oldConnectionId}", '1', 5);
+			error_log("SSE: Closing stale connection {$oldConnectionId}");
+		}
+	}
+
+	/**
+	 * Registers this connection in the cache.
+	 *
+	 * @return void
+	 */
+	protected function registerConnection(): void
+	{
+		Cache::set($this->getConnectionKey(), $this->connectionId, 300);
+	}
+
+	/**
+	 * Checks if this connection should close (signaled by newer connection).
+	 *
+	 * @return bool
+	 */
+	protected function shouldClose(): bool
+	{
+		$closeSignal = Cache::get("sse:close:{$this->connectionId}");
+		return $closeSignal !== null;
 	}
 
 	/**
@@ -112,12 +184,19 @@ class RedisServerEvents
 		// check if client is still connected, and re-subscribe if so.
 		while ($this->active && !connection_aborted())
 		{
+			// Check if newer connection signaled us to close
+			if ($this->shouldClose())
+			{
+				error_log("SSE: Connection {$this->connectionId} closed by newer connection");
+				break;
+			}
+
 			try
 			{
 				$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback)
 				{
-					// Check if client disconnected
-					if (connection_aborted())
+					// Check if client disconnected or signaled to close
+					if (connection_aborted() || $this->shouldClose())
 					{
 						$this->active = false;
 						return;
@@ -215,7 +294,7 @@ class RedisServerEvents
 	}
 
 	/**
-	 * Closes the Redis connection.
+	 * Closes the Redis connection and cleans up connection registry.
 	 *
 	 * @return void
 	 */
@@ -227,6 +306,19 @@ class RedisServerEvents
 			{
 				$this->connection->close();
 			}
+
+			// Clean up connection registry
+			$key = $this->getConnectionKey();
+			$currentId = Cache::get($key);
+
+			// Only remove if we're still the registered connection
+			if ($currentId === $this->connectionId)
+			{
+				Cache::delete($key);
+			}
+
+			// Clean up close signal
+			Cache::delete("sse:close:{$this->connectionId}");
 		}
 		catch (\Throwable $e)
 		{
