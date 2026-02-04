@@ -37,6 +37,17 @@ class RedisServerEvents
 	protected string $connectionId;
 
 	/**
+	 * @var int Read timeout in seconds for Redis connection.
+	 * Higher values reduce reconnection frequency but delay disconnect detection.
+	 */
+	protected int $readTimeout = 30;
+
+	/**
+	 * @var int Maximum consecutive reconnection failures before giving up.
+	 */
+	protected int $maxReconnectFailures = 3;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array|null $settings Optional Redis connection settings.
@@ -156,7 +167,7 @@ class RedisServerEvents
 		// to check if the client is still connected. Without this, subscribe()
 		// blocks indefinitely and doesn't detect client disconnection until
 		// a message arrives, causing requests to hang on page refresh.
-		$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, 5);
+		$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, $this->readTimeout);
 	}
 
 	/**
@@ -169,6 +180,7 @@ class RedisServerEvents
 	public function subscribe(array|string $channels, ?callable $callback = null): void
 	{
 		$channels = is_array($channels) ? $channels : [$channels];
+		$reconnectFailures = 0;
 
 		// Default callback just returns the message
 		if ($callback === null)
@@ -193,6 +205,9 @@ class RedisServerEvents
 
 			try
 			{
+				// Reset failure count on successful subscribe entry
+				$reconnectFailures = 0;
+
 				$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback)
 				{
 					// Check if client disconnected or signaled to close
@@ -228,15 +243,42 @@ class RedisServerEvents
 				// detect client disconnection (output will fail if client gone).
 				if (strpos($e->getMessage(), 'read error') !== false)
 				{
-					$this->sendHeartbeat();
-					$this->reconnectToRedis();
+					// Check client connection before attempting heartbeat
+					if (connection_aborted())
+					{
+						break;
+					}
+
+					// Send heartbeat - if this fails, client is disconnected
+					if (!$this->sendHeartbeat())
+					{
+						break;
+					}
+
+					// Attempt to reconnect to Redis
+					if (!$this->reconnectToRedis())
+					{
+						$reconnectFailures++;
+						if ($reconnectFailures >= $this->maxReconnectFailures)
+						{
+							error_log("SSE: Max reconnect failures reached, closing connection");
+							break;
+						}
+
+						// Brief delay before retry
+						usleep(100000); // 100ms
+					}
+
 					continue;
 				}
+
 				// Other Redis error - exit the loop
+				error_log("SSE: Redis error: " . $e->getMessage());
 				break;
 			}
 			catch (\Throwable $e)
 			{
+				error_log("SSE: Unexpected error: " . $e->getMessage());
 				break;
 			}
 		}
@@ -261,9 +303,9 @@ class RedisServerEvents
 	 * SSE comments (lines starting with :) are ignored by the client
 	 * but will cause output to fail if the client has disconnected.
 	 *
-	 * @return void
+	 * @return bool True if heartbeat was sent successfully, false if client disconnected.
 	 */
-	protected function sendHeartbeat(): void
+	protected function sendHeartbeat(): bool
 	{
 		echo ": heartbeat\n\n";
 		if (ob_get_level() > 0)
@@ -271,15 +313,18 @@ class RedisServerEvents
 			ob_flush();
 		}
 		flush();
+
+		// Check if client disconnected during output
+		return !connection_aborted();
 	}
 
 	/**
 	 * Reconnects to Redis after a read timeout.
 	 * After a timeout, the subscribe connection is broken and must be re-established.
 	 *
-	 * @return void
+	 * @return bool True if reconnection succeeded, false otherwise.
 	 */
-	protected function reconnectToRedis(): void
+	protected function reconnectToRedis(): bool
 	{
 		try
 		{
@@ -290,7 +335,16 @@ class RedisServerEvents
 			// Ignore close errors
 		}
 
-		$this->connectToRedis();
+		try
+		{
+			$this->connectToRedis();
+			return true;
+		}
+		catch (\Throwable $e)
+		{
+			error_log("SSE: Redis reconnection failed: " . $e->getMessage());
+			return false;
+		}
 	}
 
 	/**
