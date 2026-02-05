@@ -2,6 +2,7 @@
 namespace Proto\Http\ServerEvents;
 
 use Proto\Cache\Cache;
+use Proto\Utils\Filter\Input;
 
 /**
  * RedisServerEvents
@@ -104,7 +105,7 @@ class RedisServerEvents
 		// Include URI path to make key unique per endpoint
 		// This prevents different SSE endpoints (e.g., /activity/sync vs /conversation/sync)
 		// from signaling each other to close
-		$uri = $_SERVER['REQUEST_URI'] ?? '';
+		$uri = Input::server('REQUEST_URI');
 		$path = parse_url($uri, PHP_URL_PATH) ?? '';
 		$pathHash = md5($path);
 
