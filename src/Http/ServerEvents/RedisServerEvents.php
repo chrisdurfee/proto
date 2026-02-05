@@ -102,9 +102,21 @@ class RedisServerEvents
 	}
 
 	/**
+	 * Gets the close channel name for a specific connection.
+	 * This channel is used to send immediate close signals via pub/sub.
+	 *
+	 * @param string $connectionId The connection ID.
+	 * @return string
+	 */
+	protected function getCloseChannel(string $connectionId): string
+	{
+		return "sse:close:{$connectionId}";
+	}
+
+	/**
 	 * Closes stale connections for the same user/session.
 	 * When a user refreshes the page, this signals the old connection to close
-	 * immediately instead of waiting for timeout.
+	 * immediately by publishing to its close channel.
 	 *
 	 * @return void
 	 */
@@ -115,8 +127,47 @@ class RedisServerEvents
 
 		if ($oldConnectionId && $oldConnectionId !== $this->connectionId)
 		{
+			// Set cache flag as backup
 			Cache::set("sse:close:{$oldConnectionId}", '1', 5);
-			error_log("SSE: Closing stale connection {$oldConnectionId}");
+
+			// Publish immediate close signal via Redis pub/sub
+			$this->publishCloseSignal($oldConnectionId);
+
+			error_log("SSE: Signaling stale connection {$oldConnectionId} to close");
+		}
+	}
+
+	/**
+	 * Publishes a close signal to a connection's close channel.
+	 * This immediately interrupts the blocking subscribe.
+	 *
+	 * @param string $connectionId The connection ID to close.
+	 * @return void
+	 */
+	protected function publishCloseSignal(string $connectionId): void
+	{
+		try
+		{
+			/**
+			 * Use a separate Redis connection for publishing
+			 * since the main connection will be used for subscribing.
+			 * @SuppressWarnings PHP0413
+			 */
+			$publisher = new \Redis();
+			$publisher->connect($this->settings['host'], $this->settings['port']);
+
+			if (!empty($this->settings['password']))
+			{
+				$publisher->auth($this->settings['password']);
+			}
+
+			$publisher->publish($this->getCloseChannel($connectionId), 'close');
+			$publisher->close();
+		}
+		catch (\Throwable $e)
+		{
+			// Ignore publish errors - cache fallback will work
+			error_log("SSE: Failed to publish close signal: " . $e->getMessage());
 		}
 	}
 
@@ -182,6 +233,10 @@ class RedisServerEvents
 		$channels = is_array($channels) ? $channels : [$channels];
 		$reconnectFailures = 0;
 
+		// Add the close channel so we can receive immediate close signals
+		$closeChannel = $this->getCloseChannel($this->connectionId);
+		$channels[] = $closeChannel;
+
 		// Default callback just returns the message
 		if ($callback === null)
 		{
@@ -208,8 +263,16 @@ class RedisServerEvents
 				// Reset failure count on successful subscribe entry
 				$reconnectFailures = 0;
 
-				$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback)
+				$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback, $closeChannel)
 				{
+					// Check if this is a close signal
+					if ($channel === $closeChannel)
+					{
+						error_log("SSE: Connection {$this->connectionId} received close signal");
+						$this->active = false;
+						return;
+					}
+
 					// Check if client disconnected or signaled to close
 					if (connection_aborted() || $this->shouldClose())
 					{
