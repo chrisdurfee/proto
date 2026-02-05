@@ -39,6 +39,7 @@ class RedisServerEvents
 	/**
 	 * @var int Read timeout in seconds for Redis connection.
 	 * Higher values reduce reconnection frequency but delay disconnect detection.
+	 * Since we use pub/sub close signals for immediate termination, this can be higher.
 	 */
 	protected int $readTimeout = 2;
 
@@ -248,8 +249,9 @@ class RedisServerEvents
 
 		// Loop to handle Redis read timeouts and check for client disconnection.
 		// When read timeout expires, subscribe() throws an exception. We catch it,
-		// check if client is still connected, and re-subscribe if so.
-		while ($this->active && !connection_aborted())
+		// send a heartbeat to verify client is still connected, and re-subscribe.
+		// Note: We don't check connection_aborted() here as it's unreliable behind proxies.
+		while ($this->active)
 		{
 			// Check if newer connection signaled us to close
 			if ($this->shouldClose())
@@ -273,8 +275,8 @@ class RedisServerEvents
 						return;
 					}
 
-					// Check if client disconnected or signaled to close
-					if (connection_aborted() || $this->shouldClose())
+					// Check if signaled to close by newer connection
+					if ($this->shouldClose())
 					{
 						$this->active = false;
 						return;
@@ -303,20 +305,11 @@ class RedisServerEvents
 			catch (\RedisException $e)
 			{
 				// Read timeout - this is expected. Send a heartbeat comment to
-				// detect client disconnection (output will fail if client gone).
+				// keep the connection alive and verify client is still connected.
 				if (strpos($e->getMessage(), 'read error') !== false)
 				{
-					// Check client connection before attempting heartbeat
-					if (connection_aborted())
-					{
-						break;
-					}
-
-					// Send heartbeat - if this fails, client is disconnected
-					if (!$this->sendHeartbeat())
-					{
-						break;
-					}
+					// Send heartbeat to keep connection alive
+					$this->sendHeartbeat();
 
 					// Attempt to reconnect to Redis
 					if (!$this->reconnectToRedis())
@@ -366,19 +359,33 @@ class RedisServerEvents
 	 * SSE comments (lines starting with :) are ignored by the client
 	 * but will cause output to fail if the client has disconnected.
 	 *
-	 * @return bool True if heartbeat was sent successfully, false if client disconnected.
+	 * Note: We don't rely on connection_aborted() as it's unreliable behind proxies.
+	 * Instead, we assume success if no exception was thrown during output.
+	 *
+	 * @return bool True if heartbeat was sent successfully.
 	 */
 	protected function sendHeartbeat(): bool
 	{
-		echo ": heartbeat\n\n";
-		if (ob_get_level() > 0)
+		try
 		{
-			ob_flush();
-		}
-		flush();
+			echo ": heartbeat\n\n";
 
-		// Check if client disconnected during output
-		return !connection_aborted();
+			if (ob_get_level() > 0)
+			{
+				ob_flush();
+			}
+
+			// Use @ to suppress warnings if connection is broken
+			$result = @flush();
+
+			// flush() returns false on failure in some PHP versions
+			// but this isn't reliable, so we primarily rely on exceptions
+			return true;
+		}
+		catch (\Throwable $e)
+		{
+			return false;
+		}
 	}
 
 	/**

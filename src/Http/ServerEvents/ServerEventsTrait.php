@@ -40,9 +40,17 @@ trait ServerEventsTrait
 		ini_set('implicit_flush', '1');
 		set_time_limit(0);
 
-		// Enable detection of client disconnection.
-		// When false, PHP will abort the script when the client disconnects.
-		ignore_user_abort(false);
+		// IMPORTANT: Set to true so PHP doesn't auto-abort.
+		// connection_aborted() is unreliable behind proxies (Vite, nginx, etc.)
+		// because the proxy maintains its connection even when buffering.
+		// We'll detect disconnection via output failure instead.
+		ignore_user_abort(true);
+
+		// Disable all output buffering layers
+		while (ob_get_level() > 0)
+		{
+			ob_end_flush();
+		}
 
 		if (function_exists('apache_setenv'))
 		{
