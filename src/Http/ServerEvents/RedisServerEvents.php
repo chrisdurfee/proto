@@ -91,7 +91,8 @@ class RedisServerEvents
 	}
 
 	/**
-	 * Gets the cache key for tracking connections by user/session.
+	 * Gets the cache key for tracking connections by user/session/endpoint.
+	 * Includes the request URI to prevent different SSE endpoints from conflicting.
 	 *
 	 * @return string
 	 */
@@ -99,7 +100,15 @@ class RedisServerEvents
 	{
 		$userId = $this->session->user->id ?? 'guest';
 		$sessionId = session_id();
-		return "sse:connection:{$userId}:{$sessionId}";
+
+		// Include URI path to make key unique per endpoint
+		// This prevents different SSE endpoints (e.g., /activity/sync vs /conversation/sync)
+		// from signaling each other to close
+		$uri = $_SERVER['REQUEST_URI'] ?? '';
+		$path = parse_url($uri, PHP_URL_PATH) ?? '';
+		$pathHash = md5($path);
+
+		return "sse:connection:{$userId}:{$sessionId}:{$pathHash}";
 	}
 
 	/**
