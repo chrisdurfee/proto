@@ -40,7 +40,7 @@ class RedisServerEvents
 	 * @var int Read timeout in seconds for Redis connection.
 	 * Higher values reduce reconnection frequency but delay disconnect detection.
 	 */
-	protected int $readTimeout = 30;
+	protected int $readTimeout = 2;
 
 	/**
 	 * @var int Maximum consecutive reconnection failures before giving up.
