@@ -5,6 +5,7 @@ use Proto\Database\Database;
 use Proto\Database\Adapters\Adapter;
 use Proto\Database\QueryBuilder\QueryHandler;
 use Proto\Database\QueryBuilder\Drop;
+use Proto\Database\Seeders\SeederManager;
 
 /**
  * Migration
@@ -239,6 +240,30 @@ abstract class Migration
 	{
 		$db = $this->db();
 		return $db->execute((string)$query, $params);
+	}
+
+	/**
+	 * Runs a single seeder using the SeederManager.
+	 *
+	 * @param string $seederClass The fully qualified seeder class name.
+	 * @return void
+	 */
+	protected function runSeeder(string $seederClass): void
+	{
+		$manager = new SeederManager();
+		$manager->run($seederClass);
+	}
+
+	/**
+	 * Runs multiple seeders in sequence using the SeederManager.
+	 *
+	 * @param array $seederClasses Array of fully qualified seeder class names.
+	 * @return void
+	 */
+	protected function runManySeeders(array $seederClasses): void
+	{
+		$manager = new SeederManager();
+		$manager->runMany($seederClasses);
 	}
 
 	/**
