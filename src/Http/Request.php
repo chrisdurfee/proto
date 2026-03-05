@@ -249,9 +249,9 @@ class Request
 	 *
 	 * @param string $name
 	 * @param mixed $default
-	 * @return int|null
+	 * @return bool|null
 	 */
-	public static function getBool(string $name, mixed $default = null): ?int
+	public static function getBool(string $name, mixed $default = null): ?bool
 	{
 		$input = static::input($name, $default);
 		return (isset($input))? (bool)$input : null;
