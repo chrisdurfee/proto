@@ -403,6 +403,16 @@ class Request
 			return null;
 		}
 
+		// Normalize file extension to lowercase so checks and storage are case-insensitive
+		if (!empty($file['name']))
+		{
+			$ext = \pathinfo($file['name'], PATHINFO_EXTENSION);
+			if ($ext !== '' && $ext !== strtolower($ext))
+			{
+				$file['name'] = substr($file['name'], 0, -(strlen($ext))) . strtolower($ext);
+			}
+		}
+
 		if (self::checkBlockedFile($file) === false)
 		{
 			return null;
