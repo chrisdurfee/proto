@@ -92,7 +92,12 @@ class LocalDriver extends Driver
 	public function store(UploadFile $uploadFile): bool
 	{
 		$path = $this->getFilePath($uploadFile->getNewName(), false);
-		return $uploadFile->move($path);
+		$result = $uploadFile->move($path);
+		if ($result)
+		{
+			chmod($path, 0644);
+		}
+		return $result;
 	}
 
 	/**
