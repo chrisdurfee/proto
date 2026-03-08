@@ -359,24 +359,30 @@ class Guide
 	 *
 	 * @param string $connection Database connection name.
 	 * @param array $queries List of SQL queries.
+	 * @param bool $continueOnError Whether to skip failed queries instead of halting.
 	 * @return bool Batch execution success.
 	 */
-	protected function executeBatch(string $connection, array $queries) : bool
+	protected function executeBatch(string $connection, array $queries, bool $continueOnError = false) : bool
 	{
 		if (empty($queries))
 		{
 			return false;
 		}
 
+		$result = true;
 		foreach ($queries as $query)
 		{
 			if (!$this->executeQuery($connection, $query))
 			{
-				return false;
+				if (!$continueOnError)
+				{
+					return false;
+				}
+				$result = false;
 			}
 		}
 
-		return true;
+		return $result;
 	}
 
 	/**
@@ -512,6 +518,11 @@ class Guide
 	/**
 	 * Reverts a migration.
 	 *
+	 * Disables FK checks for the duration of the rollback so that
+	 * DROP FOREIGN KEY statements on already-missing tables and
+	 * DROP TABLE statements blocked by remaining constraints do not
+	 * halt the revert process.
+	 *
 	 * @param object $migration Migration instance.
 	 * @return bool Rollback success.
 	 */
@@ -526,6 +537,11 @@ class Guide
 		}
 
 		$connection = $migration->getConnection();
-		return $this->executeBatch($connection, $queries);
+
+		$this->executeQuery($connection, 'SET FOREIGN_KEY_CHECKS=0');
+		$result = $this->executeBatch($connection, $queries, true);
+		$this->executeQuery($connection, 'SET FOREIGN_KEY_CHECKS=1');
+
+		return $result;
 	}
 }
