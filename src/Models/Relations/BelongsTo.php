@@ -76,4 +76,49 @@ class BelongsTo
 
 		return ($this->related)::get($foreignValue);
 	}
+
+	/**
+	 * Check whether the related model exists.
+	 *
+	 * @return bool
+	 */
+	public function exists(): bool
+	{
+		return $this->getResults() !== null;
+	}
+
+	/**
+	 * Check whether the related model is the same instance as the given model.
+	 *
+	 * @param object $model
+	 * @return bool
+	 */
+	public function is(object $model): bool
+	{
+		$foreignValue = $this->child->{$this->foreignKey};
+		return $foreignValue !== null && (int)$foreignValue === (int)($model->{$this->ownerKey} ?? 0);
+	}
+
+	/**
+	 * Associate the given model by setting the foreign key on the child and saving.
+	 *
+	 * @param object $model
+	 * @return bool
+	 */
+	public function associate(object $model): bool
+	{
+		$this->child->{$this->foreignKey} = $model->{$this->ownerKey};
+		return $this->child->update();
+	}
+
+	/**
+	 * Dissociate the relationship by nulling the foreign key on the child and saving.
+	 *
+	 * @return bool
+	 */
+	public function dissociate(): bool
+	{
+		$this->child->{$this->foreignKey} = null;
+		return $this->child->update();
+	}
 }

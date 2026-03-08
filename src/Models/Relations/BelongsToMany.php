@@ -120,6 +120,35 @@ class BelongsToMany
 	}
 
 	/**
+	 * Get the count of related model instances for this parent.
+	 *
+	 * @return int
+	 */
+	public function count(): int
+	{
+		$parentId = $this->getParentId();
+		$alias = ($this->related)::alias();
+
+		$query = $this->buildBaseQuery()
+			->select(["{$alias}.*", "COUNT(*) as total"]);
+
+		$joinDef = [
+			'table' => $this->pivotTable,
+			'alias' => 'p',
+			'type' => 'inner JOIN',
+			'on' => ["p.{$this->relatedPivot} = {$alias}.{$this->relatedKey}"],
+			'fields' => null
+		];
+
+		$row = $query
+			->join($joinDef)
+			->where("p.{$this->foreignPivot} = ?")
+			->first([$parentId]);
+
+		return (int)($row->total ?? 0);
+	}
+
+	/**
 	 * Get all related model instances for this parent.
 	 *
 	 * @return object[]
@@ -249,19 +278,19 @@ class BelongsToMany
 		$parentId = $this->getParentId();
 		$isSnake = $this->parent->isSnakeCase();
 
+		$whereClauses = $isSnake
+			? [
+				Strings::snakeCase($this->foreignPivot) . ' = ?',
+				Strings::snakeCase($this->relatedPivot) . ' = ?'
+			]
+			: [
+				"{$this->foreignPivot} = ?",
+				"{$this->relatedPivot} = ?"
+			];
+
 		$success = true;
 		foreach ((array)$ids as $rid)
 		{
-			$whereClauses = $isSnake
-				? [
-					Strings::snakeCase($this->foreignPivot) . ' = ?',
-					Strings::snakeCase($this->relatedPivot) . ' = ?'
-				]
-				: [
-					"{$this->foreignPivot} = ?",
-					"{$this->relatedPivot} = ?"
-				];
-
 			$params = [$parentId, $rid];
 
 			$result = $this->parent
@@ -391,22 +420,22 @@ class BelongsToMany
 		{
 			foreach ($ids as $key => $val)
 			{
-				if (is_int($key))
-				{
-					// Numeric array: [2,3,4]
-					$rows[] = [
-						$this->foreignPivot => $parentId,
-						$this->relatedPivot => $val,
-						...$extra
-					];
-				}
-				else
+				if (is_array($val))
 				{
 					// Associative: [2 => ['meta' => 'x'], 5 => ['meta' => 'y']]
 					$rows[] = [
 						$this->foreignPivot => $parentId,
 						$this->relatedPivot => $key,
 						...$val
+					];
+				}
+				else
+				{
+					// Numeric array: [2,3,4]
+					$rows[] = [
+						$this->foreignPivot => $parentId,
+						$this->relatedPivot => $val,
+						...$extra
 					];
 				}
 			}
