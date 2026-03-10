@@ -39,6 +39,29 @@ class RedisPubSubAdapter
 	}
 
 	/**
+	 * Validates a channel name before use.
+	 *
+	 * Enforces an allowlist of safe characters to prevent Redis command
+	 * injection and routing errors caused by malformed channel names.
+	 * Only alphanumeric characters, dots, colons, hyphens, and underscores
+	 * are permitted (same as the POSIX-safe Redis channel naming convention).
+	 *
+	 * @param string $channel Channel name to validate.
+	 * @throws \InvalidArgumentException When the channel name contains invalid characters.
+	 * @return void
+	 */
+	private function validateChannel(string $channel): void
+	{
+		if ($channel === '' || !preg_match('/^[a-zA-Z0-9._:\-]+$/', $channel))
+		{
+			throw new \InvalidArgumentException(
+				"Invalid Redis channel name: \"{$channel}\". "
+				. 'Only alphanumeric characters, dots, colons, hyphens, and underscores are allowed.'
+			);
+		}
+	}
+
+	/**
 	 * Publishes a message to a Redis channel.
 	 *
 	 * @param string $channel The channel name (without redis: prefix).
@@ -47,6 +70,7 @@ class RedisPubSubAdapter
 	 */
 	public function publish(string $channel, mixed $payload): int
 	{
+		$this->validateChannel($channel);
 		$message = is_string($payload) ? $payload : json_encode($payload);
 		return $this->redis->publish($channel, $message);
 	}
@@ -60,6 +84,7 @@ class RedisPubSubAdapter
 	 */
 	public function subscribe(string $channel, callable $callback): string
 	{
+		$this->validateChannel($channel);
 		$token = $this->generateToken();
 
 		if (!isset($this->subscriptions[$channel]))

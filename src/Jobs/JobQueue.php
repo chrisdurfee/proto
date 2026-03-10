@@ -103,6 +103,16 @@ class JobQueue extends Base
 	{
 		if (is_string($job))
         {
+			if (!class_exists($job))
+			{
+				throw new \InvalidArgumentException("Job class \"{$job}\" does not exist.");
+			}
+
+			if (!is_subclass_of($job, JobInterface::class))
+			{
+				throw new \InvalidArgumentException("Job class \"{$job}\" must implement JobInterface.");
+			}
+
 			$job = new $job();
 		}
 

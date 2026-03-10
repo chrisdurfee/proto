@@ -17,12 +17,14 @@ class CrossSiteProtectionMiddleware
 	/**
 	 * This will check if the method type is a safe method.
 	 *
+	 * HEAD is intentionally excluded - it must be CSRF-protected like POST/PUT/DELETE.
+	 *
 	 * @param string $method
 	 * @return bool
 	 */
 	protected function isSafeMethod(string $method): bool
 	{
-		return in_array($method, ['OPTIONS', 'HEAD', 'GET']);
+		return in_array($method, ['OPTIONS', 'GET']);
 	}
 
 	/**

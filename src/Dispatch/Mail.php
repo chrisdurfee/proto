@@ -13,11 +13,18 @@ class Mail extends Dispatch
 	/**
 	 * Sends a mail message.
 	 *
-	 * @return Response The response after attempting to send mail.
+	 * This method MUST be overridden in a concrete subclass.
+	 * Calling it directly on the base Mail class will throw a RuntimeException
+	 * to prevent silent no-op behaviour from obscuring configuration mistakes.
+	 *
+	 * @throws \RuntimeException Always — override this method in a subclass.
+	 * @return Response
 	 */
 	public function send(): Response
 	{
-		// Placeholder - actual implementation should be provided in a subclass.
-		return Response::create();
+		throw new \RuntimeException(
+			static::class . '::send() is not implemented. '
+			. 'Extend ' . self::class . ' and override send().'
+		);
 	}
 }

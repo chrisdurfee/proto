@@ -287,6 +287,29 @@ namespace Proto\Error
 		}
 
 		/**
+		 * Strips the absolute BASE_PATH prefix from a file path to avoid
+		 * disclosing the server's directory structure in error logs.
+		 *
+		 * @param string $path Absolute file path.
+		 * @return string Relative path or the original if BASE_PATH is not defined.
+		 */
+		protected static function redactPath(string $path): string
+		{
+			if (!defined('BASE_PATH'))
+			{
+				return $path;
+			}
+
+			$base = rtrim(BASE_PATH, '\/') . DIRECTORY_SEPARATOR;
+			if (str_starts_with($path, $base))
+			{
+				return substr($path, strlen($base));
+			}
+
+			return $path;
+		}
+
+		/**
 		 * Builds error data object for logging.
 		 *
 		 * @param int $errno Error number.
@@ -305,7 +328,7 @@ namespace Proto\Error
 			return (object)[
 				'errorNumber' => $errno,
 				'errorMessage' => $errstr,
-				'errorFile' => $errfile,
+				'errorFile' => static::redactPath($errfile),
 				'errorLine' => $errline,
 				'errorTrace' => '',
 				'backTrace' => JsonFormat::encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
@@ -327,9 +350,9 @@ namespace Proto\Error
 			return (object)[
 				'errorNumber' => $exception->getCode(),
 				'errorMessage' => $exception->getMessage(),
-				'errorFile' => $exception->getFile(),
+				'errorFile' => static::redactPath($exception->getFile()),
 				'errorLine' => $exception->getLine(),
-				'errorTrace' => $exception->getTraceAsString(),
+				'errorTrace' => static::redactPath($exception->getTraceAsString()),
 				'backTrace' => JsonFormat::encode(debug_backtrace()),
 				'env' => env('env'),
 				'url' => Request::fullUrlWithScheme(),

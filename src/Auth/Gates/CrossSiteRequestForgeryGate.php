@@ -101,6 +101,6 @@ class CrossSiteRequestForgeryGate extends Gate
 			return false;
 		}
 
-		return ($storedToken === $token);
+		return hash_equals($storedToken, $token);
 	}
 }

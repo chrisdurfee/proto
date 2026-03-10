@@ -49,8 +49,31 @@ class DatabaseDriver extends Base implements DriverInterface
 			'failed_table' => 'failed_jobs',
 		], $config);
 
-		$this->jobsTable = $this->config['table'];
-		$this->failedJobsTable = $this->config['failed_table'];
+		$this->jobsTable = $this->sanitizeTableName($this->config['table']);
+		$this->failedJobsTable = $this->sanitizeTableName($this->config['failed_table']);
+	}
+
+	/**
+	 * Validates and returns a safe table name (alphanumeric and underscores only).
+	 *
+	 * Table names are interpolated directly into SQL strings because the
+	 * MySQLi driver does not support parameterized identifiers, so we must
+	 * ensure the name contains only safe characters.
+	 *
+	 * @param string $name Raw table name from configuration.
+	 * @return string Validated table name.
+	 * @throws \InvalidArgumentException When the name contains unsafe characters.
+	 */
+	protected function sanitizeTableName(string $name): string
+	{
+		if (!preg_match('/^[a-zA-Z0-9_]+$/', $name))
+		{
+			throw new \InvalidArgumentException(
+				"Invalid job table name \"{$name}\". Only alphanumeric characters and underscores are allowed."
+			);
+		}
+
+		return $name;
 	}
 
 	/**

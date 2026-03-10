@@ -30,6 +30,16 @@ trait MiddlewareTrait
 	}
 
 	/**
+	 * Shared cache of instantiated middleware objects, keyed by class name.
+	 *
+	 * Reusing the same instance across requests avoids repeated construction
+	 * overhead for stateless middleware classes.
+	 *
+	 * @var array<string, object>
+	 */
+	private static array $middlewareInstances = [];
+
+	/**
 	 * Sets up a middleware callback.
 	 *
 	 * @param string $middleware Middleware class name.
@@ -45,7 +55,8 @@ trait MiddlewareTrait
 
 		return function($request) use ($middleware, $next)
 		{
-			return (new $middleware())->handle($request, $next);
+			$instance = static::$middlewareInstances[$middleware] ??= new $middleware();
+			return $instance->handle($request, $next);
 		};
 	}
 }

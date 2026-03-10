@@ -190,6 +190,13 @@ class ResourceHelper
 	 */
 	protected static function getFilteredParts(string $url): array|false
 	{
+		// Decode percent-encoded characters before sanitizing to block
+		// traversal via encoded sequences such as %2e, %2f, %5c, or null bytes.
+		$url = rawurldecode($url);
+
+		// Remove null bytes.
+		$url = str_replace("\0", '', $url);
+
 		// Prevent directory traversal by removing dot characters.
 		$url = str_replace('.', '', $url);
 

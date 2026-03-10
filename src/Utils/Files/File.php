@@ -14,7 +14,17 @@ use Proto\Utils\Util;
 class File extends Util
 {
 	/**
+	 * Maximum size of a local file that get() will read into memory (100 MB).
+	 *
+	 * @var int
+	 */
+	protected const MAX_LOCAL_FILE_SIZE = 100 * 1024 * 1024;
+
+	/**
 	 * Retrieves the contents of a file.
+	 *
+	 * Local files that exceed MAX_LOCAL_FILE_SIZE are rejected to prevent
+	 * memory exhaustion from accidentally or maliciously oversized files.
 	 *
 	 * @param string $path The file path.
 	 * @param bool $allowRemote Whether remote files are allowed.
@@ -22,9 +32,17 @@ class File extends Util
 	 */
 	public static function get(string $path, bool $allowRemote = false): string|false
 	{
-		if (!$allowRemote && !\file_exists($path))
+		if (!$allowRemote)
 		{
-			return false;
+			if (!\file_exists($path))
+			{
+				return false;
+			}
+
+			if (\filesize($path) > static::MAX_LOCAL_FILE_SIZE)
+			{
+				return false;
+			}
 		}
 
 		return \file_get_contents($path) ?: false;
@@ -59,6 +77,10 @@ class File extends Util
 	/**
 	 * Creates a directory if it doesn't exist.
 	 *
+	 * The check-then-create pattern is inherently racy in concurrent environments.
+	 * We suppress the mkdir() warning and then re-test is_dir() so that a
+	 * concurrent process that won the race still produces a successful result.
+	 *
 	 * @param string $path The directory path.
 	 * @param int $permissions The permissions to set.
 	 * @param bool $recursive Whether to create directories recursively.
@@ -66,12 +88,14 @@ class File extends Util
 	 */
 	public static function makeDir(string $path, int $permissions = 0755, bool $recursive = true): bool
 	{
-		if (!is_dir($path))
+		if (is_dir($path))
 		{
-			return mkdir($path, $permissions, $recursive);
+			return true;
 		}
 
-		return true;
+		// Suppress the warning; re-check is_dir() to handle TOCTOU races.
+		@mkdir($path, $permissions, $recursive);
+		return is_dir($path);
 	}
 
 	/**

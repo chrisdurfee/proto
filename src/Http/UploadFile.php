@@ -199,6 +199,62 @@ class UploadFile
 	}
 
 	/**
+	 * Detects known dangerous binary signatures or embedded script code.
+	 *
+	 * Reads the first 4 KB of the file and checks for:
+	 * - PHP open tags (<?php / <?=) – polyglot / code-injection attack
+	 * - ELF magic bytes – Linux/Unix executable
+	 * - Windows PE "MZ" signature – Win executable / DLL
+	 *
+	 * This is a defence-in-depth check; it should be used in addition to
+	 * MIME-type validation, not as a replacement.
+	 *
+	 * @return bool True if dangerous content is detected.
+	 */
+	public function containsDangerousContent(): bool
+	{
+		$path = $this->getFilePath();
+		if (!is_readable($path))
+		{
+			return false;
+		}
+
+		$handle = @fopen($path, 'rb');
+		if ($handle === false)
+		{
+			return false;
+		}
+
+		$header = fread($handle, 4096);
+		fclose($handle);
+
+		if ($header === false || $header === '')
+		{
+			return false;
+		}
+
+		// PHP code injection (polyglot attacks)
+		if (str_contains($header, '<?php') || str_contains($header, '<?='))
+		{
+			return true;
+		}
+
+		// Unix/Linux ELF binary header
+		if (str_starts_with($header, "\x7FELF"))
+		{
+			return true;
+		}
+
+		// Windows PE (Portable Executable) header
+		if (str_starts_with($header, "MZ"))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Retrieves the dimensions of the uploaded image.
 	 *
 	 * @return array An array containing the width and height of the image.

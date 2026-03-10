@@ -157,11 +157,20 @@ class ImageValidator
 	/**
 	 * Validates image content by attempting to get image info.
 	 *
+	 * Also rejects files that contain dangerous content signatures
+	 * (e.g. PHP tags, ELF / PE headers) regardless of MIME type,
+	 * blocking polyglot file attacks.
+	 *
 	 * @param UploadFile $file
 	 * @return bool
 	 */
 	protected static function validateImageContent(UploadFile $file): bool
 	{
+		if ($file->containsDangerousContent())
+		{
+			return false;
+		}
+
 		$imageInfo = @getimagesize($file->getFilePath());
 		return $imageInfo !== false && isset($imageInfo[0]) && isset($imageInfo[1]);
 	}

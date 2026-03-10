@@ -183,12 +183,21 @@ class FileValidator
 	/**
 	 * Validates file content by checking if actual MIME matches allowed types.
 	 *
+	 * Also rejects files that contain dangerous content signatures
+	 * (e.g. PHP tags, ELF / PE headers) regardless of MIME type,
+	 * blocking polyglot file and code-injection attacks.
+	 *
 	 * @param UploadFile $file
 	 * @param array $allowedMimes
 	 * @return bool
 	 */
 	protected static function validateFileContent(UploadFile $file, array $allowedMimes): bool
 	{
+		if ($file->containsDangerousContent())
+		{
+			return false;
+		}
+
 		// If no specific MIME types are enforced, skip content validation
 		if (empty($allowedMimes) || $allowedMimes === static::$defaultMimeTypes)
 		{

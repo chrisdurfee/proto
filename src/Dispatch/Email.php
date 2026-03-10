@@ -155,6 +155,7 @@ class Email extends Dispatch
 		{
 			// Server settings
 			$this->mailer->isSMTP();
+			$this->mailer->SMTPKeepAlive = true;
 			$this->mailer->Host = $settings->host ?? '';
 			$this->mailer->SMTPAuth = true;
 			$this->mailer->Username = $settings->username ?? '';
@@ -215,21 +216,42 @@ class Email extends Dispatch
 	/**
 	 * Adds attachments to the email.
 	 *
+	 * Only files whose resolved real path remains within the application
+	 * base path are accepted, preventing directory-traversal attacks via
+	 * crafted attachment paths (e.g. "../../etc/passwd").
+	 *
 	 * @param array|null $files List of file paths.
 	 *
 	 * @return self
 	 */
 	public function addAttachments(?array $files = null): self
 	{
-		if (is_array($files))
+		if (!is_array($files))
 		{
-			foreach ($files as $file)
+			return $this;
+		}
+
+		$allowedBasePath = realpath(BASE_PATH) . DIRECTORY_SEPARATOR;
+
+		foreach ($files as $file)
+		{
+			if (!is_string($file))
 			{
-				if (is_file($file))
-				{
-					$this->attachments[] = $file;
-				}
+				continue;
 			}
+
+			$resolved = realpath($file);
+			if ($resolved === false || !is_file($resolved))
+			{
+				continue;
+			}
+
+			if (!str_starts_with($resolved . DIRECTORY_SEPARATOR, $allowedBasePath))
+			{
+				continue;
+			}
+
+			$this->attachments[] = $resolved;
 		}
 
 		return $this;

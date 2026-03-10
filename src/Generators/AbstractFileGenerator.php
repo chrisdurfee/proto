@@ -122,7 +122,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 				$path = $basePath . '/modules/' . $module;
 				if (!empty($featurePath))
 				{
-					$path .= '/' . str_replace('\\', '/', $featurePath);
+					$path .= '/' . $this->sanitizeFeaturePath($featurePath);
 				}
 		}
 
@@ -130,6 +130,25 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 		File::checkDir($path);
 
 		return $path;
+	}
+
+	/**
+	 * Sanitizes a feature path to prevent directory traversal.
+	 *
+	 * Only alphanumeric characters, path separators, hyphens, and underscores
+	 * are allowed.  Sequences such as ".." that could escape the module root
+	 * are removed entirely.
+	 *
+	 * @param string $featurePath The raw feature path supplied by the caller.
+	 * @return string The sanitized feature path.
+	 */
+	protected function sanitizeFeaturePath(string $featurePath): string
+	{
+		// Allow only word characters, hyphens, and directory separators.
+		$safe = preg_replace('/[^a-zA-Z0-9\/\\\\\-_]/', '', $featurePath);
+
+		// Collapse any remaining adjacent slashes or backslashes.
+		return preg_replace('/[\/\\\\]{2,}/', '/', $safe) ?? $safe;
 	}
 
 	/**
@@ -151,7 +170,7 @@ abstract class AbstractFileGenerator implements FileGeneratorInterface
 				$path = realpath(BASE_PATH . '/modules') . DIRECTORY_SEPARATOR . $module;
 				if (!empty($featurePath))
 				{
-					$path .= DIRECTORY_SEPARATOR . $this->convertSlashes($featurePath);
+					$path .= DIRECTORY_SEPARATOR . $this->convertSlashes($this->sanitizeFeaturePath($featurePath));
 				}
 				return $path;
 		}
