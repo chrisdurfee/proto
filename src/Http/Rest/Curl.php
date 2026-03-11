@@ -81,6 +81,11 @@ class Curl
 	/**
 	 * Configures cURL basic options.
 	 *
+	 * SSL peer and host verification are enabled by default to prevent
+	 * man-in-the-middle attacks.  Call {@see disableSslVerification()} on
+	 * an instance if you explicitly need to bypass verification for local
+	 * or test-only environments.
+	 *
 	 * @return self
 	 */
 	protected function configureOptions(): self
@@ -88,10 +93,26 @@ class Curl
 		curl_setopt($this->curl, CURLOPT_NOBODY, false);
 		curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
-		curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
+		curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, true);
+		curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, 2);
 		curl_setopt($this->curl, CURLOPT_ENCODING, 'gzip');
 
+		return $this;
+	}
+
+	/**
+	 * Disables SSL certificate verification.
+	 *
+	 * WARNING: Only use this in local/test environments.  Disabling
+	 * verification in production exposes all outbound requests to
+	 * man-in-the-middle attacks.
+	 *
+	 * @return self
+	 */
+	public function disableSslVerification(): self
+	{
+		curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
 		return $this;
 	}
 

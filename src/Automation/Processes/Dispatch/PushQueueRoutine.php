@@ -34,7 +34,7 @@ class PushQueueRoutine extends QueueRoutine
 	protected function dispatch($item): bool
 	{
 		$item->compiledTemplate = $item->message;
-		$item->subscriptions = \unserialize($item->subscriptions);
+		$item->subscriptions = \unserialize($item->subscriptions, ['allowed_classes' => false]);
 
 		$result = Dispatcher::push($item);
 		return ($result->sent);

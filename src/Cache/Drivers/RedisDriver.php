@@ -76,6 +76,7 @@ class RedisDriver extends Driver
 		// Authenticate if a password is set
 		if (!empty($connection->password) && !$this->db->auth($connection->password))
 		{
+			$this->db->close();
 			throw new \RuntimeException('Redis authentication failed.');
 		}
 	}

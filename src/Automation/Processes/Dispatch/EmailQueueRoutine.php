@@ -34,7 +34,7 @@ class EmailQueueRoutine extends QueueRoutine
 	protected function dispatch(object $item): bool
 	{
 		$item->compiledTemplate = $item->message;
-		$item->attachments = (is_string($item->attachments))? \unserialize($item->attachments) : null;
+		$item->attachments = (is_string($item->attachments)) ? \unserialize($item->attachments, ['allowed_classes' => false]) : null;
 		$item->to = $item->recipient;
 
 		$result = Dispatcher::email($item);

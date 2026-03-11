@@ -41,6 +41,9 @@ class Redirect extends Uri
 	/**
 	 * Sends the redirect response.
 	 *
+	 * The redirect URL is sanitized to strip CR/LF characters, preventing
+	 * HTTP response-splitting attacks.
+	 *
 	 * @return never
 	 */
 	protected function sendRedirect(): never
@@ -48,7 +51,8 @@ class Redirect extends Uri
 		$response = new Response();
 		$response->render($this->responseCode);
 
-		header('Location: ' . $this->redirectUrl, true, $this->responseCode);
+		$safeUrl = str_replace(["\r", "\n", "\0"], '', $this->redirectUrl);
+		header('Location: ' . $safeUrl, true, $this->responseCode);
 		exit;
 	}
 }

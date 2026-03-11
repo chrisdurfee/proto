@@ -24,7 +24,10 @@ class Headers
 		'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, Cache-Control',
 		'Access-Control-Allow-Methods' => null, // placeholder
 		'Access-Control-Max-Age' => '86400',
-		'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0'
+		'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+		'X-Content-Type-Options' => 'nosniff',
+		'X-Frame-Options' => 'DENY',
+		'Referrer-Policy' => 'strict-origin-when-cross-origin'
 	];
 
 	/**
@@ -49,8 +52,9 @@ class Headers
 		$headers = self::$defaultHeaders;
 		$headers['Access-Control-Allow-Methods'] = self::convertMethodsToString($methods);
 
-		// Set origin from request (required for credentials)
-		$origin = Input::server('HTTP_ORIGIN');
+		// Set origin from request (required for credentials).
+		// Strip CR/LF to prevent HTTP header injection via the Origin header.
+		$origin = str_replace(["\r", "\n", "\0"], '', Input::server('HTTP_ORIGIN'));
 		if ($origin !== '')
 		{
 			$headers['Access-Control-Allow-Origin'] = $origin;

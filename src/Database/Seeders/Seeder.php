@@ -99,6 +99,23 @@ abstract class Seeder
 	}
 
 	/**
+	 * Validates that a table name contains only safe characters.
+	 *
+	 * @param string $table
+	 * @return void
+	 * @throws \InvalidArgumentException
+	 */
+	protected function validateTableName(string $table): void
+	{
+		if (!preg_match('/^[a-zA-Z0-9_]+$/', $table))
+		{
+			throw new \InvalidArgumentException(
+				"Invalid table name: \"{$table}\". Only alphanumeric characters and underscores are allowed."
+			);
+		}
+	}
+
+	/**
 	 * Truncates a table.
 	 *
 	 * @param string $table
@@ -106,6 +123,7 @@ abstract class Seeder
 	 */
 	protected function truncate(string $table): void
 	{
+		$this->validateTableName($table);
 		$db = $this->getConnection();
 		$db->execute("TRUNCATE TABLE `{$table}`");
 	}
@@ -118,6 +136,7 @@ abstract class Seeder
 	 */
 	protected function isEmpty(string $table): bool
 	{
+		$this->validateTableName($table);
 		$db = $this->getConnection();
 		$result = $db->first("SELECT COUNT(*) as count FROM `{$table}`");
 		return ($result->count ?? 0) == 0;

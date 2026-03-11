@@ -69,7 +69,7 @@ class PushQueue extends Queue
 		{
 			if (gettype($attachments) === 'string')
 			{
-				$attachments = \unserialize($attachments);
+				$attachments = \unserialize($attachments, ['allowed_classes' => false]);
 				if (empty($attachments))
 				{
 					$attachments = null;

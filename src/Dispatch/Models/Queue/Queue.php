@@ -13,14 +13,18 @@ use Proto\Models\Model;
 abstract class Queue extends Model
 {
 	/**
-	 * This will unserialize the data.
+	 * Safely unserializes data with class instantiation disabled.
+	 *
+	 * Using allowed_classes => false prevents PHP Object Injection attacks
+	 * by refusing to hydrate serialized objects.  Only scalars and arrays
+	 * will be returned.
 	 *
 	 * @param mixed $data
 	 * @return mixed
 	 */
 	protected static function unserialize(mixed $data): mixed
 	{
-		return (gettype($data) === 'string') ? \unserialize($data) : $data;
+		return (gettype($data) === 'string') ? \unserialize($data, ['allowed_classes' => false]) : $data;
 	}
 
 	/**

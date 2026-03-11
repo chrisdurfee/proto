@@ -191,7 +191,9 @@ class Request
 	}
 
 	/**
-	 * This will get the mac address.
+	 * Retrieves the MAC address of the local machine.
+	 *
+	 * Falls back to 'unknown' when exec() is unavailable or the command fails.
 	 *
 	 * @return string
 	 */
@@ -202,8 +204,17 @@ class Request
 			return static::$mac;
 		}
 
-		$mac = exec('getmac');
-		static::$mac = Sanitize::string(strtok($mac, ' '));
+		$mac = 'unknown';
+		if (function_exists('exec'))
+		{
+			$output = @exec(PHP_OS_FAMILY === 'Windows' ? 'getmac' : 'cat /sys/class/net/eth0/address 2>/dev/null', result_code: $code);
+			if ($code === 0 && !empty($output))
+			{
+				$mac = strtok($output, ' ') ?: 'unknown';
+			}
+		}
+
+		static::$mac = Sanitize::string($mac);
 		return static::$mac;
 	}
 

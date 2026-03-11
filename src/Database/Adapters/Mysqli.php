@@ -73,6 +73,7 @@ class Mysqli extends Adapter
 
 		$this->setConnection($connection);
 		$connection->set_charset('utf8mb4');
+		$this->transactionLevel = 0;
 
 		// For explicitly non-persistent connections used in testing, disable autocommit
 		// to support proper transaction isolation

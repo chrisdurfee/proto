@@ -195,12 +195,20 @@ class File extends Util
 	/**
 	 * Deletes a file.
 	 *
+	 * Uses suppressed unlink to avoid TOCTOU race conditions where the
+	 * file could be removed between the existence check and the unlink.
+	 *
 	 * @param string $fileName The file name.
 	 * @return bool True on success, false on failure.
 	 */
 	public static function delete(string $fileName): bool
 	{
-		return \file_exists($fileName) ? \unlink($fileName) : false;
+		if (@\unlink($fileName))
+		{
+			return true;
+		}
+
+		return !\file_exists($fileName);
 	}
 
 	/**
@@ -286,13 +294,13 @@ class File extends Util
 		$tmpFile = static::createTmpName();
 		static::put($tmpFile, $content);
 
-		$contentType = static::getMimeType($tmpFile);
+		$contentType = static::sanitizeHeaderValue(static::getMimeType($tmpFile));
 		if ($contentType)
 		{
 			header("Content-Type: {$contentType}");
 		}
 
-		$fileName = static::getName($path);
+		$fileName = static::sanitizeHeaderValue(static::getName($path));
 		header("Content-Disposition: attachment; filename=\"{$fileName}\"");
 		header('Content-Length: ' . strlen($content));
 
@@ -315,8 +323,8 @@ class File extends Util
 			return;
 		}
 
-		$mimeType = static::getMimeType($path);
-		$publicName = static::getName($path);
+		$mimeType = static::sanitizeHeaderValue(static::getMimeType($path));
+		$publicName = static::sanitizeHeaderValue(static::getName($path));
 
 		header("Content-Disposition: attachment; filename={$publicName};");
 		header("Content-Type: {$mimeType}");
@@ -330,5 +338,16 @@ class File extends Util
 		}
 
 		exit;
+	}
+
+	/**
+	 * Strips CR/LF characters from a value to prevent HTTP header injection.
+	 *
+	 * @param string $value The raw header value.
+	 * @return string The sanitized header value.
+	 */
+	protected static function sanitizeHeaderValue(string $value): string
+	{
+		return str_replace(["\r", "\n", "\0"], '', $value);
 	}
 }
