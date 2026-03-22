@@ -165,12 +165,22 @@ abstract class ApiController extends Controller
 	/**
 	 * Modifies the filter object based on the request.
 	 *
+	 * When $scopeToUser is enabled on the controller, automatically
+	 * injects the session user's ID into the filter.
+	 *
 	 * @param mixed $filter
 	 * @param Request $request
 	 * @return object|null
 	 */
 	protected function modifyFilter(?object $filter, Request $request): ?object
 	{
+		if (property_exists($this, 'scopeToUser') && $this->scopeToUser)
+		{
+			$field = $this->userScopeField ?? 'userId';
+			$filter ??= (object)[];
+			$filter->$field = (int)(session()->user->id ?? 0);
+		}
+
 		return $filter;
 	}
 

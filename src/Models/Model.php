@@ -115,6 +115,19 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected static array $dataTypes = [];
 
 	/**
+	 * Fields that cannot be modified after creation.
+	 *
+	 * When set, the ResourceController will automatically strip these
+	 * fields from update data to prevent accidental or malicious changes.
+	 *
+	 * Example:
+	 * protected static array $immutableFields = ['userId', 'createdAt', 'createdBy'];
+	 *
+	 * @var array
+	 */
+	protected static array $immutableFields = [];
+
+	/**
 	 * Storage connection instance.
 	 *
 	 * @var StorageProxy|null
@@ -155,6 +168,14 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * @var array
 	 */
 	protected array $relations = [];
+
+	/**
+	 * When true, the next model instantiation will skip eager join setup.
+	 * Used by withoutJoins() for transaction-safe re-fetching in tests.
+	 *
+	 * @var bool
+	 */
+	protected static bool $skipJoins = false;
 
 	/**
 	 * Model constructor.
@@ -356,10 +377,17 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Set up model joins.
 	 *
+	 * Skipped when $skipJoins is true (set by withoutJoins()).
+	 *
 	 * @return void
 	 */
 	protected function setupJoins(): void
 	{
+		if (static::$skipJoins)
+		{
+			return;
+		}
+
 		$joins = $this->getModelJoins();
 		if (\count($joins) < 1)
 		{
@@ -789,6 +817,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+	 * Get the list of immutable fields.
+	 *
+	 * @return array
+	 */
+	public static function immutableFields(): array
+	{
+		return static::$immutableFields;
+	}
+
+	/**
 	 * Get the list of model fields.
 	 *
 	 * @return array
@@ -1059,6 +1097,58 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$instance = new static();
 		$row = $instance->storage->get($id);
 		return ($row) ? new static($row) : null;
+	}
+
+	/**
+	 * Get a record by identifier without eager joins.
+	 *
+	 * Useful in tests where eager joins create separate queries
+	 * that cannot see uncommitted transaction data.
+	 *
+	 * Usage:
+	 * ```php
+	 * $model = MyModel::getWithoutJoins($id);
+	 * ```
+	 *
+	 * @param mixed $id Identifier.
+	 * @return static|null
+	 */
+	public static function getWithoutJoins(mixed $id): ?static
+	{
+		static::$skipJoins = true;
+		$instance = new static();
+		static::$skipJoins = false;
+
+		$row = $instance->storage->get($id);
+		if (!$row)
+		{
+			return null;
+		}
+
+		return new static($row);
+	}
+
+	/**
+	 * Fetch rows matching filter conditions without eager joins.
+	 *
+	 * Useful in tests where eager joins create separate queries
+	 * that cannot see uncommitted transaction data.
+	 *
+	 * Usage:
+	 * ```php
+	 * $rows = MyModel::fetchWhereWithoutJoins(['userId' => $userId]);
+	 * ```
+	 *
+	 * @param array $filter Filter conditions.
+	 * @return array
+	 */
+	public static function fetchWhereWithoutJoins(array $filter): array
+	{
+		static::$skipJoins = true;
+		$instance = new static();
+		static::$skipJoins = false;
+
+		return $instance->storage->fetchWhere($filter);
 	}
 
 	/**

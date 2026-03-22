@@ -205,6 +205,56 @@ class UserController extends ResourceController
 }
 ```
 
+### Auto-Audit & User Scoping
+
+The framework provides automatic audit field injection and user scoping:
+
+**Auto-Audit Fields**: `ResourceController` automatically injects `createdBy`, `authorId`, `userId` on add and `updatedBy`, `editedBy` on update — if those fields exist in the model's `$fields` array. **You do not need to manually set these in hooks.**
+
+**Immutable Fields**: When a model declares `$immutableFields`, the `ResourceController` automatically strips those fields from update data in `modifyUpdateItem()`. No need for manual `restrictFields()` calls.
+
+**User Scoping**: Set `$scopeToUser = true` on a controller to automatically:
+1. Inject the session user's ID into add data via `$userScopeField` (default: `'userId'`)
+2. Filter `all()` queries by the session user's ID
+
+```php
+// ✅ CORRECT - Zero boilerplate CRUD controller
+class PostController extends ResourceController
+{
+    public function __construct(protected ?string $model = Post::class)
+    {
+        parent::__construct();
+    }
+
+    // Auto-injects userId on add, auto-filters all() by userId
+    protected bool $scopeToUser = true;
+
+    // No need for modifyAddItem/modifyUpdateItem/modifyFilter hooks
+    // when all you need is audit fields+immutable protection+user scoping!
+}
+```
+
+```php
+// Custom scope field name
+class TeamPostController extends ResourceController
+{
+    protected bool $scopeToUser = true;
+    protected string $userScopeField = 'authorId'; // Use authorId instead of userId
+}
+```
+
+**Override hooks when needed**: If your controller needs additional logic beyond what auto-audit+scoping provides, override `modifyAddItem` / `modifyUpdateItem` and call `parent::modifyAddItem($data, $request)` first:
+
+```php
+protected function modifyAddItem(object &$data, Request $request): void
+{
+    parent::modifyAddItem($data, $request);
+
+    // Additional custom logic
+    $data->slug = Strings::slug($data->title);
+}
+```
+
 ### Request Handling
 Controllers receive `Proto\Http\Router\Request` objects in public methods and hook methods.
 
@@ -418,6 +468,8 @@ The router translates these into JSON with status codes.
 ### Static Methods (operate on class)
 - `create((object)$data)` - returns BOOL
 - `get($id)` - returns object|null
+- `getWithoutJoins($id)` - returns object|null without eager joins (transaction-safe)
+- `fetchWhereWithoutJoins([...])` - returns array without eager joins (transaction-safe)
 - `remove($id)` - returns bool
 - `fetchWhere([...])` - returns array
 - `getBy([...])` - returns object|null
@@ -441,6 +493,10 @@ class User extends Model
     protected static array $fields = ['id', 'name', 'email', 'status'];
     protected static array $fieldsBlacklist = ['password']; // Exclude from JSON output
     protected static string $idKeyName = 'id'; // Default, only set if different
+
+    // Fields that cannot be modified after creation
+    // ResourceController auto-strips these on update
+    protected static array $immutableFields = ['userId', 'createdAt', 'createdBy'];
 
     // Pre-persist hook - sanitize/transform before save
     protected static function augment(mixed $data = null): mixed
@@ -981,6 +1037,29 @@ class UserPolicy extends Policy
         return auth()->user->isUser($id);
     }
 }
+```
+
+### Policy Ownership Helpers
+
+The base `Proto\Auth\Policies\Policy` provides built-in helpers for common ownership checks:
+
+```php
+// getUserId() - Get the session user's ID
+$userId = $this->getUserId(); // Returns ?int
+
+// ownsResource() - Check if resource belongs to session user
+public function get(Request $request): bool
+{
+    $post = Post::get($request->getInt('id'));
+    return $this->ownsResource($post->userId ?? null);
+}
+
+// matchesRouteUser() - Check if route userId matches session user
+public function all(Request $request): bool
+{
+    return $this->matchesRouteUser($request); // Checks 'userId' param by default
+    // or: $this->matchesRouteUser($request, 'authorId'); // Custom param name
+}
 
 // Apply to controller
 class UserController extends ResourceController
@@ -1172,6 +1251,7 @@ $this->assertIsArray($value);
 - Prefer `assertDatabaseHas()` over re-fetching models when verifying data
 - Don't disable foreign key checks
 - Don't call custom static methods in tests (may create new connections)
+- Use `Model::getWithoutJoins($id)` or `Model::fetchWhereWithoutJoins([...])` to bypass eager joins that may fail in transactions
 
 **Example Transaction-Safe Pattern**:
 ```php

@@ -17,6 +17,21 @@ abstract class ResourceController extends ApiController
 	use ModelTrait;
 
 	/**
+	 * When true, automatically adds the session user's ID to the filter
+	 * in all() queries and injects userId on add operations.
+	 *
+	 * @var bool
+	 */
+	protected bool $scopeToUser = false;
+
+	/**
+	 * The field name used for user scoping.
+	 *
+	 * @var string
+	 */
+	protected string $userScopeField = 'userId';
+
+	/**
 	 * Initializes the resource controller.
 	 *
 	 * @return void
@@ -143,14 +158,25 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
-	 * Modifies a model entry.
+	 * Modifies a model entry before adding.
 	 *
+	 * When $scopeToUser is enabled, automatically injects the session
+	 * user's ID into the data using the configured $userScopeField.
+	 *
+	 * @param object &$data The data to modify.
 	 * @param Request $request The request object.
 	 * @return void
 	 */
 	protected function modifyAddItem(object &$data, Request $request): void
 	{
-
+		if ($this->scopeToUser)
+		{
+			$field = $this->userScopeField;
+			if (!isset($data->$field))
+			{
+				$data->$field = (int)(session()->user->id ?? 0);
+			}
+		}
 	}
 
 	/**
@@ -298,14 +324,27 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
-	 * Modifies a model entry.
+	 * Modifies a model entry before updating.
 	 *
+	 * Automatically restricts immutable fields defined on the model
+	 * to prevent them from being modified after creation.
+	 *
+	 * @param object &$data The data to modify.
 	 * @param Request $request The request object.
 	 * @return void
 	 */
 	protected function modifyUpdateItem(object &$data, Request $request): void
 	{
-
+		$immutableFields = $this->model::immutableFields();
+		if (count($immutableFields) > 0)
+		{
+			$id = $data->id ?? null;
+			$this->restrictFields($data, $immutableFields);
+			if ($id !== null)
+			{
+				$data->id = $id;
+			}
+		}
 	}
 
 	/**

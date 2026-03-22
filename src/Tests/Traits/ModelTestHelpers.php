@@ -174,6 +174,47 @@ trait ModelTestHelpers
 	}
 
 	/**
+	 * Safely re-fetches a model by ID, falling back to a join-free
+	 * query if the standard get() returns null.
+	 *
+	 * This is useful in tests where models with eager joins cannot
+	 * be re-fetched within the same transaction because the join
+	 * queries create separate connections.
+	 *
+	 * @param string $modelClass The model class name.
+	 * @param mixed $id The record ID.
+	 * @return Model|null
+	 */
+	protected function safeGet(string $modelClass, mixed $id): ?Model
+	{
+		$result = $modelClass::get($id);
+		if ($result !== null)
+		{
+			return $result;
+		}
+
+		return $modelClass::getWithoutJoins($id);
+	}
+
+	/**
+	 * Refreshes a model from the database without eager joins.
+	 *
+	 * Transaction-safe alternative to refreshModel() when the model
+	 * has eager joins that interfere with re-fetching.
+	 *
+	 * @param Model $model
+	 * @return Model|null
+	 */
+	protected function refreshModelWithoutJoins(Model $model): ?Model
+	{
+		$modelClass = get_class($model);
+		$idKeyName = $model::idKeyName();
+		$id = $model->{$idKeyName};
+
+		return $modelClass::getWithoutJoins($id);
+	}
+
+	/**
 	 * Cleanup created models.
 	 *
 	 * @return void
