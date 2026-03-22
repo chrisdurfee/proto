@@ -86,7 +86,7 @@ class JoinBuilder
 			return $foreignKey;
 		}
 
-		return $this->isSnakeCase ? Strings::snakeCase($foreignKey) . '_id' : $foreignKey . 'Id';
+		return $this->isSnakeCase ? Strings::camelCase($foreignKey) . 'Id' : $foreignKey . 'Id';
 	}
 
 	/**
