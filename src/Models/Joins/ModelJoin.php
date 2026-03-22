@@ -546,33 +546,11 @@ class ModelJoin
 	/**
 	 * Prepare a column name for ON clause.
 	 *
-	 * Warns in development mode if a snake_case key is provided when
-	 * the model expects camelCase field names. This catches convention
-	 * violations early — the column would still be converted correctly
-	 * but the developer should use camelCase in model code.
-	 *
 	 * @param string $column Column name.
 	 * @return string
 	 */
 	protected function prepareOnColumn(string $column): string
 	{
-		if ($this->isSnakeCase && str_contains($column, '_'))
-		{
-			$env = (function_exists('env'))
-				? env('env')
-				: ($_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'production');
-
-			if (in_array($env, ['development', 'dev', 'local', 'testing'], true))
-			{
-				trigger_error(
-					"JoinBuilder::on() received snake_case key '{$column}'. "
-					. "Use camelCase model field names instead (e.g., '"
-					. Strings::camelCase($column) . "').",
-					E_USER_NOTICE
-				);
-			}
-		}
-
 		return $this->isSnakeCase ? Strings::snakeCase($column) : $column;
 	}
 
