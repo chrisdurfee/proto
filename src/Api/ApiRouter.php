@@ -225,9 +225,17 @@ namespace Proto\Api
 
 				/**
 				 * This will load the resource which will add the
-				 * resource to the router.
+				 * resource to the router. If a route matches inside
+				 * the included file, activateRoute() calls exit and
+				 * this line is never reached. If we reach past this
+				 * point, no route matched the request.
 				 */
 				ResourceHelper::includeResource($resourcePath);
+
+				/**
+				 * No route in the included resource matched the request.
+				 */
+				self::error('The requested resource is not found.', self::HTTP_NOT_FOUND);
 			}, $middleware);
 
 			/**
