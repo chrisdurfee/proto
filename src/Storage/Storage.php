@@ -643,7 +643,7 @@ class Storage extends TableStorage
 
 		$rows = $sql->fetch($params);
 		$result = [ 'rows' => $rows ];
-		$this->setLastCursor($result, $rows);
+		$this->setLastCursor($result, $rows, $modifiers);
 
 		return (object)$result;
 	}
@@ -653,14 +653,14 @@ class Storage extends TableStorage
 	 *
 	 * @param array $result
 	 * @param array $rows
+	 * @param array|null $modifiers Query modifiers.
 	 * @return void
 	 */
-	protected function setLastCursor(array &$result, array $rows): void
+	protected function setLastCursor(array &$result, array $rows, ?array $modifiers = null): void
 	{
 		if (!empty($rows))
 		{
-			$idKey = $this->model->getIdKeyName();
-			$result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
+			$result['lastCursor'] = Limit::getLastCursor($rows, $this->model, $modifiers);
 		}
 	}
 
@@ -853,7 +853,7 @@ class Storage extends TableStorage
 
 		$rows = $sql->fetch($params);
 		$result = [ 'rows' => $rows ];
-		$this->setLastCursor($result, $rows);
+		$this->setLastCursor($result, $rows, $modifiers);
 
 		return (object)$result;
 	}

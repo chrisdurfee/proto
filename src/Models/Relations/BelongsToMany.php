@@ -228,8 +228,7 @@ class BelongsToMany
 		$result = [ 'rows' => $rows ];
 		if (!empty($rows))
 		{
-			$idKey = $instance->getIdKeyName();
-			$result['lastCursor'] = Limit::getLastCursor($rows, $idKey);
+			$result['lastCursor'] = Limit::getLastCursor($rows, $instance, $modifiers);
 		}
 		return (object)$result;
 	}
