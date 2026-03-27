@@ -123,7 +123,8 @@ class Validator
 	protected function checkValue(string $key, string $details): bool
 	{
 		$value = $this->getValue($key);
-		if ($value === null)
+		$isEmpty = ($value === null || $value === '');
+		if ($isEmpty)
 		{
 			if ($this->isRequired($details))
 			{
