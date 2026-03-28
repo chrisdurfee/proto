@@ -99,12 +99,16 @@ class Sanitize extends Filter
 	/**
 	 * Sanitizes a string.
 	 *
+	 * Uses FILTER_SANITIZE_FULL_SPECIAL_CHARS (equivalent to htmlspecialchars with ENT_QUOTES)
+	 * to encode HTML special characters (<, >, &, ", ') without encoding whitespace control
+	 * characters such as newlines, carriage returns, and tabs.
+	 *
 	 * @param string|null $string
 	 * @return string|null
 	 */
 	public static function string(?string $string): ?string
 	{
-		return self::filter($string, FILTER_SANITIZE_SPECIAL_CHARS);
+		return self::filter($string, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 	}
 
 	/**
