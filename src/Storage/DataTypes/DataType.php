@@ -38,6 +38,18 @@ abstract class DataType
 	}
 
 	/**
+	 * Convert a raw database value back to its PHP representation.
+	 * Override in subclasses to decode complex types (e.g., JSON strings to arrays).
+	 *
+	 * @param mixed $value The raw value from the database
+	 * @return mixed The decoded PHP value
+	 */
+	public function fromDb(mixed $value): mixed
+	{
+		return $value;
+	}
+
+	/**
 	 * Determine if this value should use the custom type handler.
 	 *
 	 * @param mixed $value

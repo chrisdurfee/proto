@@ -787,7 +787,9 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function getData(): object
 	{
-		return static::format($this->data->getData());
+		$data = $this->data->getData();
+		$data = static::applyDataTypeDecoding($data);
+		return static::format($data);
 	}
 
 	/**
@@ -881,6 +883,34 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public function getDataTypes(): array
 	{
 		return static::$dataTypes;
+	}
+
+	/**
+	 * Apply data type decoding for all declared $dataTypes fields.
+	 * Automatically called before format() when reading data.
+	 *
+	 * @param object|null $data Data object.
+	 * @return object|null
+	 */
+	protected static function applyDataTypeDecoding(?object $data): ?object
+	{
+		if (!$data || empty(static::$dataTypes))
+		{
+			return $data;
+		}
+
+		foreach (static::$dataTypes as $field => $type)
+		{
+			if (!isset($data->$field))
+			{
+				continue;
+			}
+
+			$handler = is_string($type) ? new $type() : $type;
+			$data->$field = $handler->fromDb($data->$field);
+		}
+
+		return $data;
 	}
 
 	/**
@@ -1312,6 +1342,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$rows = array_map([$this, 'augment'], $rows);
 		$rows = $this->data->convertRows($rows);
+		$rows = array_map([$this, 'applyDataTypeDecoding'], $rows);
 		return array_map([$this, 'format'], $rows);
 	}
 

@@ -30,4 +30,20 @@ class JsonType extends DataType
 
 		return [json_encode($value)];
 	}
+
+	/**
+	 * Decode a JSON string from the database into a PHP array.
+	 *
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	public function fromDb(mixed $value): mixed
+	{
+		if (!is_string($value))
+		{
+			return $value;
+		}
+
+		return json_decode($value, true);
+	}
 }
