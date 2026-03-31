@@ -440,6 +440,9 @@ abstract class ResourceController extends ApiController
 	/**
 	 * Retrieves a model by ID.
 	 *
+	 * Calls enrichRow() after fetching so subclasses can append flags or
+	 * related data without overriding the full get() method.
+	 *
 	 * @param Request $request The request object.
 	 * @return object The response.
 	 */
@@ -451,24 +454,62 @@ abstract class ResourceController extends ApiController
 			return $this->error('The ID is required to get the item.');
 		}
 
-		return $this->response(['row' => $this->model::get($id)]);
+		$model = $this->model::get($id);
+		if ($model === null)
+		{
+			return $this->response(['row' => null]);
+		}
+
+		$row = $model->getData();
+		$this->enrichRow($row, $request);
+		return $this->response(['row' => $row]);
 	}
+
+	/**
+	 * Hook called after a single row is fetched in get().
+	 *
+	 * Override to append computed properties, user-specific flags, or
+	 * related data without needing to duplicate the full get() logic.
+	 *
+	 * @param object $row The formatted row data (plain object).
+	 * @param Request $request The request object.
+	 * @return void
+	 */
+	protected function enrichRow(object &$row, Request $request): void {}
 
 	/**
 	 * Retrieve all records.
 	 *
-	 * @param array|object|null $filter Filter criteria.
-	 * @param int|null $offset Offset.
-	 * @param int|null $limit Count.
-	 * @param array|null $modifiers Modifiers.
+	 * Calls enrichRows() after fetching so subclasses can append flags or
+	 * related data in a single batch without overriding the full all() method.
+	 *
+	 * @param Request $request The request object.
 	 * @return object
 	 */
 	public function all(Request $request): object
 	{
 		$inputs = $this->getAllInputs($request);
 		$result = $this->model::all($inputs->filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
+		if ($result !== false && !empty($result->rows))
+		{
+			$this->enrichRows($result->rows, $request);
+		}
+
 		return $this->response($result ? (array) $result : false);
 	}
+
+	/**
+	 * Hook called after multiple rows are fetched in all().
+	 *
+	 * Override to batch-append computed properties or related data.
+	 * Always use a single IN-query per related table rather than per-row
+	 * lookups to avoid N+1 queries.
+	 *
+	 * @param array $rows The formatted rows (plain objects).
+	 * @param Request $request The request object.
+	 * @return void
+	 */
+	protected function enrichRows(array &$rows, Request $request): void {}
 
 	/**
 	 * Searches for models.
