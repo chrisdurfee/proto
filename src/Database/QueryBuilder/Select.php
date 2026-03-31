@@ -202,14 +202,20 @@ class Select extends FieldQuery
 		$groupBy = $this->getPropertyString($this->groupBy, ' GROUP BY ', ', ');
 		$having = $this->getPropertyString($this->having, ' HAVING ', ' AND ');
 
-		return 'SELECT ' . $this->distinct . $fields .
+		$base = 'SELECT ' . $this->distinct . $fields .
 			' FROM ' . $from . $this->index .
 			' ' . $joins .
 			$where .
 			$groupBy .
-			$having .
-			$orderBy .
-			' ' . $unions .
-			' ' . $this->limit;
+			$having;
+
+		// When unions are present, ORDER BY and LIMIT must follow all UNION clauses
+		// so they apply to the complete result set rather than only the first SELECT.
+		if (!empty($this->unions))
+		{
+			return $base . ' ' . $unions . $orderBy . ' ' . $this->limit;
+		}
+
+		return $base . $orderBy . ' ' . $this->limit;
 	}
 }
