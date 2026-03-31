@@ -1431,7 +1431,132 @@ Vault::disk('s3')->delete('/tmp/file.txt');
 - External deps in `composer.json`: AWS SDK, Twilio, PHPMailer, Web Push, JWT, OpenAI. Higher-level wrappers live under `src/Dispatch/*`, `src/Integrations/*`.
 - Database access is abstracted in `src/Database/*` and `src/Storage/*` with query builders and policies.
 
-## 17. Anti-Patterns (What NOT to Do)
+## 17. Batch Enrichment Pattern
+
+Use this pattern when a controller needs to append user-specific flags (e.g., `isFavorited`, `isBookmarked`) or computed properties sourced from related tables, where:
+
+- Not all queries need the extra data (so eager joins in `joins()` are wasteful)
+- A per-row lookup inside `all()` would create N+1 queries
+
+The solution is always **3 queries total** regardless of result size: one main query + one batch `IN` query per related table, merged in PHP.
+
+### Static Batch Fetch Methods on Related Models
+
+Add a static method to each related model that accepts an array of parent IDs and returns the matching related IDs in one query:
+
+```php
+// In UserFavoriteVehicle model
+public static function getIdsForUser(int $userId, array $vehicleIds): array
+{
+    if (empty($vehicleIds))
+    {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($vehicleIds), '?'));
+    $results = static::fetchWhere([
+        ['userId', $userId],
+        ["vehicleId IN ({$placeholders})", $vehicleIds]
+    ]);
+    return array_column($results, 'vehicleId');
+}
+
+// In Bookmark model
+public static function getIdsForUser(int $userId, string $itemType, array $itemIds): array
+{
+    if (empty($itemIds))
+    {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+    $results = static::fetchWhere([
+        ['userId', $userId],
+        ['itemType', $itemType],
+        ["itemId IN ({$placeholders})", $itemIds]
+    ]);
+    return array_column($results, 'itemId');
+}
+```
+
+### Enrichment Method on the Primary Model
+
+Add a static `enrichWithUserData` method that sets default values first (covering the unauthenticated case), then overwrites with real values from the batch lookups:
+
+```php
+// In Vehicle model
+use Modules\User\Models\UserFavoriteVehicle;
+use Modules\Content\Models\Bookmark;
+
+public static function enrichWithUserData(array $rows, ?int $userId): void
+{
+    foreach ($rows as $row)
+    {
+        $row->isFavorited = false;
+        $row->isBookmarked = false;
+    }
+
+    if (!$userId || empty($rows))
+    {
+        return;
+    }
+
+    $ids = array_map(fn($row) => (int)$row->id, $rows);
+    $favIds = array_flip(UserFavoriteVehicle::getIdsForUser($userId, $ids));
+    $bookmarkIds = array_flip(Bookmark::getIdsForUser($userId, 'vehicle', $ids));
+
+    foreach ($rows as $row)
+    {
+        $row->isFavorited = isset($favIds[$row->id]);
+        $row->isBookmarked = isset($bookmarkIds[$row->id]);
+    }
+}
+```
+
+### Controller Override
+
+Override `get()` and `all()` to call the enrichment after delegating to the parent:
+
+```php
+public function get(Request $request): object
+{
+    $result = parent::get($request);
+    $row = $result->row?->getData();
+    if (!$row)
+    {
+        return $result;
+    }
+
+    Vehicle::enrichWithUserData([$row], session()->user->id);
+    $result->row = $row;
+    return $result;
+}
+
+public function all(Request $request): object
+{
+    $result = parent::all($request);
+    $rows = array_map(fn($item) => $item->getData(), $result->rows ?? []);
+    if (empty($rows))
+    {
+        return $result;
+    }
+
+    Vehicle::enrichWithUserData($rows, session()->user->id);
+    $result->rows = $rows;
+    return $result;
+}
+```
+
+**Result**: Always 3 queries — 1 main + 1 per related table — whether the list contains 1 item or 10,000.
+
+### CRITICAL Rules
+- **NEVER** call related model lookups per-row inside an `all()` loop — this is N+1 and will not scale
+- **ALWAYS** batch-fetch related data with `IN` clause queries and merge in PHP
+- Use `array_flip()` + `isset()` for O(1) set-membership checks instead of `in_array()`
+- Set all flags to their default values first so the unauthenticated (null user) path requires no extra branching
+- The enrichment method belongs on the **model**, not in the controller — controllers only call it
+
+## 18. Anti-Patterns (What NOT to Do)
 
 | ❌ WRONG | ✅ CORRECT |
 |---------|-----------|
@@ -1453,8 +1578,9 @@ Vault::disk('s3')->delete('/tmp/file.txt');
 | `$m = new Model(); $m->x = 1; $m->add();` | `$m = new Model((object)['x' => 1]); $m->add();` |
 | `$_FILES['upload']` in controller | `$request->file('upload')` |
 | `new UploadFile($_FILES['upload'])` | `$request->file('upload')` or `$request->validateFile('upload', [...])` |
+| Per-row related lookups in `all()` loop | Use `enrichWithUserData()` with batch `IN` queries |
 
-## 18. Configuration & Gotchas
+## 19. Configuration & Gotchas
 
 - `common/Config/.env` is JSON (not dotenv). It must at least define `domain` (production/development) and optional `modules`/`services` arrays.
 - In `dev` env, `ControllerHelper` skips policy/caching proxies for easier development. Production enables them.
