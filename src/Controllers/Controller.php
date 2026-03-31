@@ -51,8 +51,8 @@ abstract class Controller extends Base implements ControllerInterface
 	/**
 	 * Generates a success response.
 	 *
-	 * Objects are automatically wrapped under a 'row' key so that 'success'
-	 * is always a top-level sibling rather than merged into domain data.
+	 * Data properties are spread directly onto the response envelope and
+	 * 'success: true' is always included at the top level.
 	 *
 	 * @param object|array|null $data The response data.
 	 * @param int $statusCode The HTTP status code.
@@ -65,12 +65,7 @@ abstract class Controller extends Base implements ControllerInterface
 			$data = [];
 		}
 
-		if (is_object($data))
-		{
-			$data = ['row' => $data];
-		}
-
-		$data = (object) $data;
+		$data = is_array($data) ? (object) $data : $data;
 		if ($statusCode)
 		{
 			$data->code = $statusCode;
@@ -83,10 +78,8 @@ abstract class Controller extends Base implements ControllerInterface
 	/**
 	 * Generates a response based on the provided arguments.
 	 *
-	 * Objects are automatically wrapped under a 'row' key so that 'success'
-	 * is always a top-level sibling rather than merged into domain data.
-	 * Pass an associative array (e.g. ['rows' => $data]) to spread multiple
-	 * keys directly onto the response envelope.
+	 * Data properties (object or array) are spread directly onto the response
+	 * envelope and 'success: true' is always included at the top level.
 	 *
 	 * @param mixed ...$args Response data and optional error message.
 	 * @return object The formatted response object.
@@ -97,11 +90,6 @@ abstract class Controller extends Base implements ControllerInterface
 		if (!$result)
 		{
 			return $this->error($args[1] ?? '');
-		}
-
-		if (is_object($result))
-		{
-			$result = ['row' => $result];
 		}
 
 		$response = new Response();
