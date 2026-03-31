@@ -173,7 +173,7 @@ abstract class ModelController extends Controller
 	public function all(mixed $filter = null, ?int $offset = null, ?int $count = null, ?array $modifiers = null): object
 	{
 		$result = $this->model::all($filter, $offset, $count, $modifiers);
-		return $this->response($result);
+		return $this->response($result ? (array) $result : false);
 	}
 
 	/**
@@ -194,6 +194,7 @@ abstract class ModelController extends Controller
 	 */
 	public function count(): object
 	{
-		return $this->response($this->model::count());
+		$count = $this->model::count();
+		return $this->response($count ? (array) $count : false);
 	}
 }

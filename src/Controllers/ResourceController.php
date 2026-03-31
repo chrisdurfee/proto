@@ -467,7 +467,7 @@ abstract class ResourceController extends ApiController
 	{
 		$inputs = $this->getAllInputs($request);
 		$result = $this->model::all($inputs->filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
-		return $this->response($result);
+		return $this->response($result ? (array) $result : false);
 	}
 
 	/**
@@ -495,6 +495,7 @@ abstract class ResourceController extends ApiController
 	 */
 	public function count(Request $request): object
 	{
-		return $this->response($this->model::count());
+		$count = $this->model::count();
+		return $this->response($count ? (array) $count : false);
 	}
 }

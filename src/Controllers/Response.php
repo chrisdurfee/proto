@@ -98,11 +98,23 @@ class Response
 	/**
 	 * Returns the structured response object.
 	 *
+	 * Always creates a fresh container so the original data object is
+	 * never mutated and `success` is always a peer of the data keys.
+	 *
 	 * @return object The formatted response.
 	 */
 	public function format(): object
 	{
-		$response = $this->data ?? (object) [];
+		$response = (object) [];
+
+		if ($this->data !== null)
+		{
+			foreach ((array) $this->data as $key => $value)
+			{
+				$response->$key = $value;
+			}
+		}
+
 		$response->success = $this->success;
 		if (!$this->success)
 		{
