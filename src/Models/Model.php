@@ -418,7 +418,8 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			static::$fields,
 			$this->compiledJoins,
 			static::$fieldsBlacklist,
-			static::$isSnakeCase
+			static::$isSnakeCase,
+			array_keys(static::$dataTypes)
 		);
 	}
 

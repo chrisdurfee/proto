@@ -27,6 +27,9 @@ class Data
 	/** @var array Field blacklist. */
 	protected array $fieldBlacklist = [];
 
+	/** @var array Fields whose array values should be passed through map() unchanged (e.g. custom dataType fields). */
+	protected array $arrayAllowedFields = [];
+
 	/** @var AbstractMapper Mapper instance. */
 	protected AbstractMapper $mapper;
 
@@ -40,15 +43,18 @@ class Data
 	 * @param array $joins Join definitions.
 	 * @param array $fieldBlacklist Fields to exclude.
 	 * @param bool $snakeCase If true, mapping will convert keys to snake_case.
+	 * @param array $arrayAllowedFields Fields with custom data type handlers that may hold array values.
 	 */
 	public function __construct(
 		array $fields,
 		array $joins = [],
 		array $fieldBlacklist = [],
-		bool $snakeCase = false
+		bool $snakeCase = false,
+		array $arrayAllowedFields = []
 	)
 	{
 		$this->fieldBlacklist = $fieldBlacklist;
+		$this->arrayAllowedFields = $arrayAllowedFields;
 
 		$mapperType = ($snakeCase) ? 'snake' : 'default';
 		$this->mapper = Mapper::factory($mapperType);
@@ -356,7 +362,8 @@ class Data
 		$out = [];
 		foreach ($this->data as $key => $val)
 		{
-			if (is_null($val) || in_array($key, $this->joinFields, true) || is_array($val))
+			$isArray = is_array($val);
+			if (is_null($val) || in_array($key, $this->joinFields, true) || ($isArray && !in_array($key, $this->arrayAllowedFields, true)))
 			{
 				continue;
 			}
