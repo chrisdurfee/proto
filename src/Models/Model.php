@@ -1178,7 +1178,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$instance = new static();
 		static::$skipJoins = false;
 
-		return $instance->storage->fetchWhere($filter);
+		return $instance->storage->fetchWhere($filter) ?? [];
 	}
 
 	/**
