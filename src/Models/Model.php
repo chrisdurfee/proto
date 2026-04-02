@@ -446,11 +446,26 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Get the table alias.
 	 *
+	 * If no alias is explicitly set, generates one from the table name
+	 * by taking the first letter of each underscore-separated segment.
+	 * e.g., 'user_vehicle_preferences' → 'uvp'
+	 *
 	 * @return string|null
 	 */
 	public static function alias(): ?string
 	{
-		return static::$alias;
+		if (static::$alias !== null)
+		{
+			return static::$alias;
+		}
+
+		if (static::$tableName === null)
+		{
+			return null;
+		}
+
+		$parts = explode('_', static::$tableName);
+		return implode('', array_map(fn(string $p): string => $p[0] ?? '', $parts));
 	}
 
 	/**
@@ -460,7 +475,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function getAlias(): ?string
 	{
-		return static::$alias;
+		return static::alias();
 	}
 
 	/**
@@ -1049,6 +1064,65 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$model = new static($data);
 		return $model->storage->update();
+	}
+
+	/**
+	 * Atomically increment a counter field on a record.
+	 *
+	 * Uses SQL `SET field = field + ?` to avoid race conditions
+	 * from fetch-modify-write patterns.
+	 *
+	 * @param mixed $id The record's primary key value.
+	 * @param string $field The field to increment (camelCase model field).
+	 * @param int $amount The amount to increment by (default 1).
+	 * @return bool
+	 */
+	public static function atomicIncrement(mixed $id, string $field, int $amount = 1): bool
+	{
+		$snakeField = (static::$isSnakeCase)
+			? Strings::snakeCase($field)
+			: $field;
+		$idKey = (static::$isSnakeCase)
+			? Strings::snakeCase(static::$idKeyName)
+			: static::$idKeyName;
+
+		return static::builder()
+			->update()
+			->setRaw("`{$snakeField}` = `{$snakeField}` + ?")
+			->where("{$idKey} = ?")
+			->execute([$amount, $id]);
+	}
+
+	/**
+	 * Atomically decrement a counter field on a record.
+	 *
+	 * Uses SQL `SET field = GREATEST(field - ?, 0)` by default
+	 * to prevent negative values.
+	 *
+	 * @param mixed $id The record's primary key value.
+	 * @param string $field The field to decrement (camelCase model field).
+	 * @param int $amount The amount to decrement by (default 1).
+	 * @param bool $floor Whether to floor at zero (default true).
+	 * @return bool
+	 */
+	public static function atomicDecrement(mixed $id, string $field, int $amount = 1, bool $floor = true): bool
+	{
+		$snakeField = (static::$isSnakeCase)
+			? Strings::snakeCase($field)
+			: $field;
+		$idKey = (static::$isSnakeCase)
+			? Strings::snakeCase(static::$idKeyName)
+			: static::$idKeyName;
+
+		$sql = $floor
+			? "`{$snakeField}` = GREATEST(`{$snakeField}` - ?, 0)"
+			: "`{$snakeField}` = `{$snakeField}` - ?";
+
+		return static::builder()
+			->update()
+			->setRaw($sql)
+			->where("{$idKey} = ?")
+			->execute([$amount, $id]);
 	}
 
 	/**

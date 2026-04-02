@@ -53,6 +53,32 @@ class Router
 	protected array $routes = [];
 
 	/**
+	 * Default middleware applied to all mutation routes (POST, PUT, PATCH, DELETE).
+	 *
+	 * Set via defaultMutationMiddleware() to auto-apply CSRF protection or
+	 * other middleware to all state-changing routes without manual declaration.
+	 *
+	 * @var array<string>
+	 */
+	protected array $defaultMutationMiddleware = [];
+
+	/**
+	 * When true, the next registered route skips default mutation middleware.
+	 *
+	 * Reset after each route registration via withoutMutationMiddleware().
+	 *
+	 * @var bool
+	 */
+	protected bool $skipMutationMiddleware = false;
+
+	/**
+	 * HTTP methods considered mutations (non-safe).
+	 *
+	 * @var array<string>
+	 */
+	protected const MUTATION_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
+	/**
 	 * Allowed HTTP methods.
 	 *
 	 * @var array<string>
@@ -150,6 +176,81 @@ class Router
 	protected function isValidMethod(string $method): bool
 	{
 		return in_array($method, self::METHODS, true);
+	}
+
+	/**
+	 * Sets default middleware that auto-applies to all mutation routes
+	 * (POST, PUT, PATCH, DELETE).
+	 *
+	 * Routes registered after this call will automatically include these
+	 * middleware unless opted out via withoutMutationMiddleware().
+	 *
+	 * @param array<string> $middleware Array of middleware class names.
+	 * @return self
+	 */
+	public function defaultMutationMiddleware(array $middleware): self
+	{
+		$this->defaultMutationMiddleware = $middleware;
+		return $this;
+	}
+
+	/**
+	 * Opts the next registered route out of default mutation middleware.
+	 *
+	 * Useful for webhooks, OAuth callbacks, or other endpoints that
+	 * should not have CSRF protection.
+	 *
+	 * Usage:
+	 * ```php
+	 * router()->withoutMutationMiddleware()->post('webhook', [WebhookController::class, 'handle']);
+	 * ```
+	 *
+	 * @return self
+	 */
+	public function withoutMutationMiddleware(): self
+	{
+		$this->skipMutationMiddleware = true;
+		return $this;
+	}
+
+	/**
+	 * Determines if a route method is a mutation (non-safe) method.
+	 *
+	 * The 'ALL' method is considered a mutation since it includes POST/PUT/etc.
+	 *
+	 * @param string $method The HTTP method.
+	 * @return bool
+	 */
+	protected function isMutationMethod(string $method): bool
+	{
+		return in_array($method, self::MUTATION_METHODS, true) || $method === 'ALL';
+	}
+
+	/**
+	 * Gets the effective middleware for a route, including auto-applied
+	 * mutation middleware when applicable.
+	 *
+	 * @param string $method The HTTP method for the route.
+	 * @param array|null $middleware Explicitly provided middleware.
+	 * @return array|null The merged middleware array, or null if none.
+	 */
+	protected function getEffectiveMiddleware(string $method, ?array $middleware): ?array
+	{
+		if ($this->skipMutationMiddleware)
+		{
+			$this->skipMutationMiddleware = false;
+			return $middleware;
+		}
+
+		if (empty($this->defaultMutationMiddleware) || !$this->isMutationMethod($method))
+		{
+			return $middleware;
+		}
+
+		$defaults = $this->defaultMutationMiddleware;
+		return $middleware !== null
+			? array_merge($defaults, $middleware)
+			: $defaults;
 	}
 
 	/**
@@ -252,6 +353,11 @@ class Router
 		 * This will update any array callbacks.
 		 */
 		$callback = $this->checkArrayCallback($callback);
+
+		/**
+		 * Merge default mutation middleware if applicable.
+		 */
+		$middleware = $this->getEffectiveMiddleware($method, $middleware);
 
 		$uri = $this->getUri($uri);
 		$route = new Route($method, $uri, $callback);

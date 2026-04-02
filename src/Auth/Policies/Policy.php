@@ -26,8 +26,9 @@ abstract class Policy
 	 * The type identifier for this policy.
 	 *
 	 * Concrete policies should set this to enable type-based dispatch.
-	 * If null on a non-abstract concrete policy, a warning is emitted
-	 * in development mode.
+	 * If null on a non-abstract concrete policy, the type is auto-inferred
+	 * from the class name (e.g., EventPolicy → 'event',
+	 * GroupPostPolicy → 'groupPost').
 	 *
 	 * @var string|null
 	 */
@@ -41,7 +42,35 @@ abstract class Policy
 	 */
 	public function __construct(protected ?ApiController $controller = null)
 	{
+		$this->type = $this->resolveType();
 		$this->validatePolicy();
+	}
+
+	/**
+	 * Resolves the policy type.
+	 *
+	 * If $type is explicitly set, uses that. Otherwise, auto-infers
+	 * from the class name by stripping 'Policy' and lowercasing the
+	 * first character (e.g., EventPolicy → 'event', GroupPostPolicy → 'groupPost').
+	 *
+	 * @return string|null
+	 */
+	protected function resolveType(): ?string
+	{
+		if ($this->type !== null)
+		{
+			return $this->type;
+		}
+
+		$ref = new \ReflectionClass($this);
+		if ($ref->isAbstract())
+		{
+			return null;
+		}
+
+		$class = $ref->getShortName();
+		$type = str_replace('Policy', '', $class);
+		return lcfirst($type);
 	}
 
 	/**
@@ -78,28 +107,28 @@ abstract class Policy
 	}
 
 	/**
-	 * Warns if a concrete (non-abstract) policy is missing the $type property.
+	 * Validates that the policy $type follows camelCase convention.
+	 *
+	 * Auto-inferred types always follow convention. This catches
+	 * manually set types that use kebab-case, snake_case, or dot notation.
 	 *
 	 * @return void
 	 */
 	protected function validateTypeProperty(): void
 	{
-		if ($this->type !== null)
+		if ($this->type === null)
 		{
 			return;
 		}
 
-		$ref = new \ReflectionClass($this);
-		if ($ref->isAbstract())
+		if (preg_match('/[-._]/', $this->type))
 		{
-			return;
+			trigger_error(
+				'Policy ' . static::class . ' has $type "' . $this->type . '" which uses non-camelCase characters. '
+				. 'Policy types should use camelCase convention (e.g., "groupPost" not "group-post").',
+				E_USER_NOTICE
+			);
 		}
-
-		trigger_error(
-			'Policy ' . static::class . ' is missing the $type property. '
-			. 'Set protected ?string $type to enable type-based dispatch.',
-			E_USER_NOTICE
-		);
 	}
 
 	/**
