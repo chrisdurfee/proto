@@ -438,6 +438,36 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
+	 * Validate and store an uploaded file, returning the new filename.
+	 *
+	 * @param Request $request The request object.
+	 * @param string $fieldName The form field name for the file input.
+	 * @param string $disk The storage disk (e.g., 'local', 's3').
+	 * @param string $directory The subdirectory within the disk.
+	 * @param string $rules Validation rules (e.g., 'image:2048|mimes:jpeg,png').
+	 * @return string|null New filename, or null if no file uploaded.
+	 */
+	protected function handleFileUpload(
+		Request $request,
+		string $fieldName,
+		string $disk = 'local',
+		string $directory = '',
+		string $rules = 'image:2048'
+	): ?string
+	{
+		$file = $request->file($fieldName);
+		if (!$file)
+		{
+			return null;
+		}
+
+		$this->validateRules([$fieldName => $file], [$fieldName => $rules]);
+		$file->store($disk, $directory);
+
+		return $file->getNewName();
+	}
+
+	/**
 	 * Retrieves a model by ID.
 	 *
 	 * Calls enrichRow() after fetching so subclasses can append flags or
