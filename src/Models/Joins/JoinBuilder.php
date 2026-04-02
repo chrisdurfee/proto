@@ -323,7 +323,10 @@ class JoinBuilder
 	}
 
 	/**
-	 * Alias for one() - defines an inverse relationship (BelongsTo).
+	 * Defines an inverse (belongsTo) relationship join.
+	 *
+	 * The FK lives on this model's table pointing to the related model's PK.
+	 * e.g. posts.user_id = users.id  →  on(['userId', 'id'])
 	 *
 	 * @param string $modelName The related model class name.
 	 * @param string $type Join type (default is 'left').
@@ -338,7 +341,18 @@ class JoinBuilder
 		?string $alias = null
 	): ModelJoin
 	{
-		return $this->one($modelName, $type, $fields, $alias);
+		$join = $this->createModelJoin($modelName, $type, false, $alias);
+
+		// Override the ON: FK is on this table pointing to the related model's PK
+		$relatedFk = $this->createForeignKeyId($modelName::getIdClassName());
+		$join->on([$relatedFk, 'id']);
+
+		if (count($fields) > 0)
+		{
+			$join->fields(...$fields);
+		}
+
+		return $join;
 	}
 
 	/**

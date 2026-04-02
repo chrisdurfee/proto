@@ -448,7 +448,10 @@ class ModelJoin
 	}
 
 	/**
-	 * Alias for one() - defines an inverse relationship (BelongsTo).
+	 * Defines an inverse (belongsTo) relationship join originating from this join's context.
+	 *
+	 * The FK lives on the chained table pointing to the related model's PK.
+	 * e.g. comments.user_id = users.id  →  on(['userId', 'id'])
 	 *
 	 * @param string $modelClass The related model class.
 	 * @param string $type Join type.
@@ -457,7 +460,27 @@ class ModelJoin
 	 */
 	public function belongsTo(string $modelClass, string $type = 'left', array $fields = []): ModelJoin
 	{
-		return $this->one($modelClass, $type, $fields);
+		if ($this->multiple && $this->multipleJoin !== null)
+		{
+			return $this->multipleJoin->belongsTo($modelClass, $type, $fields);
+		}
+
+		$builder = $this->join($modelClass);
+		$modelJoin = $this->createChildModelJoin($builder, $modelClass, $type);
+
+		// Override the ON: FK is on the chained table pointing to the related model's PK
+		$relatedFk = $builder->getForeignKeyId();
+		$modelJoin->on([$relatedFk, 'id']);
+
+		$this->multipleJoin = $modelJoin;
+		$modelJoin->references($this->tableName, $this->alias);
+
+		if (count($fields))
+		{
+			$modelJoin->fields(...$fields);
+		}
+
+		return $modelJoin;
 	}
 
 	/**
