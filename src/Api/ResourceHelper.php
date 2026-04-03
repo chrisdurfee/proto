@@ -50,12 +50,14 @@ class ResourceHelper
 	/**
 	 * Resolves the resource path using nested feature module resolution.
 	 *
-	 * Resolution order:
-	 * 1. Nested feature: modules/{Seg1}/{Seg2}/Api/{Seg3...}/api.php
-	 * 2. Nested feature with Main: modules/{Seg1}/{Seg2}/Main/Api/{Seg3...}/api.php
-	 * 3. Flat module: modules/{Seg1}/Api/{Seg2...}/api.php
-	 * 4. Main folder fallback: modules/{Seg1}/Main/Api/{Seg2...}/api.php
-	 * 5. Recursive fallback: try parent paths
+	 * Tries all possible split points from deepest nesting to shallowest.
+	 * For parts [A, B, C], resolution order per split:
+	 *
+	 * Split at 3: modules/A/B/C/Api/api.php, modules/A/B/C/Main/Api/api.php
+	 * Split at 2: modules/A/B/Api/C/api.php, modules/A/B/Main/Api/C/api.php
+	 * Split at 1: modules/A/Api/B/C/api.php, modules/A/Main/Api/B/C/api.php
+	 *
+	 * Then recursive fallback with fewer segments.
 	 *
 	 * @param array $parts The URL path segments (PascalCased).
 	 * @return string|null The file path if found, or null otherwise.
@@ -67,60 +69,35 @@ class ResourceHelper
 			return null;
 		}
 
-		$moduleName = $parts[0];
+		$count = count($parts);
 
-		// Try nested feature resolution first (2+ segments)
-		if (count($parts) >= 2)
+		// Try all split points from deepest nesting to shallowest.
+		// Split at $i means the first $i segments form the directory path,
+		// and the remaining segments go under the Api/ directory.
+		for ($i = $count; $i >= 1; $i--)
 		{
-			$featureName = $parts[1];
-			$remainingParts = array_slice($parts, 2);
-			$apiSubPath = !empty($remainingParts) ? '/' . implode('/', $remainingParts) : '';
+			$dirParts = array_slice($parts, 0, $i);
+			$apiParts = array_slice($parts, $i);
+			$dirPath = implode('/', $dirParts);
+			$apiSubPath = !empty($apiParts) ? '/' . implode('/', $apiParts) : '';
 
-			// 1. Nested feature: modules/Community/Group/Api/...
-			$nestedPath = $moduleName . '/' . $featureName . '/Api' . $apiSubPath;
-			$result = self::getResourcePath($nestedPath);
+			// Direct: modules/A/B/C/Api/.../api.php
+			$result = self::getResourcePath($dirPath . '/Api' . $apiSubPath);
 			if ($result)
 			{
 				return $result;
 			}
 
-			// 2. Nested feature with Main: modules/Community/Group/Main/Api/...
-			$nestedMainPath = $moduleName . '/' . $featureName . '/Main/Api' . $apiSubPath;
-			$result = self::getResourcePath($nestedMainPath);
+			// Main fallback: modules/A/B/C/Main/Api/.../api.php
+			$result = self::getResourcePath($dirPath . '/Main/Api' . $apiSubPath);
 			if ($result)
 			{
 				return $result;
 			}
 		}
 
-		// 3. Flat module: modules/User/Api/Account/...
-		$remainingParts = array_slice($parts, 1);
-		$apiSubPath = !empty($remainingParts) ? '/' . implode('/', $remainingParts) : '';
-		$flatPath = $moduleName . '/Api' . $apiSubPath;
-		$result = self::getResourcePath($flatPath);
-		if ($result)
-		{
-			return $result;
-		}
-
-		// 4. Main folder fallback: modules/User/Main/Api/...
-		$mainPath = $moduleName . '/Main/Api' . $apiSubPath;
-		$result = self::getResourcePath($mainPath);
-		if ($result)
-		{
-			return $result;
-		}
-
-		// 5. Main folder fallback: modules/User/Main/Api/...
-		$mainPath = $moduleName . '/Api' . $apiSubPath;
-		$result = self::getResourcePath($mainPath);
-		if ($result)
-		{
-			return $result;
-		}
-
-		// 6. Recursive fallback: try with fewer path segments
-		if (count($parts) > 1)
+		// Recursive fallback: try with fewer path segments
+		if ($count > 1)
 		{
 			return self::resolveResourcePath(array_slice($parts, 0, -1));
 		}
