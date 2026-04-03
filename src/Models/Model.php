@@ -23,7 +23,9 @@ use Proto\Database\QueryBuilder\QueryHandler;
  *
  * For static analysis tools (PHPStan, Psalm), child classes should define
  * @suppresswarnings PHP0413,6507
- * @property annotations for each database field to enable proper type checking:
+ * @property annotations for each database field to enable proper type checking.
+ *
+ * @phpstan-consistent-constructor
  *
  * @example
  * ```php
