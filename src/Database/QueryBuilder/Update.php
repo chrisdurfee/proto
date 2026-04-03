@@ -61,6 +61,22 @@ class Update extends Query
 	}
 
 	/**
+	 * Add a raw SET expression without comma-splitting.
+	 *
+	 * Used for expressions like `field = field + ?` or
+	 * `field = GREATEST(field - ?, 0)` that contain commas
+	 * which must not be split.
+	 *
+	 * @param string $expression Raw SQL SET expression.
+	 * @return self
+	 */
+	public function setRaw(string $expression): self
+	{
+		$this->fields[] = $expression;
+		return $this;
+	}
+
+	/**
 	 * Renders the update query.
 	 *
 	 * @return string The rendered SQL query.
