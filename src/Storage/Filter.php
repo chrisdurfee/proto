@@ -249,12 +249,13 @@ class Filter
 	/**
 	 * Prepares the column name.
 	 *
-	 * @param string $field
+	 * @param string|int $field
 	 * @param bool $isSnakeCase
 	 * @return string
 	 */
-	protected static function prepareColumn(string $field, bool $isSnakeCase = true): string
+	protected static function prepareColumn(string|int $field, bool $isSnakeCase = true): string
 	{
+		$field = (string)$field;
 		$columnName = ($isSnakeCase) ? self::decamelize($field) : $field;
 		return Sanitize::cleanColumn($columnName);
 	}
