@@ -302,7 +302,6 @@ class Request
 			$input = strip_tags($input);
 			$input = trim($input);
 			$input = str_replace(['\\\\', '\\\'', '\\"'], ['\\', '\'', ''], $input);
-			$input = Sanitize::string($input);
 		}
 		return $input;
 	}

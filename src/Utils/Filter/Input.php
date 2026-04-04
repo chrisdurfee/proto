@@ -26,7 +26,7 @@ class Input extends Filter
 			return '';
 		}
 
-		$value = filter_input($inputType, $key, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+		$value = filter_input($inputType, $key, FILTER_DEFAULT);
 		return $value ?? '';
 	}
 

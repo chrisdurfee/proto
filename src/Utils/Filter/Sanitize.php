@@ -97,18 +97,24 @@ class Sanitize extends Filter
 	}
 
 	/**
-	 * Sanitizes a string.
+	 * Sanitizes a string by stripping HTML tags.
 	 *
-	 * Uses FILTER_SANITIZE_FULL_SPECIAL_CHARS (equivalent to htmlspecialchars with ENT_QUOTES)
-	 * to encode HTML special characters (<, >, &, ", ') without encoding whitespace control
-	 * characters such as newlines, carriage returns, and tabs.
+	 * Removes HTML tags to prevent XSS without encoding special
+	 * characters into HTML entities. Entity encoding is an
+	 * output concern handled by the rendering layer.
 	 *
 	 * @param string|null $string
 	 * @return string|null
 	 */
 	public static function string(?string $string): ?string
 	{
-		return self::filter($string, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+		if ($string === null)
+		{
+			return null;
+		}
+
+		$string = strip_tags($string);
+		return trim($string);
 	}
 
 	/**
