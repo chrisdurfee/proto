@@ -209,6 +209,21 @@ class ImageValidator
 				case 'image/tiff':
 					$extensions[] = 'tiff';
 					break;
+				case 'image/heic':
+					$extensions[] = 'heic';
+					break;
+				case 'image/heif':
+					$extensions[] = 'heif';
+					break;
+				case 'image/svg+xml':
+					$extensions[] = 'svg';
+					break;
+				case 'image/avif':
+					$extensions[] = 'avif';
+					break;
+				case 'image/jxl':
+					$extensions[] = 'jxl';
+					break;
 				default:
 					$extensions[] = str_replace('image/', '', $mime);
 			}
