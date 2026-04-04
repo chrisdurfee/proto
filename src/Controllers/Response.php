@@ -111,6 +111,13 @@ class Response
 		{
 			foreach ((array) $this->data as $key => $value)
 			{
+				// Skip private/protected property keys that contain null bytes
+				// from casting objects with non-public properties to arrays.
+				if (str_contains($key, "\0"))
+				{
+					continue;
+				}
+
 				$response->$key = $value;
 			}
 		}
