@@ -113,7 +113,7 @@ class Response
 			{
 				// Skip private/protected property keys that contain null bytes
 				// from casting objects with non-public properties to arrays.
-				if (str_contains($key, "\0"))
+				if (is_string($key) && str_contains($key, "\0"))
 				{
 					continue;
 				}

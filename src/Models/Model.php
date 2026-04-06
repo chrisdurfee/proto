@@ -874,7 +874,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public function getDataType(string $field): ?\Proto\Storage\DataTypes\DataType
 	{
-		$className = static::$dataTypes[$field] ?? null;
+		// Data::map() converts camelCase keys to snake_case before ParamsBuilder
+		// calls this method. Try the exact key first, then fall back to camelCase
+		// so that dataTypes declared as e.g. 'statusBadge' are found when the
+		// key arrives as 'status_badge'.
+		$className = static::$dataTypes[$field]
+			?? static::$dataTypes[Strings::camelCase($field)]
+			?? null;
 		if (!$className)
 		{
 			return null;
