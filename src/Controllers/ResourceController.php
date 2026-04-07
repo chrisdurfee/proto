@@ -3,6 +3,7 @@ namespace Proto\Controllers;
 
 use Proto\Http\Router\Request;
 use Proto\Models\Model;
+use Proto\Services\ServiceResult;
 
 /**
  * ResourceController
@@ -32,6 +33,23 @@ abstract class ResourceController extends ApiController
 	protected string $userScopeField = 'userId';
 
 	/**
+	 * Optional service class for delegating add/update/delete operations.
+	 *
+	 * When set, the service is auto-instantiated and addItem/updateItem/deleteItem
+	 * delegate to the service's add/update/delete methods if they exist.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $serviceClass = null;
+
+	/**
+	 * The service instance, auto-instantiated from $serviceClass.
+	 *
+	 * @var object|null
+	 */
+	protected ?object $service = null;
+
+	/**
 	 * Initializes the resource controller.
 	 *
 	 * @return void
@@ -40,6 +58,23 @@ abstract class ResourceController extends ApiController
 	{
 		parent::__construct();
 		$this->setModelClass();
+		$this->initializeService();
+	}
+
+	/**
+	 * Initializes the service instance from the $serviceClass property.
+	 *
+	 * Override this method to provide custom service instantiation logic
+	 * (e.g., constructor arguments, dependency injection).
+	 *
+	 * @return void
+	 */
+	protected function initializeService(): void
+	{
+		if ($this->serviceClass !== null)
+		{
+			$this->service = new $this->serviceClass();
+		}
 	}
 
 	/**
@@ -189,6 +224,15 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function addItem(object $data): object
 	{
+		if ($this->service !== null && method_exists($this->service, 'add'))
+		{
+			$this->injectAuditData($data, ['createdBy', 'authorId', 'userId']);
+			return $this->serviceResponse(
+				$this->service->add($data),
+				'Unable to add the item.'
+			);
+		}
+
 		$model = $this->model($data);
 		$this->getAddUserData($model);
 
@@ -357,6 +401,15 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function updateItem(object $data): object
 	{
+		if ($this->service !== null && method_exists($this->service, 'update'))
+		{
+			$this->injectAuditData($data, ['updatedBy', 'editedBy']);
+			return $this->serviceResponse(
+				$this->service->update($data),
+				'Unable to update the item.'
+			);
+		}
+
 		$model = $this->model($data);
 		$this->getUpdateUserData($model);
 
@@ -429,12 +482,84 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function deleteItem(object $data): object
 	{
+		if ($this->service !== null && method_exists($this->service, 'delete'))
+		{
+			$this->injectAuditData($data, ['deletedBy', 'removedBy', 'archivedBy']);
+			return $this->serviceResponse(
+				$this->service->delete($data),
+				'Unable to delete the item.'
+			);
+		}
+
 		$model = $this->model($data);
 		$this->getDeleteUserData($model);
 
 		return $model->delete()
 			? $this->response(['id' => $model->id])
 			: $this->error('Unable to delete the item.');
+	}
+
+	/**
+	 * Injects audit fields into a plain data object before service delegation.
+	 *
+	 * Sets the current session user's ID on each field that is not already set.
+	 * This provides the same audit data injection that getAddUserData/getUpdateUserData
+	 * perform on Model instances, but for plain objects passed to services.
+	 *
+	 * @param object &$data The data object to inject audit fields into.
+	 * @param array $fields The audit field names to inject.
+	 * @return void
+	 */
+	protected function injectAuditData(object &$data, array $fields): void
+	{
+		$userId = session()->user->id ?? null;
+		if ($userId === null)
+		{
+			return;
+		}
+
+		foreach ($fields as $field)
+		{
+			if (!isset($data->$field))
+			{
+				$data->$field = $userId;
+			}
+		}
+	}
+
+	/**
+	 * Processes a service method's return value into a controller response.
+	 *
+	 * Handles ServiceResult objects, false for failures, and raw data for success.
+	 * - ServiceResult: uses success/error from the result
+	 * - false: returns the default error message
+	 * - array/object: wraps in a success response
+	 * - scalar (e.g., an ID): wraps as ['id' => $result]
+	 *
+	 * @param mixed $result The service method return value.
+	 * @param string $errorMessage Default error message if the result indicates failure.
+	 * @return object The response object.
+	 */
+	protected function serviceResponse(mixed $result, string $errorMessage = 'Operation failed.'): object
+	{
+		if ($result instanceof ServiceResult)
+		{
+			return $result->success
+				? $this->response($result->data)
+				: $this->error($result->error ?? $errorMessage);
+		}
+
+		if ($result === false)
+		{
+			return $this->error($errorMessage);
+		}
+
+		if (is_array($result) || is_object($result))
+		{
+			return $this->response($result);
+		}
+
+		return $this->response(['id' => $result]);
 	}
 
 	/**

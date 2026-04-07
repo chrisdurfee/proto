@@ -255,6 +255,100 @@ protected function modifyAddItem(object &$data, Request $request): void
 }
 ```
 
+### Service Delegation
+
+When controllers need multi-step business logic (e.g., creating related records, external API calls), delegate to a service class instead of putting that logic in the controller.
+
+**Declare a service class** with `$serviceClass` — the controller auto-instantiates it and delegates `addItem`/`updateItem`/`deleteItem` to the service's `add`/`update`/`delete` methods when they exist. Audit fields (`createdBy`, `userId`, `updatedBy`, etc.) are automatically injected before delegation.
+
+```php
+// ✅ CORRECT - Declare service class, auto-instantiated
+class GroupPostController extends ResourceController
+{
+    protected ?string $serviceClass = GroupPostService::class;
+    protected ?string $policy = GroupPostPolicy::class;
+
+    public function __construct(protected ?string $model = GroupPost::class)
+    {
+        parent::__construct();
+    }
+
+    // addItem() automatically delegates to $this->service->add($data)
+    // updateItem() automatically delegates to $this->service->update($data)
+    // deleteItem() automatically delegates to $this->service->delete($data)
+
+    // Custom actions still use $this->service directly
+    public function like(Request $request): object
+    {
+        $id = $this->getResourceId($request);
+        $userId = session()->user->id;
+        $result = $this->service->toggleLike($id, $userId);
+        return $this->serviceResponse($result, 'Failed to toggle like');
+    }
+}
+```
+
+**Service methods** should return `ServiceResult`, `false`, an array/object, or a scalar ID:
+
+```php
+use Proto\Services\Service;
+use Proto\Services\ServiceResult;
+
+class GroupPostService extends Service
+{
+    public function add(object $data): ServiceResult
+    {
+        $post = new GroupPost($data);
+        $post->add();
+        if (!$post->id)
+        {
+            return ServiceResult::failure('Failed to create post');
+        }
+
+        // Multi-step: create related records, send notifications, etc.
+        $this->createDefaultTags($post->id);
+        $this->notifyGroupMembers($post);
+
+        return ServiceResult::success(['id' => $post->id]);
+    }
+
+    public function update(object $data): ServiceResult
+    {
+        $post = GroupPost::get($data->id);
+        if (!$post)
+        {
+            return ServiceResult::failure('Post not found');
+        }
+
+        // Business logic before update
+        $post->merge($data);
+        $post->update();
+
+        return ServiceResult::success(['id' => $post->id]);
+    }
+}
+```
+
+**`serviceResponse()`** is available for custom public methods that call the service:
+- `ServiceResult` → auto-handles success/error
+- `false` → returns the default error message
+- `array`/`object` → wraps in success response
+- Scalar (e.g., ID) → wraps as `['id' => $result]`
+
+**Custom service instantiation**: Override `initializeService()` if the service needs constructor arguments:
+
+```php
+protected function initializeService(): void
+{
+    $this->service = new GroupPostService($this->someDependency);
+}
+```
+
+**CRITICAL**:
+- Service `add`/`update`/`delete` methods receive data with audit fields already injected
+- Only define the service methods you need — missing methods fall back to default model behavior
+- Use `$serviceClass` property (NOT manual `$this->service = new ...()` in constructor)
+
 ### Request Handling
 Controllers receive `Proto\Http\Router\Request` objects in public methods and hook methods.
 
@@ -929,6 +1023,61 @@ protected function incrementCommunityGroupCount(int $communityId): void
 }
 ```
 
+### Location / Proximity Filtering (LocationFilterTrait)
+
+**Location**: `Proto\Services\Traits\LocationFilterTrait`
+
+Use this trait in services that need to filter records by geographic proximity. It builds `ST_Distance_Sphere` conditions compatible with Proto's filter array pattern so callers never write raw SQL distance expressions.
+
+```php
+use Proto\Services\Traits\LocationFilterTrait;
+
+class VehicleService extends Service
+{
+    use LocationFilterTrait;
+
+    // Direct filter on the queried table's POINT column
+    public function addLocationFilter(float $lat, float $lon, array &$filter): void
+    {
+        $this->filterByProximity($filter, [
+            'latitude' => $lat,
+            'longitude' => $lon,
+            'radius' => 50,          // miles (default)
+            'alias' => 'v',          // table alias
+            'column' => 'position',  // POINT column (default)
+        ]);
+    }
+
+    // Subquery filter against a related table
+    public function addUserLocationFilter(int $userId, array &$filter): void
+    {
+        $userLocation = UserLocationPreference::getBy(['userId' => $userId]);
+        if (!$userLocation || empty($userLocation->longitude) || empty($userLocation->latitude))
+        {
+            return;
+        }
+
+        $this->filterByProximitySubquery($filter, [
+            'latitude' => $userLocation->latitude,
+            'longitude' => $userLocation->longitude,
+            'radius' => $userLocation->radiusMiles ?? 50,
+            'table' => 'user_location_preferences',
+            'joinColumn' => 'user_id',
+            'parentColumn' => 'v.user_id',
+        ]);
+    }
+}
+```
+
+**Available methods**:
+- `filterByProximity(array &$filter, array $options)` — appends a direct proximity condition on a POINT column
+- `filterByProximitySubquery(array &$filter, array $options)` — appends an EXISTS subquery proximity condition against a related table
+- `buildProximityCondition(array $options)` — returns a standalone `[sql, params]` condition without appending
+- `buildProximitySubqueryCondition(array $options)` — returns a standalone subquery condition
+- `convertToMeters(float|int $radius, string $unit)` — utility to convert radius to meters (`'miles'` or `'km'`)
+
+**Options**: `latitude`, `longitude`, `radius` (default 50), `unit` (`'miles'`|`'km'`), `column` (default `'position'`), `alias` (table alias for direct), `table`/`joinColumn`/`parentColumn`/`tableAlias` (for subquery variant).
+
 ### CRITICAL Service Patterns
 - Services NEVER instantiate storage classes directly
 - ❌ WRONG: `$storage = new UserStorage(); $storage->getUsers();`
@@ -1579,6 +1728,8 @@ public function all(Request $request): object
 | `$_FILES['upload']` in controller | `$request->file('upload')` |
 | `new UploadFile($_FILES['upload'])` | `$request->file('upload')` or `$request->validateFile('upload', [...])` |
 | Per-row related lookups in `all()` loop | Use `enrichWithUserData()` with batch `IN` queries |
+| `$this->service = new XService()` in constructor | `protected ?string $serviceClass = XService::class;` |
+| Manual audit fields before service call | Auto-injected — service receives data with audit fields |
 
 ## 19. Configuration & Gotchas
 
