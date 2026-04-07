@@ -16,24 +16,6 @@ use Proto\Api\Validator;
 abstract class ApiController extends Controller
 {
 	/**
-	 * The item key used in requests.
-	 *
-	 * @var string
-	 */
-	protected string $item = 'item';
-
-	/**
-	 * Retrieves the request item from the request object.
-	 *
-	 * @param Request $request The request object.
-	 * @return object The request item.
-	 */
-	public function getRequestItem(Request $request): object
-	{
-		return $request->json($this->item) ?? (object) $request->all();
-	}
-
-	/**
 	 * Restricts the fields from the given data.
 	 *
 	 * @param object $data The data to restrict.
