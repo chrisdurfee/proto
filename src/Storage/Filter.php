@@ -106,6 +106,23 @@ class Filter
 			return $value[0] . ' IS NULL';
 		}
 
+		// Handle IN/NOT IN with array values: ['field', 'IN', [1, 2, 3]]
+		if ($valueCount === 3 && is_array($param))
+		{
+			$operator = strtoupper(trim((string)$value[1]));
+			if (in_array($operator, ['IN', 'NOT IN'], true))
+			{
+				if (empty($param))
+				{
+					return ($operator === 'IN') ? '1 = 0' : '1 = 1';
+				}
+
+				$placeholders = implode(', ', array_fill(0, count($param), '?'));
+				$params = array_merge($params, array_values($param));
+				return $value[0] . ' ' . $operator . ' (' . $placeholders . ')';
+			}
+		}
+
 		// Replace value with placeholder for non-null values
 		$value[$end] = '?';
 
