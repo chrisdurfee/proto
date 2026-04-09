@@ -685,6 +685,13 @@ $filter = [
     ['a.id', '>', $user->id] // auto bind with operator
 ];
 
+// IN / NOT IN with arrays (auto-generates placeholders)
+$filter = [
+    ['userId', 'IN', [1, 2, 3]],          // user_id IN (?, ?, ?)
+    ['status', 'NOT IN', ['banned', 'deleted']], // status NOT IN (?, ?)
+    ['a.replyId', 'IN', $replyIds],        // works with table aliases
+];
+
 $row = User::getBy($filter);   // one
 $rows = User::fetchWhere($filter);   // many
 ```
@@ -1602,10 +1609,9 @@ public static function getIdsForUser(int $userId, array $vehicleIds): array
         return [];
     }
 
-    $placeholders = implode(',', array_fill(0, count($vehicleIds), '?'));
     $results = static::fetchWhere([
         ['userId', $userId],
-        ["vehicleId IN ({$placeholders})", $vehicleIds]
+        ['vehicleId', 'IN', $vehicleIds]
     ]);
     return array_column($results, 'vehicleId');
 }
@@ -1618,11 +1624,10 @@ public static function getIdsForUser(int $userId, string $itemType, array $itemI
         return [];
     }
 
-    $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
     $results = static::fetchWhere([
         ['userId', $userId],
         ['itemType', $itemType],
-        ["itemId IN ({$placeholders})", $itemIds]
+        ['itemId', 'IN', $itemIds]
     ]);
     return array_column($results, 'itemId');
 }
@@ -1728,6 +1733,7 @@ public function all(Request $request): object
 | `$_FILES['upload']` in controller | `$request->file('upload')` |
 | `new UploadFile($_FILES['upload'])` | `$request->file('upload')` or `$request->validateFile('upload', [...])` |
 | Per-row related lookups in `all()` loop | Use `enrichWithUserData()` with batch `IN` queries |
+| Manual `$placeholders = implode(...)` for IN | `['field', 'IN', $array]` shorthand |
 | `$this->service = new XService()` in constructor | `protected ?string $serviceClass = XService::class;` |
 | Manual audit fields before service call | Auto-injected — service receives data with audit fields |
 
