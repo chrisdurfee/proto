@@ -21,11 +21,13 @@ use Proto\Database\QueryBuilder\QueryHandler;
  * dynamic property access for model attributes. All properties are stored
  * internally in the Data object and accessed via these magic methods.
  *
- * For static analysis tools (PHPStan, Psalm), child classes should define
- * @suppresswarnings PHP0413,6507
- * @property annotations for each database field to enable proper type checking.
+ * Child classes should declare @property annotations for each database field
+ * to enable proper type checking in static analysis tools and IDEs.
  *
+ * @SuppressWarnings PHP0413,6507
  * @phpstan-consistent-constructor
+ *
+ * @property int|null $id Primary key (auto-set on add)
  *
  * @example
  * ```php
@@ -42,12 +44,6 @@ use Proto\Database\QueryBuilder\QueryHandler;
  * ```
  *
  * @package Proto\Models
- * @abstract
- *
- * @method mixed __get(string $key) Magic getter for model properties
- * @method void __set(string $key, mixed $value) Magic setter for model properties
- * @method bool __isset(string $key) Magic isset checker for model properties
- * @method void __unset(string $key) Magic unset for model properties
  */
 abstract class Model extends Base implements \JsonSerializable, ModelInterface
 {

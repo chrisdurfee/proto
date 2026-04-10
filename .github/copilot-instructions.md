@@ -681,6 +681,12 @@ The router translates these into JSON with status codes.
 - `delete()` - removes instance
 
 ### Model Configuration
+
+**CRITICAL**: Always add `@property` PHPDoc annotations for every database field on model classes.
+This enables IDE autocompletion, eliminates "undefined property" warnings, and enables proper type checking.
+The base `Model` class declares `@property int|null $id` — child models inherit it automatically.
+Add `@SuppressWarnings PHP0413` to the model docblock if your IDE shows constructor warnings.
+
 ```php
 <?php declare(strict_types=1);
 
@@ -688,6 +694,14 @@ namespace Modules\User\Models;
 
 use Proto\Models\Model;
 
+/**
+ * User Model
+ *
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string $status
+ */
 class User extends Model
 {
     protected static ?string $tableName = 'users';
