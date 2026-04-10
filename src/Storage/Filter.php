@@ -2,7 +2,6 @@
 namespace Proto\Storage;
 
 use Proto\Utils\Strings;
-use Proto\Utils\Arrays;
 use Proto\Utils\Sanitize;
 
 /**
@@ -203,29 +202,50 @@ class Filter
 			return [];
 		}
 
+		/**
+		 * Normalize mixed filters (associative keys + numeric-indexed arrays)
+		 * into a fully numeric-indexed array so format() processes each
+		 * entry uniformly.
+		 */
+		$filter = self::normalize($filter);
+
 		$filters = [];
-		if (Arrays::isAssoc($filter))
+		foreach ($filter as $item)
 		{
-			foreach ($filter as $key => $item)
-			{
-				$key = self::prepareColumn($key, $isSnakeCase);
-
-				$value = (is_array($item)) ? [$key, ...$item] : [$key, $item];
-				$value = self::format($value, $params, $isSnakeCase);
-
-				$filters[] = $value;
-			}
-		}
-		else
-		{
-			foreach ($filter as $item)
-			{
-				$value = self::format($item, $params, $isSnakeCase);
-				$filters[] = $value;
-			}
+			$value = self::format($item, $params, $isSnakeCase);
+			$filters[] = $value;
 		}
 
 		return $filters;
+	}
+
+	/**
+	 * Normalizes a filter array so every entry is numeric-indexed.
+	 *
+	 * Associative entries ('column' => $value) become [$column, $value],
+	 * and associative entries ('column' => [$op, $val]) become
+	 * [$column, $op, $val]. Numeric entries are kept as-is.
+	 *
+	 * @param array $filter
+	 * @return array
+	 */
+	protected static function normalize(array $filter): array
+	{
+		$normalized = [];
+
+		foreach ($filter as $key => $item)
+		{
+			if (is_string($key))
+			{
+				$normalized[] = is_array($item) ? [$key, ...$item] : [$key, $item];
+			}
+			else
+			{
+				$normalized[] = $item;
+			}
+		}
+
+		return $normalized;
 	}
 
 	/**

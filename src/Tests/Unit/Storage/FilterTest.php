@@ -207,4 +207,45 @@ final class FilterTest extends Test
 		$this->assertEquals("id IN (?, ?)", $result);
 		$this->assertEquals([1, 2], $params);
 	}
+
+	/**
+	 * Test mixed filter: associative keys combined with numeric-indexed arrays.
+	 *
+	 * This reproduces the bug where isAssoc() returned true for mixed filters,
+	 * causing numeric keys to be prepended to IN arrays and producing broken SQL.
+	 *
+	 * @return void
+	 */
+	public function testSetupMixedAssocAndNumericFilters(): void
+	{
+		$params = [];
+		$result = Filter::setup([
+			'userId' => 5,
+			['status', 'IN', ['active', 'pending']]
+		], $params);
+
+		$this->assertCount(2, $result);
+		$this->assertEquals('user_id = ?', $result[0]);
+		$this->assertEquals('status IN (?, ?)', $result[1]);
+		$this->assertEquals([5, 'active', 'pending'], $params);
+	}
+
+	/**
+	 * Test mixed filter with raw SQL string entry.
+	 *
+	 * @return void
+	 */
+	public function testSetupMixedAssocAndRawSql(): void
+	{
+		$params = [];
+		$result = Filter::setup([
+			'userId' => 5,
+			"deleted_at IS NULL"
+		], $params);
+
+		$this->assertCount(2, $result);
+		$this->assertEquals('user_id = ?', $result[0]);
+		$this->assertEquals('deleted_at IS NULL', $result[1]);
+		$this->assertEquals([5], $params);
+	}
 }
