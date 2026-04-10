@@ -255,6 +255,92 @@ protected function modifyAddItem(object &$data, Request $request): void
 }
 ```
 
+### Route Parameter Auto-Injection
+
+Set `$routeParams` to auto-inject route parameters into add data and auto-filter on `all()`. This eliminates the most common `modifyAddItem()`/`modifyFilter()` override pattern:
+
+```php
+/**
+ * Route parameters to auto-inject on add and auto-filter on all().
+ * Keys are the route param name, values control behavior:
+ *   - true: required (setError if missing)
+ *   - false: optional (apply only if present)
+ */
+protected array $routeParams = [];
+```
+
+```php
+// ✅ CORRECT - Zero-override nested resource controller
+class ForumPostController extends ResourceController
+{
+    protected array $routeParams = [
+        'forumId' => true,  // Required, auto-injected on add, auto-filtered on all()
+    ];
+
+    public function __construct(protected ?string $model = ForumPost::class)
+    {
+        parent::__construct();
+    }
+
+    // No modifyAddItem() or modifyFilter() needed for forumId!
+}
+```
+
+```php
+// Override hooks when extra logic is needed beyond route params
+protected function modifyAddItem(object &$data, Request $request): void
+{
+    parent::modifyAddItem($data, $request); // Handles scopeToUser + routeParams
+
+    // Additional custom logic
+    $data->slug = Strings::slug($data->title);
+}
+```
+
+### Query String Filter Params
+
+Set `$filterParams` for declarative query-string-to-filter mapping. Combined with `$routeParams`, this eliminates 90%+ of `modifyFilter()` overrides:
+
+```php
+/**
+ * Query string parameters to auto-apply as filter conditions.
+ * Maps param name to type ('int', 'string', 'bool').
+ */
+protected array $filterParams = [];
+```
+
+```php
+// ✅ CORRECT - Both route and query params auto-applied
+class ForumPostController extends ResourceController
+{
+    protected array $routeParams = ['forumId' => true];  // From URL path
+    protected array $filterParams = ['topicId' => 'int']; // From query string
+
+    // Zero modifyFilter() override needed
+}
+```
+
+### Enrich User Fields
+
+Set `$enrichUserFields` to auto-attach session user fields to add/update responses so the UI can render the author's name/avatar without a refetch:
+
+```php
+/**
+ * Session user fields to attach to add/update responses.
+ */
+protected array $enrichUserFields = [];
+```
+
+```php
+class ForumPostController extends ResourceController
+{
+    protected array $enrichUserFields = ['firstName', 'lastName', 'image', 'username', 'verified'];
+
+    // After add/update, response automatically includes:
+    // { id: 123, firstName: 'John', lastName: 'Doe', image: '...', ... }
+}
+```
+
 ### Service Delegation
 
 When controllers need multi-step business logic (e.g., creating related records, external API calls), delegate to a service class instead of putting that logic in the controller.
@@ -541,6 +627,27 @@ protected function modifyFilter(?object $filter, Request $request): ?object
    - Customizing the persistence logic itself
    - Adding post-persistence operations
    - NOT for accessing request data (use hooks instead)
+
+### File Upload Helpers
+
+ResourceController provides built-in helpers for single and batch file uploads:
+
+```php
+// Single file upload — returns new filename or null
+$filename = $this->handleFileUpload($request, 'avatar', 'local', 'avatars', 'image:2048|mimes:jpeg,png');
+if ($filename)
+{
+    $data->avatar = $filename;
+}
+
+// Batch file upload — returns array of metadata objects
+$media = $this->handleMediaUpload($request, 'media', 'local', 'forum', 'image:5120');
+if (!empty($media))
+{
+    $data->media = json_encode($media);
+}
+// Each item: { fileName, originalName, mimeType, size }
+```
 
 ### Response Methods
 Return structured objects using:
@@ -1596,9 +1703,76 @@ Use this pattern when a controller needs to append user-specific flags (e.g., `i
 
 The solution is always **3 queries total** regardless of result size: one main query + one batch `IN` query per related table, merged in PHP.
 
+### enrichRow() Auto-Delegates to enrichRows()
+
+By default, `enrichRow()` delegates to `enrichRows()`, so you only need to implement the batch version. The single-item `get()` path automatically reuses the same logic:
+
+```php
+// Only implement enrichRows() — enrichRow() delegates automatically
+protected function enrichRows(array &$rows, Request $request): void
+{
+    $userId = session()->user->id;
+
+    $this->batchMapExists(
+        $rows, Bookmark::class,
+        'itemId', 'bookmarked',
+        [['userId', $userId], ['itemType', 'forum_post']]
+    );
+}
+```
+
+Override `enrichRow()` individually only if the single-item path genuinely needs different logic.
+
+### BatchEnrichmentTrait
+
+**Location**: `Proto\Controllers\Traits\BatchEnrichmentTrait`
+
+Use this trait in controllers that need to batch-fetch related data in `enrichRows()`. It provides two declarative helpers that eliminate manual map-building:
+
+```php
+use Proto\Controllers\Traits\BatchEnrichmentTrait;
+
+class ForumPostController extends ResourceController
+{
+    use BatchEnrichmentTrait;
+
+    protected function enrichRows(array &$rows, Request $request): void
+    {
+        $userId = session()->user->id;
+
+        // Map topic names: topicId → topicName
+        $this->batchMapField(
+            $rows, ForumTopic::class,
+            'id', 'name', 'topicName', '',
+            [], 'topicId'
+        );
+
+        // Map user votes: postId → voteType
+        $this->batchMapField(
+            $rows, ForumPostVote::class,
+            'postId', 'voteType', 'userVote', null,
+            [['userId', $userId]]
+        );
+
+        // Boolean: user bookmarked?
+        $this->batchMapExists(
+            $rows, Bookmark::class,
+            'itemId', 'bookmarked',
+            [['userId', $userId], ['itemType', 'forum_post']]
+        );
+    }
+}
+```
+
+**Available methods**:
+- `batchMapField($rows, $modelClass, $foreignKey, $valueField, $targetField, $default, $extraFilter, $sourceKey)` — batch-fetch a value from related records and map onto rows
+- `batchMapExists($rows, $modelClass, $foreignKey, $targetField, $extraFilter, $sourceKey)` — batch-check existence and set a boolean flag
+
+Both methods set defaults first (safe for unauthenticated users), then do a single `IN` query per call.
+
 ### Static Batch Fetch Methods on Related Models
 
-Add a static method to each related model that accepts an array of parent IDs and returns the matching related IDs in one query:
+For cases where you need more control, add a static method to each related model that accepts an array of parent IDs and returns the matching related IDs in one query:
 
 ```php
 // In UserFavoriteVehicle model
@@ -1708,7 +1882,9 @@ public function all(Request $request): object
 - **ALWAYS** batch-fetch related data with `IN` clause queries and merge in PHP
 - Use `array_flip()` + `isset()` for O(1) set-membership checks instead of `in_array()`
 - Set all flags to their default values first so the unauthenticated (null user) path requires no extra branching
-- The enrichment method belongs on the **model**, not in the controller — controllers only call it
+- Prefer `BatchEnrichmentTrait` helpers (`batchMapField`/`batchMapExists`) over manual map-building
+- For complex enrichment with custom static methods, the enrichment method belongs on the **model**, not in the controller — controllers only call it
+- Only implement `enrichRows()` — `enrichRow()` auto-delegates by default
 
 ## 18. Anti-Patterns (What NOT to Do)
 
@@ -1722,7 +1898,13 @@ public function all(Request $request): object
 | `->where('a')->where('b')` | `->where('a', 'b')` |
 | `->fetchOne()` | `->first()` |
 | `$this->request` in `addItem()` | Use `modifyAddItem($data, $request)` hook |
-| Override `addItem()` for route params | Use `modifyAddItem()` or override `add()` |
+| Override `addItem()` for route params | Use `$routeParams` property or `modifyAddItem()` |
+| `modifyAddItem` just for route param | Use `protected array $routeParams = ['forumId' => true];` |
+| `modifyFilter` just for query params | Use `protected array $filterParams = ['topicId' => 'int'];` |
+| Manual user fields on add response | Use `protected array $enrichUserFields = [...]` |
+| Duplicate `enrichRow`/`enrichRows` logic | Only implement `enrichRows()` — `enrichRow()` auto-delegates |
+| Manual file loop for batch uploads | Use `$this->handleMediaUpload(...)` |
+| Custom MIME fallback methods | Built into `UploadFile::getMimeType()` automatically |
 | `protected function modifyAddItem()` | `protected function modifyAddItem()` (typo) |
 | `\Modules\User\Models\User::get()` | `use Modules\User\Models\User; User::get()` |
 | `$request->route('id')` | `$request->getInt('id')` or `$request->input('id')` |
