@@ -15,6 +15,34 @@ use Proto\Utils\Files\File;
 class UploadFile
 {
 	/**
+	 * Extension-to-MIME-type fallback map for formats that finfo
+	 * frequently misdetects as text/plain or application/octet-stream.
+	 *
+	 * @var array<string, string>
+	 */
+	protected static array $extensionMimeMap = [
+		'svg' => 'image/svg+xml',
+		'webp' => 'image/webp',
+		'heic' => 'image/heic',
+		'heif' => 'image/heif',
+		'avif' => 'image/avif',
+		'jxl' => 'image/jxl',
+		'ico' => 'image/x-icon',
+		'css' => 'text/css',
+		'js' => 'application/javascript',
+		'mjs' => 'application/javascript',
+		'json' => 'application/json',
+		'xml' => 'application/xml',
+		'csv' => 'text/csv',
+		'mp4' => 'video/mp4',
+		'webm' => 'video/webm',
+		'ogg' => 'audio/ogg',
+		'mp3' => 'audio/mpeg',
+		'woff' => 'font/woff',
+		'woff2' => 'font/woff2',
+	];
+
+	/**
 	 * Holds the newly generated unique file name.
 	 *
 	 * @var string
@@ -141,6 +169,9 @@ class UploadFile
 	/**
 	 * Retrieves the MIME type of the uploaded file.
 	 *
+	 * Uses finfo detection first, then falls back to the extension map
+	 * when finfo returns empty, text/plain, or application/octet-stream.
+	 *
 	 * @return string
 	 */
 	public function getMimeType(): string
@@ -159,23 +190,24 @@ class UploadFile
 		$finfo = new \finfo(FILEINFO_MIME_TYPE);
 		$mime = $finfo->file($path) ?: '';
 
-		// Normalize a few common misdetections
-		if ($mime === 'text/plain' || $mime === 'application/octet-stream')
+		if ($mime === '' || $mime === 'text/plain' || $mime === 'application/octet-stream')
 		{
-			$ext = $this->getExtension();
-			$map = [
-				'svg' => 'image/svg+xml',
-				'webp' => 'image/webp',
-				'heic' => 'image/heic',
-				'heif' => 'image/heif',
-			];
-			if (isset($map[$ext]))
-			{
-				$mime = $map[$ext];
-			}
+			$mime = static::mimeFromExtension($this->getOriginalName()) ?: $mime;
 		}
 
 		return $this->mime = $mime;
+	}
+
+	/**
+	 * Resolves a MIME type from the file extension using the static map.
+	 *
+	 * @param string $name The original file name.
+	 * @return string The MIME type, or empty string if unknown.
+	 */
+	protected static function mimeFromExtension(string $name): string
+	{
+		$ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+		return static::$extensionMimeMap[$ext] ?? '';
 	}
 
 	/**

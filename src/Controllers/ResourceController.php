@@ -50,6 +50,31 @@ abstract class ResourceController extends ApiController
 	protected ?object $service = null;
 
 	/**
+	 * Route parameters to auto-inject on add and auto-filter on all().
+	 * Keys are the route param name, values control behavior:
+	 *   - true: required (setError if missing)
+	 *   - false: optional (apply only if present)
+	 *
+	 * @var array<string, bool>
+	 */
+	protected array $routeParams = [];
+
+	/**
+	 * Query string parameters to auto-apply as filter conditions.
+	 * Maps param name to type ('int', 'string', 'bool').
+	 *
+	 * @var array<string, string>
+	 */
+	protected array $filterParams = [];
+
+	/**
+	 * Session user fields to attach to add/update responses.
+	 *
+	 * @var array
+	 */
+	protected array $enrichUserFields = [];
+
+	/**
 	 * Initializes the resource controller.
 	 *
 	 * @return void
@@ -197,6 +222,7 @@ abstract class ResourceController extends ApiController
 	 *
 	 * When $scopeToUser is enabled, automatically injects the session
 	 * user's ID into the data using the configured $userScopeField.
+	 * When $routeParams is set, auto-injects those route parameters.
 	 *
 	 * @param object &$data The data to modify.
 	 * @param Request $request The request object.
@@ -210,6 +236,38 @@ abstract class ResourceController extends ApiController
 			if (!isset($data->$field))
 			{
 				$data->$field = (int)(session()->user->id ?? 0);
+			}
+		}
+
+		$this->applyRouteParamsToData($data, $request);
+	}
+
+	/**
+	 * Injects route parameters into a data object.
+	 *
+	 * @param object &$data The data to modify.
+	 * @param Request $request The request object.
+	 * @return void
+	 */
+	protected function applyRouteParamsToData(object &$data, Request $request): void
+	{
+		if (empty($this->routeParams))
+		{
+			return;
+		}
+
+		$params = $request->params();
+		foreach ($this->routeParams as $param => $required)
+		{
+			$value = (int)($params->$param ?? 0);
+			if ($required && !$value)
+			{
+				$this->setError(ucfirst($param) . ' is required');
+				return;
+			}
+			if ($value)
+			{
+				$data->$param = $value;
 			}
 		}
 	}
@@ -227,18 +285,23 @@ abstract class ResourceController extends ApiController
 		if ($this->service !== null && method_exists($this->service, 'add'))
 		{
 			$this->injectAuditData($data, ['createdBy', 'authorId', 'userId']);
-			return $this->serviceResponse(
-				$this->service->add($data),
-				'Unable to add the item.'
-			);
+			$result = $this->service->add($data);
+			$response = $this->serviceResponse($result, 'Unable to add the item.');
+			$this->attachUserFields($response);
+			return $response;
 		}
 
 		$model = $this->model($data);
 		$this->getAddUserData($model);
 
-		return $model->add()
-			? $this->response(['id' => $model->id])
-			: $this->error('Unable to add the item.');
+		if (!$model->add())
+		{
+			return $this->error('Unable to add the item.');
+		}
+
+		$responseData = (object)['id' => $model->id];
+		$this->attachUserFields($responseData);
+		return $this->response((array)$responseData);
 	}
 
 	/**
@@ -404,18 +467,23 @@ abstract class ResourceController extends ApiController
 		if ($this->service !== null && method_exists($this->service, 'update'))
 		{
 			$this->injectAuditData($data, ['updatedBy', 'editedBy']);
-			return $this->serviceResponse(
-				$this->service->update($data),
-				'Unable to update the item.'
-			);
+			$result = $this->service->update($data);
+			$response = $this->serviceResponse($result, 'Unable to update the item.');
+			$this->attachUserFields($response);
+			return $response;
 		}
 
 		$model = $this->model($data);
 		$this->getUpdateUserData($model);
 
-		return $model->update()
-			? $this->response(['id' => $model->id])
-			: $this->error('Unable to update the item.');
+		if (!$model->update())
+		{
+			return $this->error('Unable to update the item.');
+		}
+
+		$responseData = (object)['id' => $model->id];
+		$this->attachUserFields($responseData);
+		return $this->response((array)$responseData);
 	}
 
 	/**
@@ -593,6 +661,74 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
+	 * Validate, store, and return metadata for multiple file uploads.
+	 *
+	 * @param Request $request The request object.
+	 * @param string $fieldName The form field name for the file array input.
+	 * @param string $disk The storage disk (e.g., 'local', 's3').
+	 * @param string $directory The subdirectory within the disk.
+	 * @param string $rules Validation rules (e.g., 'image:2048|mimes:jpeg,png').
+	 * @return array Array of file metadata objects, empty if no files.
+	 */
+	protected function handleMediaUpload(
+		Request $request,
+		string $fieldName,
+		string $disk = 'local',
+		string $directory = '',
+		string $rules = 'image:2048'
+	): array
+	{
+		$files = $request->fileArray($fieldName);
+		if (empty($files))
+		{
+			return [];
+		}
+
+		$mediaItems = [];
+		foreach ($files as $file)
+		{
+			$this->validateRules([$fieldName => $file], [$fieldName => $rules]);
+			$file->store($disk, $directory);
+			$mediaItems[] = (object)[
+				'fileName' => $file->getNewName(),
+				'originalName' => $file->getOriginalName(),
+				'mimeType' => $file->getMimeType(),
+				'size' => $file->getSize()
+			];
+		}
+
+		return $mediaItems;
+	}
+
+	/**
+	 * Attaches session user fields to a response data object.
+	 *
+	 * Used after add/update to enrich the response with author data
+	 * so the UI can render immediately without a refetch.
+	 *
+	 * @param object &$data The response data to enrich.
+	 * @return void
+	 */
+	protected function attachUserFields(object &$data): void
+	{
+		if (empty($this->enrichUserFields))
+		{
+			return;
+		}
+
+		$user = session()->user ?? null;
+		if ($user === null)
+		{
+			return;
+		}
+
+		foreach ($this->enrichUserFields as $field)
+		{
+			$data->$field = $user->$field ?? null;
+		}
+	}
+
+	/**
 	 * Retrieves a model by ID.
 	 *
 	 * Calls enrichRow() after fetching so subclasses can append flags or
@@ -623,14 +759,19 @@ abstract class ResourceController extends ApiController
 	/**
 	 * Hook called after a single row is fetched in get().
 	 *
-	 * Override to append computed properties, user-specific flags, or
-	 * related data without needing to duplicate the full get() logic.
+	 * By default, delegates to enrichRows() so subclasses only need to
+	 * implement the batch version. Override individually only if the
+	 * single-item path genuinely needs different logic.
 	 *
 	 * @param object $row The formatted row data (plain object).
 	 * @param Request $request The request object.
 	 * @return void
 	 */
-	protected function enrichRow(object &$row, Request $request): void {}
+	protected function enrichRow(object &$row, Request $request): void
+	{
+		$rows = [&$row];
+		$this->enrichRows($rows, $request);
+	}
 
 	/**
 	 * Retrieve all records.

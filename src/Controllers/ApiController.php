@@ -149,6 +149,8 @@ abstract class ApiController extends Controller
 	 *
 	 * When $scopeToUser is enabled on the controller, automatically
 	 * injects the session user's ID into the filter.
+	 * When $routeParams is set, auto-applies route parameters to the filter.
+	 * When $filterParams is set, auto-applies query string parameters to the filter.
 	 *
 	 * @param mixed $filter
 	 * @param Request $request
@@ -161,6 +163,39 @@ abstract class ApiController extends Controller
 			$field = $this->userScopeField ?? 'userId';
 			$filter ??= (object)[];
 			$filter->$field = (int)(session()->user->id ?? 0);
+		}
+
+		if (property_exists($this, 'routeParams') && !empty($this->routeParams))
+		{
+			$params = $request->params();
+			foreach ($this->routeParams as $param => $required)
+			{
+				$value = (int)($params->$param ?? 0);
+				if ($value)
+				{
+					$filter ??= (object)[];
+					$filter->$param = $value;
+				}
+			}
+		}
+
+		if (property_exists($this, 'filterParams') && !empty($this->filterParams))
+		{
+			foreach ($this->filterParams as $param => $type)
+			{
+				$value = match ($type)
+				{
+					'int' => $request->getInt($param),
+					'bool' => $request->getBool($param),
+					default => $request->input($param),
+				};
+
+				if ($value !== null && $value !== '' && $value !== 0)
+				{
+					$filter ??= (object)[];
+					$filter->$param = $value;
+				}
+			}
 		}
 
 		return $filter;
