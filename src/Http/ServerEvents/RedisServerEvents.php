@@ -408,7 +408,7 @@ class RedisServerEvents
 	{
 		try
 		{
-			@$this->connection->close();
+			$this->connection->close();
 		}
 		catch (\Throwable $e)
 		{
@@ -438,7 +438,7 @@ class RedisServerEvents
 		{
 			if ($this->active)
 			{
-				@$this->connection->close();
+				$this->connection->close();
 			}
 
 			// Clean up connection registry
