@@ -44,7 +44,11 @@ class Response
 	protected function setCode(int $code): void
 	{
 		$this->code = $code;
-		http_response_code($code);
+
+		if (!headers_sent())
+		{
+			http_response_code($code);
+		}
 	}
 
 	/**
@@ -73,7 +77,11 @@ class Response
 			return;
 		}
 
-		header('Content-Type: application/json');
+		if (!headers_sent())
+		{
+			header('Content-Type: application/json');
+		}
+
 		Formatter::encodeAndRender($this->data);
 	}
 

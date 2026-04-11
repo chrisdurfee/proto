@@ -204,6 +204,12 @@ namespace Proto\Error
 				return true;
 			}
 
+			// Skip "headers already sent" errors caused by our own error output
+			if (str_contains($errstr, 'Cannot modify header information'))
+			{
+				return true;
+			}
+
 			// Set re-entry guard
 			static::$isHandling = true;
 

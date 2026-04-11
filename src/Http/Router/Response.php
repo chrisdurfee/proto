@@ -80,6 +80,11 @@ class Response
 	 */
 	public function sendHeaders(int $code, ?string $contentType = null): self
 	{
+		if (headers_sent())
+		{
+			return $this;
+		}
+
 		$contentType = $contentType ?? $this->contentType;
 		$message = $this->getResponseMessage($code);
 
