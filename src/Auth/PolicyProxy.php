@@ -65,6 +65,13 @@ class PolicyProxy implements ControllerInterface
 	/**
 	 * Calls the controller method and checks post-execution policies.
 	 *
+	 * IMPORTANT: Post-execution policy hooks (afterGet, afterAll, etc.) run
+	 * AFTER the controller method completes. This means database writes, API
+	 * calls, and file operations will execute before authorization failure is
+	 * detected. Use pre-execution policies (before(), get(), add(), etc.) for
+	 * destructive operations. Post-execution hooks are designed for result-based
+	 * ownership checks on read operations.
+	 *
 	 * @param string $method The method name.
 	 * @param array|null $arguments The method arguments.
 	 * @return mixed The method return value.

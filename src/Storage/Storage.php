@@ -245,6 +245,9 @@ class Storage extends TableStorage
 	/**
 	 * Prepare data for an update.
 	 *
+	 * Strips immutable fields declared on the model to enforce
+	 * immutability at the storage layer regardless of caller.
+	 *
 	 * @return object
 	 */
 	protected function getUpdateData(): object
@@ -253,6 +256,16 @@ class Storage extends TableStorage
 		if ($this->model->has('updatedAt'))
 		{
 			$data->updated_at = date('Y-m-d H:i:s');
+		}
+
+		$immutable = $this->model::immutableFields();
+		if (!empty($immutable))
+		{
+			foreach ($immutable as $field)
+			{
+				$snakeField = Strings::snakeCase($field);
+				unset($data->{$snakeField});
+			}
 		}
 
 		return $data;

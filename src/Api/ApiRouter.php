@@ -130,8 +130,8 @@ namespace Proto\Api
 	use Proto\Http\Response;
 	use Proto\Http\Router\Request;
 	use Proto\Http\Router\Router;
-	use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 	use Proto\Http\Middleware\ApiRateLimiterMiddleware;
+	use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 
 	/**
 	 * Class ApiRouter
@@ -186,6 +186,9 @@ namespace Proto\Api
 		protected function setupRouter(): void
 		{
 			$this->router = router();
+			$this->router->defaultMutationMiddleware([
+				CrossSiteProtectionMiddleware::class,
+			]);
 		}
 
 		/**
@@ -196,7 +199,6 @@ namespace Proto\Api
 		protected function addRoutes(): void
 		{
 			$middleware = [
-				//CrossSiteProtectionMiddleware::class,
 				ApiRateLimiterMiddleware::class,
 			];
 

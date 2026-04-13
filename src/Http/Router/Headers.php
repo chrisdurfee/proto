@@ -6,7 +6,11 @@ use Proto\Utils\Filter\Input;
 /**
  * Headers
  *
- * Handles HTTP headers.
+ * Handles HTTP headers including CORS with origin whitelisting.
+ *
+ * Configure allowed origins in common/Config/.env under "cors.allowedOrigins"
+ * as an array of domain strings (e.g. ["https://example.com", "https://app.example.com"]).
+ * When not configured, falls back to reflecting the request origin (development mode).
  *
  * @package Proto\Http\Router
  */
@@ -21,7 +25,7 @@ class Headers
 	[
 		'Access-Control-Allow-Origin' => null, // Will be set dynamically based on request origin
 		'Access-Control-Allow-Credentials' => 'true',
-		'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, Cache-Control',
+		'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, Cache-Control, csrf-token',
 		'Access-Control-Allow-Methods' => null, // placeholder
 		'Access-Control-Max-Age' => '86400',
 		'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
@@ -29,6 +33,13 @@ class Headers
 		'X-Frame-Options' => 'DENY',
 		'Referrer-Policy' => 'strict-origin-when-cross-origin'
 	];
+
+	/**
+	 * Cached allowed origins from configuration.
+	 *
+	 * @var array|null
+	 */
+	protected static ?array $allowedOrigins = null;
 
 	/**
 	 * Convert the methods array to a comma-separated string.
@@ -39,6 +50,51 @@ class Headers
 	protected static function convertMethodsToString(array $methods): string
 	{
 		return implode(', ', $methods);
+	}
+
+	/**
+	 * Retrieves allowed origins from configuration.
+	 *
+	 * @return array<string>
+	 */
+	protected static function getAllowedOrigins(): array
+	{
+		if (static::$allowedOrigins !== null)
+		{
+			return static::$allowedOrigins;
+		}
+
+		$origins = [];
+		if (function_exists('env'))
+		{
+			$cors = env('cors');
+			if (is_object($cors) && isset($cors->allowedOrigins) && is_array($cors->allowedOrigins))
+			{
+				$origins = $cors->allowedOrigins;
+			}
+		}
+
+		return (static::$allowedOrigins = $origins);
+	}
+
+	/**
+	 * Validates whether the given origin is allowed.
+	 *
+	 * When no allowed origins are configured, all origins are permitted
+	 * (development fallback). In production, configure allowedOrigins.
+	 *
+	 * @param string $origin The request origin.
+	 * @return bool
+	 */
+	protected static function isAllowedOrigin(string $origin): bool
+	{
+		$allowed = static::getAllowedOrigins();
+		if (empty($allowed))
+		{
+			return true;
+		}
+
+		return in_array($origin, $allowed, true);
 	}
 
 	/**
@@ -55,13 +111,13 @@ class Headers
 		// Set origin from request (required for credentials).
 		// Strip CR/LF to prevent HTTP header injection via the Origin header.
 		$origin = str_replace(["\r", "\n", "\0"], '', Input::server('HTTP_ORIGIN'));
-		if ($origin !== '')
+		if ($origin !== '' && static::isAllowedOrigin($origin))
 		{
 			$headers['Access-Control-Allow-Origin'] = $origin;
 		}
 		else
 		{
-			// Fallback for non-CORS requests
+			// No valid origin — omit CORS credentials headers
 			unset($headers['Access-Control-Allow-Origin']);
 			unset($headers['Access-Control-Allow-Credentials']);
 		}

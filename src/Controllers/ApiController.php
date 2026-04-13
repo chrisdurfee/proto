@@ -16,6 +16,14 @@ use Proto\Api\Validator;
 abstract class ApiController extends Controller
 {
 	/**
+	 * Maximum number of records returned by all() queries.
+	 * Override in subclasses to adjust per-controller.
+	 *
+	 * @var int
+	 */
+	protected int $maxLimit = 1000;
+
+	/**
 	 * Restricts the fields from the given data.
 	 *
 	 * @param object $data The data to restrict.
@@ -78,12 +86,13 @@ abstract class ApiController extends Controller
     }
 
 	/**
-	 * Sets a successful response and renders it as JSON.
+	 * Sets an error response and terminates the request.
 	 *
-	 * @param mixed $data The response data.
-	 * @return void
+	 * @param string|null $message The error message.
+	 * @param int $code The HTTP status code.
+	 * @return never
 	 */
-	protected function setError(?string $message = null, int $code = 400): array
+	protected function setError(?string $message = null, int $code = 400): never
 	{
 		$error = $this->error($message ?? 'An error occurred', $code);
 		JsonFormat::encodeAndRender($error);
@@ -120,6 +129,10 @@ abstract class ApiController extends Controller
 		$orderBy = $this->setOrderByModifier($request);
 		$groupBy = $this->setGroupByModifier($request);
 		$since = $request->input('since') ?? null;
+
+		// Enforce maximum limit to prevent unbounded queries
+		$maxLimit = $this->maxLimit ?? 1000;
+		$limit = min($limit, $maxLimit);
 
 		return (object) [
 			'filter' => $filter,

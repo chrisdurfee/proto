@@ -42,6 +42,24 @@ use Proto\Utils\Filter\Sanitize;
 class Validator
 {
 	/**
+	 * Allowed sanitizer method names.
+	 *
+	 * @var array<string>
+	 */
+	protected const ALLOWED_SANITIZERS = [
+		'string', 'int', 'float', 'email', 'ip', 'phone', 'mac', 'bool', 'url', 'domain',
+	];
+
+	/**
+	 * Allowed validator method names.
+	 *
+	 * @var array<string>
+	 */
+	protected const ALLOWED_VALIDATORS = [
+		'string', 'int', 'float', 'email', 'ip', 'phone', 'mac', 'bool', 'url', 'domain', 'image',
+	];
+
+	/**
 	 * @var array List of error messages.
 	 */
 	protected array $errors = [];
@@ -191,6 +209,12 @@ class Validator
 	 */
 	protected function sanitizeValue(string $key, mixed $value, string $method): mixed
 	{
+		if (!in_array($method, self::ALLOWED_SANITIZERS, true))
+		{
+			$this->addError("Invalid sanitizer type '{$method}' for key {$key}.");
+			return $value;
+		}
+
 		$value = Sanitize::$method($value);
 		$this->setValue($key, $value);
 		return $value;
@@ -223,6 +247,12 @@ class Validator
 			$maxSizeKb = $type[1] ?? null;
 			$maxSizeKb = ($maxSizeKb)? (int)$maxSizeKb : null;
 			return $this->validateFile($key, $value, $maxSizeKb, $details);
+		}
+
+		if (!in_array($method, self::ALLOWED_VALIDATORS, true))
+		{
+			$this->addError("Invalid validation type '{$method}' for key {$key}.");
+			return false;
 		}
 
 		$isValid = Validate::$method($value);

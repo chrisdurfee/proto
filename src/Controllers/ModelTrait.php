@@ -16,6 +16,21 @@ trait ModelTrait
 	protected ?string $model = null;
 
 	/**
+	 * Allowed model methods that can be forwarded via __call/__callStatic.
+	 * Override in controllers to expand the whitelist.
+	 *
+	 * @var array<string>
+	 */
+	protected array $allowedModelMethods = [
+		'get',
+		'getBy',
+		'fetchWhere',
+		'all',
+		'search',
+		'count',
+	];
+
+	/**
 	 * Retrieves the model class name.
 	 *
 	 * @return string|null The model class reference using ::class.
@@ -63,12 +78,19 @@ trait ModelTrait
 	/**
 	 * Handles dynamic method calls, forwarding them to the model.
 	 *
+	 * Only methods listed in $allowedModelMethods are forwarded.
+	 *
 	 * @param string $method The method name.
 	 * @param array $arguments The method arguments.
 	 * @return mixed The result of the method call.
 	 */
 	public function __call(string $method, array $arguments): mixed
 	{
+		if (!in_array($method, $this->allowedModelMethods, true))
+		{
+			return $this->error('The method is not callable.');
+		}
+
 		$model = $this->model();
 		$callable = [$model, $method];
 
@@ -84,6 +106,8 @@ trait ModelTrait
 	/**
 	 * Handles static method calls, forwarding them to the model.
 	 *
+	 * Only methods listed in $allowedModelMethods are forwarded.
+	 *
 	 * @param string $method The method name.
 	 * @param array $arguments The method arguments.
 	 * @return mixed The result of the method call.
@@ -91,6 +115,12 @@ trait ModelTrait
 	public static function __callStatic(string $method, array $arguments): mixed
 	{
 		$controller = new static();
+
+		if (!in_array($method, $controller->allowedModelMethods, true))
+		{
+			return Response::invalid('The method is not callable.');
+		}
+
 		$modelClass = $controller->getModelClass();
 
 		if (!\is_callable([$modelClass, $method]))

@@ -64,11 +64,25 @@ class CrossSiteRequestForgeryGate extends Gate
 	/**
 	 * This will reset the token.
 	 *
+	 * Call on login, logout, or privilege escalation to rotate
+	 * the CSRF token per OWASP token rotation guidelines.
+	 *
 	 * @return void
 	 */
-	protected function reset(): void
+	public function reset(): void
 	{
 		$this->set(self::CSRF_TOKEN, null);
+	}
+
+	/**
+	 * Rotates the CSRF token by resetting and generating a new one.
+	 *
+	 * @return string The new token.
+	 */
+	public function rotate(): string
+	{
+		$this->reset();
+		return $this->setToken();
 	}
 
 	/**

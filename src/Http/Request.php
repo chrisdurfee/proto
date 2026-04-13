@@ -124,12 +124,24 @@ class Request
 	 * This will set the request params as the body
 	 * input for PUT and PATCH Requests.
 	 *
+	 * Only parses form-urlencoded content types. JSON bodies
+	 * should be accessed via body() or json() directly.
+	 *
 	 * @param string $method
 	 * @return void
 	 */
 	protected static function setCustomInputs(string $method): void
 	{
 		if ($method !== 'PUT' && $method !== 'PATCH'  && $method !== 'DELETE')
+		{
+			return;
+		}
+
+		$contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+		$contentType = strtolower(trim(explode(';', $contentType)[0]));
+
+		// Only parse form-urlencoded bodies into $_REQUEST
+		if ($contentType !== 'application/x-www-form-urlencoded')
 		{
 			return;
 		}
@@ -271,12 +283,14 @@ class Request
 	/**
 	 * This will get an item and decode it from json.
 	 *
+	 * Uses raw() to avoid strip_tags() corrupting JSON structures.
+	 *
 	 * @param string $name
 	 * @return mixed
 	 */
 	public static function json(string $name): mixed
 	{
-		$item = static::input($name);
+		$item = static::raw($name);
 		if (!$item)
 		{
 			return null;
@@ -515,5 +529,24 @@ class Request
 			$uploadFiles[$key] = $file;
 		}
 		return $uploadFiles;
+	}
+
+	/**
+	 * Resets all cached static properties.
+	 *
+	 * Call between requests in long-running processes (e.g., PHP-FPM
+	 * workers, Swoole, RoadRunner) to prevent stale state and memory leaks.
+	 *
+	 * @return void
+	 */
+	public static function reset(): void
+	{
+		self::$currentPath = '';
+		self::$ipAddress = null;
+		self::$currentUrl = '';
+		self::$httpMethod = '';
+		self::$userAgent = '';
+		self::$headers = [];
+		self::$body = null;
 	}
 }

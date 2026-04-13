@@ -206,10 +206,10 @@ class FileValidator
 
 		$actualMime = static::getActualMimeType($file->getFilePath());
 
-		// If we can't determine actual MIME, allow it (fail open for compatibility)
+		// If we can't determine actual MIME, deny the file (fail-closed for security)
 		if (empty($actualMime))
 		{
-			return true;
+			return false;
 		}
 
 		return in_array($actualMime, $allowedMimes);

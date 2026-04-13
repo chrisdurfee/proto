@@ -76,19 +76,27 @@ class JsonFormat extends Format
 	}
 
 	/**
+	 * Maximum JSON nesting depth to prevent DoS via deeply nested objects.
+	 *
+	 * @var int
+	 */
+	protected const MAX_DEPTH = 32;
+
+	/**
 	 * Decodes a JSON string.
 	 *
 	 * @param mixed $data The JSON-encoded string.
+	 * @param int|null $depth Maximum nesting depth (defaults to MAX_DEPTH).
 	 * @return mixed Decoded data or null on failure.
 	 */
-	public static function decode(mixed $data): mixed
+	public static function decode(mixed $data, ?int $depth = null): mixed
 	{
 		if ($data === null || !is_string($data) || empty($data))
 		{
 			return null;
 		}
 
-		$decodedData = json_decode($data);
+		$decodedData = json_decode($data, false, $depth ?? self::MAX_DEPTH);
 
 		if (json_last_error() !== JSON_ERROR_NONE)
 		{

@@ -84,13 +84,14 @@ abstract class Policy
 	 */
 	protected function validatePolicy(): void
 	{
-		if (!$this->isDevelopment())
+		$isDev = $this->isDevelopment();
+
+		if ($isDev)
 		{
-			return;
+			$this->validateTypeProperty();
 		}
 
-		$this->validateTypeProperty();
-		$this->validateMethodSignatures();
+		$this->validateMethodSignatures($isDev);
 	}
 
 	/**
@@ -134,13 +135,13 @@ abstract class Policy
 	/**
 	 * Validates that policy action methods have the correct signature.
 	 *
-	 * Policy methods for standard actions (get, add, update, delete, all, search)
-	 * should accept a single Request parameter. Methods with wrong signatures
-	 * will silently fall through to default() — this validation catches that.
+	 * In development: triggers a visible E_USER_WARNING for immediate feedback.
+	 * In production: logs mismatches via error_log so typos don't silently fail.
 	 *
+	 * @param bool $isDev Whether the application is in development mode.
 	 * @return void
 	 */
-	protected function validateMethodSignatures(): void
+	protected function validateMethodSignatures(bool $isDev = false): void
 	{
 		$actionMethods = ['get', 'add', 'update', 'delete', 'all', 'search', 'count', 'setup', 'merge'];
 
@@ -191,12 +192,18 @@ abstract class Policy
 				continue;
 			}
 
-			trigger_error(
-				"Policy method " . static::class . "::{$method}() has an unexpected signature. "
+			$message = "Policy method " . static::class . "::{$method}() has an unexpected signature. "
 				. "Expected (Request \$request): bool or no parameters. "
-				. "The current signature will cause the method to never be called by the policy dispatcher.",
-				E_USER_WARNING
-			);
+				. "The current signature will cause the method to never be called by the policy dispatcher.";
+
+			if ($isDev)
+			{
+				trigger_error($message, E_USER_WARNING);
+			}
+			else
+			{
+				error_log($message);
+			}
 		}
 	}
 

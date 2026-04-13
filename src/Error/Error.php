@@ -333,16 +333,62 @@ namespace Proto\Error
 		{
 			return (object)[
 				'errorNumber' => $errno,
-				'errorMessage' => $errstr,
+				'errorMessage' => static::sanitizeErrorMessage($errstr),
 				'errorFile' => static::redactPath($errfile),
 				'errorLine' => $errline,
 				'errorTrace' => '',
-				'backTrace' => JsonFormat::encode(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
+				'backTrace' => static::redactBacktrace(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
 				'env' => env('env'),
 				'url' => Request::fullUrlWithScheme(),
 				'query' => JsonFormat::encode(Request::all()),
 				'errorIp' => Request::ip()
 			];
+		}
+
+		/**
+		 * Redacts file paths from a backtrace array and encodes to JSON.
+		 *
+		 * @param array $trace The debug_backtrace() result.
+		 * @return string JSON-encoded redacted backtrace.
+		 */
+		protected static function redactBacktrace(array $trace): string
+		{
+			foreach ($trace as &$frame)
+			{
+				if (isset($frame['file']))
+				{
+					$frame['file'] = static::redactPath($frame['file']);
+				}
+			}
+
+			return JsonFormat::encode($trace) ?: '[]';
+		}
+
+		/**
+		 * Sanitizes an error message to remove potential credentials or secrets.
+		 *
+		 * Masks SMTP authentication strings, passwords, and connection strings.
+		 *
+		 * @param string $message The error message.
+		 * @return string The sanitized message.
+		 */
+		protected static function sanitizeErrorMessage(string $message): string
+		{
+			// Mask SMTP authentication details
+			$message = preg_replace(
+				'/AUTH\s+(LOGIN|PLAIN|CRAM-MD5)\s+[A-Za-z0-9+\/=]+/i',
+				'AUTH $1 [REDACTED]',
+				$message
+			) ?? $message;
+
+			// Mask password-like patterns in connection strings
+			$message = preg_replace(
+				'/password[\s]*[=:]\s*[^\s,;]+/i',
+				'password=[REDACTED]',
+				$message
+			) ?? $message;
+
+			return $message;
 		}
 
 		/**
@@ -355,11 +401,11 @@ namespace Proto\Error
 		{
 			return (object)[
 				'errorNumber' => $exception->getCode(),
-				'errorMessage' => $exception->getMessage(),
+				'errorMessage' => static::sanitizeErrorMessage($exception->getMessage()),
 				'errorFile' => static::redactPath($exception->getFile()),
 				'errorLine' => $exception->getLine(),
 				'errorTrace' => static::redactPath($exception->getTraceAsString()),
-				'backTrace' => JsonFormat::encode(debug_backtrace()),
+				'backTrace' => static::redactBacktrace(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
 				'env' => env('env'),
 				'url' => Request::fullUrlWithScheme(),
 				'query' => JsonFormat::encode(Request::all()),
