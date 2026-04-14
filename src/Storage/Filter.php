@@ -60,6 +60,7 @@ class Filter
 		 */
 		if (!is_array($value))
 		{
+			self::logRawFilter($value);
 			return $value;
 		}
 
@@ -295,5 +296,249 @@ class Filter
 		$field = (string)$field;
 		$columnName = ($isSnakeCase) ? self::decamelize($field) : $field;
 		return Sanitize::cleanColumn($columnName);
+	}
+
+	/**
+	 * Logs a deprecation notice when a raw SQL string is used as a filter.
+	 *
+	 * Helps track raw filter usage so they can gradually be replaced
+	 * with parameterized alternatives.
+	 *
+	 * @param mixed $value The raw filter value.
+	 * @return void
+	 */
+	protected static function logRawFilter(mixed $value): void
+	{
+		if (!is_string($value))
+		{
+			return;
+		}
+
+		/**
+		 * Skip safe static conditions that contain no user input.
+		 * Pattern: "alias.column IS [NOT] NULL"
+		 */
+		if (preg_match('/^[a-z_]+\.[a-z_]+\s+IS\s+(NOT\s+)?NULL$/i', $value))
+		{
+			return;
+		}
+
+		$domain = env('domain') ?? null;
+		if ($domain !== 'development')
+		{
+			return;
+		}
+
+		$caller = self::getFilterCaller();
+		$message = "[Proto\\Filter] Raw SQL filter detected: \"{$value}\"";
+		if ($caller)
+		{
+			$message .= " in {$caller}";
+		}
+
+		error_log($message);
+	}
+
+	/**
+	 * Gets the caller information for a raw filter log entry.
+	 *
+	 * Walks the backtrace to find the first caller outside the
+	 * Filter/Storage internals.
+	 *
+	 * @return string|null
+	 */
+	protected static function getFilterCaller(): ?string
+	{
+		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+		$skipClasses = ['Proto\\Storage\\Filter', 'Proto\\Storage\\Storage'];
+
+		foreach ($trace as $frame)
+		{
+			$class = $frame['class'] ?? '';
+			if (!in_array($class, $skipClasses, true) && !empty($frame['file']))
+			{
+				$file = basename($frame['file']);
+				$line = $frame['line'] ?? '?';
+				return "{$file}:{$line}";
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Build an EXISTS subquery filter condition.
+	 *
+	 * Returns an array suitable for use in a filter array. The generated
+	 * SQL is fully parameterized.
+	 *
+	 * @param string $table The related table name.
+	 * @param string $alias The table alias for the subquery.
+	 * @param string $joinCondition The ON/WHERE clause linking to the parent (e.g., "ea.event_id = e.id").
+	 * @param array $conditions Additional parameterized conditions. Each entry is either:
+	 *   - [column, value] for equality
+	 *   - [column, operator, value] for comparison
+	 *   - [column, 'IN', [values]] for IN clauses
+	 * @return array A filter entry: [sql, [params]].
+	 */
+	public static function exists(string $table, string $alias, string $joinCondition, array $conditions = []): array
+	{
+		return self::buildSubqueryFilter('EXISTS', $table, $alias, $joinCondition, $conditions);
+	}
+
+	/**
+	 * Build a NOT EXISTS subquery filter condition.
+	 *
+	 * @param string $table The related table name.
+	 * @param string $alias The table alias for the subquery.
+	 * @param string $joinCondition The ON/WHERE clause linking to the parent (e.g., "ea.event_id = e.id").
+	 * @param array $conditions Additional parameterized conditions.
+	 * @return array A filter entry: [sql, [params]].
+	 */
+	public static function notExists(string $table, string $alias, string $joinCondition, array $conditions = []): array
+	{
+		return self::buildSubqueryFilter('NOT EXISTS', $table, $alias, $joinCondition, $conditions);
+	}
+
+	/**
+	 * Build a parameterized EXISTS or NOT EXISTS subquery filter.
+	 *
+	 * @param string $type 'EXISTS' or 'NOT EXISTS'.
+	 * @param string $table The related table name.
+	 * @param string $alias The table alias.
+	 * @param string $joinCondition The join condition linking to parent table.
+	 * @param array $conditions Additional conditions.
+	 * @return array A filter entry: [sql, [params]].
+	 */
+	protected static function buildSubqueryFilter(
+		string $type,
+		string $table,
+		string $alias,
+		string $joinCondition,
+		array $conditions
+	): array
+	{
+		$table = Sanitize::cleanColumn($table);
+		$alias = Sanitize::cleanColumn($alias);
+		$params = [];
+
+		$whereParts = [$joinCondition];
+
+		foreach ($conditions as $condition)
+		{
+			if (!is_array($condition) || count($condition) < 2)
+			{
+				continue;
+			}
+
+			$col = Sanitize::cleanColumn((string)$condition[0]);
+			$condCount = count($condition);
+
+			if ($condCount === 2)
+			{
+				$whereParts[] = "{$col} = ?";
+				$params[] = $condition[1];
+			}
+			elseif ($condCount === 3)
+			{
+				$operator = strtoupper(trim((string)$condition[1]));
+				if (!in_array($operator, self::allowedOperators(), true))
+				{
+					$operator = '=';
+				}
+
+				if (in_array($operator, ['IN', 'NOT IN'], true) && is_array($condition[2]))
+				{
+					if (empty($condition[2]))
+					{
+						$whereParts[] = ($operator === 'IN') ? '1 = 0' : '1 = 1';
+					}
+					else
+					{
+						$placeholders = implode(', ', array_fill(0, count($condition[2]), '?'));
+						$whereParts[] = "{$col} {$operator} ({$placeholders})";
+						$params = array_merge($params, array_values($condition[2]));
+					}
+				}
+				else
+				{
+					$whereParts[] = "{$col} {$operator} ?";
+					$params[] = $condition[2];
+				}
+			}
+		}
+
+		$where = implode(' AND ', $whereParts);
+		$sql = "{$type} (SELECT 1 FROM {$table} {$alias} WHERE {$where})";
+
+		return [$sql, $params];
+	}
+
+	/**
+	 * Build a condition with table alias prefix.
+	 *
+	 * Convenience method for `[alias.column, value]` style conditions
+	 * that properly sanitize the column name.
+	 *
+	 * @param string $alias Table alias (e.g., 'e').
+	 * @param string $column Column name (camelCase or snake_case).
+	 * @param mixed $value The filter value.
+	 * @param string|null $operator Optional operator (=, !=, >, <, LIKE, IN, etc.).
+	 * @return array A filter entry.
+	 */
+	public static function aliased(string $alias, string $column, mixed $value, ?string $operator = null): array
+	{
+		$alias = Sanitize::cleanColumn($alias);
+		$column = Sanitize::cleanColumn(Strings::snakeCase($column));
+		$qualified = "{$alias}.{$column}";
+
+		if ($operator !== null)
+		{
+			return [$qualified, $operator, $value];
+		}
+
+		return [$qualified, $value];
+	}
+
+	/**
+	 * Build a safe static condition string.
+	 *
+	 * Used for conditions with no user input like `'alias.column IS NULL'`
+	 * or `'alias.column > NOW()'`. Column and alias are sanitized.
+	 *
+	 * @param string $alias Table alias.
+	 * @param string $column Column name (camelCase or snake_case).
+	 * @param string $expression SQL expression (e.g., 'IS NULL', '> NOW()').
+	 * @return string A safe static condition string.
+	 */
+	public static function condition(string $alias, string $column, string $expression): string
+	{
+		$alias = Sanitize::cleanColumn($alias);
+		$column = Sanitize::cleanColumn(Strings::snakeCase($column));
+
+		/**
+		 * Whitelist common static expressions to prevent injection.
+		 */
+		$allowedExpressions = [
+			'IS NULL',
+			'IS NOT NULL',
+			'> NOW()',
+			'>= NOW()',
+			'< NOW()',
+			'<= NOW()',
+			'= NOW()',
+		];
+
+		$normalized = strtoupper(trim($expression));
+		if (!in_array($normalized, $allowedExpressions, true))
+		{
+			trigger_error(
+				"[Proto\\Filter] Unrecognized static expression: \"{$expression}\". Use parameterized conditions for dynamic values.",
+				E_USER_WARNING
+			);
+			return '1=1';
+		}
+
+		return "{$alias}.{$column} {$expression}";
 	}
 }
