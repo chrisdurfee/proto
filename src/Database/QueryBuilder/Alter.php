@@ -111,6 +111,20 @@ class Alter extends Blueprint
 	}
 
 	/**
+	 * Adds an index to the table.
+	 *
+	 * @param string $name The index name.
+	 * @return CreateIndex
+	 */
+
+	public function index(string $name): CreateIndex
+	{
+		$index = $this->getType($name, 'index');
+		$this->adding[] = $index;
+		return $index;
+	}
+
+	/**
 	 * Adds a field.
 	 *
 	 * @param string $name The field name.

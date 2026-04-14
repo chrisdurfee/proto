@@ -75,14 +75,18 @@ abstract class ApiController extends Controller
 	}
 
 	/**
-	 * Handles validation errors by encoding the error message and rendering it as JSON.
+	 * Handles validation errors by rendering a JSON error response
+	 * with both a summary message and field-level error details.
 	 *
-	 * @param Validator $validator The validator object containing the error message.
+	 * @param Validator $validator The validator object containing the errors.
 	 * @return void
 	 */
 	protected function errorValidating(Validator $validator): void
     {
-        $this->setError($validator->getMessage());
+        $fieldErrors = $validator->getFieldErrors();
+        $error = $this->error($validator->getMessage(), 200, $fieldErrors);
+        JsonFormat::encodeAndRender($error);
+        die;
     }
 
 	/**

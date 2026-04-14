@@ -1,8 +1,10 @@
 <?php declare(strict_types=1);
 namespace Proto\Controllers;
 
+use Proto\Controllers\Traits\AuditFieldsTrait;
+use Proto\Controllers\Traits\FileUploadTrait;
+use Proto\Controllers\Traits\UserEnrichmentTrait;
 use Proto\Http\Router\Request;
-use Proto\Models\Model;
 use Proto\Services\ServiceResult;
 
 /**
@@ -16,6 +18,9 @@ use Proto\Services\ServiceResult;
 abstract class ResourceController extends ApiController
 {
 	use ModelTrait;
+	use AuditFieldsTrait;
+	use FileUploadTrait;
+	use UserEnrichmentTrait;
 
 	/**
 	 * When true, automatically adds the session user's ID to the filter
@@ -66,13 +71,6 @@ abstract class ResourceController extends ApiController
 	 * @var array<string, string>
 	 */
 	protected array $filterParams = [];
-
-	/**
-	 * Session user fields to attach to add/update responses.
-	 *
-	 * @var array
-	 */
-	protected array $enrichUserFields = [];
 
 	/**
 	 * Initializes the resource controller.
@@ -165,33 +163,6 @@ abstract class ResourceController extends ApiController
 		return $model->setup()
 			? $this->response(['id' => $model->id])
 			: $this->error('Unable to add the item.');
-	}
-
-	/**
-	 * Adds user data to the model.
-	 *
-	 * This method sets the `createdBy` and `authorId` fields to the current user's ID if they are not already set.
-	 *
-	 * @param Model $model The model instance to which user data will be added.
-	 * @return void
-	 */
-	protected function getAddUserData(Model $model): void
-	{
-		$userId = session()->user->id ?? null;
-		if ($model->has('createdBy') && !isset($model->createdBy))
-		{
-			$model->createdBy = $userId;
-		}
-
-		if ($model->has('authorId') && !isset($model->authorId))
-		{
-			$model->authorId = $userId;
-		}
-
-		if ($model->has('userId') && !isset($model->userId))
-		{
-			$model->userId = $userId;
-		}
 	}
 
 	/**
@@ -302,28 +273,6 @@ abstract class ResourceController extends ApiController
 		$responseData = (object)['id' => $model->id];
 		$this->attachUserFields($responseData);
 		return $this->response((array)$responseData);
-	}
-
-	/**
-	 * Adds user data to the model for updates.
-	 *
-	 * This method sets the `updatedBy` field to the current user's ID if it is not already set.
-	 *
-	 * @param Model $model The model instance to which user data will be added.
-	 * @return void
-	 */
-	protected function getUpdateUserData(Model $model): void
-	{
-		$userId = session()->user->id ?? null;
-		if ($model->has('updatedBy') && !isset($model->updatedBy))
-		{
-			$model->updatedBy = $userId;
-		}
-
-		if ($model->has('editedBy') && !isset($model->editedBy))
-		{
-			$model->editedBy = $userId;
-		}
 	}
 
 	/**
@@ -514,33 +463,6 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
-	 * Adds user data to the model for deletions.
-	 *
-	 * This method sets the `deletedBy` field to the current user's ID if it is not already set.
-	 *
-	 * @param Model $model The model instance to which user data will be added.
-	 * @return void
-	 */
-	protected function getDeleteUserData(Model $model): void
-	{
-		$userId = session()->user->id ?? null;
-		if ($model->has('deletedBy') && !isset($model->deletedBy))
-		{
-			$model->deletedBy = $userId;
-		}
-
-		if ($model->has('removedBy') && !isset($model->removedBy))
-		{
-			$model->removedBy = $userId;
-		}
-
-		if ($model->has('archivedBy') && !isset($model->archivedBy))
-		{
-			$model->archivedBy = $userId;
-		}
-	}
-
-	/**
 	 * Deletes a model item.
 	 *
 	 * This method initializes the model with the provided data and adds user data for deletion.
@@ -565,34 +487,6 @@ abstract class ResourceController extends ApiController
 		return $model->delete()
 			? $this->response(['id' => $model->id])
 			: $this->error('Unable to delete the item.');
-	}
-
-	/**
-	 * Injects audit fields into a plain data object before service delegation.
-	 *
-	 * Sets the current session user's ID on each field that is not already set.
-	 * This provides the same audit data injection that getAddUserData/getUpdateUserData
-	 * perform on Model instances, but for plain objects passed to services.
-	 *
-	 * @param object &$data The data object to inject audit fields into.
-	 * @param array $fields The audit field names to inject.
-	 * @return void
-	 */
-	protected function injectAuditData(object &$data, array $fields): void
-	{
-		$userId = session()->user->id ?? null;
-		if ($userId === null)
-		{
-			return;
-		}
-
-		foreach ($fields as $field)
-		{
-			if (!isset($data->$field))
-			{
-				$data->$field = $userId;
-			}
-		}
 	}
 
 	/**
@@ -628,104 +522,6 @@ abstract class ResourceController extends ApiController
 		}
 
 		return $this->response(['id' => $result]);
-	}
-
-	/**
-	 * Validate and store an uploaded file, returning the new filename.
-	 *
-	 * @param Request $request The request object.
-	 * @param string $fieldName The form field name for the file input.
-	 * @param string $disk The storage disk (e.g., 'local', 's3').
-	 * @param string $directory The subdirectory within the disk.
-	 * @param string $rules Validation rules (e.g., 'image:2048|mimes:jpeg,png').
-	 * @return string|null New filename, or null if no file uploaded.
-	 */
-	protected function handleFileUpload(
-		Request $request,
-		string $fieldName,
-		string $disk = 'local',
-		string $directory = '',
-		string $rules = 'image:2048'
-	): ?string
-	{
-		$file = $request->file($fieldName);
-		if (!$file)
-		{
-			return null;
-		}
-
-		$this->validateRules([$fieldName => $file], [$fieldName => $rules]);
-		$file->store($disk, $directory);
-
-		return $file->getNewName();
-	}
-
-	/**
-	 * Validate, store, and return metadata for multiple file uploads.
-	 *
-	 * @param Request $request The request object.
-	 * @param string $fieldName The form field name for the file array input.
-	 * @param string $disk The storage disk (e.g., 'local', 's3').
-	 * @param string $directory The subdirectory within the disk.
-	 * @param string $rules Validation rules (e.g., 'image:2048|mimes:jpeg,png').
-	 * @return array Array of file metadata objects, empty if no files.
-	 */
-	protected function handleMediaUpload(
-		Request $request,
-		string $fieldName,
-		string $disk = 'local',
-		string $directory = '',
-		string $rules = 'image:2048'
-	): array
-	{
-		$files = $request->fileArray($fieldName);
-		if (empty($files))
-		{
-			return [];
-		}
-
-		$mediaItems = [];
-		foreach ($files as $file)
-		{
-			$this->validateRules([$fieldName => $file], [$fieldName => $rules]);
-			$file->store($disk, $directory);
-			$mediaItems[] = (object)[
-				'fileName' => $file->getNewName(),
-				'originalName' => $file->getOriginalName(),
-				'mimeType' => $file->getMimeType(),
-				'size' => $file->getSize()
-			];
-		}
-
-		return $mediaItems;
-	}
-
-	/**
-	 * Attaches session user fields to a response data object.
-	 *
-	 * Used after add/update to enrich the response with author data
-	 * so the UI can render immediately without a refetch.
-	 *
-	 * @param object &$data The response data to enrich.
-	 * @return void
-	 */
-	protected function attachUserFields(object &$data): void
-	{
-		if (empty($this->enrichUserFields))
-		{
-			return;
-		}
-
-		$user = session()->user ?? null;
-		if ($user === null)
-		{
-			return;
-		}
-
-		foreach ($this->enrichUserFields as $field)
-		{
-			$data->$field = $user->$field ?? null;
-		}
 	}
 
 	/**

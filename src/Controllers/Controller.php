@@ -55,15 +55,19 @@ abstract class Controller extends Base implements ControllerInterface
 	 *
 	 * @param string $message The error message.
 	 * @param int $statusCode The HTTP status code.
+	 * @param array<string, string[]> $errors Optional field-level validation errors.
 	 * @return object The error response object.
 	 */
-	protected function error(string $message = '', int $statusCode = 200): object
+	protected function error(string $message = '', int $statusCode = 200, array $errors = []): object
 	{
 		$response = new Response();
 		$response->error($message);
-		$response->setData([
-			'code' => $statusCode,
-		]);
+		$data = ['code' => $statusCode];
+		if (!empty($errors))
+		{
+			$data['errors'] = $errors;
+		}
+		$response->setData($data);
 		return $response->format();
 	}
 

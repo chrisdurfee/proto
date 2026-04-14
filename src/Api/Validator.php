@@ -60,10 +60,14 @@ class Validator
 	];
 
 	/**
-	 * @var array List of error messages.
+	 * @var array<string> Flat list of error messages (backward-compatible).
 	 */
 	protected array $errors = [];
 
+	/**
+	 * @var array<string, string[]> Field-keyed error messages for structured output.
+	 */
+	protected array $fieldErrors = [];
 	/**
 	 * @var bool Indicates whether the data is valid.
 	 */
@@ -102,13 +106,34 @@ class Validator
 	}
 
 	/**
-	 * Returns the list of validation errors.
+	 * Returns the flat list of validation errors (backward-compatible).
 	 *
-	 * @return array
+	 * @return array<string>
 	 */
 	public function getErrors(): array
 	{
 		return $this->errors;
+	}
+
+	/**
+	 * Returns field-keyed validation errors.
+	 *
+	 * Each key is the field name, each value is an array of error strings
+	 * for that field. Fields with no errors are not included.
+	 *
+	 * Example:
+	 * ```php
+	 * [
+	 *     'email' => ['The value is not correct'],
+	 *     'name' => ['The key is not set'],
+	 * ]
+	 * ```
+	 *
+	 * @return array<string, string[]>
+	 */
+	public function getFieldErrors(): array
+	{
+		return $this->fieldErrors;
 	}
 
 	/**
@@ -146,7 +171,7 @@ class Validator
 		{
 			if ($this->isRequired($details))
 			{
-				$this->addError("The key {$key} is not set.");
+				$this->addError("The key {$key} is not set.", $key, 'This field is required.');
 				return false;
 			}
 
@@ -211,7 +236,7 @@ class Validator
 	{
 		if (!in_array($method, self::ALLOWED_SANITIZERS, true))
 		{
-			$this->addError("Invalid sanitizer type '{$method}' for key {$key}.");
+			$this->addError("Invalid sanitizer type '{$method}' for key {$key}.", $key, "Invalid sanitizer type '{$method}'.");
 			return $value;
 		}
 
@@ -251,7 +276,7 @@ class Validator
 
 		if (!in_array($method, self::ALLOWED_VALIDATORS, true))
 		{
-			$this->addError("Invalid validation type '{$method}' for key {$key}.");
+			$this->addError("Invalid validation type '{$method}' for key {$key}.", $key, "Invalid validation type '{$method}'.");
 			return false;
 		}
 
@@ -259,7 +284,7 @@ class Validator
 
 		if ($isValid === false)
 		{
-			$this->addError("The value {$key} is not correct.");
+			$this->addError("The value {$key} is not correct.", $key, 'The value is not valid.');
 			return false;
 		}
 
@@ -269,7 +294,7 @@ class Validator
 			$result = (strlen($value) <= $limit);
 			if ($result === false)
 			{
-				$this->addError("The value {$key} is over the max size.");
+				$this->addError("The value {$key} is over the max size.", $key, "Must be {$limit} characters or fewer.");
 			}
 		}
 
@@ -303,13 +328,24 @@ class Validator
 	/**
 	 * Adds an error message and marks the data as invalid.
 	 *
-	 * @param string $message The error message.
+	 * When a field key is provided, the error is also stored in the
+	 * field-keyed errors array for structured output.
+	 *
+	 * @param string $message The full error message (backward-compatible).
+	 * @param string|null $field The field name this error applies to.
+	 * @param string|null $fieldMessage A shorter field-specific message (without field name prefix).
 	 * @return self
 	 */
-	protected function addError(string $message): self
+	protected function addError(string $message, ?string $field = null, ?string $fieldMessage = null): self
 	{
 		$this->isValid = false;
 		$this->errors[] = $message;
+
+		if ($field !== null)
+		{
+			$this->fieldErrors[$field][] = $fieldMessage ?? $message;
+		}
+
 		return $this;
 	}
 
@@ -327,7 +363,7 @@ class Validator
 		// First check if it's a valid image file format
 		if (!Validate::image($value))
 		{
-			$this->addError("The value {$key} is not a valid image file.");
+			$this->addError("The value {$key} is not a valid image file.", $key, 'Not a valid image file.');
 			return false;
 		}
 
@@ -340,7 +376,7 @@ class Validator
 		{
 			foreach ($validation['errors'] as $error)
 			{
-				$this->addError("The image {$key}: {$error}");
+				$this->addError("The image {$key}: {$error}", $key, $error);
 			}
 			return false;
 		}
@@ -390,7 +426,7 @@ class Validator
 		{
 			foreach ($validation['errors'] as $error)
 			{
-				$this->addError("The file {$key}: {$error}");
+				$this->addError("The file {$key}: {$error}", $key, $error);
 			}
 			return false;
 		}
