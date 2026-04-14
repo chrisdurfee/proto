@@ -362,7 +362,7 @@ abstract class Query extends Template
 	/**
 	 * Constructs a property string from an array of values.
 	 *
-	 * @param array $propertyAn array of property values.
+	 * @param array $property array of property values.
 	 * @param string $propertyText The text label for the property.
 	 * @param string $glueText The glue string to join property values.
 	 * @return string The constructed property string.

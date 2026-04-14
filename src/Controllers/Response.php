@@ -87,7 +87,7 @@ class Response
 	/**
 	 * Creates and returns a success response.
 	 *
-	 * @param string $message The success message.
+	 * @param mixed $data The success data.
 	 * @return object The formatted success response.
 	 */
 	public static function success(mixed $data = null): object

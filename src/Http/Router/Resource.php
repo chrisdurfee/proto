@@ -27,9 +27,7 @@ class Resource
 	/**
 	 * Initializes the route.
 	 *
-	 * @param string $method The HTTP method for the route.
-	 * @param string $uri The route URI.
-	 * @param callable $callback The callback action to execute when the route is activated.
+	 * @param string $controller The fully qualified class name of the controller to associate with this resource.
 	 */
 	public function __construct(
 		string $controller

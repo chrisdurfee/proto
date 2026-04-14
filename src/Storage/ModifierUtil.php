@@ -171,8 +171,7 @@ class ModifierUtil
 	 * Apply group-by conditions.
 	 *
 	 * @param object $sql Query builder instance.
-	 * @param array|null $modifiers Modifiers.
-	 * @param array|null $params Parameter array.
+	 * @param array|null $groupBy Group-by fields.
 	 * @param bool $isSnakeCase Whether to convert field names to snake_case.
 	 * @param string $alias Optional table alias.
 	 * @return void

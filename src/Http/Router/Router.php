@@ -311,7 +311,7 @@ class Router
 	/**
 	 * This will return the full URI.
 	 *
-	 * @param string $uri
+	 * @param callable|array $callback
 	 * @return callable|array
 	 */
 	protected function checkArrayCallback(callable|array $callback): callable
