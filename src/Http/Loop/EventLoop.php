@@ -4,14 +4,18 @@ namespace Proto\Http\Loop;
 use SplObjectStorage;
 
 /**
- * This will prevent the script from timing out.
- */
-set_time_limit(0);
-
-/**
  * EventLoop
  *
  * Handles event loop execution.
+ *
+ * The loop terminates when ANY of the following happens:
+ *   - `end()` is called externally,
+ *   - the client connection is reported as aborted,
+ *   - `maxDurationSeconds` (when > 0) elapses since the loop started.
+ *
+ * The third bound is critical for SSE streams behind nginx/Vite proxies,
+ * where `connection_aborted()` is unreliable. Without a deadline a stuck
+ * worker can never recycle, leading to PHP-FPM saturation.
  *
  * @package Proto\Http\Loop
  */
@@ -32,18 +36,48 @@ class EventLoop
 	protected bool $active = true;
 
 	/**
+	 * Maximum loop duration in seconds. Zero disables the deadline (use
+	 * with caution — only when callers enforce their own timeout).
+	 *
+	 * @var int
+	 */
+	protected int $maxDurationSeconds;
+
+	/**
+	 * Wall-clock time when the loop started.
+	 *
+	 * @var float|null
+	 */
+	protected ?float $startedAt = null;
+
+	/**
 	 * Constructs the EventLoop instance.
 	 *
-	 * @param int $tickInterval The tick interval in milliseconds.
+	 * @param int $tickInterval The tick interval in seconds.
 	 * @param SplObjectStorage $events The events storage.
+	 * @param int $maxDurationSeconds Hard upper bound on loop runtime.
+	 *   Defaults to 300 (5 minutes); set to 0 to disable.
 	 * @return void
 	 */
 	public function __construct(
 		int $tickInterval = 10,
-		protected SplObjectStorage $events = new SplObjectStorage()
+		protected SplObjectStorage $events = new SplObjectStorage(),
+		int $maxDurationSeconds = 300
 	)
 	{
 		$this->timer = new TickTimer($tickInterval);
+		$this->maxDurationSeconds = max(0, $maxDurationSeconds);
+	}
+
+	/**
+	 * Updates the maximum loop duration. Pass 0 to disable the deadline.
+	 *
+	 * @param int $seconds
+	 * @return void
+	 */
+	public function setMaxDuration(int $seconds): void
+	{
+		$this->maxDurationSeconds = max(0, $seconds);
 	}
 
 	/**
@@ -57,12 +91,29 @@ class EventLoop
 	}
 
 	/**
+	 * Returns true once the loop has exceeded its configured deadline.
+	 *
+	 * @return bool
+	 */
+	protected function isOverDeadline(): bool
+	{
+		if ($this->maxDurationSeconds <= 0 || $this->startedAt === null)
+		{
+			return false;
+		}
+
+		return (microtime(true) - $this->startedAt) >= $this->maxDurationSeconds;
+	}
+
+	/**
 	 * Executes the event loop.
 	 *
 	 * @return void
 	 */
 	public function loop(): void
 	{
+		$this->startedAt = microtime(true);
+
 		while ($this->isActive())
 		{
 			if (connection_aborted())
@@ -71,12 +122,14 @@ class EventLoop
 				return;
 			}
 
+			if ($this->isOverDeadline())
+			{
+				$this->end();
+				return;
+			}
+
 			$this->tick();
 
-			/**
-			 * This will check to stop if an event has
-			 * stopped the loop.
-			 */
 			if (!$this->isActive())
 			{
 				break;

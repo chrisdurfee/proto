@@ -2,6 +2,7 @@
 namespace Proto\Controllers\Traits;
 
 use Proto\Http\Router\Request;
+use Proto\Http\ServerEvents\SseConfig;
 
 /**
  * SyncableTrait
@@ -43,7 +44,32 @@ trait SyncableTrait
 	public function sync(Request $request): void
 	{
 		$channel = $this->getSyncChannel($request);
-		redisEvent($channel, fn(string $ch, array $msg) => $this->handleSyncMessage($ch, $msg, $request));
+		redisEvent(
+			$channel,
+			fn(string $ch, array $msg) => $this->handleSyncMessage($ch, $msg, $request),
+			$this->getSyncConfig($request)
+		);
+	}
+
+	/**
+	 * Optional per-endpoint SSE config overrides. Override in controllers
+	 * that need a longer-lived stream, faster heartbeats, etc. Returning
+	 * null uses framework defaults (see `SseConfig`).
+	 *
+	 * Example:
+	 * ```php
+	 * protected function getSyncConfig(Request $request): array
+	 * {
+	 *     return ['maxDuration' => 600, 'heartbeatInterval' => 10];
+	 * }
+	 * ```
+	 *
+	 * @param Request $request
+	 * @return array<string, int>|SseConfig|null
+	 */
+	protected function getSyncConfig(Request $request): array|SseConfig|null
+	{
+		return null;
 	}
 
 	/**

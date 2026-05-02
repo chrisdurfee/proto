@@ -9,6 +9,7 @@ namespace
 	use Proto\Http\Session\SessionInterface;
 	use Proto\Http\ServerEvents\ServerEvents;
 	use Proto\Http\ServerEvents\RedisServerEvents;
+	use Proto\Http\ServerEvents\SseConfig;
 
 	/**
 	 * @var Base $base This will boostrap the application.
@@ -70,26 +71,27 @@ namespace
 	/**
 	 * Creates a server event that triggers at specified intervals.
 	 *
-	 * @param int $interval
-	 * @param callable $callback
+	 * @param int $interval Tick interval in seconds.
+	 * @param callable $callback Tick callback. Return `false` to end early.
+	 * @param array<string, int>|SseConfig|null $config Optional SSE config
+	 *   overrides (see `SseConfig`) — e.g. `['maxDuration' => 600]`.
 	 * @return void
 	 */
-	function serverEvent(int $interval, callable $callback): void
+	function serverEvent(int $interval, callable $callback, array|SseConfig|null $config = null): void
 	{
-		$server = new ServerEvents($interval);
+		$server = new ServerEvents($interval, $config);
 		$server->start(function(EventLoop $loop) use($callback)
 		{
-			// Wrap the callback so returning `false` ends the loop (useful for timeboxed SSE).
 			$loop->addEvent(new UpdateEvent(function($event) use ($callback, $loop)
 			{
 				$result = $callback($event);
 				if ($result === false)
 				{
 					$loop->end();
-					return null; // don't emit any payload on termination
+					return null;
 				}
 
-				return $result; // emit payload (if non-empty) this tick
+				return $result;
 			}));
 		});
 	}
@@ -98,11 +100,13 @@ namespace
 	 * Creates a server event stream that triggers when data is available.
 	 *
 	 * @param callable $callback
+	 * @param array<string, int>|SseConfig|null $config Optional SSE config
+	 *   overrides (see `SseConfig`).
 	 * @return void
 	 */
-	function eventStream(callable $callback): void
+	function eventStream(callable $callback, array|SseConfig|null $config = null): void
 	{
-		$server = new ServerEvents();
+		$server = new ServerEvents(200, $config);
         $server->stream($callback);
 	}
 
@@ -110,16 +114,21 @@ namespace
 	 * Creates a Redis-based SSE stream that subscribes to one or more Redis channels.
 	 * Messages published to the channels are automatically sent to the client.
 	 *
+	 * Streams are bounded by `SseConfig::$maxDuration` (default 5 minutes)
+	 * so PHP-FPM workers always recycle. The browser's `EventSource`
+	 * auto-reconnects, so the bound is invisible to users.
+	 *
 	 * @param array|string $channels The Redis channel(s) to subscribe to (without 'redis:' prefix).
 	 * @param callable|null $callback Optional callback to process messages before sending.
-	 * Receives ($channel, $message) as parameters.
-	 * Return a value to send as SSE message, false to terminate.
-	 * If not provided, messages are sent as-is.
+	 *   Receives ($channel, $message) as parameters. Return a value to send as
+	 *   SSE message, false to terminate. If not provided, messages are sent as-is.
+	 * @param array<string, int>|SseConfig|null $config Optional SSE config
+	 *   overrides (see `SseConfig`) — e.g. `['maxDuration' => 600]`.
 	 * @return void
 	 */
-	function redisEvent(array|string $channels, ?callable $callback = null): void
+	function redisEvent(array|string $channels, ?callable $callback = null, array|SseConfig|null $config = null): void
 	{
-		$server = new RedisServerEvents();
+		$server = new RedisServerEvents(null, $config);
 		$server->subscribe($channels, $callback);
 	}
 }

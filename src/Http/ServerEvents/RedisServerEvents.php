@@ -10,6 +10,17 @@ use Proto\Utils\Filter\Input;
  * Implements Server-Sent Events (SSE) directly with Redis pub/sub.
  * Does not use EventLoop since Redis subscribe() is already blocking.
  *
+ * Reliability guarantees:
+ *   - Stream always exits within `SseConfig::$maxDuration` seconds (the
+ *     browser's EventSource auto-reconnects, so this is invisible to
+ *     users).
+ *   - Heartbeats use `fwrite(php://output, ...)` and detect broken pipes,
+ *     so a closed client connection terminates the stream within one
+ *     `redisReadTimeout` window instead of leaking the worker forever.
+ *   - A `register_shutdown_function` ensures Redis cleanup runs even on
+ *     fatal errors / `request_terminate_timeout` kills (where `__destruct`
+ *     would not).
+ *
  * @package Proto\Http\ServerEvents
  */
 class RedisServerEvents
@@ -38,28 +49,28 @@ class RedisServerEvents
 	protected string $connectionId;
 
 	/**
-	 * @var int Read timeout in seconds for Redis connection.
-	 * Higher values reduce reconnection frequency but delay disconnect detection.
-	 * Since we use pub/sub close signals for immediate termination, this can be higher.
-	 */
-	protected int $readTimeout = 2;
-
-	/**
-	 * @var int Maximum consecutive reconnection failures before giving up.
-	 */
-	protected int $maxReconnectFailures = 3;
-
-	/**
 	 * Constructor.
 	 *
-	 * @param array|null $settings Optional Redis connection settings.
+	 * @param array|null $settings Optional Redis connection settings
+	 *   (`host`, `port`, `password`). When null, pulled from `env('cache')`.
+	 * @param array<string, int>|SseConfig|null $config Optional SSE config
+	 *   overrides (see `SseConfig`) or a pre-built config instance.
 	 */
-	public function __construct(?array $settings = null)
+	public function __construct(?array $settings = null, array|SseConfig|null $config = null)
 	{
+		$this->sseConfig = $config instanceof SseConfig
+			? $config
+			: new SseConfig($config ?? []);
+
 		$this->settings = $settings ?? $this->getDefaultSettings();
 		$this->connectionId = $this->generateConnectionId();
 		$this->configureStreaming();
 		$this->setupResponse();
+		$this->registerShutdownHandler(function(): void
+		{
+			// Idempotent — safe to call multiple times.
+			$this->close();
+		});
 		$this->closeStaleConnections();
 		$this->registerConnection();
 		$this->connectToRedis();
@@ -92,19 +103,30 @@ class RedisServerEvents
 	}
 
 	/**
-	 * Gets the cache key for tracking connections by user/session/endpoint.
-	 * Includes the request URI to prevent different SSE endpoints from conflicting.
+	 * Identifies the current user. Falls back to "guest" when no session
+	 * user exists. Used for both the per-endpoint singleton key and the
+	 * user-wide close channel.
+	 *
+	 * @return string
+	 */
+	protected function getUserIdentifier(): string
+	{
+		return (string)($this->session->user->id ?? 'guest');
+	}
+
+	/**
+	 * Gets the cache key for tracking the singleton-per-endpoint connection
+	 * registration.
 	 *
 	 * @return string
 	 */
 	protected function getConnectionKey(): string
 	{
-		$userId = $this->session->user->id ?? 'guest';
+		$userId = $this->getUserIdentifier();
 		$sessionId = session_id();
 
-		// Include URI path to make key unique per endpoint
-		// This prevents different SSE endpoints (e.g., /activity/sync vs /conversation/sync)
-		// from signaling each other to close
+		// Include URI path so different SSE endpoints (e.g.
+		// /activity/sync vs /conversation/sync) don't kick each other off.
 		$uri = Input::server('REQUEST_URI');
 		$path = parse_url($uri, PHP_URL_PATH) ?? '';
 		$pathHash = md5($path);
@@ -113,10 +135,10 @@ class RedisServerEvents
 	}
 
 	/**
-	 * Gets the close channel name for a specific connection.
-	 * This channel is used to send immediate close signals via pub/sub.
+	 * Per-connection close channel. A publish here interrupts the blocking
+	 * subscribe and causes this single stream to exit cleanly.
 	 *
-	 * @param string $connectionId The connection ID.
+	 * @param string $connectionId
 	 * @return string
 	 */
 	protected function getCloseChannel(string $connectionId): string
@@ -125,9 +147,22 @@ class RedisServerEvents
 	}
 
 	/**
-	 * Closes stale connections for the same user/session.
-	 * When a user refreshes the page, this signals the old connection to close
-	 * immediately by publishing to its close channel.
+	 * User-wide close channel. A publish here closes every active SSE
+	 * stream owned by this user across all endpoints. Useful for logout,
+	 * permission revocation, or admin "kick" actions.
+	 *
+	 * @param string $userId
+	 * @return string
+	 */
+	protected function getUserCloseChannel(string $userId): string
+	{
+		return "sse:user:close:{$userId}";
+	}
+
+	/**
+	 * Closes stale per-endpoint connections for the same user/session.
+	 * Triggered when the same user opens the same SSE endpoint again
+	 * (e.g. page refresh).
 	 *
 	 * @return void
 	 */
@@ -138,30 +173,25 @@ class RedisServerEvents
 
 		if ($oldConnectionId && $oldConnectionId !== $this->connectionId)
 		{
-			// Set cache flag as backup
 			Cache::set("sse:close:{$oldConnectionId}", '1', 5);
-
-			// Publish immediate close signal via Redis pub/sub
-			$this->publishCloseSignal($oldConnectionId);
+			$this->publishCloseSignal($this->getCloseChannel($oldConnectionId));
 
 			error_log("SSE: Signaling stale connection {$oldConnectionId} to close");
 		}
 	}
 
 	/**
-	 * Publishes a close signal to a connection's close channel.
-	 * This immediately interrupts the blocking subscribe.
+	 * Publishes a close signal to the given channel. Uses a separate Redis
+	 * connection because the main one is reserved for subscribing.
 	 *
-	 * @param string $connectionId The connection ID to close.
+	 * @param string $channel Fully-qualified channel name to publish to.
 	 * @return void
 	 */
-	protected function publishCloseSignal(string $connectionId): void
+	protected function publishCloseSignal(string $channel): void
 	{
 		try
 		{
 			/**
-			 * Use a separate Redis connection for publishing
-			 * since the main connection will be used for subscribing.
 			 * @SuppressWarnings PHP0413
 			 */
 			$publisher = new \Redis();
@@ -172,13 +202,57 @@ class RedisServerEvents
 				$publisher->auth($this->settings['password']);
 			}
 
-			$publisher->publish($this->getCloseChannel($connectionId), 'close');
+			$publisher->publish($channel, 'close');
 			$publisher->close();
 		}
 		catch (\Throwable $e)
 		{
-			// Ignore publish errors - cache fallback will work
-			error_log("SSE: Failed to publish close signal: " . $e->getMessage());
+			error_log("SSE: Failed to publish close signal to {$channel}: " . $e->getMessage());
+		}
+	}
+
+	/**
+	 * Closes every active SSE stream for the given user across all
+	 * endpoints. Safe to call from any normal HTTP request (e.g. logout
+	 * handler) — does NOT initialise any SSE response headers.
+	 *
+	 * @param int|string $userId
+	 * @param array|null $settings Optional Redis connection settings.
+	 * @return void
+	 */
+	public static function closeUserConnections(int|string $userId, ?array $settings = null): void
+	{
+		$channel = "sse:user:close:{$userId}";
+
+		try
+		{
+			$cfg = $settings ?? (function (): array
+			{
+				$connection = env('cache')?->connection ?? null;
+				return [
+					'host' => $connection?->host ?? '127.0.0.1',
+					'port' => $connection?->port ?? 6379,
+					'password' => $connection?->password ?? null,
+				];
+			})();
+
+			/**
+			 * @SuppressWarnings PHP0413
+			 */
+			$publisher = new \Redis();
+			$publisher->connect($cfg['host'], $cfg['port']);
+
+			if (!empty($cfg['password']))
+			{
+				$publisher->auth($cfg['password']);
+			}
+
+			$publisher->publish($channel, 'close');
+			$publisher->close();
+		}
+		catch (\Throwable $e)
+		{
+			error_log("SSE: closeUserConnections failed for {$userId}: " . $e->getMessage());
 		}
 	}
 
@@ -189,11 +263,14 @@ class RedisServerEvents
 	 */
 	protected function registerConnection(): void
 	{
-		Cache::set($this->getConnectionKey(), $this->connectionId, 300);
+		// TTL is max-duration + a generous grace so stale entries
+		// self-evict if cleanup ever fails.
+		$ttl = $this->sseConfig->scriptTimeLimit() + 60;
+		Cache::set($this->getConnectionKey(), $this->connectionId, $ttl);
 	}
 
 	/**
-	 * Checks if this connection should close (signaled by newer connection).
+	 * Checks if this connection should close (signaled via cache fallback).
 	 *
 	 * @return bool
 	 */
@@ -225,11 +302,13 @@ class RedisServerEvents
 			throw new \RuntimeException('Redis authentication failed.');
 		}
 
-		// Set a read timeout so subscribe() periodically returns, allowing us
-		// to check if the client is still connected. Without this, subscribe()
-		// blocks indefinitely and doesn't detect client disconnection until
-		// a message arrives, causing requests to hang on page refresh.
-		$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, $this->readTimeout);
+		// Cap the read timeout at heartbeat interval so subscribe() always
+		// returns control quickly enough to run liveness/deadline checks.
+		$readTimeout = min(
+			$this->sseConfig->redisReadTimeout,
+			$this->sseConfig->heartbeatInterval
+		);
+		$this->connection->setOption(\Redis::OPT_READ_TIMEOUT, $readTimeout);
 	}
 
 	/**
@@ -244,11 +323,12 @@ class RedisServerEvents
 		$channels = is_array($channels) ? $channels : [$channels];
 		$reconnectFailures = 0;
 
-		// Add the close channel so we can receive immediate close signals
+		// Always include the per-connection and user-wide close channels.
 		$closeChannel = $this->getCloseChannel($this->connectionId);
+		$userCloseChannel = $this->getUserCloseChannel($this->getUserIdentifier());
 		$channels[] = $closeChannel;
+		$channels[] = $userCloseChannel;
 
-		// Default callback just returns the message
 		if ($callback === null)
 		{
 			$callback = function($channel, $message)
@@ -257,88 +337,89 @@ class RedisServerEvents
 			};
 		}
 
-		// Loop to handle Redis read timeouts and check for client disconnection.
-		// When read timeout expires, subscribe() throws an exception. We catch it,
-		// send a heartbeat to verify client is still connected, and re-subscribe.
-		// Note: We don't check connection_aborted() here as it's unreliable behind proxies.
 		while ($this->active)
 		{
-			// Check if newer connection signaled us to close
+			if ($this->isOverDeadline())
+			{
+				error_log("SSE: Connection {$this->connectionId} reached max duration; closing");
+				break;
+			}
+
 			if ($this->shouldClose())
 			{
-				error_log("SSE: Connection {$this->connectionId} closed by newer connection");
+				error_log("SSE: Connection {$this->connectionId} closed by signal");
 				break;
 			}
 
 			try
 			{
-				// Reset failure count on successful subscribe entry
 				$reconnectFailures = 0;
 
-				$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback, $closeChannel)
+				$this->connection->subscribe($channels, function($redis, $channel, $message) use ($callback, $closeChannel, $userCloseChannel)
 				{
-					// Check if this is a close signal
-					if ($channel === $closeChannel)
+					if ($channel === $closeChannel || $channel === $userCloseChannel)
 					{
-						error_log("SSE: Connection {$this->connectionId} received close signal");
+						error_log("SSE: Connection {$this->connectionId} received close signal on {$channel}");
 						$this->active = false;
+						$redis->close();
 						return;
 					}
 
-					// Check if signaled to close by newer connection
-					if ($this->shouldClose())
+					if ($this->shouldClose() || $this->isOverDeadline())
 					{
 						$this->active = false;
+						$redis->close();
 						return;
 					}
 
-					// Decode JSON if applicable
 					$payload = json_decode($message, true) ?? $message;
-
-					// Call the user callback
 					$result = $callback($channel, $payload);
 
-					// If callback returns false, stop subscription
 					if ($result === false)
 					{
 						$this->active = false;
+						$redis->close();
 						return;
 					}
 
-					// Send result as SSE message
 					if ($result !== null)
 					{
-						$this->sendMessage($result);
+						if (!$this->sendMessage($result))
+						{
+							// Client is gone — bail.
+							$this->active = false;
+							$redis->close();
+							return;
+						}
 					}
 				});
 			}
 			catch (\RedisException $e)
 			{
-				// Read timeout - this is expected. Send a heartbeat comment to
-				// keep the connection alive and verify client is still connected.
 				if (strpos($e->getMessage(), 'read error') !== false)
 				{
-					// Send heartbeat to keep connection alive
-					$this->sendHeartbeat();
+					// Read timeout — heartbeat the client. If that write
+					// fails (broken pipe), the client is gone and we exit.
+					if (!$this->sendHeartbeat())
+					{
+						error_log("SSE: Heartbeat write failed for {$this->connectionId}; client gone");
+						break;
+					}
 
-					// Attempt to reconnect to Redis
 					if (!$this->reconnectToRedis())
 					{
 						$reconnectFailures++;
-						if ($reconnectFailures >= $this->maxReconnectFailures)
+						if ($reconnectFailures >= $this->sseConfig->maxReconnectFailures)
 						{
 							error_log("SSE: Max reconnect failures reached, closing connection");
 							break;
 						}
-
-						// Brief delay before retry
-						usleep(100000); // 100ms
+						usleep(100000);
 					}
 
 					continue;
 				}
 
-				// Other Redis error - exit the loop
 				error_log("SSE: Redis error: " . $e->getMessage());
 				break;
 			}
@@ -353,56 +434,39 @@ class RedisServerEvents
 	}
 
 	/**
-	 * Sends a message to the client.
+	 * Sends a message to the client. Returns false if the underlying write
+	 * fails (broken pipe).
 	 *
-	 * @param mixed $data The data to send.
-	 * @return void
+	 * @param mixed $data
+	 * @return bool
 	 */
-	protected function sendMessage(mixed $data): void
+	protected function sendMessage(mixed $data): bool
 	{
 		$json = json_encode($data);
-		$this->response->sendEvent($json, 'message');
+		if ($json === false)
+		{
+			return true;
+		}
+
+		return $this->response->writeEvent($json, 'message');
 	}
 
 	/**
-	 * Sends a heartbeat comment to detect client disconnection.
-	 * SSE comments (lines starting with :) are ignored by the client
-	 * but will cause output to fail if the client has disconnected.
+	 * Sends a heartbeat comment to detect client disconnection. Uses
+	 * `fwrite()` rather than `echo` so a broken pipe is reported as a
+	 * write failure instead of silently succeeding.
 	 *
-	 * Note: We don't rely on connection_aborted() as it's unreliable behind proxies.
-	 * Instead, we assume success if no exception was thrown during output.
-	 *
-	 * @return bool True if heartbeat was sent successfully.
+	 * @return bool True if heartbeat was delivered.
 	 */
 	protected function sendHeartbeat(): bool
 	{
-		try
-		{
-			echo ": heartbeat\n\n";
-
-			if (ob_get_level() > 0)
-			{
-				ob_flush();
-			}
-
-			// Use @ to suppress warnings if connection is broken
-			$result = @flush();
-
-			// flush() returns false on failure in some PHP versions
-			// but this isn't reliable, so we primarily rely on exceptions
-			return true;
-		}
-		catch (\Throwable $e)
-		{
-			return false;
-		}
+		return StreamWriter::writeAndFlush(": heartbeat\n\n") && StreamWriter::isAlive();
 	}
 
 	/**
 	 * Reconnects to Redis after a read timeout.
-	 * After a timeout, the subscribe connection is broken and must be re-established.
 	 *
-	 * @return bool True if reconnection succeeded, false otherwise.
+	 * @return bool
 	 */
 	protected function reconnectToRedis(): bool
 	{
@@ -428,7 +492,7 @@ class RedisServerEvents
 	}
 
 	/**
-	 * Closes the Redis connection and cleans up connection registry.
+	 * Closes the Redis connection and cleans up registry. Idempotent.
 	 *
 	 * @return void
 	 */
@@ -438,44 +502,48 @@ class RedisServerEvents
 		{
 			if ($this->active)
 			{
-				$this->connection->close();
+				$this->active = false;
+
+				try
+				{
+					$this->connection->close();
+				}
+				catch (\Throwable $e)
+				{
+					// Ignore — connection may already be torn down.
+				}
 			}
 
-			// Clean up connection registry
 			$key = $this->getConnectionKey();
 			$currentId = Cache::get($key);
 
-			// Only remove if we're still the registered connection
 			if ($currentId === $this->connectionId)
 			{
 				Cache::delete($key);
 			}
 
-			// Clean up close signal
 			Cache::delete("sse:close:{$this->connectionId}");
 		}
 		catch (\Throwable $e)
 		{
-			// Ignore errors during cleanup
+			// Ignore errors during cleanup.
 		}
-		$this->active = false;
 	}
 
 	/**
 	 * Gets session data by key using Proto's session system.
-	 * Safe to call during SSE stream (automatically handles session locking).
 	 *
-	 * @param string $key Session key.
+	 * @param string $key
 	 * @return mixed
 	 */
 	protected function getSessionData(string $key): mixed
 	{
-		// Proto's session system automatically opens/closes to prevent blocking
 		return $this->session->{$key} ?? null;
 	}
 
 	/**
-	 * Destructor - ensures cleanup.
+	 * Destructor — runs when the script exits cleanly. The shutdown handler
+	 * registered in the constructor handles the abnormal-exit case.
 	 */
 	public function __destruct()
 	{

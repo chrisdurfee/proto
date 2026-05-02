@@ -10,6 +10,11 @@ use Proto\Http\Loop\EventLoop;
  *
  * Implements Server-Sent Events (SSE) for real-time data streaming.
  *
+ * Streams are bounded by `SseConfig::$maxDuration` so PHP-FPM workers can
+ * always recycle. The browser's `EventSource` will silently auto-reconnect
+ * when the server cleanly ends a stream, so the bound is invisible to
+ * users.
+ *
  * @package Proto\Http\ServerEvents
  */
 class ServerEvents extends EventEmitter
@@ -33,11 +38,18 @@ class ServerEvents extends EventEmitter
 	/**
 	 * Constructs a ServerEvents instance.
 	 *
-	 * @param int $interval The interval between event loop ticks in seconds.
+	 * @param int $interval Tick interval in seconds.
+	 * @param array<string, int>|SseConfig|null $config Optional SSE config
+	 *   overrides (see `SseConfig`) or a pre-built config instance.
 	 */
-	public function __construct(int $interval = 200)
+	public function __construct(int $interval = 200, array|SseConfig|null $config = null)
 	{
 		parent::__construct();
+
+		$this->sseConfig = $config instanceof SseConfig
+			? $config
+			: new SseConfig($config ?? []);
+
 		$this->initialize($interval);
 	}
 
@@ -51,7 +63,16 @@ class ServerEvents extends EventEmitter
 	{
 		$this->configureStreaming();
 		$this->setupResponse();
-		$this->loop = new EventLoop($interval);
+
+		$this->registerShutdownHandler(function(): void
+		{
+			if ($this->connected)
+			{
+				$this->shutdown();
+			}
+		});
+
+		$this->loop = new EventLoop($interval, new \SplObjectStorage(), $this->sseConfig->maxDuration);
 		$this->emit('connection', $this->loop);
 	}
 
@@ -103,19 +124,24 @@ class ServerEvents extends EventEmitter
 			$loop->addEvent(new AsyncEvent(function(AsyncEvent $event) use ($callback, $loop)
 			{
 				$result = $callback($event);
-				$loop->end(); // Runs only once
+				$loop->end();
 				return $result;
 			}));
 		});
 	}
 
 	/**
-	 * Stops the server and emits the 'close' event.
+	 * Stops the server and emits the 'close' event. Idempotent.
 	 *
 	 * @return void
 	 */
 	protected function shutdown(): void
 	{
+		if (!$this->connected)
+		{
+			return;
+		}
+
 		$this->connected = false;
 		$this->emit('close');
 	}

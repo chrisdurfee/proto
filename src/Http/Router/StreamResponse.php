@@ -1,10 +1,17 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Router;
 
+use Proto\Http\ServerEvents\StreamWriter;
+
 /**
  * StreamResponse
  *
  * Represents a Server-Sent Events (SSE) stream response.
+ *
+ * All client output goes through `Proto\Http\ServerEvents\StreamWriter`,
+ * which writes via `fwrite(php://output, ...)` instead of `echo` so
+ * broken pipes are surfaced as boolean failures (and SSE streams can
+ * exit instead of looping forever into a dead socket).
  *
  * @package Proto\Http\Router
  */
@@ -32,42 +39,32 @@ class StreamResponse extends Response
 		$contentType = $contentType ?? $this->contentType;
 		$message = parent::getResponseMessage($code);
 
-		// Disable all output buffering before sending headers
 		while (ob_get_level())
 		{
 			ob_end_flush();
 		}
 
-		// Send status line
 		header("HTTP/2.0 {$code} {$message}");
 
-		// Send SSE-specific headers (no charset for text/event-stream)
-		// Force explicit Content-Type without charset
 		header("Content-Type: {$contentType}", true);
 		header('Cache-Control: no-cache, no-store, must-revalidate');
 		header('Pragma: no-cache');
 		header('Expires: 0');
 		header('Connection: keep-alive');
-		header('X-Accel-Buffering: no'); // For Nginx, prevents buffering.
+		header('X-Accel-Buffering: no');
 
-		// PHP-FPM and Apache specific headers to prevent buffering
 		header('X-Content-Type-Options: nosniff');
-		header('Content-Encoding: identity'); // Prevent gzip compression
+		header('Content-Encoding: identity');
 
-		// Force immediate header sending
 		if (function_exists('fastcgi_finish_request'))
 		{
-			// This doesn't finish the request, just flushes headers in FPM
 			flush();
 		}
 
-		// Disable implicit output buffering
 		ini_set('output_buffering', 'off');
 		ini_set('zlib.output_compression', 'off');
 
-		// Send initial SSE comment to establish connection
-		echo ": SSE Connection Established\n\n";
-		$this->flush();
+		StreamWriter::writeAndFlush(": SSE Connection Established\n\n");
 
 		return $this;
 	}
@@ -79,26 +76,27 @@ class StreamResponse extends Response
 	 */
 	public function flush(): self
 	{
-		// Only flush if output buffering is active
-		$levels = ob_get_level();
-		if ($levels > 0)
-		{
-			// Flush each buffer level with safety limit
-			$maxLevels = min($levels, 10); // Prevent infinite loops
-			for ($i = 0; $i < $maxLevels; $i++)
-			{
-				@ob_flush();
-			}
-		}
-
-		// System flush - always safe to call
-		flush();
-
+		StreamWriter::flush();
 		return $this;
 	}
 
 	/**
+	 * True if the most recent client write succeeded and the connection
+	 * still appears healthy.
+	 *
+	 * @return bool
+	 */
+	public function isAlive(): bool
+	{
+		return StreamWriter::isAlive();
+	}
+
+	/**
 	 * Sends an event to the SSE client.
+	 *
+	 * Maintains the original fluent API for backward compatibility. Use
+	 * `writeEvent()` instead when callers need to know whether the write
+	 * actually succeeded.
 	 *
 	 * @param string $data
 	 * @param string|null $event
@@ -106,24 +104,35 @@ class StreamResponse extends Response
 	 */
 	public function sendEvent(string $data, ?string $event = null): self
 	{
+		$this->writeEvent($data, $event);
+		return $this;
+	}
+
+	/**
+	 * Sends an event and reports success/failure. Returns false when the
+	 * client has disconnected or the underlying socket write fails.
+	 *
+	 * @param string $data
+	 * @param string|null $event
+	 * @return bool
+	 */
+	public function writeEvent(string $data, ?string $event = null): bool
+	{
+		$payload = '';
+
 		if ($event !== null)
 		{
-			echo "event: {$event}\n";
+			$payload .= "event: {$event}\n";
 		}
 
-		// Split multi-line data into multiple data: lines (SSE spec requirement)
 		$lines = explode("\n", $data);
 		foreach ($lines as $line)
 		{
-			echo "data: {$line}\n";
+			$payload .= "data: {$line}\n";
 		}
 
-		// Send the required empty line to complete the event
-		echo "\n";
+		$payload .= "\n";
 
-		// Aggressive flushing
-		$this->flush();
-
-		return $this;
+		return StreamWriter::writeAndFlush($payload);
 	}
 }
