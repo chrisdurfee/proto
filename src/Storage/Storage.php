@@ -205,11 +205,15 @@ class Storage extends TableStorage
 	/**
 	 * Update the status of a record.
 	 *
+	 * `status` is whitelisted so models that mark it immutable (to block
+	 * the generic `update()` path) can still be mutated through this
+	 * dedicated method without requiring a storage-level override.
+	 *
 	 * @return bool
 	 */
 	public function updateStatus(): bool
 	{
-		$data = $this->getUpdateData();
+		$data = $this->getUpdateData(['status']);
 		$dateTime = date('Y-m-d H:i:s');
 		return $this->db->update($this->tableName, [
 			'id' => $data->id,
@@ -246,11 +250,17 @@ class Storage extends TableStorage
 	 * Prepare data for an update.
 	 *
 	 * Strips immutable fields declared on the model to enforce
-	 * immutability at the storage layer regardless of caller.
+	 * immutability at the storage layer regardless of caller. The model's
+	 * primary key is always preserved (it is needed for the WHERE clause
+	 * and is inherently immutable). Dedicated mutator methods (e.g.
+	 * `updateStatus`) may pass `$preserveImmutable` to whitelist the
+	 * specific fields they own so they don't have to override the storage
+	 * method just to bypass the immutable strip.
 	 *
+	 * @param array $preserveImmutable Field names to keep even if marked immutable.
 	 * @return object
 	 */
-	protected function getUpdateData(): object
+	protected function getUpdateData(array $preserveImmutable = []): object
 	{
 		$data = $this->getData();
 		if ($this->model->has('updatedAt'))
@@ -261,8 +271,14 @@ class Storage extends TableStorage
 		$immutable = $this->model::immutableFields();
 		if (!empty($immutable))
 		{
+			$idKey = $this->getModelIdKeyName();
+			$preserve = array_flip(array_merge($preserveImmutable, [$idKey]));
 			foreach ($immutable as $field)
 			{
+				if (isset($preserve[$field]))
+				{
+					continue;
+				}
 				$snakeField = Strings::snakeCase($field);
 				unset($data->{$snakeField});
 			}
