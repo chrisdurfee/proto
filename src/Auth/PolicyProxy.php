@@ -2,7 +2,6 @@
 namespace Proto\Auth;
 
 use Proto\Controllers\ControllerInterface;
-use Proto\Controllers\Controller;
 use Proto\Controllers\Response;
 use Proto\Http\Response as HttpResponse;
 use Proto\Auth\Policies\Policy;
@@ -19,11 +18,11 @@ class PolicyProxy implements ControllerInterface
 	/**
 	 * Initializes the proxy with a controller and its corresponding policy.
 	 *
-	 * @param Controller $controller The controller instance.
+	 * @param ControllerInterface $controller The controller instance.
 	 * @param Policy $policy The policy instance.
 	 */
 	public function __construct(
-		protected readonly Controller $controller,
+		protected readonly ControllerInterface $controller,
 		protected readonly Policy $policy
 	) {}
 

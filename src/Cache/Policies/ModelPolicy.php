@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Cache\Policies;
 
-use Proto\Controllers\ResourceController;
+use Proto\Controllers\Controller;
 use Proto\Http\Router\Request;
 
 /**
@@ -9,18 +9,25 @@ use Proto\Http\Router\Request;
  *
  * This class handles caching policies for models.
  *
+ * The wrapped controller is always a resource controller at runtime, so the
+ * resource CRUD methods (add, update, delete, get, all, etc.) are valid even
+ * though the declared property type is the base Controller. The property is
+ * typed as Controller to remain invariant with the parent policy (required by
+ * PHP 8.4).
+ *
  * @package Proto\Cache\Policies
+ * @SuppressWarnings PHP0418
  */
 class ModelPolicy extends Policy
 {
 	/**
 	 * Creates a cache policy instance.
 	 *
-	 * @param ResourceController $controller The controller instance.
+	 * @param Controller $controller The controller instance.
 	 * @return void
 	 */
 	public function __construct(
-		protected ResourceController $controller
+		protected Controller $controller
 	)
 	{
 	}
@@ -253,7 +260,7 @@ class ModelPolicy extends Policy
 
 		if ($filter !== null)
 		{
-			$params[] = is_array($filter) ? implode(':', $filter) : (string) $filter;
+			$params[] = $this->serializeFilterValue($filter);
 		}
 
 		if ($offset !== null)
@@ -288,6 +295,38 @@ class ModelPolicy extends Policy
 		}
 
 		return implode(':', $params);
+	}
+
+	/**
+	 * Serializes a filter value into a stable string for cache key generation.
+	 *
+	 * Filters may be scalars, arrays, or objects (e.g. a decoded JSON filter
+	 * such as {"tab":"forYou"}). Casting an object or nested array directly to
+	 * string throws under PHP 8.4, so non-scalar values are JSON-encoded.
+	 *
+	 * @param mixed $filter The filter value.
+	 * @return string
+	 */
+	protected function serializeFilterValue(mixed $filter): string
+	{
+		if (is_array($filter))
+		{
+			$parts = [];
+			foreach ($filter as $value)
+			{
+				$parts[] = ($value === null || is_scalar($value))
+					? (string) $value
+					: (json_encode($value) ?: '');
+			}
+			return implode(':', $parts);
+		}
+
+		if (is_object($filter))
+		{
+			return json_encode($filter) ?: '';
+		}
+
+		return (string) $filter;
 	}
 
 	/**

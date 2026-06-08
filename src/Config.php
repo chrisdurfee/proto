@@ -151,11 +151,33 @@ namespace Proto
 		private function detectEnvironment(): void
 		{
 			/**
+			 * An explicit server/container environment variable always wins.
+			 * This lets Docker-based dev containers force the environment even
+			 * when the incoming Host header is an IP:port that won't match the
+			 * configured development domain. These vars are set by the
+			 * deployment (not attacker-controlled), so they are safe to trust.
+			 */
+			$override = $this->detectEnvironmentOverride();
+			if ($override !== null)
+			{
+				$this->set('env', $override);
+				return;
+			}
+
+			/**
 			 * Sanitize the Host header before comparison. The value is
 			 * attacker-controlled, so strip control characters/whitespace
 			 * and lowercase it to prevent header-spoofing edge cases.
 			 */
 			$host = strtolower(trim(preg_replace('/[^A-Za-z0-9\.\-\:]/', '', $_SERVER['HTTP_HOST'] ?? '')));
+
+			/**
+			 * Strip any port from the host (e.g. "localhost:8443" ->
+			 * "localhost") so the comparison against configured domains still
+			 * matches when the app is served on a non-standard port.
+			 */
+			$host = $this->stripHostPort($host);
+
 			$urls = $this->get('domain');
 
 			/**
@@ -172,6 +194,59 @@ namespace Proto
 				isset($urls->development) && $host === strtolower((string)$urls->development) => 'dev',
 				default => 'prod',
 			});
+		}
+
+		/**
+		 * Resolves an explicit environment from server/container variables.
+		 *
+		 * Honors APP_ENV first, then a DOCKER_CONTAINER flag (which implies a
+		 * local dev container).
+		 *
+		 * @return string|null The resolved environment, or null if none set.
+		 */
+		private function detectEnvironmentOverride(): ?string
+		{
+			$appEnv = strtolower(trim((string)($_SERVER['APP_ENV'] ?? getenv('APP_ENV') ?: '')));
+			if ($appEnv !== '')
+			{
+				return match ($appEnv)
+				{
+					'dev', 'development', 'local' => 'dev',
+					'staging' => 'staging',
+					'testing', 'test' => 'testing',
+					'prod', 'production' => 'prod',
+					default => null,
+				};
+			}
+
+			$dockerFlag = strtolower(trim((string)($_SERVER['DOCKER_CONTAINER'] ?? getenv('DOCKER_CONTAINER') ?: '')));
+			if ($dockerFlag === '1' || $dockerFlag === 'true')
+			{
+				return 'dev';
+			}
+
+			return null;
+		}
+
+		/**
+		 * Strips the port from a host string.
+		 *
+		 * Handles bracketed IPv6 literals (e.g. "[::1]:8443") as well as the
+		 * common "host:port" form.
+		 *
+		 * @param string $host The sanitized host.
+		 * @return string The host without a port.
+		 */
+		private function stripHostPort(string $host): string
+		{
+			if ($host !== '' && $host[0] === '[')
+			{
+				$end = strpos($host, ']');
+				return $end !== false ? substr($host, 0, $end + 1) : $host;
+			}
+
+			$colon = strpos($host, ':');
+			return $colon !== false ? substr($host, 0, $colon) : $host;
 		}
 
 		/**

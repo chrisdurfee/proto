@@ -2,6 +2,7 @@
 namespace Proto\Cache\Policies;
 
 use Proto\Controllers\Controller;
+use Proto\Controllers\ControllerInterface;
 
 /**
  * PolicyProxy
@@ -10,7 +11,7 @@ use Proto\Controllers\Controller;
  *
  * @package Proto\Cache\Policies
  */
-class PolicyProxy
+class PolicyProxy implements ControllerInterface
 {
 	/**
 	 * Initializes the proxy with the controller and policy objects.
@@ -23,6 +24,19 @@ class PolicyProxy
 		protected Policy $policy
 	)
 	{
+	}
+
+	/**
+	 * Retrieves the policy class name for the wrapped controller.
+	 *
+	 * Delegates to the underlying controller so the cache proxy can be
+	 * transparently wrapped by the auth policy proxy.
+	 *
+	 * @return string|null
+	 */
+	public function getPolicy(): ?string
+	{
+		return $this->controller->getPolicy();
 	}
 
 	/**

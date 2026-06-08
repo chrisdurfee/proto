@@ -3,7 +3,7 @@ namespace Proto\Cache\Policies;
 
 use Proto\Cache\Cache;
 use Proto\Utils\Format\JsonFormat;
-use Proto\Controllers\ApiController;
+use Proto\Controllers\Controller;
 
 /**
  * Policy
@@ -36,11 +36,11 @@ abstract class Policy implements CachePolicyInterface
 	/**
 	 * Creates a cache policy instance.
 	 *
-	 * @param ApiController $controller The controller instance.
+	 * @param Controller $controller The controller instance.
 	 * @return void
 	 */
 	public function __construct(
-		protected ApiController $controller
+		protected Controller $controller
 	)
 	{
 	}
@@ -93,6 +93,10 @@ abstract class Policy implements CachePolicyInterface
 	/**
 	 * Stores a value in the cache.
 	 *
+	 * Null responses (e.g. SSE/sync endpoints) and values that fail JSON
+	 * encoding are not cached, since the cache driver only accepts strings
+	 * and caching an empty/invalid payload would be meaningless.
+	 *
 	 * @param string $key The cache key.
 	 * @param mixed $value The value to store.
 	 * @param int|null $expire Expiration time in seconds (optional).
@@ -100,7 +104,18 @@ abstract class Policy implements CachePolicyInterface
 	 */
 	public function setValue(string $key, mixed $value, ?int $expire = null): void
 	{
-		Cache::set($key, JsonFormat::encode($value), $expire ?? $this->expire);
+		if ($value === null)
+		{
+			return;
+		}
+
+		$encoded = JsonFormat::encode($value);
+		if ($encoded === null)
+		{
+			return;
+		}
+
+		Cache::set($key, $encoded, $expire ?? $this->expire);
 	}
 
 	/**
@@ -123,6 +138,27 @@ abstract class Policy implements CachePolicyInterface
 	 */
 	protected function createKey(string $method, mixed $params): string
 	{
-		return $this->controller::class . ':' . $method . ':' . (string)$params;
+		return $this->controller::class . ':' . $method . ':' . $this->normalizeParams($params);
+	}
+
+	/**
+	 * Normalizes cache-key parameters into a stable string.
+	 *
+	 * Parameters may be scalars, arrays, or objects (e.g. a decoded JSON
+	 * filter like {"tab":"forYou"}). Casting a non-scalar directly to string
+	 * throws, so arrays/objects are JSON-encoded (falling back to a hash of
+	 * a serialized representation if encoding fails).
+	 *
+	 * @param mixed $params The method parameters.
+	 * @return string
+	 */
+	protected function normalizeParams(mixed $params): string
+	{
+		if ($params === null || is_scalar($params))
+		{
+			return (string)$params;
+		}
+
+		return JsonFormat::encode($params) ?? md5(serialize($params));
 	}
 }

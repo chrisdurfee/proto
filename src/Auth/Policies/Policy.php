@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Auth\Policies;
 
-use Proto\Controllers\Controller;
+use Proto\Controllers\ControllerInterface;
 use Proto\Http\Router\Request;
 
 /**
@@ -37,10 +37,10 @@ abstract class Policy
 	/**
 	 * This will create a new instance of the policy.
 	 *
-	 * @param ?Controller $controller The controller instance associated with this policy.
+	 * @param ?ControllerInterface $controller The controller instance associated with this policy.
 	 * @return void
 	 */
-	public function __construct(protected ?Controller $controller = null)
+	public function __construct(protected ?ControllerInterface $controller = null)
 	{
 		$this->type = $this->resolveType();
 		$this->validatePolicy();
