@@ -3,6 +3,7 @@ namespace Proto\Http;
 
 use Proto\Http\Session\DatabaseSession;
 use Proto\Http\Session\FileSession;
+use Proto\Http\Session\RedisSession;
 use Proto\Http\Session\SessionInterface;
 use Proto\Config;
 
@@ -39,8 +40,14 @@ class Session
 	 */
 	protected static function getConfigType(): string
 	{
-		$session = env('session');
-		return ($session ?? 'file') === 'file' ? FileSession::class : DatabaseSession::class;
+		$session = env('session') ?? 'file';
+		return match ($session)
+		{
+			'redis' => RedisSession::class,
+			'database' => DatabaseSession::class,
+			'file' => FileSession::class,
+			default => $session === 'file' ? FileSession::class : DatabaseSession::class,
+		};
 	}
 
 	/**

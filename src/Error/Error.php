@@ -5,6 +5,7 @@ namespace Proto\Error
 	use Proto\Http\Request;
 	use Proto\Http\Response;
 	use Proto\Utils\Format\JsonFormat;
+	use Proto\Cache\Cache;
 
 	/**
 	 * Class Error
@@ -56,6 +57,20 @@ namespace Proto\Error
 		 * @var bool
 		 */
 		private static bool $isHandling = false;
+
+		/**
+		 * Throttle window in seconds for identical errors.
+		 *
+		 * @var int
+		 */
+		private const THROTTLE_WINDOW = 60;
+
+		/**
+		 * Maximum identical errors logged per throttle window.
+		 *
+		 * @var int
+		 */
+		private const THROTTLE_LIMIT = 5;
 
 		/**
 		 * Checks if a message indicates the error log table is missing.
@@ -421,6 +436,11 @@ namespace Proto\Error
 		 */
 		protected static function logError(object $data): bool
 		{
+			if (static::isThrottled($data))
+			{
+				return true;
+			}
+
 			try
 			{
 				return ErrorLog::create($data);
@@ -429,6 +449,62 @@ namespace Proto\Error
 			{
 				return static::handleLoggingFailure($e, $data);
 			}
+		}
+
+		/**
+		 * Determines whether an identical error should be throttled to protect
+		 * the database from error storms.
+		 *
+		 * Uses the cache as a cross-request fixed-window counter keyed by an
+		 * error fingerprint (number + file + line + message). Up to
+		 * THROTTLE_LIMIT identical errors are logged per THROTTLE_WINDOW
+		 * seconds; further duplicates are suppressed. Degrades gracefully:
+		 * when the cache is unavailable or any failure occurs, throttling is
+		 * skipped so genuine errors are never silently dropped.
+		 *
+		 * @param object $data The error data.
+		 * @return bool True when the error should be suppressed.
+		 */
+		protected static function isThrottled(object $data): bool
+		{
+			try
+			{
+				if (!Cache::isSupported())
+				{
+					return false;
+				}
+
+				$key = 'error-log:' . static::getErrorFingerprint($data);
+				$count = Cache::incr($key);
+				if ($count <= 1)
+				{
+					// First occurrence in the window: set TTL and allow logging.
+					Cache::set($key, '1', static::THROTTLE_WINDOW);
+					return false;
+				}
+
+				return $count > static::THROTTLE_LIMIT;
+			}
+			catch (\Throwable $e)
+			{
+				return false;
+			}
+		}
+
+		/**
+		 * Builds a stable fingerprint identifying a unique error occurrence.
+		 *
+		 * @param object $data The error data.
+		 * @return string
+		 */
+		protected static function getErrorFingerprint(object $data): string
+		{
+			$signature = ($data->errorNumber ?? '') . '|'
+				. ($data->errorFile ?? '') . '|'
+				. ($data->errorLine ?? '') . '|'
+				. ($data->errorMessage ?? '');
+
+			return hash('xxh3', $signature);
 		}
 
 		/**

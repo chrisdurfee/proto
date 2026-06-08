@@ -45,12 +45,25 @@ namespace Proto
 		/**
 		 * Loads settings from the configuration file.
 		 *
+		 * The parsed config is cached in APCu (when available) keyed by the
+		 * file path and modification time. This avoids re-reading and
+		 * re-decoding the JSON config on every request in short-lived
+		 * processes. Cache is automatically invalidated when the file changes.
+		 *
 		 * @return void
 		 */
 		private function loadSettings(): void
 		{
-			$contents = File::get(BASE_PATH . '/common/Config/.env');
+			$path = BASE_PATH . '/common/Config/.env';
 
+			$cached = self::loadCachedSettings($path);
+			if ($cached !== null)
+			{
+				$this->settings = $cached;
+				return;
+			}
+
+			$contents = File::get($path);
 			if (!$contents)
 			{
 				throw new \RuntimeException('Settings file not found.');
@@ -63,6 +76,71 @@ namespace Proto
 			}
 
 			$this->settings = $decodedSettings;
+			self::storeCachedSettings($path, $decodedSettings);
+		}
+
+		/**
+		 * Builds the APCu cache key for the config file.
+		 *
+		 * Includes the file modification time so a changed file produces a
+		 * new key, transparently invalidating stale cached settings.
+		 *
+		 * @param string $path The config file path.
+		 * @return string|null The cache key, or null if APCu/file is unavailable.
+		 */
+		private static function configCacheKey(string $path): ?string
+		{
+			if (!function_exists('apcu_enabled') || !apcu_enabled())
+			{
+				return null;
+			}
+
+			$mtime = @filemtime($path);
+			if ($mtime === false)
+			{
+				return null;
+			}
+
+			return 'proto.config:' . $path . ':' . $mtime;
+		}
+
+		/**
+		 * Retrieves cached settings from APCu when available.
+		 *
+		 * @SuppressWarnings PHP0417
+		 * @param string $path The config file path.
+		 * @return object|null The cached settings, or null on miss.
+		 */
+		private static function loadCachedSettings(string $path): ?object
+		{
+			$key = self::configCacheKey($path);
+			if ($key === null)
+			{
+				return null;
+			}
+
+			$success = false;
+			$cached = apcu_fetch($key, $success);
+			return ($success && is_object($cached)) ? $cached : null;
+		}
+
+		/**
+		 * Stores parsed settings in APCu when available.
+		 *
+		 * @SuppressWarnings PHP0417
+		 * @param string $path The config file path.
+		 * @param object $settings The parsed settings to cache.
+		 * @return void
+		 */
+		private static function storeCachedSettings(string $path, object $settings): void
+		{
+			$key = self::configCacheKey($path);
+			if ($key === null)
+			{
+				return;
+			}
+
+			apcu_store($key, $settings, 300);
 		}
 
 		/**

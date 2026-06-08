@@ -52,6 +52,15 @@ class KafkaDriver extends Base implements DriverInterface
 	protected array $completedJobs = [];
 
 	/**
+	 * Maximum number of entries retained in the in-memory stats arrays
+	 * (completed/failed). Prevents unbounded memory growth in long-running
+	 * workers. Oldest entries are discarded once the cap is exceeded.
+	 *
+	 * @var int
+	 */
+	protected const MAX_STATS_ENTRIES = 1000;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array $config Driver configuration
@@ -292,6 +301,7 @@ class KafkaDriver extends Base implements DriverInterface
 				'completed_at' => date('Y-m-d H:i:s'),
 				'payload' => $jobData['payload'],
 			];
+			$this->capStatsArray($this->completedJobs);
 
 			// Remove from processing
 			unset($this->processingJobs[$jobId]);
@@ -342,6 +352,7 @@ class KafkaDriver extends Base implements DriverInterface
 			];
 
 			$this->failedJobs[$jobId] = $failedJob;
+			$this->capStatsArray($this->failedJobs);
 
 			// Optionally publish to a dead-letter queue
 			$this->publishToDeadLetterQueue($failedJob);
@@ -356,6 +367,22 @@ class KafkaDriver extends Base implements DriverInterface
         {
 			error_log("Kafka mark failed error: " . $e->getMessage());
 			return false;
+		}
+	}
+
+	/**
+	 * Caps an in-memory stats array to MAX_STATS_ENTRIES, discarding the
+	 * oldest entries (insertion order) when the limit is exceeded.
+	 *
+	 * @param array $jobs The stats array passed by reference.
+	 * @return void
+	 */
+	protected function capStatsArray(array &$jobs): void
+	{
+		$count = count($jobs);
+		if ($count > static::MAX_STATS_ENTRIES)
+		{
+			$jobs = array_slice($jobs, $count - static::MAX_STATS_ENTRIES, null, true);
 		}
 	}
 
