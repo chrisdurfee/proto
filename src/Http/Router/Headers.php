@@ -122,7 +122,38 @@ class Headers
 			unset($headers['Access-Control-Allow-Credentials']);
 		}
 
+		// Enforce HTTPS via HSTS in production over secure connections only.
+		if (static::isSecureProduction())
+		{
+			$headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
+		}
+
 		return $headers;
+	}
+
+	/**
+	 * Determines whether the current request is a secure (HTTPS) production request.
+	 *
+	 * HSTS must only be emitted over HTTPS and is scoped to production to avoid
+	 * pinning local/staging hosts during development.
+	 *
+	 * @return bool
+	 */
+	protected static function isSecureProduction(): bool
+	{
+		if (function_exists('env') && env('env') !== 'prod')
+		{
+			return false;
+		}
+
+		$https = Input::server('HTTPS');
+		if (!empty($https) && strtolower((string)$https) !== 'off')
+		{
+			return true;
+		}
+
+		// Honor a trusted forwarded protocol header (terminating proxy/load balancer).
+		return strtolower((string)Input::server('HTTP_X_FORWARDED_PROTO')) === 'https';
 	}
 
 	/**

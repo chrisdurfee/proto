@@ -72,15 +72,27 @@ namespace Proto
 		 */
 		private function detectEnvironment(): void
 		{
-			$host = $_SERVER['HTTP_HOST'] ?? '';
+			/**
+			 * Sanitize the Host header before comparison. The value is
+			 * attacker-controlled, so strip control characters/whitespace
+			 * and lowercase it to prevent header-spoofing edge cases.
+			 */
+			$host = strtolower(trim(preg_replace('/[^A-Za-z0-9\.\-\:]/', '', $_SERVER['HTTP_HOST'] ?? '')));
 			$urls = $this->get('domain');
 
+			/**
+			 * Fail secure: unknown/spoofed hosts resolve to 'prod' so error
+			 * reporting and other dev-only behaviors are never enabled by an
+			 * unrecognized Host header. Development hosts must be listed
+			 * explicitly under domain.development.
+			 */
 			$this->set('env', match (true)
 			{
-				$host === '' || $host === $urls->production => 'prod',
-				isset($urls->staging) && $host === $urls->staging => 'staging',
-				isset($urls->testing) && $host === $urls->testing => 'testing',
-				default => 'dev',
+				$host === '' || $host === strtolower((string)($urls->production ?? '')) => 'prod',
+				isset($urls->staging) && $host === strtolower((string)$urls->staging) => 'staging',
+				isset($urls->testing) && $host === strtolower((string)$urls->testing) => 'testing',
+				isset($urls->development) && $host === strtolower((string)$urls->development) => 'dev',
+				default => 'prod',
 			});
 		}
 

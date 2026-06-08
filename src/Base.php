@@ -21,9 +21,16 @@ class Base
 	/**
 	 * Initializes the system and services.
 	 *
+	 * The optional $data argument is unused at this level. It exists so that
+	 * subclasses (notably Proto\Models\Model) can override the constructor
+	 * with `__construct(?object $data = null)` without producing
+	 * inconsistent-constructor / LSP warnings in IDEs and static analyzers
+	 * (e.g. DEVSense PHP0441). Subclasses are free to ignore it.
+	 *
+	 * @param object|null $data Optional initialization payload (ignored here).
 	 * @return void
 	 */
-	public function __construct()
+	public function __construct(?object $data = null)
 	{
 		$this->setupSystem();
 	}

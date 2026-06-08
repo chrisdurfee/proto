@@ -19,6 +19,18 @@ use Proto\Utils\Strings;
 class ResourceHelper
 {
 	/**
+	 * Caches resolved resource paths (and misses) keyed by request URL.
+	 *
+	 * Route resolution performs multiple realpath() syscalls per request.
+	 * Caching the result for the lifetime of the PHP process avoids repeating
+	 * the filesystem walk for the same URL within long-lived workers and
+	 * warm PHP-FPM processes. A sentinel empty string marks a known miss.
+	 *
+	 * @var array<string,string|null>
+	 */
+	protected static array $resolvedCache = [];
+
+	/**
 	 * Constructs the full resource file path.
 	 *
 	 * @param string $resourcePath The sanitized resource path segment.
@@ -38,13 +50,18 @@ class ResourceHelper
 	 */
 	public static function getResource(string $url): ?string
 	{
+		if (array_key_exists($url, self::$resolvedCache))
+		{
+			return self::$resolvedCache[$url];
+		}
+
 		$parts = self::getFilteredParts($url);
 		if ($parts === false || empty($parts))
 		{
-			return null;
+			return self::$resolvedCache[$url] = null;
 		}
 
-		return self::resolveResourcePath($parts);
+		return self::$resolvedCache[$url] = self::resolveResourcePath($parts);
 	}
 
 	/**
