@@ -242,6 +242,50 @@ class RedisDriver extends Driver
 	}
 
 	/**
+	 * Appends one or more values to the tail of a Redis list.
+	 *
+	 * @param string $key List key.
+	 * @param string ...$values Values to append.
+	 * @return int The new length of the list, or 0 on failure.
+	 */
+	public function rPush(string $key, string ...$values): int
+	{
+		$result = $this->db->rPush($key, ...$values);
+		return $result !== false ? (int)$result : 0;
+	}
+
+	/**
+	 * Removes and returns up to $count elements from the head of a
+	 * Redis list (FIFO order).
+	 *
+	 * @param string $key List key.
+	 * @param int $count Maximum number of elements to pop.
+	 * @return array The popped elements, or an empty array if the list is empty.
+	 */
+	public function lPop(string $key, int $count = 1): array
+	{
+		$result = $this->db->lPop($key, max(1, $count));
+		if ($result === false || $result === null)
+		{
+			return [];
+		}
+
+		return is_array($result) ? $result : [$result];
+	}
+
+	/**
+	 * Gets the length of a Redis list.
+	 *
+	 * @param string $key List key.
+	 * @return int The list length, or 0 if the key does not exist.
+	 */
+	public function lLen(string $key): int
+	{
+		$result = $this->db->lLen($key);
+		return $result !== false ? (int)$result : 0;
+	}
+
+	/**
 	 * Gets the underlying Redis connection instance.
 	 *
 	 * @return Redis The Redis instance.
