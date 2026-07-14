@@ -38,7 +38,7 @@ class ErrorLog extends Migration
 			$table->varchar('url', 255)->nullable();
 			$table->text('query')->nullable();
 			$table->boolean('resolved')->default(0);
-			$table->varchar('error_ip', 45);
+			$table->varchar('error_ip', 45)->nullable();
 
             // Indexes for faster queries on commonly searched columns
 			$table->index('env')->fields('created_at', 'error_ip', 'env', 'resolved');
