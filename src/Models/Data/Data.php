@@ -170,6 +170,11 @@ class Data
 		{
 			$name = $join->getAs() ?? $join->getTableName();
 			$key = Strings::camelCase($name);
+			if ($this->isOwnField($key))
+			{
+				return;
+			}
+
 			$this->nestedDataHelper->addKey($key);
 
 			/**
@@ -192,9 +197,33 @@ class Data
 		foreach ($joiningFields as $field)
 		{
 			$key = $this->checkAliasField($field);
+			if ($this->isOwnField($key))
+			{
+				continue;
+			}
+
 			$this->joinFields[] = $key;
 			$this->setDataField($key, null);
 		}
+	}
+
+	/**
+	 * Checks if a key is one of the model's own columns.
+	 *
+	 * Own fields are initialized before joins, so a key that already exists
+	 * in the data object but is not a registered join field belongs to the
+	 * model itself. Join fields must never shadow own columns: map() skips
+	 * join fields when persisting, so an unaliased collision would silently
+	 * strip the column from every INSERT/UPDATE. Alias the join field to
+	 * expose the joined value instead.
+	 *
+	 * @param string $key Field name (camelCase).
+	 * @return bool
+	 */
+	private function isOwnField(string $key): bool
+	{
+		return property_exists($this->data, $key)
+			&& !in_array($key, $this->joinFields, true);
 	}
 
 	/**
