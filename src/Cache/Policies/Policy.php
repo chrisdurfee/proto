@@ -4,6 +4,7 @@ namespace Proto\Cache\Policies;
 use Proto\Cache\Cache;
 use Proto\Utils\Format\JsonFormat;
 use Proto\Controllers\Controller;
+use Proto\Http\Session;
 
 /**
  * Policy
@@ -130,7 +131,11 @@ abstract class Policy implements CachePolicyInterface
 	}
 
 	/**
-	 * Creates a unique cache key.
+	 * Creates a unique cache key, scoped to the acting user/session.
+	 *
+	 * Responses are namespaced by the current user (or, when anonymous,
+	 * the session id) so a cached response is never returned to a
+	 * different visitor than the one who generated it.
 	 *
 	 * @param string $method The method name.
 	 * @param mixed $params The method parameters.
@@ -138,7 +143,52 @@ abstract class Policy implements CachePolicyInterface
 	 */
 	protected function createKey(string $method, mixed $params): string
 	{
-		return $this->controller::class . ':' . $method . ':' . $this->normalizeParams($params);
+		return $this->controller::class . ':' . $this->getScopeToken() . ':' . $method . ':' . $this->normalizeParams($params);
+	}
+
+	/**
+	 * Builds a wildcard key pattern matching a method across every scope.
+	 *
+	 * Used to invalidate cached responses for every user when the
+	 * underlying data changes, since a write can affect what other
+	 * users would see even though each response is cached separately.
+	 *
+	 * @param string $method The method name.
+	 * @param mixed $params The method parameters.
+	 * @return string The generated key pattern.
+	 */
+	protected function createKeyPattern(string $method, mixed $params): string
+	{
+		return $this->controller::class . ':*:' . $method . ':' . $this->normalizeParams($params);
+	}
+
+	/**
+	 * Gets a token identifying the acting user, or the anonymous session.
+	 *
+	 * @return string
+	 */
+	protected function getScopeToken(): string
+	{
+		$userId = session()->user->id ?? null;
+		return $userId !== null ? 'u' . $userId : 's' . Session::getId();
+	}
+
+	/**
+	 * Deletes every cached key matching a wildcard pattern.
+	 *
+	 * @param string $pattern The key pattern.
+	 * @return void
+	 */
+	protected function deleteKeysMatching(string $pattern): void
+	{
+		$keys = $this->getKeys($pattern);
+		if (!empty($keys))
+		{
+			foreach ($keys as $key)
+			{
+				$this->deleteKey($key);
+			}
+		}
 	}
 
 	/**

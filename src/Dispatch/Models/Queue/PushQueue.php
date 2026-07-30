@@ -59,7 +59,7 @@ class PushQueue extends Queue
 	/**
 	 * This will get the attachments
 	 *
-	 * @param string|object $attachments
+	 * @param object $data
 	 * @return object|null
 	 */
 	protected static function getAttachments($data): ?object

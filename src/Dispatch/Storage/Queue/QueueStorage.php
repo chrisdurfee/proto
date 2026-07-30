@@ -67,7 +67,6 @@ class QueueStorage extends Storage
 	 * This will delete the batch.
 	 *
 	 * @param string $agentId
-	 * @param string $status
 	 * @return bool
 	 */
 	public function deleteByAgentId(string $agentId): bool

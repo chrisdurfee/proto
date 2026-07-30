@@ -92,11 +92,7 @@ class ModelPolicy extends Policy
 		$id = $item->id ?? $this->getResourceId($request);
 		if ($id !== null)
 		{
-			$key = $this->createKey('get', $id);
-			if ($this->hasKey($key))
-			{
-				$this->deleteKey($key);
-			}
+			$this->deleteKeysMatching($this->createKeyPattern('get', $id));
 		}
 
 		$this->deleteAll();
@@ -112,11 +108,7 @@ class ModelPolicy extends Policy
 	public function updateStatus(Request $request): object
 	{
 		$id = $this->getResourceId($request);
-		$key = $this->createKey('get', $id);
-		if ($this->hasKey($key))
-		{
-			$this->deleteKey($key);
-		}
+		$this->deleteKeysMatching($this->createKeyPattern('get', $id));
 
 		$this->deleteAll();
 
@@ -144,11 +136,7 @@ class ModelPolicy extends Policy
 
 		if ($id !== null)
 		{
-			$key = $this->createKey('get', $id);
-			if ($this->hasKey($key))
-			{
-				$this->deleteKey($key);
-			}
+			$this->deleteKeysMatching($this->createKeyPattern('get', $id));
 		}
 
 		$this->deleteAll();
@@ -183,15 +171,7 @@ class ModelPolicy extends Policy
 	 */
 	protected function deleteAll(): void
 	{
-		$keyPattern = $this->createKey('all', '*');
-		$keys = $this->getKeys($keyPattern);
-		if (!empty($keys))
-		{
-			foreach ($keys as $key)
-			{
-				$this->deleteKey($key);
-			}
-		}
+		$this->deleteKeysMatching($this->createKeyPattern('all', '*'));
 
 		// Also clear any generic method caches that might be affected
 		$this->deleteGenericMethodCaches();
@@ -214,11 +194,11 @@ class ModelPolicy extends Policy
 
 			foreach ($allKeys as $key)
 			{
-				// Extract method name from cache key
+				// Extract method name from cache key (format: Class:scope:method:params)
 				$keyParts = explode(':', $key);
-				if (count($keyParts) >= 2)
+				if (count($keyParts) >= 3)
 				{
-					$method = $keyParts[1];
+					$method = $keyParts[2];
 					// If it's not a standard CRUD method, it's likely a generic cached method
 					if (!in_array($method, $standardMethods))
 					{

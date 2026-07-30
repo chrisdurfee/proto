@@ -23,6 +23,24 @@ abstract class Controller extends Base implements ControllerInterface
 	protected ?string $policy = null;
 
 	/**
+	 * Caching is opt-in: a controller must declare it supports scoped
+	 * caching before ControllerHelper will wrap it in a cache proxy.
+	 *
+	 * @var bool $cacheable
+	 */
+	protected bool $cacheable = false;
+
+	/**
+	 * This will check if the controller's responses may be cached.
+	 *
+	 * @return bool
+	 */
+	public function isCacheable(): bool
+	{
+		return $this->cacheable;
+	}
+
+	/**
 	 * This will get the policy for the controller.
 	 *
 	 * @return string|null

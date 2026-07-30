@@ -20,6 +20,11 @@ class ControllerHelper
 	/**
 	 * This will set the caching policy for the controller.
 	 *
+	 * Caching is opt-in (@see Controller::$cacheable): a controller must
+	 * declare it supports scoped caching, since the cache policy keys
+	 * responses per acting user/session (@see Policy::createKey) rather
+	 * than caching them globally.
+	 *
 	 * @param Controller $controller
 	 * @param string $policy
 	 * @return mixed
@@ -29,7 +34,11 @@ class ControllerHelper
 		string $policy = ModelPolicy::class
 	): mixed
 	{
-		if (Cache::isSupported() !== true || env('env') === 'dev')
+		if (
+			$controller->isCacheable() !== true ||
+			Cache::isSupported() !== true ||
+			env('env') === 'dev'
+		)
 		{
 			return $controller;
 		}
