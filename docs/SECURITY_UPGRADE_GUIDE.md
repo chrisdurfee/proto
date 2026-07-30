@@ -489,7 +489,7 @@ Update any flagged methods to use `Request $request` or zero parameters.
 
 ### 14. Long-Running Process Support
 
-**What changed:** `Request::reset()` and `PublicIp::reset()` methods clear cached static properties between requests.
+**What changed:** `Request::reset()`, `PublicIp::reset()`, `Session::reset()`, and `Gate::reset()` clear cached static properties between requests.
 
 **When to use:** If your app runs in a long-running process (Swoole, RoadRunner, ReactPHP, or persistent PHP-FPM workers handling multiple requests), call these between requests:
 
@@ -497,9 +497,13 @@ Update any flagged methods to use `Request $request` or zero parameters.
 // In your worker loop or middleware
 Request::reset();
 PublicIp::reset();
+Session::reset();
+Gate::reset();
 ```
 
-**Not needed for:** Standard PHP-FPM (process-per-request) or Apache mod_php setups.
+**Why `Session::reset()` and `Gate::reset()` matter:** The session adapter's token and singleton instance (and the `Session` object cached on `Gate`) are stored in static properties. Without resetting them, the *first* request handled by a worker process creates a session/CSRF token that every *subsequent* request on that worker silently reuses — different visitors end up sharing the same session data and CSRF token. Skipping this reset is a real cross-visitor session/CSRF collision, not just stale data.
+
+**Not needed for:** Standard PHP-FPM (process-per-request) or Apache mod_php setups, where each request runs in a fresh PHP process and statics never persist across requests.
 
 ---
 

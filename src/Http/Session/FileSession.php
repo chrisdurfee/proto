@@ -212,4 +212,25 @@ class FileSession extends Adapter
 		$this->close();
 		return $result;
 	}
+
+	/**
+	 * Resets cached static state.
+	 *
+	 * Closes any active native session before the singleton instance is
+	 * dropped, so a long-running process doesn't leak one visitor's
+	 * `$_SESSION` into the next request. Call between requests in
+	 * long-running process environments (Swoole, RoadRunner, persistent
+	 * PHP-FPM workers).
+	 *
+	 * @return void
+	 */
+	public static function reset(): void
+	{
+		if (session_status() === PHP_SESSION_ACTIVE)
+		{
+			session_write_close();
+		}
+
+		parent::reset();
+	}
 }

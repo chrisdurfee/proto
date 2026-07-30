@@ -70,4 +70,11 @@ interface SessionInterface
 	 * @return bool
 	 */
 	public function destroy(): bool;
+
+	/**
+	 * Resets cached static state (token/instance) between requests.
+	 *
+	 * @return void
+	 */
+	public static function reset(): void;
 }

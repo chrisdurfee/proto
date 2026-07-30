@@ -142,4 +142,24 @@ class Session
 	{
 		static::getInstance()->destroy();
 	}
+
+	/**
+	 * Resets cached static state on the active session adapter.
+	 *
+	 * The adapter singleton and its session token are cached in static
+	 * properties, so a long-running process (Swoole, RoadRunner, persistent
+	 * PHP-FPM workers) would otherwise keep serving the first visitor's
+	 * session/CSRF token to every later visitor. Call between requests in
+	 * those environments, alongside `Request::reset()` and `Gate::reset()`.
+	 *
+	 * @return void
+	 */
+	public static function reset(): void
+	{
+		$type = self::$type ?? self::getConfigType();
+		$type::reset();
+
+		self::$instance = null;
+		self::$type = null;
+	}
 }

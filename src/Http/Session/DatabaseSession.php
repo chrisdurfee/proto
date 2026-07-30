@@ -223,4 +223,21 @@ class DatabaseSession extends Adapter
 
 		return false;
 	}
+
+	/**
+	 * Resets cached static state.
+	 *
+	 * Without this, `start()` short-circuits on `static::$token !== null` and
+	 * the singleton instance is reused, so every visitor handled by the same
+	 * long-running process (e.g. Swoole, RoadRunner, persistent PHP-FPM
+	 * workers) would silently inherit the first visitor's session/CSRF token.
+	 * Call between requests in those environments.
+	 *
+	 * @return void
+	 */
+	public static function reset(): void
+	{
+		static::$token = null;
+		parent::reset();
+	}
 }

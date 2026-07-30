@@ -57,4 +57,20 @@ abstract class Gate
 	{
 		return static::$session ??= Session::init();
 	}
+
+	/**
+	 * Resets the cached session reference.
+	 *
+	 * `$session` is static and shared by every gate subclass, so once cached
+	 * it outlives a single request in long-running processes (Swoole,
+	 * RoadRunner, persistent PHP-FPM workers), causing later visitors to
+	 * reuse an earlier visitor's session (and CSRF token). Call between
+	 * requests in those environments, alongside `Session::reset()`.
+	 *
+	 * @return void
+	 */
+	public static function reset(): void
+	{
+		static::$session = null;
+	}
 }
