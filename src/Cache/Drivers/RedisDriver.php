@@ -14,15 +14,30 @@ use stdClass;
 class RedisDriver extends Driver
 {
 	/**
-	 * Redis database connection instance.
+	 * Redis database connection instance. Nullable: a failed/unavailable
+	 * connection must never crash the request (@see connect()), so every
+	 * accessor below checks $connected rather than assuming $db is usable.
 	 *
 	 * @SuppressWarnings PHP0413
-	 * @var Redis
+	 * @var Redis|null
 	 */
-	protected Redis $db;
+	protected ?Redis $db = null;
+
+	/**
+	 * Whether the connection was established successfully. Distinct from
+	 * isSupported() (extension presence): this reflects actual reachability.
+	 *
+	 * @var bool
+	 */
+	protected bool $connected = false;
 
 	/**
 	 * Constructor method that initializes the Redis connection.
+	 *
+	 * Never throws: a Redis outage must degrade the app to "no cache" (falls
+	 * through to the database) rather than fatal every cacheable request.
+	 * connect() catches its own failures; isSupported()/every accessor below
+	 * checks $connected before touching $db.
 	 */
 	public function __construct()
 	{
@@ -30,7 +45,9 @@ class RedisDriver extends Driver
 	}
 
 	/**
-	 * Checks if Redis extension is available.
+	 * Checks if Redis is available: the extension is loaded AND a live
+	 * connection was established. Callers (Cache::isSupported(), etc.) rely
+	 * on this to decide whether to bother hitting the cache at all.
 	 *
 	 * @return bool
 	 */
@@ -39,7 +56,7 @@ class RedisDriver extends Driver
 		/**
 		 * @SuppressWarnings PHP0413
 		 */
-		return class_exists(Redis::class);
+		return class_exists(Redis::class) && $this->connected;
 	}
 
 	/**
@@ -55,29 +72,77 @@ class RedisDriver extends Driver
 	/**
 	 * Establishes a connection to the Redis server.
 	 *
+	 * Any failure (unreachable host, wrong port, bad auth, misconfiguration)
+	 * is caught and recorded via setError() instead of thrown, so a Redis
+	 * outage degrades the app to running without a cache rather than
+	 * fataling every request that touches a cacheable controller.
+	 *
 	 * @return void
 	 */
 	protected function connect(): void
 	{
-		if (!$this->isSupported())
+		if (!class_exists(Redis::class))
 		{
 			return;
 		}
 
-		$connection = $this->getCacheSettings();
-		$this->db = new Redis();
-
-		// Use persistent connection to optimize performance
-		if (!$this->db->pconnect($connection->host, $connection->port))
+		try
 		{
-			throw new \RuntimeException('Failed to connect to Redis server.');
+			$connection = $this->getCacheSettings();
+			$this->db = new Redis();
+
+			// Use a short connect timeout so an unreachable host fails fast
+			// instead of stalling the request for the OS-level TCP timeout.
+			if (!$this->db->pconnect($connection->host, $connection->port, 1.0))
+			{
+				throw new \RuntimeException('Failed to connect to Redis server.');
+			}
+
+			// Authenticate if a password is set
+			if (!empty($connection->password) && !$this->db->auth($connection->password))
+			{
+				throw new \RuntimeException('Redis authentication failed.');
+			}
+
+			$this->connected = true;
+		}
+		catch (\Throwable $e)
+		{
+			$this->connected = false;
+			$this->db = null;
+			$this->setError(
+				$e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e)
+			);
+		}
+	}
+
+	/**
+	 * Runs a Redis operation, swallowing connection-level failures so a
+	 * mid-request drop (stale persistent connection, network blip, Redis
+	 * restart) degrades to the operation's fallback value instead of
+	 * throwing out of a cache accessor and breaking the request.
+	 *
+	 * @param callable $operation Receives the connected Redis instance.
+	 * @param mixed $fallback Value to return when unsupported or on failure.
+	 * @return mixed
+	 */
+	protected function attempt(callable $operation, mixed $fallback): mixed
+	{
+		if (!$this->connected || $this->db === null)
+		{
+			return $fallback;
 		}
 
-		// Authenticate if a password is set
-		if (!empty($connection->password) && !$this->db->auth($connection->password))
+		try
 		{
-			$this->db->close();
-			throw new \RuntimeException('Redis authentication failed.');
+			return $operation($this->db);
+		}
+		catch (\Throwable $e)
+		{
+			$this->setError(
+				$e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e)
+			);
+			return $fallback;
 		}
 	}
 
@@ -89,8 +154,11 @@ class RedisDriver extends Driver
 	 */
 	public function get(string $key): ?string
 	{
-		$value = $this->db->get($key);
-		return $value !== false ? $value : null;
+		return $this->attempt(function (Redis $db) use ($key): ?string
+		{
+			$value = $db->get($key);
+			return $value !== false ? $value : null;
+		}, null);
 	}
 
 	/**
@@ -101,15 +169,18 @@ class RedisDriver extends Driver
 	 */
 	public function keys(string $pattern): array
 	{
-		$iterator = null;
-		$keys = [];
-
-		while ($foundKeys = $this->db->scan($iterator, $pattern))
+		return $this->attempt(function (Redis $db) use ($pattern): array
 		{
-			$keys = array_merge($keys, $foundKeys);
-		}
+			$iterator = null;
+			$keys = [];
 
-		return $keys;
+			while ($foundKeys = $db->scan($iterator, $pattern))
+			{
+				$keys = array_merge($keys, $foundKeys);
+			}
+
+			return $keys;
+		}, []);
 	}
 
 	/**
@@ -120,7 +191,7 @@ class RedisDriver extends Driver
 	 */
 	public function has(string $key): bool
 	{
-		return $this->db->exists($key) > 0;
+		return $this->attempt(fn (Redis $db): bool => $db->exists($key) > 0, false);
 	}
 
 	/**
@@ -131,7 +202,7 @@ class RedisDriver extends Driver
 	 */
 	public function incr(string $key): int
 	{
-		return (int) $this->db->incr($key);
+		return $this->attempt(fn (Redis $db): int => (int) $db->incr($key), 0);
 	}
 
 	/**
@@ -142,7 +213,7 @@ class RedisDriver extends Driver
 	 */
 	public function delete(string $key): bool
 	{
-		return $this->db->del($key) > 0;
+		return $this->attempt(fn (Redis $db): bool => $db->del($key) > 0, false);
 	}
 
 	/**
@@ -155,14 +226,18 @@ class RedisDriver extends Driver
 	 */
 	public function set(string $key, string $value, ?int $expire = null): void
 	{
-		if ($expire !== null)
+		$this->attempt(function (Redis $db) use ($key, $value, $expire): bool
 		{
-			$this->db->setEx($key, $expire, $value);
-		}
-		else
-		{
-			$this->db->set($key, $value);
-		}
+			if ($expire !== null)
+			{
+				$db->setEx($key, $expire, $value);
+			}
+			else
+			{
+				$db->set($key, $value);
+			}
+			return true;
+		}, false);
 	}
 
 	/**
@@ -172,7 +247,7 @@ class RedisDriver extends Driver
 	 */
 	public function clear(): bool
 	{
-		return $this->db->flushDB();
+		return $this->attempt(fn (Redis $db): bool => $db->flushDB(), false);
 	}
 
 	/**
@@ -184,7 +259,7 @@ class RedisDriver extends Driver
 	 */
 	public function publish(string $channel, string $message): int
 	{
-		return $this->db->publish($channel, $message);
+		return $this->attempt(fn (Redis $db): int => (int) $db->publish($channel, $message), 0);
 	}
 
 	/**
@@ -197,11 +272,23 @@ class RedisDriver extends Driver
 	 */
 	public function subscribe(array|string $channels, callable $callback): void
 	{
+		if (!$this->connected || $this->db === null)
+		{
+			return;
+		}
+
 		$channels = is_array($channels) ? $channels : [$channels];
 
-		$this->db->subscribe($channels, function ($redis, $channel, $message) use ($callback) {
-			$callback($channel, $message);
-		});
+		try
+		{
+			$this->db->subscribe($channels, function ($redis, $channel, $message) use ($callback) {
+				$callback($channel, $message);
+			});
+		}
+		catch (\Throwable $e)
+		{
+			$this->setError($e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e));
+		}
 	}
 
 	/**
@@ -214,11 +301,23 @@ class RedisDriver extends Driver
 	 */
 	public function psubscribe(array|string $patterns, callable $callback): void
 	{
+		if (!$this->connected || $this->db === null)
+		{
+			return;
+		}
+
 		$patterns = is_array($patterns) ? $patterns : [$patterns];
 
-		$this->db->psubscribe($patterns, function ($redis, $pattern, $channel, $message) use ($callback) {
-			$callback($pattern, $channel, $message);
-		});
+		try
+		{
+			$this->db->psubscribe($patterns, function ($redis, $pattern, $channel, $message) use ($callback) {
+				$callback($pattern, $channel, $message);
+			});
+		}
+		catch (\Throwable $e)
+		{
+			$this->setError($e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e));
+		}
 	}
 
 	/**
@@ -230,14 +329,26 @@ class RedisDriver extends Driver
 	 */
 	public function unsubscribe(array|string|null $channels = null): void
 	{
-		if ($channels === null)
+		if (!$this->connected || $this->db === null)
 		{
-			$this->db->unsubscribe();
+			return;
 		}
-		else
+
+		try
 		{
-			$channels = is_array($channels) ? $channels : [$channels];
-			$this->db->unsubscribe($channels);
+			if ($channels === null)
+			{
+				$this->db->unsubscribe();
+			}
+			else
+			{
+				$channels = is_array($channels) ? $channels : [$channels];
+				$this->db->unsubscribe($channels);
+			}
+		}
+		catch (\Throwable $e)
+		{
+			$this->setError($e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e));
 		}
 	}
 
@@ -250,8 +361,11 @@ class RedisDriver extends Driver
 	 */
 	public function rPush(string $key, string ...$values): int
 	{
-		$result = $this->db->rPush($key, ...$values);
-		return $result !== false ? (int)$result : 0;
+		return $this->attempt(function (Redis $db) use ($key, $values): int
+		{
+			$result = $db->rPush($key, ...$values);
+			return $result !== false ? (int) $result : 0;
+		}, 0);
 	}
 
 	/**
@@ -264,13 +378,16 @@ class RedisDriver extends Driver
 	 */
 	public function lPop(string $key, int $count = 1): array
 	{
-		$result = $this->db->lPop($key, max(1, $count));
-		if ($result === false || $result === null)
+		return $this->attempt(function (Redis $db) use ($key, $count): array
 		{
-			return [];
-		}
+			$result = $db->lPop($key, max(1, $count));
+			if ($result === false || $result === null)
+			{
+				return [];
+			}
 
-		return is_array($result) ? $result : [$result];
+			return is_array($result) ? $result : [$result];
+		}, []);
 	}
 
 	/**
@@ -281,17 +398,24 @@ class RedisDriver extends Driver
 	 */
 	public function lLen(string $key): int
 	{
-		$result = $this->db->lLen($key);
-		return $result !== false ? (int)$result : 0;
+		return $this->attempt(function (Redis $db) use ($key): int
+		{
+			$result = $db->lLen($key);
+			return $result !== false ? (int) $result : 0;
+		}, 0);
 	}
 
 	/**
 	 * Gets the underlying Redis connection instance.
 	 *
-	 * @return Redis The Redis instance.
+	 * Returns null when the connection is unavailable — callers that need
+	 * direct access (e.g. blocking list ops) must check for null themselves,
+	 * same as every other accessor on this driver.
+	 *
+	 * @return Redis|null The Redis instance, or null if not connected.
 	 */
-	public function getConnection(): Redis
+	public function getConnection(): ?Redis
 	{
-		return $this->db;
+		return $this->connected ? $this->db : null;
 	}
 }

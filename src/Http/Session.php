@@ -150,7 +150,8 @@ class Session
 	 * properties, so a long-running process (Swoole, RoadRunner, persistent
 	 * PHP-FPM workers) would otherwise keep serving the first visitor's
 	 * session/CSRF token to every later visitor. Call between requests in
-	 * those environments, alongside `Request::reset()` and `Gate::reset()`.
+	 * those environments, alongside `Request::reset()` and
+	 * `Gate::resetSessionCache()`.
 	 *
 	 * @return void
 	 */

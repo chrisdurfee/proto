@@ -489,7 +489,7 @@ Update any flagged methods to use `Request $request` or zero parameters.
 
 ### 14. Long-Running Process Support
 
-**What changed:** `Request::reset()`, `PublicIp::reset()`, `Session::reset()`, and `Gate::reset()` clear cached static properties between requests.
+**What changed:** `Request::reset()`, `PublicIp::reset()`, `Session::reset()`, and `Gate::resetSessionCache()` clear cached static properties between requests.
 
 **When to use:** If your app runs in a long-running process (Swoole, RoadRunner, ReactPHP, or persistent PHP-FPM workers handling multiple requests), call these between requests:
 
@@ -498,10 +498,12 @@ Update any flagged methods to use `Request $request` or zero parameters.
 Request::reset();
 PublicIp::reset();
 Session::reset();
-Gate::reset();
+Gate::resetSessionCache();
 ```
 
-**Why `Session::reset()` and `Gate::reset()` matter:** The session adapter's token and singleton instance (and the `Session` object cached on `Gate`) are stored in static properties. Without resetting them, the *first* request handled by a worker process creates a session/CSRF token that every *subsequent* request on that worker silently reuses — different visitors end up sharing the same session data and CSRF token. Skipping this reset is a real cross-visitor session/CSRF collision, not just stale data.
+**Why `Session::reset()` and `Gate::resetSessionCache()` matter:** The session adapter's token and singleton instance (and the `Session` object cached on `Gate`) are stored in static properties. Without resetting them, the *first* request handled by a worker process creates a session/CSRF token that every *subsequent* request on that worker silently reuses — different visitors end up sharing the same session data and CSRF token. Skipping this reset is a real cross-visitor session/CSRF collision, not just stale data.
+
+**Note:** the method is deliberately *not* named `Gate::reset()`. `CrossSiteRequestForgeryGate` (a `Gate` subclass) already declares an unrelated instance method `reset()` that clears the stored CSRF token. PHP fatals at class-load time when a subclass overrides a static parent method with a non-static one, so naming both members `reset()` broke every CSRF-gated request outright (regardless of whether either was ever called) — see CHANGELOG for v1.3.40/1.3.41.
 
 **Not needed for:** Standard PHP-FPM (process-per-request) or Apache mod_php setups, where each request runs in a fresh PHP process and statics never persist across requests.
 

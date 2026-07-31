@@ -58,14 +58,29 @@ class Cache extends Singleton
 	/**
 	 * Loads the cache driver.
 	 *
+	 * Defense in depth: well-behaved drivers (e.g. RedisDriver) already
+	 * catch their own connection failures and never throw. This catch
+	 * guards against a misbehaving/future driver doing otherwise — a cache
+	 * backend being unreachable must never take down the whole app, since
+	 * every cache call already degrades to "no cache" when $driver is null.
+	 *
 	 * @return void
 	 */
 	protected function loadDriver(): void
 	{
 		$class = $this->getDriverClassName();
-		if ($class !== null && class_exists($class))
-        {
+		if ($class === null || !class_exists($class))
+		{
+			return;
+		}
+
+		try
+		{
 			$this->driver = new $class();
+		}
+		catch (\Throwable)
+		{
+			$this->driver = null;
 		}
 	}
 

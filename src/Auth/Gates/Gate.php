@@ -67,9 +67,16 @@ abstract class Gate
 	 * reuse an earlier visitor's session (and CSRF token). Call between
 	 * requests in those environments, alongside `Session::reset()`.
 	 *
+	 * Named `resetSessionCache()` (not `reset()`) because subclasses such as
+	 * `CrossSiteRequestForgeryGate` already declare an unrelated *instance*
+	 * `reset()` (clears the stored CSRF token). PHP fatals at class-load
+	 * time if a subclass overrides a static parent method with a
+	 * non-static one — that collision previously made every CSRF-gated
+	 * request fatal as soon as this method existed as `reset()` here.
+	 *
 	 * @return void
 	 */
-	public static function reset(): void
+	public static function resetSessionCache(): void
 	{
 		static::$session = null;
 	}

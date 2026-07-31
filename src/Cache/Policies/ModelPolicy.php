@@ -153,9 +153,17 @@ class ModelPolicy extends Policy
 	{
 		$id = $this->getResourceId($request);
 		$key = $this->createKey('get', $id);
-		if ($this->hasKey($key))
+
+		/**
+		 * A single GET replaces the previous EXISTS + GET pair: setValue()
+		 * never stores a literal null (@see Policy::setValue), so a null
+		 * result here unambiguously means "not cached" — halving the Redis
+		 * round trips on every cache hit.
+		 */
+		$cached = $this->getValue($key);
+		if ($cached !== null)
 		{
-			return $this->getValue($key);
+			return $cached;
 		}
 
 		$response = $this->controller->get($request);
@@ -331,9 +339,11 @@ class ModelPolicy extends Policy
 
 		$params = $this->setupAllParams($filter, $offset, $limit, $inputs->modifiers);
 		$key = $this->createKey('all', $params);
-		if ($this->hasKey($key))
+
+		$cached = $this->getValue($key);
+		if ($cached !== null)
 		{
-			return $this->getValue($key);
+			return $cached;
 		}
 
 		$response = $this->controller->all($request);
@@ -388,9 +398,10 @@ class ModelPolicy extends Policy
 		$key = $this->createKey($method, $cacheParams);
 
 		// Check if we have a cached result
-		if ($this->hasKey($key))
+		$cached = $this->getValue($key);
+		if ($cached !== null)
 		{
-			return $this->getValue($key);
+			return $cached;
 		}
 
 		// Call the controller method and cache the result
