@@ -23,13 +23,6 @@ class S3Driver extends Driver
 	protected S3Client $s3Client;
 
 	/**
-	 * S3 bucket name.
-	 *
-	 * @var string
-	 */
-	protected string $bucket;
-
-	/**
 	 * AWS region.
 	 *
 	 * @var string
@@ -42,6 +35,25 @@ class S3Driver extends Driver
 	 * @var string|null
 	 */
 	protected ?string $endpoint = null;
+
+	/**
+	 * Optional object ACL (e.g. "public-read"). Left unset by default since
+	 * R2 and ACL-disabled AWS buckets reject any ACL header; set
+	 * files.amazon.s3.bucket.{alias}.acl to opt in for buckets that need it.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $acl = null;
+
+	/**
+	 * Bucket-relative key prefix (e.g. "users/"), read from
+	 * files.amazon.s3.bucket.{alias}.path. Every S3 key must be built
+	 * through {@see key()} so uploads land under their category folder
+	 * instead of the bucket root.
+	 *
+	 * @var string
+	 */
+	protected string $path = '';
 
 	/**
 	 * S3Driver constructor.
@@ -67,6 +79,8 @@ class S3Driver extends Driver
 		$this->bucket = $settings->bucketName;
 		$this->region = $settings->region;
 		$this->endpoint = $settings->endpoint ?? null;
+		$this->acl = $settings->acl ?? null;
+		$this->path = (string)($settings->path ?? '');
 
 		$config = [
 			'version' => $settings->version,
@@ -118,9 +132,40 @@ class S3Driver extends Driver
 			'version' => $bucketSettings->version,
 			'endpoint' => $bucketSettings->endpoint ?? null,
 			'bucketName' => $bucketSettings->name,
-			'path' => $bucketSettings->path,
+			'path' => $bucketSettings->path ?? '',
+			'acl' => $bucketSettings->acl ?? null,
 		];
 		return $settings;
+	}
+
+	/**
+	 * Builds the real S3 object key for a bare filename by applying this
+	 * bucket's configured path prefix. Every method below must route
+	 * filenames through this instead of using them as the Key directly.
+	 *
+	 * @param string $fileName
+	 * @return string
+	 */
+	protected function key(string $fileName): string
+	{
+		return $this->path . $fileName;
+	}
+
+	/**
+	 * Builds the putObject/copyObject params array, including the ACL
+	 * entry only when one is configured (R2 and ACL-disabled AWS buckets
+	 * reject any ACL header).
+	 *
+	 * @param array $params
+	 * @return array
+	 */
+	protected function withAcl(array $params): array
+	{
+		if ($this->acl !== null)
+		{
+			$params['ACL'] = $this->acl;
+		}
+		return $params;
 	}
 
 	/**
@@ -133,12 +178,11 @@ class S3Driver extends Driver
 	{
 		try
 		{
-			$result = $this->s3Client->putObject([
+			$result = $this->s3Client->putObject($this->withAcl([
 				'Bucket' => $this->bucket,
-				'Key' => $uploadFile->getNewName(),
+				'Key' => $this->key($uploadFile->getNewName()),
 				'SourceFile' => $uploadFile->getPath(),
-				'ACL' => 'public-read',
-			]);
+			]));
 			return $result !== null;
 		}
 		catch (AwsException $e)
@@ -163,12 +207,11 @@ class S3Driver extends Driver
 	{
 		try
 		{
-			$result = $this->s3Client->putObject([
+			$result = $this->s3Client->putObject($this->withAcl([
 				'Bucket' => $this->bucket,
-				'Key' => basename($fileName),
+				'Key' => $this->key(basename($fileName)),
 				'SourceFile' => $fileName,
-				'ACL' => 'public-read',
-			]);
+			]));
 			return $result !== null;
 		}
 		catch (AwsException $e)
@@ -189,7 +232,7 @@ class S3Driver extends Driver
 		{
 			$result = $this->s3Client->getObject([
 				'Bucket' => $this->bucket,
-				'Key' => $fileName,
+				'Key' => $this->key($fileName),
 			]);
 			return (string)$result['Body'];
 		}
@@ -209,9 +252,9 @@ class S3Driver extends Driver
 	{
 		if ($this->endpoint)
 		{
-			return rtrim($this->endpoint, '/') . '/' . $this->bucket . '/' . $fileName;
+			return rtrim($this->endpoint, '/') . '/' . $this->bucket . '/' . $this->key($fileName);
 		}
-		return "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/{$fileName}";
+		return "https://{$this->bucket}.s3.{$this->region}.amazonaws.com/" . $this->key($fileName);
 	}
 
 	/**
@@ -226,7 +269,7 @@ class S3Driver extends Driver
 		{
 			$result = $this->s3Client->getObject([
 				'Bucket' => $this->bucket,
-				'Key' => $fileName,
+				'Key' => $this->key($fileName),
 			]);
 			header("Content-Type: " . $result['ContentType']);
 			header("Content-Length: " . $result['ContentLength']);
@@ -251,12 +294,11 @@ class S3Driver extends Driver
 	{
 		try
 		{
-			$this->s3Client->copyObject([
+			$this->s3Client->copyObject($this->withAcl([
 				'Bucket' => $this->bucket,
-				'CopySource' => "{$this->bucket}/{$oldFileName}",
-				'Key' => $newFileName,
-				'ACL' => 'public-read',
-			]);
+				'CopySource' => "{$this->bucket}/" . $this->key($oldFileName),
+				'Key' => $this->key($newFileName),
+			]));
 			return $this->delete($oldFileName);
 		}
 		catch (AwsException $e)
@@ -289,7 +331,7 @@ class S3Driver extends Driver
 		{
 			$this->s3Client->deleteObject([
 				'Bucket' => $this->bucket,
-				'Key' => $fileName,
+				'Key' => $this->key($fileName),
 			]);
 			return true;
 		}
@@ -311,7 +353,7 @@ class S3Driver extends Driver
 		{
 			$result = $this->s3Client->headObject([
 				'Bucket' => $this->bucket,
-				'Key' => $fileName,
+				'Key' => $this->key($fileName),
 			]);
 			return (int)$result['ContentLength'];
 		}
