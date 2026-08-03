@@ -173,7 +173,6 @@ class FileValidator
 		{
 			$finfo = finfo_open(FILEINFO_MIME_TYPE);
 			$mimeType = finfo_file($finfo, $filePath);
-			finfo_close($finfo);
 			return $mimeType ?: '';
 		}
 

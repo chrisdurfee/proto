@@ -147,7 +147,7 @@ class EventLoop
 	 */
 	public function addEvent(EventInterface $event): void
 	{
-		$this->events->attach($event);
+		$this->events->offsetSet($event);
 	}
 
 	/**
@@ -158,7 +158,7 @@ class EventLoop
 	 */
 	public function removeEvent(EventInterface $event): void
 	{
-		$this->events->detach($event);
+		$this->events->offsetUnset($event);
 	}
 
 	/**

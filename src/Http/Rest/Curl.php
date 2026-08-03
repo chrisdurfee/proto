@@ -177,7 +177,7 @@ class Curl
 	 */
 	protected function close(): void
 	{
-		curl_close($this->curl);
+		unset($this->curl);
 	}
 
 	/**
