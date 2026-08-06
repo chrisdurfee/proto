@@ -49,6 +49,31 @@ class RedisServerEvents
 	protected string $connectionId;
 
 	/**
+	 * Session id used to scope the stale-connection singleton key.
+	 *
+	 * Native `session_id()` is only meaningful for `FileSession` (the
+	 * only adapter that calls PHP's `session_start()`). Cookie/DB-backed
+	 * adapters — e.g. `DatabaseSession` (this app's configured driver,
+	 * see `common/Config/.env` → `"session": "database"`) — never touch
+	 * PHP's native session at all, so `session_id()` is always `""`
+	 * regardless of SSE. Fall back to the adapter's own `getId()` (the
+	 * `token` cookie value for `DatabaseSession`) so different
+	 * users/browsers don't collapse onto the same connection key.
+	 *
+	 * @var string
+	 */
+	protected string $sessionId = '';
+
+	/**
+	 * Optional per-tab client id from `?sseClient=`. Scopes the
+	 * stale-connection singleton so multiple tabs (same session cookie)
+	 * do not death-match each other's streams every reconnect.
+	 *
+	 * @var string
+	 */
+	protected string $sseClientId = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array|null $settings Optional Redis connection settings
@@ -66,6 +91,7 @@ class RedisServerEvents
 		$this->connectionId = $this->generateConnectionId();
 		$this->configureStreaming();
 		$this->setupResponse();
+		$this->captureConnectionScope();
 		$this->registerShutdownHandler(function(): void
 		{
 			// Idempotent — safe to call multiple times.
@@ -74,6 +100,40 @@ class RedisServerEvents
 		$this->closeStaleConnections();
 		$this->registerConnection();
 		$this->connectToRedis();
+	}
+
+	/**
+	 * Capture session id + optional `sseClient` query param. Used as the
+	 * stale-connection key.
+	 *
+	 * @return void
+	 */
+	protected function captureConnectionScope(): void
+	{
+		// Native session_id() is only populated by FileSession. Other
+		// adapters (DatabaseSession, RedisSession) manage their own token
+		// independent of PHP's session mechanism, so try the adapter's
+		// own getId() first and fall back to session_id() only for
+		// FileSession-style setups.
+		$this->sessionId = ($this->session !== null) ? (string)$this->session::getId() : '';
+		if ($this->sessionId === '')
+		{
+			$this->sessionId = session_id();
+		}
+
+		$client = Input::get('sseClient');
+		// Restrict to a short opaque token so the cache key stays safe.
+		if (is_string($client) && preg_match('/^[A-Za-z0-9_-]{8,64}$/', $client) === 1)
+		{
+			$this->sseClientId = $client;
+		}
+		else
+		{
+			// No client id → scope to this connection only so a missing
+			// param cannot collapse every tab into one shared singleton
+			// (the multi-tab reconnect storm).
+			$this->sseClientId = $this->connectionId;
+		}
 	}
 
 	/**
@@ -118,12 +178,19 @@ class RedisServerEvents
 	 * Gets the cache key for tracking the singleton-per-endpoint connection
 	 * registration.
 	 *
+	 * Scoped by user + session + path + per-tab `sseClient` so:
+	 *   - a page refresh (same sseClient reused for the tab lifetime,
+	 *     or a new load with a new id) can still replace its own stream
+	 *   - other tabs sharing the session cookie keep their own stream
+	 *     instead of death-matching every ~3s reconnect
+	 *
 	 * @return string
 	 */
 	protected function getConnectionKey(): string
 	{
 		$userId = $this->getUserIdentifier();
-		$sessionId = session_id();
+		$sessionId = $this->sessionId !== '' ? $this->sessionId : 'nosession';
+		$clientId = $this->sseClientId !== '' ? $this->sseClientId : $this->connectionId;
 
 		// Include URI path so different SSE endpoints (e.g.
 		// /activity/sync vs /conversation/sync) don't kick each other off.
@@ -131,7 +198,7 @@ class RedisServerEvents
 		$path = parse_url($uri, PHP_URL_PATH) ?? '';
 		$pathHash = md5($path);
 
-		return "sse:connection:{$userId}:{$sessionId}:{$pathHash}";
+		return "sse:connection:{$userId}:{$sessionId}:{$pathHash}:{$clientId}";
 	}
 
 	/**
@@ -418,6 +485,13 @@ class RedisServerEvents
 					}
 
 					continue;
+				}
+
+				// Intentional closeSignal path calls $redis->close(), which
+				// surfaces here as "Connection closed" — not a real failure.
+				if (!$this->active || stripos($e->getMessage(), 'Connection closed') !== false)
+				{
+					break;
 				}
 
 				error_log("SSE: Redis error: " . $e->getMessage());
