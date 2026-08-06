@@ -183,38 +183,44 @@ class CreateField extends Template
 	}
 
 	/**
-	 * Sets the field type to DECIMAL with specified length.
+	 * Sets the field type to DECIMAL with specified precision and scale.
 	 *
-	 * @param int $length
+	 * @param int $length Precision (total digits).
+	 * @param int|null $decimals Scale (digits after the decimal point).
 	 * @return self
 	 */
-	public function decimal(int $length): self
+	public function decimal(int $length, ?int $decimals = null): self
 	{
-		$this->setFieldType('DECIMAL', $length);
+		$value = isset($decimals) ? "{$length},{$decimals}" : $length;
+		$this->setFieldType('DECIMAL', $value);
 		return $this;
 	}
 
 	/**
-	 * Sets the field type to FLOAT with specified length.
+	 * Sets the field type to FLOAT with specified precision and scale.
 	 *
-	 * @param int $length
+	 * @param int $length Precision (total digits).
+	 * @param int|null $decimals Scale (digits after the decimal point).
 	 * @return self
 	 */
-	public function floatType(int $length): self
+	public function floatType(int $length, ?int $decimals = null): self
 	{
-		$this->setFieldType('FLOAT', $length);
+		$value = isset($decimals) ? "{$length},{$decimals}" : $length;
+		$this->setFieldType('FLOAT', $value);
 		return $this;
 	}
 
 	/**
-	 * Sets the field type to DOUBLE with specified length.
+	 * Sets the field type to DOUBLE with specified precision and scale.
 	 *
-	 * @param int $length
+	 * @param int $length Precision (total digits).
+	 * @param int|null $decimals Scale (digits after the decimal point).
 	 * @return self
 	 */
-	public function doubleType(int $length): self
+	public function doubleType(int $length, ?int $decimals = null): self
 	{
-		$this->setFieldType('DOUBLE', $length);
+		$value = isset($decimals) ? "{$length},{$decimals}" : $length;
+		$this->setFieldType('DOUBLE', $value);
 		return $this;
 	}
 
