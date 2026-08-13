@@ -206,6 +206,33 @@ class RedisDriver extends Driver
 	}
 
 	/**
+	 * Sets a key's time-to-live in seconds without changing its value.
+	 *
+	 * @param string $key Cache key.
+	 * @param int $seconds TTL in seconds.
+	 * @return bool True if expiry was applied.
+	 */
+	public function expire(string $key, int $seconds): bool
+	{
+		return $this->attempt(function (Redis $db) use ($key, $seconds): bool
+		{
+			$result = $db->expire($key, $seconds);
+			return $result === true || $result === 1;
+		}, false);
+	}
+
+	/**
+	 * Returns remaining TTL in seconds (-2 missing, -1 no expiry).
+	 *
+	 * @param string $key Cache key.
+	 * @return int
+	 */
+	public function ttl(string $key): int
+	{
+		return $this->attempt(fn (Redis $db): int => (int) $db->ttl($key), -2);
+	}
+
+	/**
 	 * Deletes a key from the cache.
 	 *
 	 * @param string $key Cache key.

@@ -152,6 +152,31 @@ class Cache extends Singleton
 	}
 
 	/**
+	 * Sets a key's time-to-live in seconds without changing its value.
+	 *
+	 * @param string $key The cache key.
+	 * @param int $seconds TTL in seconds.
+	 * @return bool True when expiry was applied.
+	 */
+	public static function expire(string $key, int $seconds): bool
+	{
+		$driver = static::driver();
+		return $driver ? $driver->expire($key, $seconds) : false;
+	}
+
+	/**
+	 * Returns remaining TTL in seconds (-2 missing, -1 no expiry, >=0 left).
+	 *
+	 * @param string $key The cache key.
+	 * @return int
+	 */
+	public static function ttl(string $key): int
+	{
+		$driver = static::driver();
+		return $driver ? $driver->ttl($key) : -2;
+	}
+
+	/**
 	 * Retrieves the application environment.
 	 *
 	 * @return string The environment name.

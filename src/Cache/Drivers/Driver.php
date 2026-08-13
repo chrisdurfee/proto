@@ -69,6 +69,33 @@ abstract class Driver
 	abstract public function incr(string $key): int;
 
 	/**
+	 * Sets a key's time-to-live in seconds without changing its value.
+	 *
+	 * Default no-op for drivers that lack native expiry control.
+	 *
+	 * @param string $key
+	 * @param int $seconds
+	 * @return bool True when expiry was applied.
+	 */
+	public function expire(string $key, int $seconds): bool
+	{
+		return false;
+	}
+
+	/**
+	 * Returns remaining TTL in seconds.
+	 *
+	 * Convention matches Redis: -2 missing, -1 no expiry, >=0 seconds left.
+	 *
+	 * @param string $key
+	 * @return int
+	 */
+	public function ttl(string $key): int
+	{
+		return -2;
+	}
+
+	/**
 	 * Retrieves a list of keys matching a pattern.
 	 *
 	 * @param string $pattern Pattern to match keys.

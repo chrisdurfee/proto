@@ -54,34 +54,6 @@ class RateLimiter
 	}
 
 	/**
-	 * Checks if the key is cached.
-	 *
-	 * @param string $key
-	 * @return bool
-	 */
-	protected static function isCached(string $key): bool
-	{
-		$cache = self::cache();
-		return isset($cache) && $cache::has($key);
-	}
-
-	/**
-	 * Sets a key-value pair in the cache with expiration.
-	 *
-	 * @param string $key
-	 * @param int $expiration
-	 * @return void
-	 */
-	protected static function set(string $key, int $expiration): void
-	{
-		$cache = self::cache();
-		if ($cache)
-		{
-			$cache::set($key, '1', $expiration);
-		}
-	}
-
-	/**
 	 * Increments the value of a cached key.
 	 *
 	 * @param string $key
@@ -91,6 +63,34 @@ class RateLimiter
 	{
 		$cache = self::cache();
 		return isset($cache) ? $cache::incr($key) : 1;
+	}
+
+	/**
+	 * Ensures the rate-limit key has a TTL.
+	 *
+	 * Redis INCR creates missing keys with no expiry. A race between
+	 * EXISTS and key expiry can also leave immortal counters that
+	 * permanently 429 an identity after maxRequests. Always (re)apply
+	 * TTL when the key is new or has no expiry.
+	 *
+	 * @param string $key
+	 * @param int $expiration
+	 * @param int $requests
+	 * @return void
+	 */
+	protected static function ensureTtl(string $key, int $expiration, int $requests): void
+	{
+		$cache = self::cache();
+		if (!$cache)
+		{
+			return;
+		}
+
+		$ttl = $cache::ttl($key);
+		if ($requests === 1 || $ttl < 0)
+		{
+			$cache::expire($key, $expiration);
+		}
 	}
 
 	/**
@@ -108,13 +108,9 @@ class RateLimiter
 		}
 
 		$id = 'rate-limit:' . $limit->id();
-		if (!static::isCached($id))
-		{
-			static::set($id, $limit->getTimeLimit());
-			return;
-		}
-
 		$requests = static::increment($id);
+		static::ensureTtl($id, $limit->getTimeLimit(), $requests);
+
 		if ($limit->isOverLimit($requests))
 		{
 			static::sendRateLimitResponse($limit, $requests);
