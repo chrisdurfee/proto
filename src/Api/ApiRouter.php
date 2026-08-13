@@ -271,7 +271,12 @@ namespace Proto\Api
 			$this->addPreCatchAllRoutes($middleware);
 
 			$router = $this->router;
-			$router->all(':resource.*', function(Request $req): void
+
+			/**
+			 * The catch-all is a dispatcher only — CSRF is owned by the individual
+			 * routes each api.php registers, so it must not run here.
+			 */
+			$router->withoutMutationMiddleware()->all(':resource.*', function(Request $req): void
 			{
 				/**
 				 * This will get the resource from the request.
