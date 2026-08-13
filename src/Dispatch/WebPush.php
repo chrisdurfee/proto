@@ -14,6 +14,16 @@ use Minishlink\WebPush\Subscription;
 class WebPush extends Dispatch
 {
 	/**
+	 * Default TTL in seconds (28 days), as a string for PSR-7 header values.
+	 *
+	 * Guzzle PSR-7 2.11+ deprecates non-string header values; minishlink
+	 * still defaults TTL to an int, so we coerce the framework default.
+	 *
+	 * @var string
+	 */
+	protected const DEFAULT_TTL = '2419200';
+
+	/**
 	 * Instance of the WebPush library.
 	 *
 	 * @var wPush|null
@@ -82,6 +92,7 @@ class WebPush extends Dispatch
 		self::$webPush = new wPush($auth);
 		self::$webPush->setReuseVAPIDHeaders(true);
 		self::$webPush->setAutomaticPadding(false);
+		self::$webPush->setDefaultOptions(['TTL' => self::DEFAULT_TTL]);
 	}
 
 	/**
@@ -111,6 +122,9 @@ class WebPush extends Dispatch
 
 	/**
 	 * Queues and sends notifications for multiple subscriptions.
+	 *
+	 * Each report row includes `expired` when the push service returned
+	 * 404/410 so callers can deactivate dead endpoints instead of retrying.
 	 *
 	 * @return object An object containing a success flag and an array of report rows.
 	 */
@@ -147,7 +161,8 @@ class WebPush extends Dispatch
 
 			$result->rows[] = (object)[
 				'endpoint' => $report->getEndpoint(),
-				'sent' => $sent
+				'sent' => $sent,
+				'expired' => $report->isSubscriptionExpired()
 			];
 		}
 

@@ -489,12 +489,12 @@ Update any flagged methods to use `Request $request` or zero parameters.
 
 ### 14. Long-Running Process Support
 
-**What changed:** `Request::reset()`, `PublicIp::reset()`, `Session::reset()`, and `Gate::resetSessionCache()` clear cached static properties between requests.
+**What changed:** `ApiRouter::initialize()` automatically registers a shutdown handler that calls `Request::reset()`, `PublicIp::reset()`, `Session::reset()`, and `Gate::resetSessionCache()` after each HTTP request. The same hooks remain public for custom workers that do not use `ApiRouter`.
 
-**When to use:** If your app runs in a long-running process (Swoole, RoadRunner, ReactPHP, or persistent PHP-FPM workers handling multiple requests), call these between requests:
+**When to use:** Prefer bootstrapping the API via `ApiRouter::initialize()` (or a subclass). No app-level `register_shutdown_function` is required for PHP-FPM workers. If you run a custom long-running loop (Swoole, RoadRunner, ReactPHP) without ApiRouter, call the resets between requests:
 
 ```php
-// In your worker loop or middleware
+// Only needed when NOT using ApiRouter::initialize()
 Request::reset();
 PublicIp::reset();
 Session::reset();
@@ -505,7 +505,9 @@ Gate::resetSessionCache();
 
 **Note:** the method is deliberately *not* named `Gate::reset()`. `CrossSiteRequestForgeryGate` (a `Gate` subclass) already declares an unrelated instance method `reset()` that clears the stored CSRF token. PHP fatals at class-load time when a subclass overrides a static parent method with a non-static one, so naming both members `reset()` broke every CSRF-gated request outright (regardless of whether either was ever called) — see CHANGELOG for v1.3.40/1.3.41.
 
-**Not needed for:** Standard PHP-FPM (process-per-request) or Apache mod_php setups, where each request runs in a fresh PHP process and statics never persist across requests.
+**SSE / long streams:** The shutdown reset runs when the stream ends and the worker returns to the pool, not mid-stream. Do not call the reset hooks while an SSE connection is still open.
+
+**Not needed for:** Standard PHP-FPM (process-per-request) or Apache mod_php setups, where each request runs in a fresh PHP process and statics never persist across requests. Auto-reset is still harmless in those environments.
 
 ---
 

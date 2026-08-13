@@ -22,7 +22,7 @@ $location->add(); // Handles custom types automatically
 
 | Type | Use Case | Input Format |
 |------|----------|--------------|
-| `PointType` | MySQL POINT(x,y) | `"lat lon"`, `[lat, lon]`, `{lat, lon}` |
+| `PointType` | MySQL POINT(x,y) lon/lat | `"lon lat"`, `[lon, lat]`, `{lon, lat}` / `{longitude, latitude}` |
 | `JsonType` | JSON columns | Array, object, or JSON string |
 
 ## Create Custom Type

@@ -231,10 +231,34 @@ abstract class Policy
 	}
 
 	/**
+	 * Checks if a user is signed in for this request.
+	 *
+	 * Uses the auth registry `user` gate when available; otherwise falls
+	 * back to a non-null session user id.
+	 *
+	 * @return bool
+	 */
+	protected function isSignedIn(): bool
+	{
+		if (function_exists('auth'))
+		{
+			$userGate = auth()->user ?? null;
+			if ($userGate !== null && method_exists($userGate, 'isSignedIn'))
+			{
+				return (bool) $userGate->isSignedIn();
+			}
+		}
+
+		return $this->getUserId() !== null;
+	}
+
+	/**
 	 * Checks if the given user ID matches the current session user.
 	 *
 	 * This is the simplest ownership check — use for resources that
-	 * have a direct userId field.
+	 * have a direct userId field. Fail-closed when either id is null.
+	 * Apps that grant admins an ownership bypass should override this
+	 * method (do not change the default semantics here).
 	 *
 	 * @param int|null $resourceUserId The userId from the resource.
 	 * @return bool
@@ -270,5 +294,24 @@ abstract class Policy
 		}
 
 		return $this->ownsResource($routeUserId);
+	}
+
+	/**
+	 * Read a route parameter as int, returning null when missing or zero.
+	 *
+	 * @param Request $request
+	 * @param string $paramName
+	 * @return int|null
+	 */
+	protected function getRouteParam(Request $request, string $paramName): ?int
+	{
+		$value = $request->params()->$paramName ?? null;
+		if ($value === null)
+		{
+			return null;
+		}
+
+		$value = (int) $value;
+		return $value > 0 ? $value : null;
 	}
 }

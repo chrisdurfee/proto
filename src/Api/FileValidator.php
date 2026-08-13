@@ -35,6 +35,11 @@ class FileValidator
 		'image/gif',
 		'image/webp',
 		'image/bmp',
+		'image/tiff',
+		'image/avif',
+		'image/heic',
+		'image/heif',
+		'image/jxl',
 		// Archives
 		'application/zip',
 		'application/x-rar-compressed',
@@ -49,7 +54,8 @@ class FileValidator
 		'video/mp4',
 		'video/mpeg',
 		'video/quicktime',
-		'video/x-msvideo'
+		'video/x-msvideo',
+		'video/webm'
 	];
 
 	/**
@@ -146,6 +152,9 @@ class FileValidator
 	/**
 	 * Validates MIME type.
 	 *
+	 * Uses UploadFile::getMimeType() so finfo blind spots (avif/heic/heif/jxl
+	 * often reported as octet-stream) fall back to the extension map.
+	 *
 	 * @param UploadFile $file
 	 * @param array $allowedMimes
 	 * @return bool
@@ -153,12 +162,30 @@ class FileValidator
 	protected static function validateMimeType(UploadFile $file, array $allowedMimes): bool
 	{
 		$fileMime = $file->getType();
-
-		// Also check actual MIME type using finfo for security
-		$actualMime = static::getActualMimeType($file->getFilePath());
+		$actualMime = static::resolveMimeType($file);
 
 		// Check if either the declared or actual MIME type is in the allowed list
-		return in_array($fileMime, $allowedMimes) || in_array($actualMime, $allowedMimes);
+		return in_array($fileMime, $allowedMimes, true) || in_array($actualMime, $allowedMimes, true);
+	}
+
+	/**
+	 * Resolves the best-effort MIME type for an upload.
+	 *
+	 * Prefers UploadFile::getMimeType() (finfo + extension fallback). Falls
+	 * back to raw finfo when needed.
+	 *
+	 * @param UploadFile $file
+	 * @return string
+	 */
+	protected static function resolveMimeType(UploadFile $file): string
+	{
+		$mime = $file->getMimeType();
+		if ($mime !== '')
+		{
+			return $mime;
+		}
+
+		return static::getActualMimeType($file->getFilePath());
 	}
 
 	/**
@@ -203,7 +230,7 @@ class FileValidator
 			return true;
 		}
 
-		$actualMime = static::getActualMimeType($file->getFilePath());
+		$actualMime = static::resolveMimeType($file);
 
 		// If we can't determine actual MIME, deny the file (fail-closed for security)
 		if (empty($actualMime))
@@ -211,7 +238,7 @@ class FileValidator
 			return false;
 		}
 
-		return in_array($actualMime, $allowedMimes);
+		return in_array($actualMime, $allowedMimes, true);
 	}
 
 	/**
@@ -241,6 +268,10 @@ class FileValidator
 			'image/webp' => 'webp',
 			'image/bmp' => 'bmp',
 			'image/tiff' => 'tiff',
+			'image/avif' => 'avif',
+			'image/heic' => 'heic',
+			'image/heif' => 'heif',
+			'image/jxl' => 'jxl',
 			// Archives
 			'application/zip' => 'zip',
 			'application/x-rar-compressed' => 'rar',
@@ -255,7 +286,8 @@ class FileValidator
 			'video/mp4' => 'mp4',
 			'video/mpeg' => 'mpeg',
 			'video/quicktime' => 'mov',
-			'video/x-msvideo' => 'avi'
+			'video/x-msvideo' => 'avi',
+			'video/webm' => 'webm'
 		];
 
 		$extensions = [];
@@ -297,12 +329,16 @@ class FileValidator
 			'csv' => 'text/csv',
 			// Images
 			'jpeg' => 'image/jpeg',
-			'jpg' => 'image/jpg',
+			'jpg' => 'image/jpeg',
 			'png' => 'image/png',
 			'gif' => 'image/gif',
 			'webp' => 'image/webp',
 			'bmp' => 'image/bmp',
 			'tiff' => 'image/tiff',
+			'avif' => 'image/avif',
+			'heic' => 'image/heic',
+			'heif' => 'image/heif',
+			'jxl' => 'image/jxl',
 			// Archives
 			'zip' => 'application/zip',
 			'rar' => 'application/x-rar-compressed',
@@ -317,7 +353,8 @@ class FileValidator
 			'mp4' => 'video/mp4',
 			'mpeg' => 'video/mpeg',
 			'mov' => 'video/quicktime',
-			'avi' => 'video/x-msvideo'
+			'avi' => 'video/x-msvideo',
+			'webm' => 'video/webm'
 		];
 
 		$types = explode(',', $mimeString);

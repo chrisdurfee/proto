@@ -62,15 +62,15 @@ The base `Storage` class now handles everything automatically. You only need a c
 
 ### PointType
 
-Handles MySQL `POINT(x, y)` spatial data.
+Handles MySQL `POINT(x, y)` spatial data where **X is longitude** and **Y is latitude**.
 
-**Supported input formats:**
-- String: `"37.7749 -122.4194"` (space-separated lat/lon)
-- Array: `[37.7749, -122.4194]`
-- Object: `{lat: 37.7749, lon: -122.4194}` or `{x: 37.7749, y: 37.7749}`
+**Supported input formats (lon-first):**
+- String: `"-122.4194 37.7749"` (space-separated lon/lat; same order as `fromDb()`)
+- Array: `[-122.4194, 37.7749]` or `['longitude' => -122.4194, 'latitude' => 37.7749]`
+- Object: `{lon: -122.4194, lat: 37.7749}` / `{longitude, latitude}` / `{x, y}`
 
 **SQL output:**
-- INSERT: `POINT(?, ?)`
+- INSERT: `POINT(?, ?)` with binds `[longitude, latitude]`
 - UPDATE: `position = POINT(?, ?)`
 
 **Example:**

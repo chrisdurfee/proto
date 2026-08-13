@@ -1,6 +1,7 @@
 {
 	"name": "protoframework/proto",
 	"description": "The Proto Framework - A modular monolith framework for PHP.",
+	"version": "1.3.49",
 	"keywords": [
 		"proto",
 		"framework",

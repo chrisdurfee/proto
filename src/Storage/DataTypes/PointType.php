@@ -5,7 +5,15 @@ namespace Proto\Storage\DataTypes;
  * PointType
  *
  * Handles MySQL POINT(x, y) spatial data type.
- * Expects values in format "latitude longitude" (space-separated).
+ *
+ * MySQL stores POINT as (X, Y) where X is longitude and Y is latitude.
+ * Accept and emit values in lon-first order so they round-trip correctly
+ * with ST_Distance_Sphere / MBR filters and WKB decoding.
+ *
+ * Supported input formats:
+ * - String: `"lon lat"` (space-separated; same order as fromDb())
+ * - Array: `[lon, lat]` or `['longitude' => lon, 'latitude' => lat]`
+ * - Object: `{lon|lng|longitude|x, lat|latitude|y}`
  *
  * @package Proto\Storage\DataTypes
  */
@@ -20,6 +28,8 @@ class PointType extends DataType
 	}
 
 	/**
+	 * Converts a value to POINT(?, ?) bind params: [longitude, latitude].
+	 *
 	 * @inheritDoc
 	 */
 	public function toParams(mixed $value): array
@@ -29,39 +39,48 @@ class PointType extends DataType
 			return [null, null];
 		}
 
-		// Handle "lat lon" format
+		// Handle "lon lat" / "x y" format (matches fromDb output)
 		if (is_string($value))
 		{
-			$parts = explode(' ', $value, 2);
+			$parts = explode(' ', trim($value), 2);
 			return [
 				$parts[0] ?? null,
 				$parts[1] ?? null
 			];
 		}
 
-		// Handle array format [lat, lon]
+		// Handle array format [lon, lat] or named keys
 		if (is_array($value))
 		{
+			if (isset($value['longitude']) || isset($value['lon']) || isset($value['lng']))
+			{
+				$lon = $value['longitude'] ?? $value['lon'] ?? $value['lng'] ?? null;
+				$lat = $value['latitude'] ?? $value['lat'] ?? null;
+				return [$lon, $lat];
+			}
+
 			return [
 				$value[0] ?? null,
 				$value[1] ?? null
 			];
 		}
 
-		// Handle object format {lat, lon} or {x, y}
+		// Handle object format {lon|lng|longitude|x, lat|latitude|y}
 		if (is_object($value))
 		{
-			return [
-				$value->lat ?? $value->x ?? null,
-				$value->lon ?? $value->y ?? null
-			];
+			$lon = $value->longitude ?? $value->lon ?? $value->lng ?? $value->x ?? null;
+			$lat = $value->latitude ?? $value->lat ?? $value->y ?? null;
+			return [$lon, $lat];
 		}
 
 		return [null, null];
 	}
 
 	/**
-	 * Decodes a MySQL POINT binary (WKB with 4-byte SRID prefix) back to "x y" string.
+	 * Decodes a MySQL POINT binary (WKB with 4-byte SRID prefix) back to "lon lat" string.
+	 *
+	 * WKB X is longitude and Y is latitude; the returned string is `"x y"`
+	 * (lon-first), matching toParams() string parsing.
 	 *
 	 * @inheritDoc
 	 */

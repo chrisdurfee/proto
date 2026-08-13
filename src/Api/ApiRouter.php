@@ -135,10 +135,14 @@ namespace
 
 namespace Proto\Api
 {
+	use Proto\Auth\Gates\Gate;
 	use Proto\Base;
+	use Proto\Http\PublicIp;
+	use Proto\Http\Request as HttpRequest;
 	use Proto\Http\Response;
 	use Proto\Http\Router\Request;
 	use Proto\Http\Router\Router;
+	use Proto\Http\Session;
 	use Proto\Http\Middleware\ApiRateLimiterMiddleware;
 	use Proto\Http\Middleware\CrossSiteProtectionMiddleware;
 
@@ -157,6 +161,13 @@ namespace Proto\Api
 		 * @var int
 		 */
 		private const HTTP_NOT_FOUND = 404;
+
+		/**
+		 * Whether the per-request singleton reset has been registered.
+		 *
+		 * @var bool
+		 */
+		private static bool $requestResetRegistered = false;
 
 		/**
 		 * The router instance.
@@ -179,12 +190,45 @@ namespace Proto\Api
 		/**
 		 * Initializes the RouterHelper instance and sets up the API service.
 		 *
+		 * Registers a shutdown handler that clears request-scoped singletons
+		 * so long-lived PHP-FPM workers do not reuse session, CSRF, IP, or
+		 * request state across visitors. Apps do not need to call the reset
+		 * hooks manually when bootstrapping via ApiRouter::initialize().
+		 *
 		 * @return void
 		 */
 		public static function initialize(): void
 		{
+			static::registerRequestReset();
 			$api = new static();
 			$api->setup();
+		}
+
+		/**
+		 * Registers a one-time shutdown function that resets FPM singletons.
+		 *
+		 * Safe to call multiple times (e.g. tests or nested bootstrap). Runs
+		 * after the HTTP response is sent, including when a matched route
+		 * exits early. Long-running SSE streams reset when the stream ends
+		 * and the worker returns to the pool — not mid-stream.
+		 *
+		 * @return void
+		 */
+		protected static function registerRequestReset(): void
+		{
+			if (self::$requestResetRegistered)
+			{
+				return;
+			}
+
+			self::$requestResetRegistered = true;
+			register_shutdown_function(static function (): void
+			{
+				HttpRequest::reset();
+				PublicIp::reset();
+				Session::reset();
+				Gate::resetSessionCache();
+			});
 		}
 
 		/**
@@ -201,6 +245,19 @@ namespace Proto\Api
 		}
 
 		/**
+		 * Registers routes that should bypass the default mutation middleware
+		 * (e.g. CSRF). Called in addRoutes() before the catch-all is registered
+		 * so that these routes are matched first. Subclasses override this to
+		 * add machine-to-machine or webhook routes without touching the catch-all.
+		 *
+		 * @param array $middleware
+		 * @return void
+		 */
+		protected function addPreCatchAllRoutes(array $middleware): void
+		{
+		}
+
+		/**
 		 * Adds API routes to the router with the appropriate middleware.
 		 *
 		 * @return void
@@ -210,6 +267,8 @@ namespace Proto\Api
 			$middleware = [
 				ApiRateLimiterMiddleware::class,
 			];
+
+			$this->addPreCatchAllRoutes($middleware);
 
 			$router = $this->router;
 			$router->all(':resource.*', function(Request $req): void

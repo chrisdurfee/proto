@@ -24,7 +24,11 @@ class ImageValidator
 		'image/gif',
 		'image/webp',
 		'image/bmp',
-		'image/tiff'
+		'image/tiff',
+		'image/avif',
+		'image/heic',
+		'image/heif',
+		'image/jxl'
 	];
 
 	/**
@@ -129,10 +133,15 @@ class ImageValidator
 	{
 		$fileMime = $file->getType();
 
-		// Also check actual MIME type using finfo for security
-		$actualMime = static::getActualMimeType($file->getFilePath());
+		// Prefer UploadFile::getMimeType() so finfo blind spots
+		// (avif/heic/heif/jxl) fall back to the extension map.
+		$actualMime = $file->getMimeType();
+		if ($actualMime === '')
+		{
+			$actualMime = static::getActualMimeType($file->getFilePath());
+		}
 
-		return in_array($fileMime, $allowedMimes) && in_array($actualMime, $allowedMimes);
+		return in_array($fileMime, $allowedMimes, true) || in_array($actualMime, $allowedMimes, true);
 	}
 
 	/**
