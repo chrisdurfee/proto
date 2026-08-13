@@ -61,6 +61,40 @@ class PointType extends DataType
 	}
 
 	/**
+	 * Decodes a MySQL POINT binary (WKB with 4-byte SRID prefix) back to "x y" string.
+	 *
+	 * @inheritDoc
+	 */
+	public function fromDb(mixed $value): mixed
+	{
+		// MySQL POINT: 4-byte SRID + 1-byte byte-order + 4-byte WKB type + 8-byte X + 8-byte Y = 25 bytes
+		if (!is_string($value) || strlen($value) !== 25)
+		{
+			return $value;
+		}
+
+		$byteOrder = ord($value[4]);
+		$xBytes = substr($value, 9, 8);
+		$yBytes = substr($value, 17, 8);
+
+		if ($byteOrder === 0)
+		{
+			$xBytes = strrev($xBytes);
+			$yBytes = strrev($yBytes);
+		}
+
+		$x = unpack('d', $xBytes)[1] ?? null;
+		$y = unpack('d', $yBytes)[1] ?? null;
+
+		if ($x === null || $y === null)
+		{
+			return $value;
+		}
+
+		return $x . ' ' . $y;
+	}
+
+	/**
 	 * @inheritDoc
 	 */
 	public function shouldHandle(mixed $value): bool
