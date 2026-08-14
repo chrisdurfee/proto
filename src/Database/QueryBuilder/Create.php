@@ -275,18 +275,37 @@ class Create extends Blueprint
 	/**
 	 * Magic method to pass calls to a child field.
 	 *
+	 * Unknown column-type methods previously returned null after silently
+	 * dropping the field (e.g. `$table->raw(...)`), which produced migrations
+	 * that appeared to succeed while omitting columns. As of 1.3.50 this
+	 * throws {@see \BadMethodCallException} so typos and unsupported helpers
+	 * fail loudly at migration time.
+	 *
 	 * @param string $method The method name.
 	 * @param array $arguments The method arguments.
-	 * @return CreateField|null
+	 * @return CreateField
+	 * @throws \BadMethodCallException When the field type method does not exist.
+	 * @throws \InvalidArgumentException When the first argument (column name) is missing.
 	 */
-	public function __call(string $method, array $arguments): ?CreateField
+	public function __call(string $method, array $arguments): CreateField
 	{
+		if (!isset($arguments[0]) || !is_string($arguments[0]) || $arguments[0] === '')
+		{
+			throw new \InvalidArgumentException(
+				"Create::{$method}() requires a non-empty column name as the first argument."
+			);
+		}
+
 		$field = $this->createField($arguments[0]);
 		$callable = [$field, $method];
 		if (!is_callable($callable))
 		{
 			$this->removeField($field);
-			return null;
+			throw new \BadMethodCallException(
+				"Unknown Create column type method \"{$method}\". "
+				. "Valid types live on CreateField (e.g. integer, varchar, point, json). "
+				. "There is no raw() helper — use a typed column method instead."
+			);
 		}
 
 		$args = array_slice($arguments, 1);

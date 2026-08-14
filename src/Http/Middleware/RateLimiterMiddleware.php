@@ -3,6 +3,7 @@ namespace Proto\Http\Middleware;
 
 use Proto\Http\Limit;
 use Proto\Http\RateLimiter;
+use Proto\Http\RateLimiterIdentity;
 use Proto\Http\Router\Request;
 
 /**
@@ -46,5 +47,17 @@ class RateLimiterMiddleware
 	protected function getLimit(): Limit
 	{
 		return $this->limit;
+	}
+
+	/**
+	 * Resolve the per-user (fallback per-IP) rate-limit identity.
+	 *
+	 * Feature middleware should key buckets as `feature:minute:` . identity.
+	 *
+	 * @return string
+	 */
+	protected function getIdentity(): string
+	{
+		return RateLimiterIdentity::resolve();
 	}
 }

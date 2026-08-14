@@ -59,7 +59,7 @@ trait BatchEnrichmentTrait
 			[[$foreignKey, 'IN', array_values($ids)]],
 			$extraFilter
 		);
-		$results = $modelClass::fetchWhere($filter);
+		$results = $this->batchFetchRelated($modelClass, $filter);
 		if (!$results)
 		{
 			return;
@@ -125,7 +125,7 @@ trait BatchEnrichmentTrait
 			[[$foreignKey, 'IN', array_values($ids)]],
 			$extraFilter
 		);
-		$results = $modelClass::fetchWhere($filter);
+		$results = $this->batchFetchRelated($modelClass, $filter);
 		if (!$results)
 		{
 			return;
@@ -146,5 +146,26 @@ trait BatchEnrichmentTrait
 			}
 		}
 		unset($row);
+	}
+
+	/**
+	 * Fetch related rows without eager joins so unqualified filter columns
+	 * (e.g. `user_id IN (...)`) are not ambiguous against joined tables.
+	 *
+	 * Falls back to `fetchWhere()` when `fetchWhereWithoutJoins` is unavailable.
+	 *
+	 * @param string $modelClass
+	 * @param array $filter
+	 * @return array|null
+	 */
+	protected function batchFetchRelated(string $modelClass, array $filter): ?array
+	{
+		if (is_callable([$modelClass, 'fetchWhereWithoutJoins']))
+		{
+			$results = $modelClass::fetchWhereWithoutJoins($filter);
+			return $results === [] ? null : $results;
+		}
+
+		return $modelClass::fetchWhere($filter);
 	}
 }

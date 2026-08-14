@@ -3,6 +3,7 @@ namespace Proto\Controllers;
 
 use Proto\Controllers\Traits\AuditFieldsTrait;
 use Proto\Controllers\Traits\FileUploadTrait;
+use Proto\Controllers\Traits\ImageOptimizationTrait;
 use Proto\Controllers\Traits\UserEnrichmentTrait;
 use Proto\Http\Router\Request;
 use Proto\Services\ServiceResult;
@@ -20,6 +21,7 @@ abstract class ResourceController extends ApiController
 	use ModelTrait;
 	use AuditFieldsTrait;
 	use FileUploadTrait;
+	use ImageOptimizationTrait;
 	use UserEnrichmentTrait;
 
 	/**

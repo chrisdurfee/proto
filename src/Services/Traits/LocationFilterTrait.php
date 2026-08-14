@@ -1,54 +1,29 @@
 <?php declare(strict_types=1);
 namespace Proto\Services\Traits;
 
+use Proto\Geo\BoundingBox;
+
 /**
  * LocationFilterTrait
  *
- * Simplifies building MySQL spatial proximity filters using
- * ST_Distance_Sphere. Appends ready-to-use filter conditions
- * to a Proto-style filter array so callers never need to write
- * raw SQL distance expressions.
+ * Builds MySQL spatial proximity filters using an MBR bounding-box
+ * prefilter (index-friendly) followed by `ST_Distance_Sphere` refinement.
+ * The MBR is always a superset of the exact circle, so results match a
+ * distance-only query while avoiding full table scans when a SPATIAL
+ * index exists on the POINT column.
  *
- * Requires a MySQL POINT column on the target table for spatial
- * calculations. The POINT column should store (longitude, latitude)
- * per MySQL convention.
+ * Requires a MySQL POINT column storing (longitude, latitude).
  *
- * Usage in a service:
+ * Usage:
  * ```php
- * use Proto\Services\Traits\LocationFilterTrait;
- *
- * class VehicleService extends Service
- * {
- *     use LocationFilterTrait;
- *
- *     public function addLocationFilter(int $userId, array &$filter): void
- *     {
- *         $userLocation = UserLocationPreference::getBy(['userId' => $userId]);
- *         if (!$userLocation)
- *         {
- *             return;
- *         }
- *
- *         $this->filterByProximity($filter, [
- *             'latitude' => $userLocation->latitude,
- *             'longitude' => $userLocation->longitude,
- *             'radius' => $userLocation->radiusMiles ?? 50,
- *         ]);
- *     }
- * }
- * ```
- *
- * Subquery variant (match against a related table):
- * ```php
- * $this->filterByProximitySubquery($filter, [
+ * $this->filterByProximity($filter, [
  *     'latitude' => $lat,
  *     'longitude' => $lon,
  *     'radius' => 50,
- *     'table' => 'user_location_preferences',
- *     'joinColumn' => 'user_id',
- *     'parentColumn' => 'v.user_id',
  * ]);
  * ```
+ *
+ * Optional `'mbr' => false` disables the bounding-box prefilter.
  *
  * @package Proto\Services\Traits
  */
@@ -79,6 +54,7 @@ trait LocationFilterTrait
 	 *  - column    (string, the POINT column, default 'position')
 	 *  - alias     (string, table alias prefix, default '' — no alias)
 	 *  - unit      (string, 'miles'|'km', default 'miles')
+	 *  - mbr       (bool, default true — include MBR prefilter)
 	 *
 	 * @param array<mixed> &$filter The Proto filter array to append to.
 	 * @param array<string, mixed> $options Location options.
@@ -86,29 +62,21 @@ trait LocationFilterTrait
 	 */
 	protected function filterByProximity(array &$filter, array $options): void
 	{
-		$lat = $this->extractFloat($options, 'latitude');
-		$lon = $this->extractFloat($options, 'longitude');
-		if ($lat === null || $lon === null)
+		$condition = $this->buildProximityCondition($options);
+		if ($condition === null)
 		{
 			return;
 		}
 
-		$radiusMeters = $this->resolveRadiusMeters($options);
-		$column = $this->resolveColumn($options);
-
-		$filter[] = [
-			"ST_Distance_Sphere({$column}, POINT(?, ?)) <= ?",
-			[$lon, $lat, $radiusMeters]
-		];
+		foreach ($condition as $clause)
+		{
+			$filter[] = $clause;
+		}
 	}
 
 	/**
 	 * Append a proximity filter using an EXISTS subquery against
 	 * a related table that holds the POINT column.
-	 *
-	 * This is useful when the spatial data lives in a different
-	 * table (e.g. user_location_preferences) and you need to
-	 * match rows from the primary table via a foreign key.
 	 *
 	 * Options (in addition to those in filterByProximity):
 	 *  - table        (string, required — the related table name)
@@ -116,6 +84,7 @@ trait LocationFilterTrait
 	 *  - parentColumn (string, required — matching column in the parent query)
 	 *  - column       (string, POINT column in related table, default 'position')
 	 *  - tableAlias   (string, alias for the subquery table, default 'loc')
+	 *  - mbr          (bool, default true)
 	 *
 	 * @param array<mixed> &$filter The Proto filter array to append to.
 	 * @param array<string, mixed> $options Location and join options.
@@ -123,41 +92,27 @@ trait LocationFilterTrait
 	 */
 	protected function filterByProximitySubquery(array &$filter, array $options): void
 	{
-		$lat = $this->extractFloat($options, 'latitude');
-		$lon = $this->extractFloat($options, 'longitude');
-		if ($lat === null || $lon === null)
+		$condition = $this->buildProximitySubqueryCondition($options);
+		if ($condition === null)
 		{
 			return;
 		}
 
-		$table = $options['table'] ?? null;
-		$joinColumn = $options['joinColumn'] ?? null;
-		$parentColumn = $options['parentColumn'] ?? null;
-		if (!$table || !$joinColumn || !$parentColumn)
-		{
-			return;
-		}
-
-		$radiusMeters = $this->resolveRadiusMeters($options);
-		$pointColumn = $options['column'] ?? 'position';
-		$tableAlias = $options['tableAlias'] ?? 'loc';
-
-		$filter[] = [
-			"EXISTS (SELECT 1 FROM {$table} {$tableAlias} "
-			. "WHERE {$tableAlias}.{$joinColumn} = {$parentColumn} "
-			. "AND {$tableAlias}.{$pointColumn} IS NOT NULL "
-			. "AND ST_Distance_Sphere({$tableAlias}.{$pointColumn}, POINT(?, ?)) <= ?)",
-			[$lon, $lat, $radiusMeters]
-		];
+		$filter[] = $condition;
 	}
 
 	/**
-	 * Build a standalone proximity filter condition array
-	 * (not appended to an existing filter). Useful when you need
-	 * the condition for further composition.
+	 * Build proximity filter condition(s) for a POINT column.
+	 *
+	 * Returns an array of one or two filter clauses (MBR prefilter when
+	 * derivable, then exact distance), or null when coordinates are missing.
+	 *
+	 * Breaking note (1.3.50): previously returned a single `[sql, params]`
+	 * clause. Callers that consumed the return value directly should iterate
+	 * the array; `filterByProximity()` already does this.
 	 *
 	 * @param array<string, mixed> $options Same options as filterByProximity.
-	 * @return array{0: string, 1: array<mixed>}|null The filter condition or null if invalid.
+	 * @return array<int, array{0: string, 1: array<mixed>}>|null
 	 */
 	protected function buildProximityCondition(array $options): ?array
 	{
@@ -168,26 +123,83 @@ trait LocationFilterTrait
 			return null;
 		}
 
-		$radiusMeters = $this->resolveRadiusMeters($options);
+		$radiusMiles = $this->resolveRadiusMiles($options);
+		$radiusMeters = $this->convertToMeters($radiusMiles);
 		$column = $this->resolveColumn($options);
 
-		return [
+		$clauses = [];
+		$useMbr = (bool)($options['mbr'] ?? true);
+		if ($useMbr)
+		{
+			$mbr = BoundingBox::mbrCondition($column, $lat, $lon, $radiusMiles);
+			if ($mbr !== null)
+			{
+				$clauses[] = $mbr;
+			}
+		}
+
+		$clauses[] = [
 			"ST_Distance_Sphere({$column}, POINT(?, ?)) <= ?",
 			[$lon, $lat, $radiusMeters]
 		];
+
+		return $clauses;
 	}
 
 	/**
-	 * Build a standalone subquery proximity condition.
+	 * Build a standalone subquery proximity condition with optional MBR.
 	 *
 	 * @param array<string, mixed> $options Same options as filterByProximitySubquery.
-	 * @return array{0: string, 1: array<mixed>}|null The filter condition or null if invalid.
+	 * @return array{0: string, 1: array<mixed>}|null
 	 */
 	protected function buildProximitySubqueryCondition(array $options): ?array
 	{
-		$filter = [];
-		$this->filterByProximitySubquery($filter, $options);
-		return $filter[0] ?? null;
+		$lat = $this->extractFloat($options, 'latitude');
+		$lon = $this->extractFloat($options, 'longitude');
+		if ($lat === null || $lon === null)
+		{
+			return null;
+		}
+
+		$table = $options['table'] ?? null;
+		$joinColumn = $options['joinColumn'] ?? null;
+		$parentColumn = $options['parentColumn'] ?? null;
+		if (!$table || !$joinColumn || !$parentColumn)
+		{
+			return null;
+		}
+
+		$radiusMiles = $this->resolveRadiusMiles($options);
+		$radiusMeters = $this->convertToMeters($radiusMiles);
+		$pointColumn = $options['column'] ?? 'position';
+		$tableAlias = $options['tableAlias'] ?? 'loc';
+		$aliasedColumn = "{$tableAlias}.{$pointColumn}";
+		$useMbr = (bool)($options['mbr'] ?? true);
+
+		$params = [];
+		$mbrClause = '';
+		if ($useMbr)
+		{
+			$wkt = BoundingBox::polygonWktMiles($lat, $lon, $radiusMiles);
+			if ($wkt !== null)
+			{
+				$mbrClause = "AND MBRContains(ST_GeomFromText(?, 0), {$aliasedColumn}) ";
+				$params[] = $wkt;
+			}
+		}
+
+		$params[] = $lon;
+		$params[] = $lat;
+		$params[] = $radiusMeters;
+
+		return [
+			"EXISTS (SELECT 1 FROM {$table} {$tableAlias} "
+			. "WHERE {$tableAlias}.{$joinColumn} = {$parentColumn} "
+			. "AND {$aliasedColumn} IS NOT NULL "
+			. $mbrClause
+			. "AND ST_Distance_Sphere({$aliasedColumn}, POINT(?, ?)) <= ?)",
+			$params
+		];
 	}
 
 	/**
@@ -207,16 +219,22 @@ trait LocationFilterTrait
 	}
 
 	/**
-	 * Resolve the radius in meters from the options array.
+	 * Resolve the radius in miles from the options array, normalizing
+	 * the `km` unit so the bounding-box math stays in miles.
 	 *
 	 * @param array<string, mixed> $options
 	 * @return float
 	 */
-	private function resolveRadiusMeters(array $options): float
+	private function resolveRadiusMiles(array $options): float
 	{
 		$radius = (float)($options['radius'] ?? $this->defaultRadiusMiles);
 		$unit = $options['unit'] ?? 'miles';
-		return $this->convertToMeters($radius, $unit);
+		if ($unit === 'km')
+		{
+			return ($radius * 1000.0) / $this->milesToMeters;
+		}
+
+		return $radius;
 	}
 
 	/**

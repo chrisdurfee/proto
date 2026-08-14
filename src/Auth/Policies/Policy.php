@@ -275,6 +275,129 @@ abstract class Policy
 	}
 
 	/**
+	 * Policy for resource PUT (upsert) requests.
+	 *
+	 * PUT and PATCH are semantically equivalent writes, so `setup` must
+	 * never be more permissive than `update`. When a subclass defines
+	 * `update()`, its ownership rules are reused; otherwise the request
+	 * falls back to `default()` when present, else denies.
+	 *
+	 * @param Request $request
+	 * @return bool
+	 */
+	public function setup(Request $request): bool
+	{
+		if (method_exists($this, 'update'))
+		{
+			return $this->update($request);
+		}
+
+		if (method_exists($this, 'default'))
+		{
+			return $this->default($request);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Checks if the signed-in user has a role via the auth registry.
+	 *
+	 * Fails closed when the role gate is unavailable.
+	 *
+	 * @param string $roleSlug
+	 * @return bool
+	 */
+	protected function hasRole(string $roleSlug): bool
+	{
+		if (!function_exists('auth'))
+		{
+			return false;
+		}
+
+		$roleGate = auth()->role ?? null;
+		if ($roleGate === null || !method_exists($roleGate, 'hasRole'))
+		{
+			return false;
+		}
+
+		return (bool) $roleGate->hasRole($roleSlug);
+	}
+
+	/**
+	 * Checks if the signed-in user has a permission via the auth registry.
+	 *
+	 * Fails closed when the permission gate is unavailable. Apps that grant
+	 * admins an implicit bypass should override this method.
+	 *
+	 * @param string $permissionSlug
+	 * @return bool
+	 */
+	protected function hasPermission(string $permissionSlug): bool
+	{
+		if (!function_exists('auth'))
+		{
+			return false;
+		}
+
+		$permissionGate = auth()->permission ?? null;
+		if ($permissionGate === null || !method_exists($permissionGate, 'hasPermission'))
+		{
+			return false;
+		}
+
+		return (bool) $permissionGate->hasPermission($permissionSlug);
+	}
+
+	/**
+	 * Returns true when the current user has the admin role OR owns the
+	 * resource. Fail-closed when `$resourceOwnerId` is null and the user
+	 * is not an admin.
+	 *
+	 * @param int|null $resourceOwnerId
+	 * @param string $adminRole Admin role slug (default 'admin').
+	 * @return bool
+	 */
+	protected function isOwnerOrAdmin(?int $resourceOwnerId, string $adminRole = 'admin'): bool
+	{
+		if ($this->hasRole($adminRole))
+		{
+			return true;
+		}
+
+		if ($resourceOwnerId === null)
+		{
+			return false;
+		}
+
+		return $this->ownsResource($resourceOwnerId);
+	}
+
+	/**
+	 * Visibility helper: public/published statuses OR owner/admin.
+	 *
+	 * @param string|null $visibility
+	 * @param int|null $resourceOwnerId
+	 * @param array<int, string> $publicValues
+	 * @param string $adminRole
+	 * @return bool
+	 */
+	protected function isPublicOrOwner(
+		?string $visibility,
+		?int $resourceOwnerId,
+		array $publicValues = ['public', 'published'],
+		string $adminRole = 'admin'
+	): bool
+	{
+		if ($visibility !== null && in_array($visibility, $publicValues, true))
+		{
+			return true;
+		}
+
+		return $this->isOwnerOrAdmin($resourceOwnerId, $adminRole);
+	}
+
+	/**
 	 * Checks if the request's route userId parameter matches the session user.
 	 *
 	 * Useful for routes like /user/:userId/resource where the userId
