@@ -832,6 +832,8 @@ Contributions are welcome! To contribute:
 3. Commit Your Changes with clear, descriptive messages
 4. Submit a Pull Request with a detailed description of your changes
 
+**Releases:** Packagist uses git tags for versioning; do not set a `"version"` field in `composer.json`.
+
 Please follow our `CONTRIBUTING.md` for coding standards and guidelines.
 
 ## License

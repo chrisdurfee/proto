@@ -9,10 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 - Packagist / SemVer publish for the complete 1.3.50 + 1.3.51 surface (image pipeline, policy helpers, APNs, CSV export, `rawOrderBy`, typed field formatting, realtime publish, split votes / pivot counters).
-- The git tag `1.3.52` incorrectly pointed at the 1.3.51 commit while `composer.json` still reported `1.3.51`. Do not publish `1.3.52`; use **1.3.53** as the clean release.
-
-### Changed
-- `composer.json` version set to `1.3.53`.
+- The git tag `1.3.52` incorrectly pointed at the 1.3.51 commit. Do not publish `1.3.52`; use **1.3.53** as the clean release.
+- Packagist versions come from git tags only; do not set a `"version"` field in `composer.json`.
 
 ## [1.3.51] - 2026-08-14
 
