@@ -95,4 +95,30 @@ class Dispatcher
 
 		return Controllers\WebPushController::dispatch($settings, $data);
 	}
+
+	/**
+	 * Sends an APNs (Apple Push Notification) message.
+	 *
+	 * Settings require `tokens` (device token hex strings) and a push
+	 * `template` (or `compiledTemplate`). Config is read from `push.apns`.
+	 *
+	 * Queueing (`$settings->queue`) prepares the payload via
+	 * {@see Controllers\ApnsController::enqueue()} but does not persist
+	 * it: there is no framework `apns_queue` table. Apps that need durable
+	 * enqueue should store the returned payload themselves.
+	 *
+	 * @param object $settings
+	 * @param object|null $data
+	 * @return Response
+	 */
+	public static function apns(object $settings, ?object $data = null): Response
+	{
+		if (isset($settings->queue) && $settings->queue !== false)
+		{
+			Enqueuer::apns($settings, $data);
+			return self::createQueuedResponse('APNs message prepared for queue.');
+		}
+
+		return Controllers\ApnsController::dispatch($settings, $data);
+	}
 }

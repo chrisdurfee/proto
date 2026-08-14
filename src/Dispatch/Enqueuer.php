@@ -59,4 +59,19 @@ class Enqueuer
 
 		return $settings;
 	}
+
+	/**
+	 * Prepares an APNs notification payload for app-owned queues.
+	 *
+	 * Unlike {@see push()}, this does not write to a framework table.
+	 * Returns `{ tokens, message }` for the caller to persist.
+	 *
+	 * @param object $settings The APNs settings (`tokens`, `template`).
+	 * @param object|null $data Additional push data.
+	 * @return object
+	 */
+	public static function apns(object $settings, ?object $data = null): object
+	{
+		return Controllers\ApnsController::enqueue($settings, $data);
+	}
 }

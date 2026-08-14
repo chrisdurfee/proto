@@ -5,6 +5,16 @@ All notable changes to Proto Framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.51] - 2026-08-14
+
+### Added
+- `Proto\Dispatch\Apns\Apns` + `ApnsJwt` and `Controllers\ApnsController` for APNs HTTP/2 (token auth, dead-token reporting). `Dispatcher::apns()` / `Enqueuer::apns()` (enqueue prepares payload only; no framework `apns_queue` table).
+- `Proto\Utils\CsvExport` and `Controllers\Traits\CsvExportTrait` (`exportMaxRows`, `fetchExportRows()`, `streamMappedCsv()`).
+- `Proto\Storage\Traits\RawOrderBySupport` for injection-safe server-side `rawOrderBy` modifiers.
+- `Proto\Models\Traits\FormatsTypedFields` for post-join bool/int casting via `FORMAT_*_FIELDS` constants.
+- `Proto\Services\Traits\RealtimePublishTrait` (`publishRealtime()` adds the `redis:` Events prefix).
+- Docs: `docs/RFC_NESTED_API_COMPOSITION.md` (deferred nested `api.php` composition / safer `resource()`; design only).
+
 ## [1.3.50] - 2026-08-14
 
 ### Added
