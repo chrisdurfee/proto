@@ -413,6 +413,16 @@ class Router
 	}
 
 	/**
+	 * Whether matching routes are collected instead of activated.
+	 *
+	 * @return bool
+	 */
+	public function isDeferred(): bool
+	{
+		return $this->deferDepth >= 1;
+	}
+
+	/**
 	 * End a deferral frame without activating the pending route.
 	 *
 	 * @return self

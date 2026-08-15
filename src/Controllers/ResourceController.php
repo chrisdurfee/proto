@@ -725,6 +725,7 @@ abstract class ResourceController extends ApiController
 			$inputs->modifiers['include'] = $includes;
 		}
 
+		$inputs->modifiers['scopesApplied'] = true;
 		$result = $this->model::all($filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
 		if ($result !== false && !empty($result->rows))
 		{
@@ -850,7 +851,7 @@ abstract class ResourceController extends ApiController
 		}
 
 		$filter = $this->qualifyFilter($this->applyListScopes($lookup, $request));
-		$result = $this->model::all($filter, 0, 1);
+		$result = $this->model::all($filter, 0, 1, ['scopesApplied' => true]);
 		if ($result === false || empty($result->rows))
 		{
 			return null;

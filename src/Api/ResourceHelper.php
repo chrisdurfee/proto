@@ -222,6 +222,11 @@ class ResourceHelper
 	/**
 	 * Includes the specified resource file.
 	 *
+	 * The ApiRouter catch-all calls this with deferDepth 0: defer, require
+	 * the api.php, then flush the best match. If already deferred, this is
+	 * a plain require (same as includeApi()) so a nested call cannot flush
+	 * the parent pending route. Prefer includeApi() for sibling composition.
+	 *
 	 * @param string $resourcePath The path of the resource file.
 	 * @return void
 	 */
@@ -230,6 +235,12 @@ class ResourceHelper
 		$router = (function_exists('router')) ? router() : null;
 		if ($router instanceof Router)
 		{
+			if ($router->isDeferred())
+			{
+				require $resourcePath;
+				return;
+			}
+
 			$router->deferActivation();
 			try
 			{

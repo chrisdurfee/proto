@@ -113,8 +113,10 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 * List scopes applied on every all()/getRows()/fetchWhere() call.
 	 * Entries are Scope instances or class-strings.
 	 *
-	 * ResourceController::all() and get() also apply these via applyListScopes().
-	 * Direct Model::get($id) does not, so internal writes can still load a row.
+	 * ResourceController::all() and get() apply these via applyListScopes()
+	 * for the filter and cache key, then pass scopesApplied so getRows()
+	 * does not apply them a second time. Direct Model::get($id) does not,
+	 * so internal writes can still load a row.
 	 *
 	 * @var array<int, class-string|\Proto\Models\Scopes\Scope>
 	 */
@@ -1557,7 +1559,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object|false
 	{
-		$filter = static::applyScopes($filter, static::scopeActor());
+		$scopesApplied = (bool)($modifiers['scopesApplied'] ?? false);
+		if ($modifiers !== null)
+		{
+			unset($modifiers['scopesApplied']);
+		}
+
+		if (!$scopesApplied)
+		{
+			$filter = static::applyScopes($filter, static::scopeActor());
+		}
 
 		$includes = $modifiers['include'] ?? [];
 		if (is_array($includes) && $includes !== [])

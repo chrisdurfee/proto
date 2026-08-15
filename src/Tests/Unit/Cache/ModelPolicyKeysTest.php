@@ -4,7 +4,10 @@ namespace Proto\Tests\Unit\Cache;
 
 use Proto\Cache\Policies\ModelPolicy;
 use Proto\Controllers\Controller;
+use Proto\Controllers\ResourceController;
 use Proto\Http\Router\Request;
+use Proto\Models\Model;
+use Proto\Models\Scopes\VisibleScope;
 use Proto\Tests\Test;
 
 /**
@@ -18,6 +21,15 @@ final class ModelPolicyKeysTest extends Test
 	 * @var bool
 	 */
 	protected bool $useTransactions = false;
+
+	/**
+	 * @return void
+	 */
+	protected function tearDown(): void
+	{
+		unset($GLOBALS['protoTestActor']);
+		parent::tearDown();
+	}
 
 	/**
 	 * @return ModelPolicy
@@ -114,6 +126,187 @@ final class ModelPolicyKeysTest extends Test
 				$_GET['id'] = $previous;
 				$_REQUEST['id'] = $previous;
 			}
+		}
+	}
+
+	/**
+	 * Shared all() keys must include applyListScopes() so user A's
+	 * owner-inclusive list cannot be served to user B.
+	 *
+	 * @return void
+	 */
+	public function testSharedAllKeysIncludeListScopes(): void
+	{
+		$controller = new class extends ResourceController
+		{
+			public function __construct()
+			{
+				$this->model = SharedCacheVisibleModel::class;
+				$this->cacheSharedPayload = true;
+				parent::__construct();
+			}
+
+			public function all(Request $request): object
+			{
+				return (object)['success' => true, 'rows' => []];
+			}
+		};
+
+		$policy = new RecordingModelPolicy($controller);
+		$request = new Request();
+
+		$GLOBALS['protoTestActor'] = (object)['id' => 42];
+		$policy->all($request);
+		$keyA = $policy->keys[0] ?? null;
+
+		$GLOBALS['protoTestActor'] = (object)['id' => 99];
+		$policy->all($request);
+		$keyB = $policy->keys[1] ?? null;
+
+		$GLOBALS['protoTestActor'] = (object)['id' => 42];
+		$policy->all($request);
+		$keyAAgain = $policy->keys[2] ?? null;
+
+		$this->assertNotNull($keyA);
+		$this->assertNotNull($keyB);
+		$this->assertNotSame($keyA, $keyB);
+		$this->assertSame($keyA, $keyAAgain);
+	}
+
+	/**
+	 * invalidateGetKeys() must drop get:{id}, get:{id}:*, and slug/guid identities.
+	 *
+	 * @return void
+	 */
+	public function testInvalidateGetKeysDeletesIdIncludeAndSlugPatterns(): void
+	{
+		$previous = $_REQUEST['id'] ?? null;
+		unset($_GET['id'], $_REQUEST['id']);
+
+		try
+		{
+			$controller = new class extends Controller {};
+			$policy = new class($controller) extends ModelPolicy
+			{
+				/**
+				 * @var array<int, string>
+				 */
+				public array $patterns = [];
+
+				protected function deleteKeysMatching(string $pattern): void
+				{
+					$this->patterns[] = $pattern;
+				}
+
+				public function exposeInvalidate(Request $request, mixed $id = null, ?object $item = null): void
+				{
+					$this->invalidateGetKeys($request, $id, $item);
+				}
+
+				public function exposePattern(string $method, mixed $params): string
+				{
+					return $this->createKeyPattern($method, $params);
+				}
+			};
+
+			$policy->exposeInvalidate(
+				new Request(),
+				5,
+				(object)['id' => 5, 'slug' => 'my-slug', 'guid' => 'abc']
+			);
+
+			$five = $policy->exposePattern('get', 5);
+			$fifty = $policy->exposePattern('get', 50);
+			// Class:*:get:5 must not match Class:*:get:50 (no trailing wildcard on the id).
+			$this->assertStringEndsWith(':get:5', $five);
+			$this->assertStringEndsWith(':get:50', $fifty);
+			$this->assertFalse(str_ends_with($fifty, ':get:5'));
+
+			$this->assertContains($five, $policy->patterns);
+			$this->assertContains($five . ':*', $policy->patterns);
+			$this->assertContains($policy->exposePattern('get', 'my-slug'), $policy->patterns);
+			$this->assertContains($policy->exposePattern('get', 'my-slug') . ':*', $policy->patterns);
+			$this->assertContains($policy->exposePattern('get', 'abc'), $policy->patterns);
+			$this->assertContains($policy->exposePattern('get', 'abc') . ':*', $policy->patterns);
+		}
+		finally
+		{
+			if ($previous === null)
+			{
+				unset($_GET['id'], $_REQUEST['id']);
+			}
+			else
+			{
+				$_GET['id'] = $previous;
+				$_REQUEST['id'] = $previous;
+			}
+		}
+	}
+}
+
+/**
+ * @package Proto\Tests\Unit\Cache
+ */
+final class RecordingModelPolicy extends ModelPolicy
+{
+	/**
+	 * @var array<int, string>
+	 */
+	public array $keys = [];
+
+	/**
+	 * @param string $method
+	 * @param mixed $params
+	 * @return string
+	 */
+	protected function createKey(string $method, mixed $params): string
+	{
+		$key = parent::createKey($method, $params);
+		$this->keys[] = $key;
+		return $key;
+	}
+
+	/**
+	 * @param string $key
+	 * @return mixed
+	 */
+	public function getValue(string $key): mixed
+	{
+		return (object)['success' => true, 'rows' => []];
+	}
+}
+
+/**
+ * @package Proto\Tests\Unit\Cache
+ */
+final class SharedCacheVisibleModel extends Model
+{
+	/**
+	 * @var string|null
+	 */
+	protected static ?string $tableName = 'shared_cache_visible';
+
+	/**
+	 * @var array
+	 */
+	protected static array $fields = ['id'];
+
+	/**
+	 * @var array<int, class-string>
+	 */
+	protected static array $scopes = [VisibleScope::class];
+}
+
+namespace
+{
+	if (!function_exists('session'))
+	{
+		/**
+		 * @return object
+		 */
+		function session(): object
+		{
+			return (object)['user' => $GLOBALS['protoTestActor'] ?? null];
 		}
 	}
 }
