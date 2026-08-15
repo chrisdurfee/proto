@@ -199,8 +199,8 @@ final class ResourceControllerIncludesTest extends Test
 		ScopedGetCaptureModel::$rowsToReturn = [];
 
 		$previous = $_REQUEST['id'] ?? null;
-		$_GET['id'] = 5;
-		$_REQUEST['id'] = 5;
+		$_GET['id'] = '5';
+		$_REQUEST['id'] = '5';
 
 		try
 		{
