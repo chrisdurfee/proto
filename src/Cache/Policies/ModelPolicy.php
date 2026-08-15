@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Cache\Policies;
 
+use Proto\Cache\Cache;
 use Proto\Controllers\Controller;
 use Proto\Http\Router\Request;
 
@@ -170,16 +171,72 @@ class ModelPolicy extends Policy
 	}
 
 	/**
-	 * Deletes all cached list keys.
+	 * In-process fallback when Cache::incr is unavailable (no driver / dev).
+	 *
+	 * @var array<string, int>
+	 */
+	protected static array $listGenerations = [];
+
+	/**
+	 * Invalidate list caches by bumping the generation token.
+	 *
+	 * Reads include the gen in the `all()` key, so one INCR (or get/set)
+	 * replaces SCAN+DEL of every `Class:*:all:*` key. Targeted
+	 * `invalidateGetKeys()` still deletes get keys. Generic method
+	 * caches still SCAN.
 	 *
 	 * @return void
 	 */
 	protected function deleteAll(): void
 	{
-		$this->deleteKeysMatching($this->createKeyPattern('all', '*'));
-
-		// Also clear any generic method caches that might be affected
+		$this->incrementListGeneration();
 		$this->deleteGenericMethodCaches();
+	}
+
+	/**
+	 * Cache key for the list generation token.
+	 *
+	 * @return string
+	 */
+	protected function listGenerationKey(): string
+	{
+		return $this->controller::class . ':all:gen';
+	}
+
+	/**
+	 * Current list generation (0 when unset).
+	 *
+	 * @return int
+	 */
+	protected function getListGeneration(): int
+	{
+		$key = $this->listGenerationKey();
+		$cached = Cache::get($key);
+		if ($cached !== null && $cached !== '')
+		{
+			return (int) $cached;
+		}
+
+		return self::$listGenerations[$key] ?? 0;
+	}
+
+	/**
+	 * Bump the list generation so prior `all()` keys miss.
+	 *
+	 * @return int
+	 */
+	protected function incrementListGeneration(): int
+	{
+		$key = $this->listGenerationKey();
+		$next = Cache::incr($key);
+		if ($next < 1)
+		{
+			$next = $this->getListGeneration() + 1;
+			Cache::set($key, (string) $next);
+		}
+
+		self::$listGenerations[$key] = $next;
+		return $next;
 	}
 
 	/**
@@ -383,7 +440,7 @@ class ModelPolicy extends Policy
 		}
 
 		$params = $this->setupAllParams($filter, $offset, $limit, $this->modifiersWithIncludes($request, $inputs->modifiers));
-		$key = $this->createKey('all', $params);
+		$key = $this->createKey('all', 'g' . $this->getListGeneration() . ':' . $params);
 
 		$cached = $this->getValue($key);
 		if ($cached !== null)

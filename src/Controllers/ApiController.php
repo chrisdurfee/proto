@@ -234,8 +234,21 @@ abstract class ApiController extends Controller
 		}
 
 		$filter = JsonFormat::decode($filter) ?? (object)[];
-		$filter = Filter::sanitizeRequestFilter($filter);
+		$filter = Filter::sanitizeRequestFilter($filter, $this->requestFilterColumns());
 		return $this->modifyFilter($filter, $request);
+	}
+
+	/**
+	 * Allowed request-filter columns, or null to skip the field allowlist.
+	 *
+	 * ResourceController passes the model's filterable fields. App-built
+	 * filters appended after getFilter() are not passed through this.
+	 *
+	 * @return array<int, string>|null
+	 */
+	protected function requestFilterColumns(): ?array
+	{
+		return null;
 	}
 
 	/**

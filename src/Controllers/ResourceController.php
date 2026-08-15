@@ -29,7 +29,7 @@ abstract class ResourceController extends ApiController
 
 	/**
 	 * When true, automatically adds the session user's ID to the filter
-	 * in all() queries and injects userId on add operations.
+	 * in all() queries and overwrites userId on add/setup.
 	 *
 	 * @var bool
 	 */
@@ -136,8 +136,10 @@ abstract class ResourceController extends ApiController
 	protected array $scopes = [];
 
 	/**
-	 * When true, ModelPolicy caches a shared payload and re-applies
-	 * viewer flags after the cache hit.
+	 * When true, ModelPolicy shares list (`all`) cache keys across
+	 * viewers after `applyListScopes()` is folded in. `get()` stays
+	 * user/session scoped. Viewer flags are stripped before cache
+	 * and re-applied after a list hit.
 	 *
 	 * @var bool
 	 */
@@ -180,6 +182,26 @@ abstract class ResourceController extends ApiController
 	public function getFilter(Request $request): mixed
 	{
 		return $this->qualifyFilter(parent::getFilter($request));
+	}
+
+	/**
+	 * Request filters may only predicate on filterable model fields.
+	 *
+	 * @return array<int, string>|null
+	 */
+	protected function requestFilterColumns(): ?array
+	{
+		if ($this->model === null)
+		{
+			return null;
+		}
+
+		if (is_callable([$this->model, 'filterableFields']))
+		{
+			return $this->model::filterableFields();
+		}
+
+		return is_callable([$this->model, 'fields']) ? $this->model::fields() : null;
 	}
 
 	/**
@@ -250,6 +272,7 @@ abstract class ResourceController extends ApiController
 			return $this->error('No item provided.');
 		}
 
+		$this->modifyAddItem($data, $request);
 		if (!$this->validateItem($data, false))
 		{
 			return $this->error('Invalid item data.');
@@ -305,8 +328,9 @@ abstract class ResourceController extends ApiController
 	/**
 	 * Modifies a model entry before adding.
 	 *
-	 * When $scopeToUser is enabled, automatically injects the session
-	 * user's ID into the data using the configured $userScopeField.
+	 * When $scopeToUser is enabled, always overwrites the configured
+	 * $userScopeField with the session user's ID so a client cannot
+	 * set another user's id.
 	 * When $routeParams is set, auto-injects those route parameters.
 	 *
 	 * @param object &$data The data to modify.
@@ -318,10 +342,7 @@ abstract class ResourceController extends ApiController
 		if ($this->scopeToUser)
 		{
 			$field = $this->userScopeField;
-			if (!isset($data->$field))
-			{
-				$data->$field = (int)(session()->user->id ?? 0);
-			}
+			$data->$field = (int)(session()->user->id ?? 0);
 		}
 
 		$this->applyRouteParamsToData($data, $request);
@@ -763,7 +784,19 @@ abstract class ResourceController extends ApiController
 			return $this->error('No search term provided.');
 		}
 
-		return $this->response(['rows' => $this->model::search($search)]);
+		$filter = $this->applyListScopes($this->getFilter($request), $request);
+		$modifiers = [
+			'search' => $search,
+			'scopesApplied' => true
+		];
+		$result = $this->model::all($filter, 0, $this->maxLimit, $modifiers);
+		if ($result !== false && !empty($result->rows))
+		{
+			$this->applyDeclaredEnrichments($result->rows, $request);
+			$this->enrichRows($result->rows, $request);
+		}
+
+		return $this->response($result ? (array) $result : false);
 	}
 
 	/**
@@ -774,7 +807,11 @@ abstract class ResourceController extends ApiController
 	 */
 	public function count(Request $request): object
 	{
-		$count = $this->model::count();
+		$inputs = $this->getAllInputs($request);
+		$filter = $this->applyListScopes($inputs->filter, $request);
+		$modifiers = $inputs->modifiers ?? [];
+		$modifiers['scopesApplied'] = true;
+		$count = $this->model::count($filter, $modifiers);
 		return $this->response($count ? (array) $count : false);
 	}
 
@@ -1121,7 +1158,7 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
-	 * Whether ModelPolicy should cache a shared payload (no viewer flags).
+	 * Whether ModelPolicy should share list cache keys (no viewer flags).
 	 *
 	 * @return bool
 	 */

@@ -110,6 +110,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected static array $searchableFields = [];
 
 	/**
+	 * Columns a client may predicate on via request `filter` JSON.
+	 *
+	 * `null` (default) = `$fields` minus the secret/audit skip set used
+	 * by searchable `['*']`. An explicit list is used as-is.
+	 *
+	 * @var array<int, string>|null
+	 */
+	protected static ?array $filterableFields = null;
+
+	/**
 	 * List scopes applied on every all()/getRows()/fetchWhere() call.
 	 * Entries are Scope instances or class-strings.
 	 *
@@ -1304,7 +1314,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$instance = new static();
 		static::$skipJoins = false;
 
-		return $instance->storage->fetchWhere($filter) ?? [];
+		return $instance->storage->getRows($filter)->rows ?? [];
 	}
 
 	/**
@@ -1345,7 +1355,10 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function count(mixed $filter = null, ?array $modifiers = null): object|false
 	{
+		static::$skipJoins = true;
 		$instance = new static();
+		static::$skipJoins = false;
+
 		return $instance->storage->count($filter, $modifiers);
 	}
 
@@ -1442,10 +1455,61 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			return static::$searchableFields;
 		}
 
-		$skip = array_flip(array_merge(
+		$fields = [];
+		foreach (static::$fields as $field)
+		{
+			if (!static::isInferredSkipField($field, true))
+			{
+				$fields[] = $field;
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Columns a client may use in request `filter` JSON.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function filterableFields(): array
+	{
+		if (static::$filterableFields !== null)
+		{
+			return static::$filterableFields;
+		}
+
+		$fields = [];
+		foreach (static::$fields as $field)
+		{
+			if (!static::isInferredSkipField($field, false))
+			{
+				$fields[] = $field;
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Secret, PII, and audit names excluded from inferred search and
+	 * default request-filter allowlists. Suffix/contains matches so
+	 * `emailAddress` and `accessToken` are skipped.
+	 *
+	 * @param string $field
+	 * @param bool $includeId Whether to treat `id` as skipped (search).
+	 * @return bool
+	 */
+	protected static function isInferredSkipField(string $field, bool $includeId = false): bool
+	{
+		if ($includeId && $field === 'id')
+		{
+			return true;
+		}
+
+		$exact = array_flip(array_merge(
 			static::$fieldsBlacklist,
 			[
-				'id',
 				'password',
 				'passwordHash',
 				'token',
@@ -1464,16 +1528,21 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			]
 		));
 
-		$fields = [];
-		foreach (static::$fields as $field)
+		if (isset($exact[$field]))
 		{
-			if (!isset($skip[$field]))
+			return true;
+		}
+
+		$lower = strtolower($field);
+		foreach (['email', 'phone', 'mobile', 'secret', 'token', 'key', 'ssn', 'password'] as $needle)
+		{
+			if (str_contains($lower, $needle))
 			{
-				$fields[] = $field;
+				return true;
 			}
 		}
 
-		return $fields;
+		return false;
 	}
 
 	/**

@@ -20,7 +20,9 @@ use Proto\Utils\Strings;
 class ResourceHelper
 {
 	/**
-	 * Caches resolved resource paths (and misses) keyed by request URL.
+	 * Caches resolved resource paths (and misses) keyed by filtered
+	 * non-numeric PascalCase segments (same as resolution), not the raw URL.
+	 * `post/1` and `post/2` share one cache entry.
 	 *
 	 * Route resolution performs multiple realpath() syscalls per request.
 	 * Caching the result for the lifetime of the PHP process avoids repeating
@@ -51,21 +53,22 @@ class ResourceHelper
 	 */
 	public static function getResource(string $url): ?string
 	{
-		if (array_key_exists($url, self::$resolvedCache))
-		{
-			return self::$resolvedCache[$url];
-		}
-
 		$parts = self::getFilteredParts($url);
 		if ($parts === false || empty($parts))
 		{
-			return self::$resolvedCache[$url] = null;
+			return null;
+		}
+
+		$cacheKey = implode('/', $parts);
+		if (array_key_exists($cacheKey, self::$resolvedCache))
+		{
+			return self::$resolvedCache[$cacheKey];
 		}
 
 		$resolved = self::resolveResourcePath($parts);
 		if ($resolved !== null)
 		{
-			return self::$resolvedCache[$url] = $resolved;
+			return self::$resolvedCache[$cacheKey] = $resolved;
 		}
 
 		$alt = self::singularizeLastPart($parts);
@@ -74,11 +77,11 @@ class ResourceHelper
 			$resolved = self::resolveResourcePath($alt);
 			if ($resolved !== null)
 			{
-				return self::$resolvedCache[$url] = $resolved;
+				return self::$resolvedCache[$cacheKey] = $resolved;
 			}
 		}
 
-		return self::$resolvedCache[$url] = null;
+		return self::$resolvedCache[$cacheKey] = null;
 	}
 
 	/**

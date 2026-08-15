@@ -60,4 +60,37 @@ final class SearchableFieldsTest extends Test
 
 		$this->assertEquals(['name', 'email'], $model->getSearchableFields());
 	}
+
+	/**
+	 * Inferred search skips suffix/contains names (emailAddress, accessToken).
+	 *
+	 * @return void
+	 */
+	public function testStarSkipsSuffixSecretNames(): void
+	{
+		$model = new class extends Model
+		{
+			protected static ?string $tableName = 'searchable_fields_suffix';
+			protected static array $fields = ['id', 'title', 'emailAddress', 'accessToken', 'apiKey', 'phoneNumber'];
+			protected static array $searchableFields = ['*'];
+		};
+
+		$this->assertEquals(['title'], $model->getSearchableFields());
+	}
+
+	/**
+	 * Default filterable fields keep id/status and drop secrets.
+	 *
+	 * @return void
+	 */
+	public function testFilterableFieldsDropSecretsAndKeepId(): void
+	{
+		$model = new class extends Model
+		{
+			protected static ?string $tableName = 'filterable_fields_default';
+			protected static array $fields = ['id', 'status', 'email', 'emailAddress', 'password', 'accessToken'];
+		};
+
+		$this->assertEquals(['id', 'status'], $model::filterableFields());
+	}
 }

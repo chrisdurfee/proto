@@ -846,13 +846,13 @@ protected array $lookupKeys = ['id', 'guid', 'slug'];
 
 **Lifecycle.** Override `afterAdd` / `afterUpdate` / `afterDelete`. Successful mutations also emit `{model}.created|updated|deleted` via `events()->emit()`.
 
-**Shared cache.** ModelPolicy already namespaces keys by user or session. Set `$cacheSharedPayload = true` only when the row payload is identical for every viewer; viewer flags are stripped before cache and re-applied after a hit. Declare every viewer-specific field in `$currentUserFlags` or `$enrichments` type `flag`.
+**Shared cache.** ModelPolicy namespaces keys by user or session. `$cacheSharedPayload = true` shares **lists only** (`all()` keys include `applyListScopes()`); `get()` stays user/session scoped. Viewer flags are stripped before a shared list is stored and re-applied after a hit. Declare every viewer-specific field in `$currentUserFlags` or `$enrichments` type `flag`.
 
 **Routing.** Use `router()->resourceStrict('post', PostController::class)` instead of `resource()` when the same prefix has item ids and literal children. `ResourceHelper` defers activation in `api.php` and prefers static segments, so `post/feed` wins over `post/:id` in either order. Use `router()->includeApi(__DIR__ . '/Feed/api.php')` to compose sibling api files. Outside `api.php`, call `deferActivation()` / `flushDeferred()` or register the literal child first.
 
 **Services.** `Proto\Services\Service` provides `success()`, `failure()`, `restrictFields()`, and `generateUuid()`. Set `$serviceClass` on the controller instead of constructing a service in `__construct()`. Gateways memoize children with `$this->gateway(ChildGateway::class)`.
 
-**Filters.** Request `filter` JSON cannot carry raw SQL fragments. App-built parameterized entries (`[sql, [params]]`) still work when you append them after `getFilter()`. For sync windows use `Filter::since()` (bound params) or `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates the clause.
+**Filters.** Request `filter` JSON cannot carry raw SQL fragments. Columns are allowlisted to the model's filterable fields ( `$fields` minus secrets, or `$filterableFields`). Request `IN` / `NOT IN` lists are capped at 100. App-built parameterized entries (`[sql, [params]]`) still work when you append them after `getFilter()`. For sync windows use `Filter::since()` (bound params) or `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates the clause.
 
 ```php
 $since = Filter::sinceLiteral('c', (string)$lastSync, ['updatedAt', 'createdAt']);

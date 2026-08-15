@@ -171,16 +171,36 @@ class RedisDriver extends Driver
 	{
 		return $this->attempt(function (Redis $db) use ($pattern): array
 		{
-			$iterator = null;
-			$keys = [];
-
-			while ($foundKeys = $db->scan($iterator, $pattern))
-			{
-				$keys = array_merge($keys, $foundKeys);
-			}
-
-			return $keys;
+			return $this->collectScanKeys($db, $pattern);
 		}, []);
+	}
+
+	/**
+	 * Drain a Redis SCAN cursor, including empty pages while the cursor is open.
+	 *
+	 * `while ($chunk = $db->scan(...))` stops on `[]` even when the
+	 * cursor is not yet 0 and silently drops the rest of the keyspace.
+	 *
+	 * @param object $db Redis connection (or a scan-compatible fake).
+	 * @param string $pattern Key pattern.
+	 * @return array
+	 */
+	protected function collectScanKeys(object $db, string $pattern): array
+	{
+		$iterator = null;
+		$keys = [];
+
+		do
+		{
+			$chunk = $db->scan($iterator, $pattern) ?: [];
+			if ($chunk !== [])
+			{
+				$keys = array_merge($keys, $chunk);
+			}
+		}
+		while ($iterator != 0);
+
+		return $keys;
 	}
 
 	/**

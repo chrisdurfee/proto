@@ -402,4 +402,62 @@ final class FilterTest extends Test
 		);
 		$this->assertNull(Filter::sinceLiteral('c', "2026-01-01' OR 1=1 --"));
 	}
+
+	/**
+	 * Request filters drop secret columns when an allowlist is passed.
+	 *
+	 * @return void
+	 */
+	public function testSanitizeRequestFilterDropsSecretColumns(): void
+	{
+		$allowed = ['id', 'status'];
+		$result = Filter::sanitizeRequestFilter(
+			(object)[
+				'email' => 'a@b.c',
+				'password' => 'x',
+				'status' => 'published',
+				'token' => 'abc'
+			],
+			$allowed
+		);
+
+		$this->assertEquals('published', $result->status);
+		$this->assertFalse(isset($result->email));
+		$this->assertFalse(isset($result->password));
+		$this->assertFalse(isset($result->token));
+	}
+
+	/**
+	 * Client IN lists longer than 100 are truncated; short lists stay.
+	 *
+	 * @return void
+	 */
+	public function testSanitizeRequestFilterCapsInLists(): void
+	{
+		$ids = range(1, 101);
+		$result = Filter::sanitizeRequestFilter([
+			['id', 'IN', $ids],
+			['status', 'IN', ['a', 'b', 'c']]
+		]);
+
+		$values = array_values($result);
+		$this->assertCount(2, $values);
+		$this->assertSame(['status', 'IN', ['a', 'b', 'c']], $values[1]);
+		$this->assertSame('IN', $values[0][1]);
+		$this->assertCount(Filter::REQUEST_IN_LIMIT, $values[0][2]);
+		$this->assertSame(range(1, 100), $values[0][2]);
+	}
+
+	/**
+	 * App-built filters after sanitize stay uncapped.
+	 *
+	 * @return void
+	 */
+	public function testAppBuiltInListsAreUncapped(): void
+	{
+		$params = [];
+		$result = Filter::format(['id', 'IN', range(1, 101)], $params, false);
+		$this->assertStringStartsWith('id IN (', $result);
+		$this->assertCount(101, $params);
+	}
 }

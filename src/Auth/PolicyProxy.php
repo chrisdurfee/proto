@@ -90,12 +90,15 @@ class PolicyProxy implements ControllerInterface
 	/**
 	 * Checks the default policy method.
 	 *
+	 * Missing `default()` denies. Rally policies that only implement
+	 * `update()` must add `default()` allow or explicit `get` / `all`.
+	 *
 	 * @param array|null $arguments The method arguments.
 	 * @return bool Whether access is allowed.
 	 */
 	protected function checkPolicyDefault(?array $arguments = []): bool
 	{
-		return $this->callMethod($this->policy, 'default', $arguments, true);
+		return $this->callMethod($this->policy, 'default', $arguments, false);
 	}
 
 	/**

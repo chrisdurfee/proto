@@ -737,6 +737,16 @@ class Filter
 	}
 
 	/**
+	/**
+	 * Maximum IN / NOT IN list length accepted from a client filter.
+	 *
+	 * App-built filters appended after getFilter() are uncapped.
+	 *
+	 * @var int
+	 */
+	public const REQUEST_IN_LIMIT = 100;
+
+	/**
 	 * Drop raw SQL fragments that arrived from a client filter payload.
 	 *
 	 * Request filters may only be associative scalars or
@@ -745,10 +755,16 @@ class Filter
 	 * `[sql, [params]]` fragments from the client are dropped.
 	 * Append app-built parameterized fragments after getFilter().
 	 *
+	 * When `$allowedColumns` is provided, keys/tuples whose column is
+	 * not in that list (camelCase or snake_case, alias optional) are
+	 * dropped. IN / NOT IN arrays longer than REQUEST_IN_LIMIT are
+	 * truncated.
+	 *
 	 * @param mixed $filter
+	 * @param array<int, string>|null $allowedColumns
 	 * @return mixed
 	 */
-	public static function sanitizeRequestFilter(mixed $filter): mixed
+	public static function sanitizeRequestFilter(mixed $filter, ?array $allowedColumns = null): mixed
 	{
 		if ($filter === null)
 		{
@@ -762,19 +778,20 @@ class Filter
 			return is_string($items) ? (object)[] : $filter;
 		}
 
+		$allowed = self::allowedColumnSet($allowedColumns);
 		$out = [];
 		foreach ($items as $key => $item)
 		{
 			if (is_string($key))
 			{
-				if (!self::isSafeColumn($key))
+				if (!self::isSafeColumn($key) || !self::isAllowedColumn($key, $allowed))
 				{
 					continue;
 				}
 
 				if (is_array($item) && self::isOperatorValuePair($item))
 				{
-					$out[$key] = $item;
+					$out[$key] = self::capRequestInList($item);
 					continue;
 				}
 
@@ -791,9 +808,9 @@ class Filter
 				continue;
 			}
 
-			if (is_array($item) && isset($item[0]) && is_string($item[0]) && self::isSafeColumn($item[0]))
+			if (is_array($item) && isset($item[0]) && is_string($item[0]) && self::isSafeColumn($item[0]) && self::isAllowedColumn($item[0], $allowed))
 			{
-				$out[] = $item;
+				$out[] = self::capRequestInList($item);
 			}
 		}
 
@@ -833,5 +850,82 @@ class Filter
 
 		$allowed = self::allowedOperators();
 		return in_array(strtoupper($first), $allowed, true);
+	}
+
+	/**
+	 * @param array<int, string>|null $allowedColumns
+	 * @return array<string, true>|null
+	 */
+	protected static function allowedColumnSet(?array $allowedColumns): ?array
+	{
+		if ($allowedColumns === null)
+		{
+			return null;
+		}
+
+		$set = [];
+		foreach ($allowedColumns as $field)
+		{
+			if (!is_string($field) || $field === '')
+			{
+				continue;
+			}
+
+			$set[$field] = true;
+			$set[Strings::snakeCase($field)] = true;
+			$set[Strings::camelCase($field)] = true;
+		}
+
+		return $set;
+	}
+
+	/**
+	 * @param string $column
+	 * @param array<string, true>|null $allowed
+	 * @return bool
+	 */
+	protected static function isAllowedColumn(string $column, ?array $allowed): bool
+	{
+		if ($allowed === null)
+		{
+			return true;
+		}
+
+		$bare = str_contains($column, '.')
+			? substr($column, (int)strrpos($column, '.') + 1)
+			: $column;
+
+		return isset($allowed[$bare]);
+	}
+
+	/**
+	 * Truncate client IN / NOT IN arrays to REQUEST_IN_LIMIT.
+	 *
+	 * @param array $item
+	 * @return array
+	 */
+	protected static function capRequestInList(array $item): array
+	{
+		$limit = self::REQUEST_IN_LIMIT;
+
+		if (isset($item[0], $item[1]) && is_string($item[0]) && is_array($item[1]))
+		{
+			$operator = strtoupper($item[0]);
+			if (in_array($operator, ['IN', 'NOT IN'], true) && count($item[1]) > $limit)
+			{
+				$item[1] = array_slice(array_values($item[1]), 0, $limit);
+			}
+		}
+
+		if (isset($item[1], $item[2]) && is_string($item[1]) && is_array($item[2]))
+		{
+			$operator = strtoupper($item[1]);
+			if (in_array($operator, ['IN', 'NOT IN'], true) && count($item[2]) > $limit)
+			{
+				$item[2] = array_slice(array_values($item[2]), 0, $limit);
+			}
+		}
+
+		return $item;
 	}
 }

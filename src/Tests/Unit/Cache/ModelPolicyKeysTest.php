@@ -183,6 +183,129 @@ final class ModelPolicyKeysTest extends Test
 	}
 
 	/**
+	 * `$cacheSharedPayload` shares list keys only. get() stays user-scoped
+	 * so two actors never share a get key (owner draft vs guest null).
+	 *
+	 * @return void
+	 */
+	public function testSharedGetKeysStayUserScopedWhileAllMayShare(): void
+	{
+		$controller = new class extends ResourceController
+		{
+			public function __construct()
+			{
+				$this->model = SharedCachePlainModel::class;
+				$this->cacheSharedPayload = true;
+				parent::__construct();
+			}
+
+			public function get(Request $request): object
+			{
+				return (object)['success' => true, 'row' => null];
+			}
+
+			public function all(Request $request): object
+			{
+				return (object)['success' => true, 'rows' => []];
+			}
+		};
+
+		$previous = $_REQUEST['id'] ?? null;
+		$_GET['id'] = '5';
+		$_REQUEST['id'] = '5';
+
+		try
+		{
+			$policy = new RecordingModelPolicy($controller);
+			$request = new Request();
+
+			$GLOBALS['protoTestActor'] = (object)['id' => 42];
+			$policy->get($request);
+			$policy->all($request);
+			$getA = $policy->keys[0] ?? null;
+			$allA = $policy->keys[1] ?? null;
+
+			$GLOBALS['protoTestActor'] = (object)['id' => 99];
+			$policy->get($request);
+			$policy->all($request);
+			$getB = $policy->keys[2] ?? null;
+			$allB = $policy->keys[3] ?? null;
+
+			$this->assertNotNull($getA);
+			$this->assertNotNull($getB);
+			$this->assertNotSame($getA, $getB);
+			$this->assertStringContainsString(':u42:get:', $getA);
+			$this->assertStringContainsString(':u99:get:', $getB);
+			$this->assertStringNotContainsString(':shared:get:', $getA);
+			$this->assertStringNotContainsString(':shared:get:', $getB);
+
+			$this->assertNotNull($allA);
+			$this->assertNotNull($allB);
+			$this->assertStringContainsString(':shared:all:', $allA);
+			$this->assertStringContainsString(':shared:all:', $allB);
+			$this->assertSame($allA, $allB);
+		}
+		finally
+		{
+			if ($previous === null)
+			{
+				unset($_GET['id'], $_REQUEST['id']);
+			}
+			else
+			{
+				$_GET['id'] = $previous;
+				$_REQUEST['id'] = $previous;
+			}
+		}
+	}
+
+	/**
+	 * Writes bump the list generation so all() keys change without SCAN.
+	 *
+	 * @return void
+	 */
+	public function testAllKeysChangeGenerationAfterWrite(): void
+	{
+		$controller = new class extends ResourceController
+		{
+			public function __construct()
+			{
+				$this->model = SharedCachePlainModel::class;
+				$this->cacheSharedPayload = true;
+				parent::__construct();
+			}
+
+			public function all(Request $request): object
+			{
+				return (object)['success' => true, 'rows' => []];
+			}
+
+			public function add(Request $request): object
+			{
+				return (object)['success' => true, 'id' => 1];
+			}
+		};
+
+		$policy = new RecordingModelPolicy($controller);
+		$request = new Request();
+
+		$GLOBALS['protoTestActor'] = (object)['id' => 7];
+		$policy->all($request);
+		$keyBefore = $policy->keys[0] ?? null;
+
+		$policy->add($request);
+
+		$policy->all($request);
+		$keyAfter = $policy->keys[1] ?? null;
+
+		$this->assertNotNull($keyBefore);
+		$this->assertNotNull($keyAfter);
+		$this->assertNotSame($keyBefore, $keyAfter);
+		$this->assertStringContainsString(':all:g', $keyBefore);
+		$this->assertStringContainsString(':all:g', $keyAfter);
+	}
+
+	/**
 	 * invalidateGetKeys() must drop get:{id}, get:{id}:*, and slug/guid identities.
 	 *
 	 * @return void
@@ -283,6 +406,22 @@ final class RecordingModelPolicy extends ModelPolicy
 	{
 		return (object)['success' => true, 'rows' => []];
 	}
+}
+
+/**
+ * @package Proto\Tests\Unit\Cache
+ */
+final class SharedCachePlainModel extends Model
+{
+	/**
+	 * @var string|null
+	 */
+	protected static ?string $tableName = 'shared_cache_plain';
+
+	/**
+	 * @var array
+	 */
+	protected static array $fields = ['id'];
 }
 
 /**

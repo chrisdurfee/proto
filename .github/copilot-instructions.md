@@ -221,7 +221,7 @@ The framework provides automatic audit field injection and user scoping:
 **Immutable Fields**: When a model declares `$immutableFields`, the `ResourceController` automatically strips those fields from update data in `modifyUpdateItem()`. No need for manual `restrictFields()` calls.
 
 **User Scoping**: Set `$scopeToUser = true` on a controller to automatically:
-1. Inject the session user's ID into add data via `$userScopeField` (default: `'userId'`)
+1. Overwrite `$userScopeField` (default: `'userId'`) on add/setup from the session — a client cannot set another user's id
 2. Filter `all()` queries by the session user's ID
 
 ```php
@@ -233,7 +233,7 @@ class PostController extends ResourceController
         parent::__construct();
     }
 
-    // Auto-injects userId on add, auto-filters all() by userId
+    // Overwrites userId on add/setup, auto-filters all() by userId
     protected bool $scopeToUser = true;
 
     // No need for modifyAddItem/modifyUpdateItem/modifyFilter hooks
@@ -1951,11 +1951,11 @@ class PostController extends ResourceController
 
 **Scopes and search**
 - Model `$scopes` run on `all()` / `getRows()` / `fetchWhere()` and on ResourceController `get()`. `Model::get($id)` does not apply them.
-- `$searchableFields` defaults to `[]` (off). Use an explicit list or `['*']` to infer; `email` / `phone` / secrets are never inferred.
+- `$searchableFields` defaults to `[]` (off). Use an explicit list or `['*']` to infer; `email` / `phone` / secrets and suffix names (`emailAddress`, `accessToken`) are never inferred.
 
 **Cache**
 - ModelPolicy keys are already `u{userId}` / `s{sessionId}`.
-- `$cacheSharedPayload = true` only when the payload is identical for every viewer. Declare every viewer flag so it is stripped and re-applied.
+- `$cacheSharedPayload = true` shares lists only; `get()` stays user/session scoped. Declare every viewer flag so it is stripped and re-applied on list hits.
 - Writes invalidate `get:{id}`, `get:{id}:inc=*`, and slug/guid identities from the request item.
 
 **Services and gateways**
@@ -2003,7 +2003,7 @@ class PostController extends ResourceController
 | `router()->resource()` then a child path | `resourceStrict()` in api.php; static children outrank `:id` |
 | Fat `enrichRows()` for simple flags | `$enrichments` + optional `?include=` |
 | Always-on expensive joins | `includeJoins()` + `$allowedIncludes` |
-| Shared Redis cache of liked/bookmarked | User-scoped keys (default) or `$cacheSharedPayload` + flag strip |
+| Shared Redis cache of liked/bookmarked | User-scoped keys (default); `$cacheSharedPayload` shares lists only |
 | Copy `success()`/`generateUuid()` in Common | Extend `Proto\Services\Service` |
 | `new ChildGateway()` per call | `$this->gateway(ChildGateway::class)` |
 | Manual `$placeholders = implode(...)` for IN | `['field', 'IN', $array]` shorthand |

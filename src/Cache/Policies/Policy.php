@@ -133,9 +133,9 @@ abstract class Policy implements CachePolicyInterface
 	/**
 	 * Creates a unique cache key, scoped to the acting user/session.
 	 *
-	 * Responses are namespaced by the current user (or, when anonymous,
-	 * the session id) so a cached response is never returned to a
-	 * different visitor than the one who generated it.
+	 * `get()` is always namespaced by user or session. `all()` may use
+	 * `shared` when `$cacheSharedPayload` is true (list scopes are still
+	 * folded into the key).
 	 *
 	 * @param string $method The method name.
 	 * @param mixed $params The method parameters.
@@ -143,7 +143,7 @@ abstract class Policy implements CachePolicyInterface
 	 */
 	protected function createKey(string $method, mixed $params): string
 	{
-		return $this->controller::class . ':' . $this->getScopeToken() . ':' . $method . ':' . $this->normalizeParams($params);
+		return $this->controller::class . ':' . $this->getScopeToken($method) . ':' . $method . ':' . $this->normalizeParams($params);
 	}
 
 	/**
@@ -165,11 +165,20 @@ abstract class Policy implements CachePolicyInterface
 	/**
 	 * Gets a token identifying the acting user, or the anonymous session.
 	 *
+	 * `$cacheSharedPayload` shares list keys only. `get()` stays
+	 * user/session scoped so an owner draft or guest `{row:null}`
+	 * cannot be served to the other viewer.
+	 *
+	 * @param string|null $method The cache method name (`get`, `all`, …).
 	 * @return string
 	 */
-	protected function getScopeToken(): string
+	protected function getScopeToken(?string $method = null): string
 	{
-		if (method_exists($this->controller, 'usesSharedCache') && $this->controller->usesSharedCache())
+		if (
+			$method !== 'get'
+			&& method_exists($this->controller, 'usesSharedCache')
+			&& $this->controller->usesSharedCache()
+		)
 		{
 			return 'shared';
 		}

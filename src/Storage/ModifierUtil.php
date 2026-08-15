@@ -84,7 +84,12 @@ class ModifierUtil
 			return;
 		}
 
-		$term = '%' . strtolower($term) . '%';
+		$escaped = str_replace(
+			['\\', '%', '_'],
+			['\\\\', '\\%', '\\_'],
+			strtolower($term)
+		);
+		$term = '%' . $escaped . '%';
 		$searchConditions = [];
 		foreach ($fields as $field)
 		{
