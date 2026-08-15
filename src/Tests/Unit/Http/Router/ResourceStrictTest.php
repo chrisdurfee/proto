@@ -32,9 +32,10 @@ final class ResourceStrictTest extends Test
 	 */
 	private function deferredRouter(string $path): Router
 	{
-		$_SERVER['REQUEST_METHOD'] = 'GET';
-		$_SERVER['REQUEST_URI'] = $path;
 		HttpRequest::reset();
+		$http = new \ReflectionClass(HttpRequest::class);
+		$http->getProperty('httpMethod')->setValue(null, 'GET');
+		$http->getProperty('currentPath')->setValue(null, $path);
 
 		$router = new Router('');
 		$router->deferActivation();
