@@ -902,7 +902,12 @@ class Storage extends TableStorage
 		$qualified = $this->alias !== '' ? $this->alias . '.' . $column : $column;
 
 		$params = [];
-		$sql = $this->table()->select($qualified . ' AS grouped_key', 'COUNT(*) AS grouped_count');
+		// Single-element / nested arrays are raw SQL. A string field is
+		// alias-prefixed by the query builder (`p.COUNT(*)` is invalid).
+		$sql = $this->table()->select(
+			[[$qualified], 'grouped_key'],
+			[['COUNT(*)'], 'grouped_count']
+		);
 		$where = $this->getWhere($params, $filter);
 		if ($where !== [])
 		{

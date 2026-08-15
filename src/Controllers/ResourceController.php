@@ -849,7 +849,7 @@ abstract class ResourceController extends ApiController
 			return null;
 		}
 
-		$filter = $this->applyListScopes($lookup, $request);
+		$filter = $this->qualifyFilter($this->applyListScopes($lookup, $request));
 		$result = $this->model::all($filter, 0, 1);
 		if ($result === false || empty($result->rows))
 		{
