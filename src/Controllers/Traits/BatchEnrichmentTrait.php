@@ -149,6 +149,64 @@ trait BatchEnrichmentTrait
 	}
 
 	/**
+	 * Batch-count related records per row and set an integer field.
+	 *
+	 * @param array $rows Result rows to enrich.
+	 * @param string $modelClass Related model class.
+	 * @param string $foreignKey Field on the related model matching row IDs.
+	 * @param string $targetField Integer field name to set on each row.
+	 * @param array $extraFilter Additional filter conditions.
+	 * @param string $sourceKey Field on rows to match against (default: 'id').
+	 * @return void
+	 */
+	protected function batchMapCount(
+		array &$rows,
+		string $modelClass,
+		string $foreignKey,
+		string $targetField,
+		array $extraFilter = [],
+		string $sourceKey = 'id'
+	): void
+	{
+		foreach ($rows as &$row)
+		{
+			$row->$targetField = 0;
+		}
+		unset($row);
+
+		if (empty($rows))
+		{
+			return;
+		}
+
+		$ids = array_unique(array_filter(
+			array_map(fn($r) => $r->$sourceKey ?? null, $rows)
+		));
+		if (empty($ids))
+		{
+			return;
+		}
+
+		$counts = is_callable([$modelClass, 'countGroupedBy'])
+			? $modelClass::countGroupedBy($foreignKey, array_values($ids), $extraFilter)
+			: [];
+		if ($counts === [])
+		{
+			return;
+		}
+
+		foreach ($rows as &$row)
+		{
+			$key = $row->$sourceKey ?? null;
+			if ($key !== null && isset($counts[$key]))
+			{
+				$row->$targetField = $counts[$key];
+			}
+		}
+		unset($row);
+	}
+
+	/**
 	 * Fetch related rows without eager joins so unqualified filter columns
 	 * (e.g. `user_id IN (...)`) are not ambiguous against joined tables.
 	 *

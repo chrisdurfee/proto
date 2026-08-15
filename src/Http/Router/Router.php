@@ -53,6 +53,28 @@ class Router
 	protected array $routes = [];
 
 	/**
+	 * When greater than zero, matching routes are collected and the most
+	 * specific one is activated later via flushDeferred().
+	 *
+	 * @var int
+	 */
+	protected int $deferDepth = 0;
+
+	/**
+	 * Best matching route while activation is deferred.
+	 *
+	 * @var Uri|null
+	 */
+	protected ?Uri $pendingRoute = null;
+
+	/**
+	 * Specificity score for $pendingRoute.
+	 *
+	 * @var int
+	 */
+	protected int $pendingScore = -1;
+
+	/**
 	 * Default middleware applied to all mutation routes (POST, PUT, PATCH, DELETE).
 	 *
 	 * Set via defaultMutationMiddleware() to auto-apply CSRF protection or
@@ -370,10 +392,124 @@ class Router
 
 		if ($this->matchesRoute($route))
 		{
-			$this->activateRoute($route);
+			$this->considerRoute($route);
 		}
 
 		return $this;
+	}
+
+	/**
+	 * Collect matching routes instead of activating the first hit.
+	 *
+	 * Used while an api.php is being included so literal children
+	 * registered after `resourceStrict()` can outrank `:id`.
+	 *
+	 * @return self
+	 */
+	public function deferActivation(): self
+	{
+		$this->deferDepth++;
+		return $this;
+	}
+
+	/**
+	 * End a deferral frame without activating the pending route.
+	 *
+	 * @return self
+	 */
+	public function endDeferral(): self
+	{
+		$this->deferDepth = max(0, $this->deferDepth - 1);
+		if ($this->deferDepth === 0)
+		{
+			$this->pendingRoute = null;
+			$this->pendingScore = -1;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Best matching route while activation is deferred.
+	 *
+	 * @return Uri|null
+	 */
+	public function pendingRoute(): ?Uri
+	{
+		return $this->pendingRoute;
+	}
+
+	/**
+	 * Activate the most specific deferred match, if any.
+	 *
+	 * @return void
+	 */
+	public function flushDeferred(): void
+	{
+		$route = $this->pendingRoute;
+		$this->pendingRoute = null;
+		$this->pendingScore = -1;
+		if ($route !== null)
+		{
+			$this->activateRoute($route);
+		}
+	}
+
+	/**
+	 * Activate immediately, or keep the highest-specificity match.
+	 *
+	 * @param Uri $route
+	 * @return void
+	 */
+	protected function considerRoute(Uri $route): void
+	{
+		if ($this->deferDepth < 1)
+		{
+			$this->activateRoute($route);
+			return;
+		}
+
+		$score = $this->routeSpecificity($route);
+		if ($this->pendingRoute === null || $score > $this->pendingScore)
+		{
+			$this->pendingRoute = $route;
+			$this->pendingScore = $score;
+		}
+	}
+
+	/**
+	 * Static segments outrank params; wildcards are weakest.
+	 *
+	 * @param Uri $route
+	 * @return int
+	 */
+	protected function routeSpecificity(Uri $route): int
+	{
+		$path = trim($route->uri(), '/');
+		if ($path === '')
+		{
+			return 0;
+		}
+
+		$score = 0;
+		foreach (explode('/', $path) as $segment)
+		{
+			if ($segment === '*' || str_contains($segment, '*'))
+			{
+				$score += 1;
+				continue;
+			}
+
+			if (str_starts_with($segment, ':'))
+			{
+				$score += 10;
+				continue;
+			}
+
+			$score += 100;
+		}
+
+		return $score;
 	}
 
 	/**
@@ -394,6 +530,51 @@ class Router
 
 		$uri = $uri . '/:id?';
 		return $this->all($uri, $callback, $middleware);
+	}
+
+	/**
+	 * Registers a resource without a greedy optional `:id?`.
+	 *
+	 * Collection verbs hit `$uri`; item verbs require `$uri/:id`.
+	 * When routes are registered through ResourceHelper (api.php),
+	 * activation is deferred and static children such as `post/feed`
+	 * outrank `post/:id` regardless of registration order.
+	 *
+	 * @param string $uri
+	 * @param string $controller
+	 * @param array|null $middleware
+	 * @return self
+	 */
+	public function resourceStrict(string $uri, string $controller, ?array $middleware = null): self
+	{
+		$callback = function(Request $req) use ($controller): mixed
+		{
+			$resource = new Resource($controller);
+			return $resource->activate($req);
+		};
+
+		$this->all($uri, $callback, $middleware);
+		return $this->all($uri . '/:id', $callback, $middleware);
+	}
+
+	/**
+	 * Include another api.php in the current router context.
+	 *
+	 * Child files stay independently resolvable by URL. Use this from a
+	 * parent api.php to compose sibling feature routes without relying
+	 * on ResourceHelper path matching.
+	 *
+	 * @param string $path Absolute path to an api.php file.
+	 * @return self
+	 */
+	public function includeApi(string $path): self
+	{
+		if (is_file($path))
+		{
+			require $path;
+		}
+
+		return $this;
 	}
 
 	/**

@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Api;
 
+use Proto\Http\Router\Router;
 use Proto\Utils\Strings;
 
 /**
@@ -61,7 +62,74 @@ class ResourceHelper
 			return self::$resolvedCache[$url] = null;
 		}
 
-		return self::$resolvedCache[$url] = self::resolveResourcePath($parts);
+		$resolved = self::resolveResourcePath($parts);
+		if ($resolved !== null)
+		{
+			return self::$resolvedCache[$url] = $resolved;
+		}
+
+		$alt = self::singularizeLastPart($parts);
+		if ($alt !== $parts)
+		{
+			$resolved = self::resolveResourcePath($alt);
+			if ($resolved !== null)
+			{
+				return self::$resolvedCache[$url] = $resolved;
+			}
+		}
+
+		return self::$resolvedCache[$url] = null;
+	}
+
+	/**
+	 * Retry storefronts → Storefront when the plural folder does not exist.
+	 *
+	 * @param array<int, string> $parts
+	 * @return array<int, string>
+	 */
+	protected static function singularizeLastPart(array $parts): array
+	{
+		if ($parts === [])
+		{
+			return $parts;
+		}
+
+		$last = count($parts) - 1;
+		$word = $parts[$last];
+		$singular = self::singularize($word);
+		if ($singular === $word)
+		{
+			return $parts;
+		}
+
+		$parts[$last] = $singular;
+		return $parts;
+	}
+
+	/**
+	 * Conservative English singularizer for module folder names.
+	 *
+	 * @param string $word PascalCase segment.
+	 * @return string
+	 */
+	protected static function singularize(string $word): string
+	{
+		if (str_ends_with($word, 'ies') && strlen($word) > 3)
+		{
+			return substr($word, 0, -3) . 'y';
+		}
+
+		if (preg_match('/(ses|xes|zes|ches|shes)$/i', $word))
+		{
+			return substr($word, 0, -2);
+		}
+
+		if (str_ends_with($word, 's') && !str_ends_with($word, 'ss') && strlen($word) > 1)
+		{
+			return substr($word, 0, -1);
+		}
+
+		return $word;
 	}
 
 	/**
@@ -159,6 +227,23 @@ class ResourceHelper
 	 */
 	public static function includeResource(string $resourcePath): void
 	{
+		$router = (function_exists('router')) ? router() : null;
+		if ($router instanceof Router)
+		{
+			$router->deferActivation();
+			try
+			{
+				require_once $resourcePath;
+				$router->flushDeferred();
+			}
+			finally
+			{
+				$router->endDeferral();
+			}
+
+			return;
+		}
+
 		require_once $resourcePath;
 	}
 

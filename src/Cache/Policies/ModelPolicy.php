@@ -90,10 +90,7 @@ class ModelPolicy extends Policy
 	{
 		$item = $this->controller->getRequestItem($request);
 		$id = $item->id ?? $this->getResourceId($request);
-		if ($id !== null)
-		{
-			$this->deleteKeysMatching($this->createKeyPattern('get', $id));
-		}
+		$this->invalidateGetKeys($request, $id, $item);
 
 		$this->deleteAll();
 		return $this->controller->update($request);
@@ -108,7 +105,7 @@ class ModelPolicy extends Policy
 	public function updateStatus(Request $request): object
 	{
 		$id = $this->getResourceId($request);
-		$this->deleteKeysMatching($this->createKeyPattern('get', $id));
+		$this->invalidateGetKeys($request, $id);
 
 		$this->deleteAll();
 
@@ -127,6 +124,7 @@ class ModelPolicy extends Policy
 	 */
 	public function delete(Request $request): object
 	{
+		$item = null;
 		$id = $this->getResourceId($request);
 		if ($id === null)
 		{
@@ -134,10 +132,7 @@ class ModelPolicy extends Policy
 			$id = $item->id ?? null;
 		}
 
-		if ($id !== null)
-		{
-			$this->deleteKeysMatching($this->createKeyPattern('get', $id));
-		}
+		$this->invalidateGetKeys($request, $id, $item);
 
 		$this->deleteAll();
 		return $this->controller->delete($request);
@@ -152,7 +147,8 @@ class ModelPolicy extends Policy
 	public function get(Request $request): object
 	{
 		$id = $this->getResourceId($request);
-		$key = $this->createKey('get', $id);
+		$cacheId = $id ?? ($request->input('id') ?? $request->params()->id ?? null);
+		$key = $this->createKey('get', $this->cacheIdWithIncludes($request, $cacheId));
 
 		/**
 		 * A single GET replaces the previous EXISTS + GET pair: setValue()
@@ -163,11 +159,12 @@ class ModelPolicy extends Policy
 		$cached = $this->getValue($key);
 		if ($cached !== null)
 		{
+			$this->reenrichCached($cached, $request);
 			return $cached;
 		}
 
 		$response = $this->controller->get($request);
-		$this->setValue($key, $response, $this->getMethodExpiration('get'));
+		$this->setValue($key, $this->stripViewerFlags($response), $this->getMethodExpiration('get'));
 
 		return $response;
 	}
@@ -214,6 +211,50 @@ class ModelPolicy extends Policy
 					}
 				}
 			}
+		}
+	}
+
+	/**
+	 * Drop get() keys for an id, include suffixes, and slug/guid identities.
+	 *
+	 * `Class:*:get:5` does not match `Class:*:get:5:inc=author` or slug keys.
+	 *
+	 * @param Request $request
+	 * @param mixed $id
+	 * @param object|null $item
+	 * @return void
+	 */
+	protected function invalidateGetKeys(Request $request, mixed $id = null, ?object $item = null): void
+	{
+		$identities = [];
+		if ($id !== null && $id !== '')
+		{
+			$identities[] = $id;
+		}
+
+		if ($item !== null)
+		{
+			foreach (['id', 'guid', 'slug', 'uuid'] as $field)
+			{
+				$value = $item->$field ?? null;
+				if ($value !== null && $value !== '')
+				{
+					$identities[] = $value;
+				}
+			}
+		}
+
+		$raw = $request->input('id') ?? $request->params()->id ?? null;
+		if ($raw !== null && $raw !== '')
+		{
+			$identities[] = $raw;
+		}
+
+		foreach (array_unique($identities, SORT_REGULAR) as $identity)
+		{
+			$pattern = $this->createKeyPattern('get', $identity);
+			$this->deleteKeysMatching($pattern);
+			$this->deleteKeysMatching($pattern . ':*');
 		}
 	}
 
@@ -327,6 +368,10 @@ class ModelPolicy extends Policy
 	{
 		$inputs = $this->controller->getAllInputs($request);
 		$filter = $inputs->filter;
+		if (method_exists($this->controller, 'applyListScopes'))
+		{
+			$filter = $this->controller->applyListScopes($filter, $request);
+		}
 		$offset = $inputs->offset;
 		$limit = $inputs->limit;
 		$search = $inputs->modifiers['search'] ?? null;
@@ -337,19 +382,157 @@ class ModelPolicy extends Policy
 			return $this->controller->all($request);
 		}
 
-		$params = $this->setupAllParams($filter, $offset, $limit, $inputs->modifiers);
+		$params = $this->setupAllParams($filter, $offset, $limit, $this->modifiersWithIncludes($request, $inputs->modifiers));
 		$key = $this->createKey('all', $params);
 
 		$cached = $this->getValue($key);
 		if ($cached !== null)
 		{
+			$this->reenrichCached($cached, $request);
 			return $cached;
 		}
 
 		$response = $this->controller->all($request);
-		$this->setValue($key, $response, $this->getMethodExpiration('all'));
+		$this->setValue($key, $this->stripViewerFlags($response), $this->getMethodExpiration('all'));
 
 		return $response;
+	}
+
+	/**
+	 * Fold allowlisted includes into the all() cache key.
+	 *
+	 * @param Request $request
+	 * @param array|null $modifiers
+	 * @return array|null
+	 */
+	protected function modifiersWithIncludes(Request $request, ?array $modifiers): ?array
+	{
+		if (!method_exists($this->controller, 'requestedIncludes'))
+		{
+			return $modifiers;
+		}
+
+		$includes = $this->controller->requestedIncludes($request);
+		if ($includes === [])
+		{
+			return $modifiers;
+		}
+
+		$modifiers ??= [];
+		$modifiers['include'] = $includes;
+		return $modifiers;
+	}
+
+	/**
+	 * Fold allowlisted includes into the get() cache key.
+	 *
+	 * @param Request $request
+	 * @param mixed $id
+	 * @return mixed
+	 */
+	protected function cacheIdWithIncludes(Request $request, mixed $id): mixed
+	{
+		if (!method_exists($this->controller, 'requestedIncludes'))
+		{
+			return $id;
+		}
+
+		$includes = $this->controller->requestedIncludes($request);
+		if ($includes === [])
+		{
+			return $id;
+		}
+
+		return (string)$id . ':inc=' . implode(',', $includes);
+	}
+
+	/**
+	 * Re-apply viewer flags after a shared-cache hit.
+	 *
+	 * @param mixed $response
+	 * @param Request $request
+	 * @return void
+	 */
+	protected function reenrichCached(mixed $response, Request $request): void
+	{
+		if (!is_object($response) || !method_exists($this->controller, 'usesSharedCache'))
+		{
+			return;
+		}
+
+		if (!$this->controller->usesSharedCache() || !method_exists($this->controller, 'reapplyEnrichments'))
+		{
+			return;
+		}
+
+		if (!empty($response->rows) && is_array($response->rows))
+		{
+			$this->controller->reapplyEnrichments($response->rows, $request);
+		}
+
+		if (isset($response->row) && is_object($response->row))
+		{
+			$rows = [$response->row];
+			$this->controller->reapplyEnrichments($rows, $request);
+			$response->row = $rows[0];
+		}
+	}
+
+	/**
+	 * Clone a response and strip viewer-specific fields before caching.
+	 *
+	 * @param mixed $response
+	 * @return mixed
+	 */
+	protected function stripViewerFlags(mixed $response): mixed
+	{
+		if (!is_object($response) || !method_exists($this->controller, 'usesSharedCache') || !$this->controller->usesSharedCache())
+		{
+			return $response;
+		}
+
+		if (!method_exists($this->controller, 'viewerFlagFields'))
+		{
+			return $response;
+		}
+
+		$fields = $this->controller->viewerFlagFields();
+		if ($fields === [])
+		{
+			return $response;
+		}
+
+		$copy = json_decode(json_encode($response));
+		if (!is_object($copy))
+		{
+			return $response;
+		}
+
+		if (!empty($copy->rows) && is_array($copy->rows))
+		{
+			foreach ($copy->rows as $row)
+			{
+				if (!is_object($row))
+				{
+					continue;
+				}
+
+				foreach ($fields as $field)
+				{
+					unset($row->$field);
+				}
+			}
+		}
+
+		if (isset($copy->row) && is_object($copy->row))
+		{
+			foreach ($fields as $field)
+			{
+				unset($copy->row->$field);
+			}
+		}
+
+		return $copy;
 	}
 
 	/**

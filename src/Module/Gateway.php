@@ -32,6 +32,37 @@ namespace Proto\Module;
 abstract class Gateway
 {
 	/**
+	 * Memoized child gateway / service instances.
+	 *
+	 * @var array<string, object>
+	 */
+	private array $lazyInstances = [];
+
+	/**
+	 * Return a memoized instance of a child gateway or service.
+	 *
+	 * @template T of object
+	 * @param class-string<T> $class
+	 * @param mixed ...$constructorArgs
+	 * @return T
+	 */
+	protected function gateway(string $class, mixed ...$constructorArgs): object
+	{
+		$key = $class;
+		if ($constructorArgs !== [])
+		{
+			$key .= ':' . md5(serialize($constructorArgs));
+		}
+
+		if (!isset($this->lazyInstances[$key]))
+		{
+			$this->lazyInstances[$key] = new $class(...$constructorArgs);
+		}
+
+		return $this->lazyInstances[$key];
+	}
+
+	/**
 	 * Returns the primary model class for this gateway.
 	 *
 	 * @return string Fully-qualified model class name.

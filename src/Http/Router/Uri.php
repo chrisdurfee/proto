@@ -47,6 +47,16 @@ abstract class Uri
 	}
 
 	/**
+	 * Registered URI pattern, including the router base path.
+	 *
+	 * @return string
+	 */
+	public function uri(): string
+	{
+		return $this->uri;
+	}
+
+	/**
 	 * Compiles the URI pattern into a regex for matching.
 	 *
 	 * @param string $uri The route URI.

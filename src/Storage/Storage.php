@@ -888,6 +888,45 @@ class Storage extends TableStorage
 	}
 
 	/**
+	 * Count rows grouped by a foreign key without loading every match.
+	 *
+	 * @param string $foreignKey Model field (camelCase or as stored).
+	 * @param mixed $filter Filter criteria, including the IN list.
+	 * @return array<int|string, int>
+	 */
+	public function countGroupedBy(string $foreignKey, mixed $filter = null): array
+	{
+		$column = $this->model->isSnakeCase()
+			? Strings::snakeCase($foreignKey)
+			: $foreignKey;
+		$qualified = $this->alias !== '' ? $this->alias . '.' . $column : $column;
+
+		$params = [];
+		$sql = $this->table()->select($qualified . ' AS grouped_key', 'COUNT(*) AS grouped_count');
+		$where = $this->getWhere($params, $filter);
+		if ($where !== [])
+		{
+			$sql->where(...$where);
+		}
+
+		$sql->groupBy($qualified);
+		$rows = $sql->fetch($params);
+		$counts = [];
+		foreach ($rows as $row)
+		{
+			$key = $row->grouped_key ?? $row->groupedKey ?? null;
+			if ($key === null)
+			{
+				continue;
+			}
+
+			$counts[$key] = (int)($row->grouped_count ?? $row->groupedCount ?? 0);
+		}
+
+		return $counts;
+	}
+
+	/**
 	 * Execute a callback on a query builder.
 	 *
 	 * @param callable $callBack Callback function.

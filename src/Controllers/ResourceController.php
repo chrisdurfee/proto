@@ -2,11 +2,13 @@
 namespace Proto\Controllers;
 
 use Proto\Controllers\Traits\AuditFieldsTrait;
+use Proto\Controllers\Traits\BatchEnrichmentTrait;
 use Proto\Controllers\Traits\FileUploadTrait;
 use Proto\Controllers\Traits\ImageOptimizationTrait;
 use Proto\Controllers\Traits\UserEnrichmentTrait;
 use Proto\Http\Router\Request;
 use Proto\Services\ServiceResult;
+use Proto\Storage\Filter;
 
 /**
  * ResourceController
@@ -23,6 +25,7 @@ abstract class ResourceController extends ApiController
 	use FileUploadTrait;
 	use ImageOptimizationTrait;
 	use UserEnrichmentTrait;
+	use BatchEnrichmentTrait;
 
 	/**
 	 * When true, automatically adds the session user's ID to the filter
@@ -75,6 +78,72 @@ abstract class ResourceController extends ApiController
 	protected array $filterParams = [];
 
 	/**
+	 * When true, unqualified filter keys that match the model $fields
+	 * are prefixed with the model alias so joins do not make columns
+	 * like `status` ambiguous.
+	 *
+	 * @var bool
+	 */
+	protected bool $qualifyFilters = true;
+
+	/**
+	 * Alternate keys accepted by get() when the route id is not numeric.
+	 * `id` is always tried first via getResourceId().
+	 *
+	 * @var array<int, string>
+	 */
+	protected array $lookupKeys = ['id'];
+
+	/**
+	 * Declarative batch enrichments applied on get() and all() before
+	 * enrichRows(). Each entry is keyed by the field set on the row.
+	 *
+	 * Types: `flag` (exists), `field` (copy a column), `count`.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	protected array $enrichments = [];
+
+	/**
+	 * Viewer-scoped boolean flags (liked, bookmarked, …). Same shape as
+	 * CurrentUserFlagsTrait::$currentUserFlags. Applied automatically.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	protected array $currentUserFlags = [];
+
+	/**
+	 * Extra include names allowed on `?include=`. Unknown names are ignored.
+	 *
+	 * @var array<int, string>
+	 */
+	protected array $allowedIncludes = [];
+
+	/**
+	 * Includes always applied (still must be in $allowedIncludes to be
+	 * request-overridable; defaults are merged in regardless).
+	 *
+	 * @var array<int, string>
+	 */
+	protected array $defaultIncludes = [];
+
+	/**
+	 * Controller-level Scope class-strings applied on all() in addition
+	 * to the model's $scopes.
+	 *
+	 * @var array<int, class-string>
+	 */
+	protected array $scopes = [];
+
+	/**
+	 * When true, ModelPolicy caches a shared payload and re-applies
+	 * viewer flags after the cache hit.
+	 *
+	 * @var bool
+	 */
+	protected bool $cacheSharedPayload = false;
+
+	/**
 	 * Initializes the resource controller.
 	 *
 	 * @return void
@@ -103,6 +172,43 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
+	 * Qualify model-field filters after the standard filter modifiers run.
+	 *
+	 * @param Request $request
+	 * @return mixed
+	 */
+	public function getFilter(Request $request): mixed
+	{
+		return $this->qualifyFilter(parent::getFilter($request));
+	}
+
+	/**
+	 * Prefix unqualified model fields with the model alias.
+	 *
+	 * Controllers that build their own filter arrays should call this
+	 * so join-safe lists do not need a hand-rolled alias map.
+	 *
+	 * @param mixed $filter
+	 * @return mixed
+	 */
+	protected function qualifyFilter(mixed $filter): mixed
+	{
+		if (!$this->qualifyFilters || $this->model === null || !is_callable([$this->model, 'alias']))
+		{
+			return $filter;
+		}
+
+		$alias = $this->model::alias();
+		if ($alias === null || $alias === '')
+		{
+			return $filter;
+		}
+
+		$fields = is_callable([$this->model, 'fields']) ? $this->model::fields() : [];
+		return Filter::qualify($filter, $alias, $fields);
+	}
+
+	/**
 	 * Validates the item data using the defined validation rules.
 	 *
 	 * @param object $item The item to validate.
@@ -117,10 +223,14 @@ abstract class ResourceController extends ApiController
 			return true;
 		}
 
-		if ($isUpdating && !isset($item->id))
+		if ($isUpdating)
 		{
-			$idKeyName = $this->model::idKeyName();
-			$rules[] = "{$idKeyName}|required";
+			$rules = $this->rulesForPartialUpdate($rules, $item);
+			if (!isset($item->id))
+			{
+				$idKeyName = $this->model::idKeyName();
+				$rules[] = "{$idKeyName}|required";
+			}
 		}
 
 		return $this->validateRules($item, $rules);
@@ -187,7 +297,9 @@ abstract class ResourceController extends ApiController
 			return $this->error('Invalid item data.');
 		}
 
-		return $this->addItem($data);
+		$response = $this->addItem($data);
+		$this->dispatchLifecycle('afterAdd', $data, $request, $response);
+		return $response;
 	}
 
 	/**
@@ -378,7 +490,9 @@ abstract class ResourceController extends ApiController
 			return $this->error('Invalid item data.');
 		}
 
-		return $this->updateItem($data);
+		$response = $this->updateItem($data);
+		$this->dispatchLifecycle('afterUpdate', $data, $request, $response);
+		return $response;
 	}
 
 	/**
@@ -461,7 +575,10 @@ abstract class ResourceController extends ApiController
 			return $this->error('The ID is required to delete.');
 		}
 
-		return $this->deleteItem((object) ['id' => $id]);
+		$item = (object) ['id' => $id];
+		$response = $this->deleteItem($item);
+		$this->dispatchLifecycle('afterDelete', $item, $request, $response);
+		return $response;
 	}
 
 	/**
@@ -538,20 +655,37 @@ abstract class ResourceController extends ApiController
 	public function get(Request $request): object
 	{
 		$id = $this->getResourceId($request);
-		if ($id === null)
+		$hasAlternate = $this->hasAlternateLookupKeys();
+		if ($id === null && !$hasAlternate)
 		{
 			return $this->error('The ID is required to get the item.');
 		}
 
-		$model = $this->model::get($id);
-		if ($model === null)
+		$includes = $this->requestedIncludes($request);
+		if ($includes !== [] && $this->model !== null && is_callable([$this->model, 'setRequestedIncludes']))
 		{
-			return $this->response(['row' => null]);
+			$this->model::setRequestedIncludes($includes);
 		}
 
-		$row = $model->getData();
-		$this->enrichRow($row, $request);
-		return $this->response(['row' => $row]);
+		try
+		{
+			$model = $this->resolveGetModel($request);
+			if ($model === null)
+			{
+				return $this->response(['row' => null]);
+			}
+
+			$row = method_exists($model, 'getData') ? $model->getData() : $model;
+			$this->enrichRow($row, $request);
+			return $this->response(['row' => $row]);
+		}
+		finally
+		{
+			if ($this->model !== null && is_callable([$this->model, 'setRequestedIncludes']))
+			{
+				$this->model::setRequestedIncludes([]);
+			}
+		}
 	}
 
 	/**
@@ -568,6 +702,7 @@ abstract class ResourceController extends ApiController
 	protected function enrichRow(object &$row, Request $request): void
 	{
 		$rows = [&$row];
+		$this->applyDeclaredEnrichments($rows, $request);
 		$this->enrichRows($rows, $request);
 	}
 
@@ -583,9 +718,17 @@ abstract class ResourceController extends ApiController
 	public function all(Request $request): object
 	{
 		$inputs = $this->getAllInputs($request);
-		$result = $this->model::all($inputs->filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
+		$filter = $this->applyListScopes($inputs->filter, $request);
+		$includes = $this->requestedIncludes($request);
+		if ($includes !== [])
+		{
+			$inputs->modifiers['include'] = $includes;
+		}
+
+		$result = $this->model::all($filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
 		if ($result !== false && !empty($result->rows))
 		{
+			$this->applyDeclaredEnrichments($result->rows, $request);
 			$this->enrichRows($result->rows, $request);
 		}
 
@@ -633,4 +776,397 @@ abstract class ResourceController extends ApiController
 		$count = $this->model::count();
 		return $this->response($count ? (array) $count : false);
 	}
+
+	/**
+	 * Whether get() should accept non-numeric lookup keys (uuid, slug).
+	 *
+	 * @return bool
+	 */
+	protected function hasAlternateLookupKeys(): bool
+	{
+		foreach ($this->lookupKeys as $key)
+		{
+			if ($key !== 'id')
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Resolve a model for get() by numeric id or $lookupKeys (uuid/slug).
+	 *
+	 * Applies the same list scopes as all() so drafts / private rows
+	 * are not readable by id unless the scope allows the actor.
+	 *
+	 * @param Request $request
+	 * @return object|null
+	 */
+	protected function resolveGetModel(Request $request): ?object
+	{
+		$id = $this->getResourceId($request);
+		if ($id !== null)
+		{
+			return $this->firstScoped($request, ['id' => $id]);
+		}
+
+		$raw = $request->input('id') ?? $request->params()->id ?? null;
+		if (!is_string($raw) || $raw === '')
+		{
+			return null;
+		}
+
+		foreach ($this->lookupKeys as $key)
+		{
+			if ($key === 'id')
+			{
+				continue;
+			}
+
+			$found = $this->firstScoped($request, [$key => $raw]);
+			if ($found !== null)
+			{
+				return $found;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * First row matching a lookup after list scopes are applied.
+	 *
+	 * @param Request $request
+	 * @param array $lookup
+	 * @return object|null
+	 */
+	protected function firstScoped(Request $request, array $lookup): ?object
+	{
+		if ($this->model === null)
+		{
+			return null;
+		}
+
+		$filter = $this->applyListScopes($lookup, $request);
+		$result = $this->model::all($filter, 0, 1);
+		if ($result === false || empty($result->rows))
+		{
+			return null;
+		}
+
+		return $result->rows[0];
+	}
+
+	/**
+	 * Strip `required` from rules for fields omitted on PATCH.
+	 *
+	 * @param array $rules
+	 * @param object $item
+	 * @return array
+	 */
+	protected function rulesForPartialUpdate(array $rules, object $item): array
+	{
+		$out = [];
+		foreach ($rules as $key => $rule)
+		{
+			if (is_int($key))
+			{
+				$out[] = $rule;
+				continue;
+			}
+
+			if (!isset($item->$key) && is_string($rule))
+			{
+				$parts = array_values(array_filter(
+					explode('|', $rule),
+					fn(string $part): bool => strtolower($part) !== 'required'
+				));
+				$rule = implode('|', $parts);
+			}
+
+			$out[$key] = $rule;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Apply $enrichments and $currentUserFlags with batch IN queries.
+	 *
+	 * Called automatically from get()/all() so subclasses do not need
+	 * to call parent::enrichRows() to get declared flags.
+	 *
+	 * @param array $rows
+	 * @param Request $request
+	 * @return void
+	 */
+	protected function applyDeclaredEnrichments(array &$rows, Request $request): void
+	{
+		if (empty($rows))
+		{
+			return;
+		}
+
+		$userId = (int)(session()->user->id ?? 0);
+		$userId = $userId > 0 ? $userId : null;
+
+		foreach ($this->currentUserFlags as $field => $config)
+		{
+			$this->applyEnrichment($rows, (string)$field, array_merge($config, ['type' => 'flag']), $userId);
+		}
+
+		$includes = $this->requestedIncludes($request);
+		foreach ($this->enrichments as $field => $config)
+		{
+			$includeKey = $config['include'] ?? null;
+			if ($includeKey !== null && !in_array($includeKey, $includes, true))
+			{
+				continue;
+			}
+
+			$this->applyEnrichment($rows, (string)$field, $config, $userId);
+		}
+	}
+
+	/**
+	 * @param array $rows
+	 * @param string $field
+	 * @param array<string, mixed> $config
+	 * @param int|null $userId
+	 * @return void
+	 */
+	protected function applyEnrichment(array &$rows, string $field, array $config, ?int $userId): void
+	{
+		$type = $config['type'] ?? 'flag';
+		$model = $config['model'] ?? null;
+		$foreignKey = $config['foreignKey'] ?? null;
+		if ($model === null || $foreignKey === null)
+		{
+			return;
+		}
+
+		$sourceKey = $config['sourceKey'] ?? 'id';
+		$extraFilter = $config['extraFilter'] ?? [];
+
+		if ($type === 'flag')
+		{
+			if ($userId === null)
+			{
+				foreach ($rows as &$row)
+				{
+					$row->$field = false;
+				}
+				unset($row);
+				return;
+			}
+
+			$userField = $config['userField'] ?? 'userId';
+			$extraFilter = array_merge([[$userField, $userId]], $extraFilter);
+			$this->batchMapExists($rows, $model, $foreignKey, $field, $extraFilter, $sourceKey);
+			return;
+		}
+
+		if ($type === 'count')
+		{
+			$this->batchMapCount($rows, $model, $foreignKey, $field, $extraFilter, $sourceKey);
+			return;
+		}
+
+		if ($type === 'field')
+		{
+			$valueField = $config['valueField'] ?? $field;
+			$default = $config['default'] ?? null;
+			$this->batchMapField($rows, $model, $foreignKey, $valueField, $field, $default, $extraFilter, $sourceKey);
+		}
+	}
+
+	/**
+	 * Run a lifecycle hook after a successful mutation.
+	 *
+	 * @param string $hook afterAdd|afterUpdate|afterDelete
+	 * @param object $data
+	 * @param Request $request
+	 * @param object $response
+	 * @return void
+	 */
+	protected function dispatchLifecycle(string $hook, object $data, Request $request, object $response): void
+	{
+		if (!($response->success ?? false))
+		{
+			return;
+		}
+
+		if (!isset($data->id))
+		{
+			$data->id = $response->id ?? null;
+		}
+
+		$this->$hook($data, $request);
+		$this->emit($this->lifecycleEvent($hook), $data);
+	}
+
+	/**
+	 * Publish a domain event.
+	 *
+	 * @param string $event
+	 * @param mixed $payload
+	 * @return void
+	 */
+	protected function emit(string $event, mixed $payload = null): void
+	{
+		if (function_exists('events'))
+		{
+			events()->emit($event, $payload);
+		}
+	}
+
+	/**
+	 * @param string $hook
+	 * @return string
+	 */
+	protected function lifecycleEvent(string $hook): string
+	{
+		$base = 'resource';
+		if ($this->model !== null)
+		{
+			$short = (new \ReflectionClass($this->model))->getShortName();
+			$base = lcfirst($short);
+		}
+
+		return match ($hook)
+		{
+			'afterAdd' => $base . '.created',
+			'afterUpdate' => $base . '.updated',
+			'afterDelete' => $base . '.deleted',
+			default => $base . '.' . $hook
+		};
+	}
+
+	/**
+	 * Allowlisted includes from `?include=` plus defaults.
+	 *
+	 * @param Request $request
+	 * @return array<int, string>
+	 */
+	public function requestedIncludes(Request $request): array
+	{
+		$raw = $request->input('include');
+		$asked = [];
+		if (is_string($raw) && $raw !== '')
+		{
+			$asked = array_values(array_filter(array_map('trim', explode(',', $raw))));
+		}
+
+		if ($this->allowedIncludes !== [])
+		{
+			$asked = array_values(array_intersect($asked, $this->allowedIncludes));
+		}
+		else
+		{
+			$asked = [];
+		}
+
+		return array_values(array_unique(array_merge($this->defaultIncludes, $asked)));
+	}
+
+	/**
+	 * Apply model scopes, controller scopes, and Policy::scope().
+	 *
+	 * @param mixed $filter
+	 * @param Request $request
+	 * @return mixed
+	 */
+	public function applyListScopes(mixed $filter, Request $request): mixed
+	{
+		$actor = (function_exists('session')) ? (session()->user ?? null) : null;
+		if ($this->model !== null && is_callable([$this->model, 'applyScopes']))
+		{
+			$filter = $this->model::applyScopes($filter, $actor);
+		}
+
+		foreach ($this->scopes as $scope)
+		{
+			$instance = is_string($scope) ? new $scope() : $scope;
+			if ($instance instanceof \Proto\Models\Scopes\Scope)
+			{
+				$filter = $instance->apply($filter, $actor);
+			}
+		}
+
+		if ($this->policy !== null && class_exists($this->policy))
+		{
+			$policy = new $this->policy($this);
+			if (method_exists($policy, 'scope'))
+			{
+				$filter = $policy->scope($filter, $request);
+			}
+		}
+
+		return $filter;
+	}
+
+	/**
+	 * Re-apply declared enrichments after a shared cache hit.
+	 *
+	 * @param array $rows
+	 * @param Request $request
+	 * @return void
+	 */
+	public function reapplyEnrichments(array &$rows, Request $request): void
+	{
+		$this->applyDeclaredEnrichments($rows, $request);
+	}
+
+	/**
+	 * Whether ModelPolicy should cache a shared payload (no viewer flags).
+	 *
+	 * @return bool
+	 */
+	public function usesSharedCache(): bool
+	{
+		return $this->cacheSharedPayload;
+	}
+
+	/**
+	 * Field names that are viewer-specific and must be stripped before
+	 * storing a shared cache payload.
+	 *
+	 * @return array<int, string>
+	 */
+	public function viewerFlagFields(): array
+	{
+		$fields = array_keys($this->currentUserFlags);
+		foreach ($this->enrichments as $field => $config)
+		{
+			if (($config['type'] ?? 'flag') === 'flag')
+			{
+				$fields[] = (string)$field;
+			}
+		}
+
+		return array_values(array_unique($fields));
+	}
+
+	/**
+	 * @param object $item
+	 * @param Request $request
+	 * @return void
+	 */
+	protected function afterAdd(object $item, Request $request): void {}
+
+	/**
+	 * @param object $item
+	 * @param Request $request
+	 * @return void
+	 */
+	protected function afterUpdate(object $item, Request $request): void {}
+
+	/**
+	 * @param object $item
+	 * @param Request $request
+	 * @return void
+	 */
+	protected function afterDelete(object $item, Request $request): void {}
 }

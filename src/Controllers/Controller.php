@@ -76,8 +76,13 @@ abstract class Controller extends Base implements ControllerInterface
 	 * @param array<string, string[]> $errors Optional field-level validation errors.
 	 * @return object The error response object.
 	 */
-	protected function error(string $message = '', int $statusCode = 200, array $errors = []): object
+	protected function error(string $message = '', int $statusCode = 400, array $errors = []): object
 	{
+		if ($statusCode >= 400)
+		{
+			http_response_code($statusCode);
+		}
+
 		$response = new Response();
 		$response->error($message);
 		$data = ['code' => $statusCode];

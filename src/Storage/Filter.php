@@ -541,4 +541,297 @@ class Filter
 
 		return "{$alias}.{$column} {$expression}";
 	}
+
+	/**
+	 * Prefix unqualified model-field columns with a table alias.
+	 *
+	 * Keys that already contain a dot, raw SQL fragments, and columns
+	 * that are not in $fields are left unchanged so joined-table filters
+	 * keep working.
+	 *
+	 * @param mixed $filter Object or array filter.
+	 * @param string $alias Table alias (e.g. 'ml').
+	 * @param array<int, string> $fields Model field names (camelCase).
+	 * @return mixed
+	 */
+	public static function qualify(mixed $filter, string $alias, array $fields = []): mixed
+	{
+		$alias = Sanitize::cleanColumn($alias);
+		if ($filter === null || $alias === '' || $fields === [])
+		{
+			return $filter;
+		}
+
+		$fieldSet = self::fieldLookup($fields);
+
+		if (is_object($filter))
+		{
+			$out = (object)[];
+			foreach ((array)$filter as $key => $value)
+			{
+				if (is_string($key))
+				{
+					$qualified = self::qualifyColumn($key, $alias, $fieldSet);
+					$out->$qualified = $value;
+					continue;
+				}
+
+				$out->{(string)$key} = self::qualifyEntry($value, $alias, $fieldSet);
+			}
+
+			return $out;
+		}
+
+		if (!is_array($filter))
+		{
+			return $filter;
+		}
+
+		$out = [];
+		foreach ($filter as $key => $item)
+		{
+			if (is_string($key))
+			{
+				$out[self::qualifyColumn($key, $alias, $fieldSet)] = $item;
+				continue;
+			}
+
+			$out[] = self::qualifyEntry($item, $alias, $fieldSet);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Parameterized "changed since" condition.
+	 *
+	 * Rejects anything that is not a MySQL/ISO datetime so a client
+	 * `lastSync` value can never be interpolated into SQL.
+	 *
+	 * @param string $alias Table alias.
+	 * @param string $timestamp Datetime string from the client.
+	 * @param string|array<int, string> $columns One or more columns, OR'd.
+	 * @return array{0: string, 1: array<int, string>}
+	 */
+	public static function since(string $alias, string $timestamp, string|array $columns = 'updatedAt'): array
+	{
+		if (!self::isSafeTimestamp($timestamp))
+		{
+			return ['1 = 0', []];
+		}
+
+		$alias = Sanitize::cleanColumn($alias);
+		$columns = is_array($columns) ? $columns : [$columns];
+		$parts = [];
+		$params = [];
+		foreach ($columns as $column)
+		{
+			$column = Sanitize::cleanColumn(Strings::snakeCase((string)$column));
+			if ($column === '')
+			{
+				continue;
+			}
+
+			$parts[] = "{$alias}.{$column} >= ?";
+			$params[] = $timestamp;
+		}
+
+		if ($parts === [])
+		{
+			return ['1 = 0', []];
+		}
+
+		$sql = count($parts) === 1 ? $parts[0] : '(' . implode(' OR ', $parts) . ')';
+		return [$sql, $params];
+	}
+
+	/**
+	 * Safe since-clause for query builders that interpolate strings
+	 * (they do not bind Filter::since() params).
+	 *
+	 * Returns null when the timestamp is rejected so callers skip the
+	 * clause instead of interpolating client input.
+	 *
+	 * @param string $alias
+	 * @param string $timestamp
+	 * @param string|array<int, string> $columns
+	 * @return string|null
+	 */
+	public static function sinceLiteral(string $alias, string $timestamp, string|array $columns = 'updatedAt'): ?string
+	{
+		[$sql, $params] = self::since($alias, $timestamp, $columns);
+		if ($sql === '1 = 0' || $params === [])
+		{
+			return null;
+		}
+
+		$quoted = "'" . $timestamp . "'";
+		return str_replace('?', $quoted, $sql);
+	}
+
+	/**
+	 * Whether a string is a safe datetime for parameterized since-filters.
+	 *
+	 * Accepts `Y-m-d`, `Y-m-d H:i:s`, `Y-m-d\TH:i:s`, and optional
+	 * fractional seconds. Rejects SQL fragments and empty values.
+	 *
+	 * @param string $value
+	 * @return bool
+	 */
+	public static function isSafeTimestamp(string $value): bool
+	{
+		return (bool)preg_match(
+			'/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?)?$/',
+			$value
+		);
+	}
+
+	/**
+	 * @param array<int, string> $fields
+	 * @return array<string, true>
+	 */
+	protected static function fieldLookup(array $fields): array
+	{
+		$fieldSet = [];
+		foreach ($fields as $field)
+		{
+			$field = (string)$field;
+			$fieldSet[$field] = true;
+			$fieldSet[Strings::snakeCase($field)] = true;
+			$fieldSet[Strings::camelCase($field)] = true;
+		}
+
+		return $fieldSet;
+	}
+
+	/**
+	 * @param array<string, true> $fieldSet
+	 */
+	protected static function qualifyColumn(string $column, string $alias, array $fieldSet): string
+	{
+		if ($column === '' || str_contains($column, '.') || str_contains($column, ' ') || str_contains($column, '('))
+		{
+			return $column;
+		}
+
+		if (!isset($fieldSet[$column]))
+		{
+			return $column;
+		}
+
+		return $alias . '.' . $column;
+	}
+
+	/**
+	 * @param array<string, true> $fieldSet
+	 */
+	protected static function qualifyEntry(mixed $entry, string $alias, array $fieldSet): mixed
+	{
+		if (!is_array($entry) || !isset($entry[0]) || !is_string($entry[0]))
+		{
+			return $entry;
+		}
+
+		$entry[0] = self::qualifyColumn($entry[0], $alias, $fieldSet);
+		return $entry;
+	}
+
+	/**
+	 * Drop raw SQL fragments that arrived from a client filter payload.
+	 *
+	 * Request filters may only be associative scalars or
+	 * `[column, value]` / `[column, operator, value]` tuples whose
+	 * column is `[A-Za-z0-9_.]+`. Numeric-indexed SQL strings and
+	 * `[sql, [params]]` fragments from the client are dropped.
+	 * Append app-built parameterized fragments after getFilter().
+	 *
+	 * @param mixed $filter
+	 * @return mixed
+	 */
+	public static function sanitizeRequestFilter(mixed $filter): mixed
+	{
+		if ($filter === null)
+		{
+			return $filter;
+		}
+
+		$wasObject = is_object($filter);
+		$items = $wasObject ? (array)$filter : $filter;
+		if (!is_array($items))
+		{
+			return is_string($items) ? (object)[] : $filter;
+		}
+
+		$out = [];
+		foreach ($items as $key => $item)
+		{
+			if (is_string($key))
+			{
+				if (!self::isSafeColumn($key))
+				{
+					continue;
+				}
+
+				if (is_array($item) && self::isOperatorValuePair($item))
+				{
+					$out[$key] = $item;
+					continue;
+				}
+
+				if (is_scalar($item) || $item === null)
+				{
+					$out[$key] = $item;
+				}
+
+				continue;
+			}
+
+			if (is_string($item))
+			{
+				continue;
+			}
+
+			if (is_array($item) && isset($item[0]) && is_string($item[0]) && self::isSafeColumn($item[0]))
+			{
+				$out[] = $item;
+			}
+		}
+
+		if ($wasObject)
+		{
+			return (object)$out;
+		}
+
+		return $out;
+	}
+
+	/**
+	 * @param string $column
+	 * @return bool
+	 */
+	public static function isSafeColumn(string $column): bool
+	{
+		return (bool)preg_match('/^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)?$/', $column);
+	}
+
+	/**
+	 * @param array $item
+	 * @return bool
+	 */
+	protected static function isOperatorValuePair(array $item): bool
+	{
+		if ($item === [] || array_is_list($item) === false)
+		{
+			return false;
+		}
+
+		$first = $item[0] ?? null;
+		if (!is_string($first))
+		{
+			return false;
+		}
+
+		$allowed = self::allowedOperators();
+		return in_array(strtoupper($first), $allowed, true);
+	}
 }

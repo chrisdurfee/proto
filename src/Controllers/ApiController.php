@@ -4,6 +4,7 @@ namespace Proto\Controllers;
 use Proto\Http\Router\Request;
 use Proto\Utils\Format\JsonFormat;
 use Proto\Api\Validator;
+use Proto\Storage\Filter;
 
 /**
  * ApiController
@@ -82,12 +83,12 @@ abstract class ApiController extends Controller
 	 * @return void
 	 */
 	protected function errorValidating(Validator $validator): void
-    {
-        $fieldErrors = $validator->getFieldErrors();
-        $error = $this->error($validator->getMessage(), 200, $fieldErrors);
-        JsonFormat::encodeAndRender($error);
-        die;
-    }
+	{
+		$fieldErrors = $validator->getFieldErrors();
+		$error = $this->error($validator->getMessage(), 422, $fieldErrors);
+		JsonFormat::encodeAndRender($error);
+		die;
+	}
 
 	/**
 	 * Sets an error response and terminates the request.
@@ -233,6 +234,7 @@ abstract class ApiController extends Controller
 		}
 
 		$filter = JsonFormat::decode($filter) ?? (object)[];
+		$filter = Filter::sanitizeRequestFilter($filter);
 		return $this->modifyFilter($filter, $request);
 	}
 

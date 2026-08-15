@@ -99,6 +99,35 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected static array $fieldsBlacklist = [];
 
 	/**
+	 * Searchable fields for the search modifier.
+	 *
+	 * Empty array (default) = search disabled.
+	 * `['*']` = infer from `$fields` minus blacklist, audit, and secret columns.
+	 * Any other list is used as-is.
+	 *
+	 * @var array<int, string>
+	 */
+	protected static array $searchableFields = [];
+
+	/**
+	 * List scopes applied on every all()/getRows()/fetchWhere() call.
+	 * Entries are Scope instances or class-strings.
+	 *
+	 * ResourceController::all() and get() also apply these via applyListScopes().
+	 * Direct Model::get($id) does not, so internal writes can still load a row.
+	 *
+	 * @var array<int, class-string|\Proto\Models\Scopes\Scope>
+	 */
+	protected static array $scopes = [];
+
+	/**
+	 * Requested optional includes for the current query (process-local).
+	 *
+	 * @var array<int, string>
+	 */
+	protected static array $requestedIncludes = [];
+
+	/**
 	 * Custom data type handlers for specific fields.
 	 * Maps field names to DataType class instances.
 	 *
@@ -387,6 +416,22 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		}
 
 		$joins = $this->getModelJoins();
+		if (static::$requestedIncludes !== [] && method_exists(static::class, 'includeJoins'))
+		{
+			$includeJoins = [];
+			$builder = new JoinBuilder(
+				$includeJoins,
+				static::$tableName,
+				static::$alias ?? null,
+				static::$isSnakeCase,
+				static::class,
+				$this
+			);
+			$builder->setForeignKeyByModel(static::class);
+			static::includeJoins($builder, static::$requestedIncludes);
+			$joins = array_merge($joins, $includeJoins);
+		}
+
 		if (\count($joins) < 1)
 		{
 			return;
@@ -1383,11 +1428,122 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	/**
 	 * Get searchable fields for the model.
 	 *
+	 * Default is off (`[]`). Set `$searchableFields = ['*']` to infer
+	 * from `$fields`, excluding blacklist, audit, and secret columns.
+	 *
 	 * @return array
 	 */
 	public function getSearchableFields(): array
 	{
-		return [];
+		if (static::$searchableFields !== ['*'])
+		{
+			return static::$searchableFields;
+		}
+
+		$skip = array_flip(array_merge(
+			static::$fieldsBlacklist,
+			[
+				'id',
+				'password',
+				'passwordHash',
+				'token',
+				'apiKey',
+				'secret',
+				'email',
+				'phone',
+				'mobile',
+				'ssn',
+				'createdAt',
+				'updatedAt',
+				'deletedAt',
+				'createdBy',
+				'updatedBy',
+				'deletedBy'
+			]
+		));
+
+		$fields = [];
+		foreach (static::$fields as $field)
+		{
+			if (!isset($skip[$field]))
+			{
+				$fields[] = $field;
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Session actor for model scopes, if a session helper exists.
+	 *
+	 * @return object|null
+	 */
+	protected static function scopeActor(): ?object
+	{
+		if (!function_exists('session'))
+		{
+			return null;
+		}
+
+		return session()->user ?? null;
+	}
+
+	/**
+	 * Set optional includes for the next model construct / getRows().
+	 *
+	 * @param array<int, string> $includes
+	 * @return void
+	 */
+	public static function setRequestedIncludes(array $includes): void
+	{
+		static::$requestedIncludes = $includes;
+	}
+
+	/**
+	 * Apply model $scopes to a filter.
+	 *
+	 * @param mixed $filter
+	 * @param object|null $actor
+	 * @return mixed
+	 */
+	public static function applyScopes(mixed $filter, ?object $actor = null): mixed
+	{
+		foreach (static::$scopes as $scope)
+		{
+			$instance = is_string($scope) ? new $scope() : $scope;
+			if ($instance instanceof \Proto\Models\Scopes\Scope)
+			{
+				$filter = $instance->apply($filter, $actor);
+			}
+		}
+
+		return $filter;
+	}
+
+	/**
+	 * Count related rows grouped by a foreign key.
+	 *
+	 * @param string $foreignKey
+	 * @param array<int, mixed> $ids
+	 * @param array $extraFilter
+	 * @return array<int|string, int>
+	 */
+	public static function countGroupedBy(string $foreignKey, array $ids, array $extraFilter = []): array
+	{
+		if ($ids === [])
+		{
+			return [];
+		}
+
+		$filter = array_merge(
+			[[$foreignKey, 'IN', array_values($ids)]],
+			$extraFilter
+		);
+		$filter = static::applyScopes($filter, static::scopeActor());
+
+		$instance = new static();
+		return $instance->storage->countGroupedBy($foreignKey, $filter);
 	}
 
 	/**
@@ -1401,14 +1557,29 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function getRows(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object|false
 	{
-		$instance = new static();
-		$result = $instance->storage->getRows($filter, $offset, $limit, $modifiers);
-		if ($result !== false && !empty($result->rows))
+		$filter = static::applyScopes($filter, static::scopeActor());
+
+		$includes = $modifiers['include'] ?? [];
+		if (is_array($includes) && $includes !== [])
 		{
-			$result->rows = $instance->convertRows($result->rows);
+			static::$requestedIncludes = $includes;
 		}
 
-		return $result;
+		$instance = new static();
+		try
+		{
+			$result = $instance->storage->getRows($filter, $offset, $limit, $modifiers);
+			if ($result !== false && !empty($result->rows))
+			{
+				$result->rows = $instance->convertRows($result->rows);
+			}
+
+			return $result;
+		}
+		finally
+		{
+			static::$requestedIncludes = [];
+		}
 	}
 
 	/**

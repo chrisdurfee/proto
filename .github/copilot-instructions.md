@@ -145,6 +145,13 @@ use Modules\User\Controllers\UserController;
 // Resource routes (path: /user/:id?)
 router()->resource('user', UserController::class);
 
+// resourceStrict + ResourceHelper: post/feed wins over post/:id
+router()->resourceStrict('post', PostController::class);
+router()->get('post/feed', [PostController::class, 'feed']);
+
+// Compose a sibling api.php without relying on ResourceHelper
+router()->includeApi(__DIR__ . '/Feed/api.php');
+
 // Nested resources (path: /user/:userId/address/:id?)
 router()->resource('user/:userId/address', AddressController::class);
 
@@ -1899,6 +1906,65 @@ public function all(Request $request): object
 - Prefer `BatchEnrichmentTrait` helpers (`batchMapField`/`batchMapExists`) over manual map-building
 - For complex enrichment with custom static methods, the enrichment method belongs on the **model**, not in the controller — controllers only call it
 - Only implement `enrichRows()` — `enrichRow()` auto-delegates by default
+- Prefer `$enrichments` / `$currentUserFlags` over a custom `enrichRows()` for flag/field/count maps
+- Services should use `Proto\Support\BatchMap` instead of copying the controller trait
+
+## 17b. ResourceController — Prefer Declarative APIs
+
+Do **not** override `all()` / `get()` / `add()` just to alias filters, attach liked flags, or fire a side effect. Use the properties and hooks:
+
+```php
+class PostController extends ResourceController
+{
+	protected bool $qualifyFilters = true;
+	protected array $lookupKeys = ['id', 'guid'];
+	protected array $allowedIncludes = ['author', 'stats'];
+	protected array $currentUserFlags = [
+		'liked' => ['model' => PostLike::class, 'foreignKey' => 'postId']
+	];
+	protected array $enrichments = [
+		'commentCount' => [
+			'type' => 'count',
+			'model' => Comment::class,
+			'foreignKey' => 'postId',
+			'include' => 'stats'
+		]
+	];
+	protected array $scopes = [VisibleScope::class];
+
+	protected function afterAdd(object $item, Request $request): void
+	{
+		// notifications, search index — not extra SQL in add()
+	}
+}
+```
+
+**Filters**
+- Unqualified model fields are aliased automatically (`$qualifyFilters`).
+- Client `filter` JSON is sanitized: raw SQL strings are dropped. Append app-built `[sql, [params]]` **after** `getFilter()`.
+- Sync windows: `Filter::since()` for storage filters; `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates SQL. Never concatenate `lastSync`.
+
+**Includes and joins**
+- `?include=` is allowlisted via `$allowedIncludes`. Unknown names are ignored.
+- Always-on identity/privacy joins stay in `joins()`. Optional joins go in `includeJoins($builder, array $includes)`.
+- Use `UserJoinFields::PUBLIC_AUTHOR` (not email/mobile) on public user joins.
+
+**Scopes and search**
+- Model `$scopes` run on `all()` / `getRows()` / `fetchWhere()` and on ResourceController `get()`. `Model::get($id)` does not apply them.
+- `$searchableFields` defaults to `[]` (off). Use an explicit list or `['*']` to infer; `email` / `phone` / secrets are never inferred.
+
+**Cache**
+- ModelPolicy keys are already `u{userId}` / `s{sessionId}`.
+- `$cacheSharedPayload = true` only when the payload is identical for every viewer. Declare every viewer flag so it is stripped and re-applied.
+- Writes invalidate `get:{id}`, `get:{id}:inc=*`, and slug/guid identities from the request item.
+
+**Services and gateways**
+- Extend `Proto\Services\Service` (`success`, `failure`, `restrictFields`, `generateUuid`).
+- `$serviceClass = PostService::class` — do not `new` the service in the constructor.
+- Memoize child gateways with `$this->gateway(Child::class)`.
+
+**Generators**
+- `createResource()` also writes Factory, Seeder, and Service when those files do not already exist.
 
 ## 18. Anti-Patterns (What NOT to Do)
 
@@ -1928,7 +1994,18 @@ public function all(Request $request): object
 | `$m = new Model(); $m->x = 1; $m->add();` | `$m = new Model((object)['x' => 1]); $m->add();` |
 | `$_FILES['upload']` in controller | `$request->file('upload')` |
 | `new UploadFile($_FILES['upload'])` | `$request->file('upload')` or `$request->validateFile('upload', [...])` |
-| Per-row related lookups in `all()` loop | Use `enrichWithUserData()` with batch `IN` queries |
+| Per-row related lookups in `all()` loop | Use `$enrichments` / `$currentUserFlags` or `BatchMap` |
+| Override `all()` just to alias `status` | `$qualifyFilters = true` (default) |
+| Override `all()` just to attach `liked` | `$currentUserFlags` / `$enrichments` |
+| Override `add()` just to notify / index | `afterAdd()` + `emit()` |
+| `"{$alias}.updated_at >= '{$lastSync}'"` | `Filter::since()` or `Filter::sinceLiteral()` |
+| Raw SQL in request `filter` JSON | Column tuples only; app-built SQL after `getFilter()` |
+| `router()->resource()` then a child path | `resourceStrict()` in api.php; static children outrank `:id` |
+| Fat `enrichRows()` for simple flags | `$enrichments` + optional `?include=` |
+| Always-on expensive joins | `includeJoins()` + `$allowedIncludes` |
+| Shared Redis cache of liked/bookmarked | User-scoped keys (default) or `$cacheSharedPayload` + flag strip |
+| Copy `success()`/`generateUuid()` in Common | Extend `Proto\Services\Service` |
+| `new ChildGateway()` per call | `$this->gateway(ChildGateway::class)` |
 | Manual `$placeholders = implode(...)` for IN | `['field', 'IN', $array]` shorthand |
 | `$this->service = new XService()` in constructor | `protected ?string $serviceClass = XService::class;` |
 | Manual audit fields before service call | Auto-injected — service receives data with audit fields |
@@ -1937,6 +2014,6 @@ public function all(Request $request): object
 
 - `common/Config/.env` is JSON (not dotenv). It must at least define `domain` (production/development) and optional `modules`/`services` arrays.
 - In `dev` env, `ControllerHelper` skips policy/caching proxies for easier development. Production enables them.
-- `Router::resource()` automatically adds `/:id?` to your URI; your controller can read `id` via `$req->params()->id` or `$req->getInt('id')`.
+- `Router::resource()` automatically adds `/:id?` to your URI; your controller can read `id` via `$req->params()->id` or `$req->getInt('id')`. Use `resourceStrict()` when a literal child path shares the prefix. In `api.php` (via ResourceHelper) static segments outrank `:id` regardless of order.
 
 Questions or gaps: confirm how your app autoloads `Modules\*` namespaces (Composer PSR-4 in the host app) and how you want policies/caching configured by default in non-dev.

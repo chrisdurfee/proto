@@ -16,9 +16,9 @@ use Proto\Utils\Format\JsonFormat;
 class Request
 {
 	/**
-	 * @var string $currentPath Current path of the request
+	 * @var string|null $currentPath Current path of the request
 	 */
-	protected static string $currentPath;
+	protected static ?string $currentPath = null;
 
 	/**
 	 * @var string|null $ipAddress IP address of the client
@@ -26,19 +26,19 @@ class Request
 	protected static ?string $ipAddress;
 
 	/**
-	 * @var string $currentUrl Full URL of the request
+	 * @var string|null $currentUrl Full URL of the request
 	 */
-	protected static string $currentUrl;
+	protected static ?string $currentUrl = null;
 
 	/**
-	 * @var string $httpMethod HTTP method of the request
+	 * @var string|null $httpMethod HTTP method of the request
 	 */
-	protected static string $httpMethod;
+	protected static ?string $httpMethod = null;
 
 	/**
-	 * @var string $userAgent User agent of the client
+	 * @var string|null $userAgent User agent of the client
 	 */
-	protected static string $userAgent;
+	protected static ?string $userAgent = null;
 
 	/**
 	 * @var array $headers Request headers
@@ -541,11 +541,11 @@ class Request
 	 */
 	public static function reset(): void
 	{
-		self::$currentPath = '';
+		self::$currentPath = null;
+		self::$currentUrl = null;
+		self::$httpMethod = null;
+		self::$userAgent = null;
 		self::$ipAddress = null;
-		self::$currentUrl = '';
-		self::$httpMethod = '';
-		self::$userAgent = '';
 		self::$headers = [];
 		self::$body = null;
 	}

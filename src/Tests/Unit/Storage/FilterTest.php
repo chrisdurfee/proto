@@ -248,4 +248,158 @@ final class FilterTest extends Test
 		$this->assertEquals('deleted_at IS NULL', $result[1]);
 		$this->assertEquals([5], $params);
 	}
+
+	/**
+	 * Qualify object filters that match model fields.
+	 *
+	 * @return void
+	 */
+	public function testQualifyObjectFilterPrefixesModelFields(): void
+	{
+		$filter = (object)[
+			'status' => 'active',
+			'partnerId' => 9,
+			'makeName' => 'Porsche'
+		];
+
+		$result = Filter::qualify($filter, 'ml', ['status', 'partnerId', 'title']);
+		$this->assertEquals('active', $result->{'ml.status'});
+		$this->assertEquals(9, $result->{'ml.partnerId'});
+		$this->assertEquals('Porsche', $result->makeName);
+	}
+
+	/**
+	 * Already-aliased and raw SQL entries stay untouched.
+	 *
+	 * @return void
+	 */
+	public function testQualifyLeavesAliasedAndUnknownColumns(): void
+	{
+		$filter = [
+			['ml.status', 'sold'],
+			['firstName', 'Ada'],
+			['(p.user_id = ? OR p.privacy = ?)', [1, 'public']]
+		];
+
+		$result = Filter::qualify($filter, 'ml', ['status', 'sellerId']);
+		$this->assertEquals('ml.status', $result[0][0]);
+		$this->assertEquals('firstName', $result[1][0]);
+		$this->assertEquals('(p.user_id = ? OR p.privacy = ?)', $result[2][0]);
+	}
+
+	/**
+	 * Associative array keys that match fields are prefixed.
+	 *
+	 * @return void
+	 */
+	public function testQualifyAssociativeArray(): void
+	{
+		$result = Filter::qualify([
+			'status' => 'active',
+			'sellerId' => ['IN', [1, 2]]
+		], 'ml', ['status', 'sellerId']);
+
+		$this->assertArrayHasKey('ml.status', $result);
+		$this->assertArrayHasKey('ml.sellerId', $result);
+		$this->assertEquals('active', $result['ml.status']);
+	}
+
+	/**
+	 * Empty field list is a no-op so unknown models are not rewritten.
+	 *
+	 * @return void
+	 */
+	public function testQualifyEmptyFieldsIsNoop(): void
+	{
+		$filter = ['status' => 'active'];
+		$this->assertSame($filter, Filter::qualify($filter, 'ml', []));
+	}
+
+	/**
+	 * Since-filter binds a validated timestamp.
+	 *
+	 * @return void
+	 */
+	public function testSinceBuildsParameterizedCondition(): void
+	{
+		$result = Filter::since('c', '2026-08-15 03:00:00', 'updatedAt');
+		$this->assertEquals('c.updated_at >= ?', $result[0]);
+		$this->assertEquals(['2026-08-15 03:00:00'], $result[1]);
+	}
+
+	/**
+	 * Multiple since columns are OR'd with the same bound value.
+	 *
+	 * @return void
+	 */
+	public function testSinceOrsMultipleColumns(): void
+	{
+		$result = Filter::since('c', '2026-08-15T03:00:00', ['updatedAt', 'createdAt']);
+		$this->assertEquals('(c.updated_at >= ? OR c.created_at >= ?)', $result[0]);
+		$this->assertEquals(['2026-08-15T03:00:00', '2026-08-15T03:00:00'], $result[1]);
+	}
+
+	/**
+	 * SQL fragments in lastSync must not become query text.
+	 *
+	 * @return void
+	 */
+	public function testSinceRejectsUnsafeTimestamp(): void
+	{
+		$result = Filter::since('c', "2026-01-01' OR 1=1 --", 'updatedAt');
+		$this->assertEquals('1 = 0', $result[0]);
+		$this->assertSame([], $result[1]);
+		$this->assertFalse(Filter::isSafeTimestamp("'; DROP TABLE users;--"));
+		$this->assertTrue(Filter::isSafeTimestamp('2026-08-15'));
+	}
+
+	/**
+	 * Request filters drop raw SQL strings and keep column tuples.
+	 *
+	 * @return void
+	 */
+	public function testSanitizeRequestFilterDropsRawSql(): void
+	{
+		$filter = (object)[
+			'status' => 'active',
+			0 => 'privacy = "public" OR 1=1',
+			1 => ['sellerId', 9],
+			2 => ['(p.user_id = ?)', [1]]
+		];
+
+		$result = Filter::sanitizeRequestFilter($filter);
+		$this->assertEquals('active', $result->status);
+		$values = array_values((array)$result);
+		$this->assertContains(['sellerId', 9], $values);
+		$this->assertNotContains('privacy = "public" OR 1=1', $values);
+	}
+
+	/**
+	 * Unsafe column keys are stripped from request filters.
+	 *
+	 * @return void
+	 */
+	public function testSanitizeRequestFilterRejectsUnsafeKeys(): void
+	{
+		$result = Filter::sanitizeRequestFilter([
+			'status; DROP TABLE x' => 'a',
+			'ml.status' => 'active'
+		]);
+
+		$this->assertArrayNotHasKey('status; DROP TABLE x', $result);
+		$this->assertEquals('active', $result['ml.status']);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function testSinceLiteralQuotesSafeTimestamp(): void
+	{
+		$sql = Filter::sinceLiteral('c', '2026-08-15 03:00:00', ['updatedAt', 'createdAt']);
+		$this->assertEquals(
+			"(c.updated_at >= '2026-08-15 03:00:00' OR c.created_at >= '2026-08-15 03:00:00')",
+			$sql
+		);
+		$this->assertNull(Filter::sinceLiteral('c', "2026-01-01' OR 1=1 --"));
+	}
 }

@@ -802,6 +802,70 @@ $result = static::$controllerType::methodName();
 
 This feature makes it faster to add new resources without rewriting response logic for every method.
 
+#### Resource Controller Conventions
+
+`ResourceController` can own filters, flags, lookups, and lifecycle without overriding `all()` / `get()` / `add()`.
+
+**Qualify filters.** Unqualified keys that match the model `$fields` are prefixed with the model alias so joins do not make `status` ambiguous. Default is on; set `$qualifyFilters = false` to opt out.
+
+```php
+protected bool $qualifyFilters = true;
+```
+
+**Declarative enrichments.** Declare batch flags, copied fields, and counts. They run on `get()` and `all()` before `enrichRows()`. Use `'include' => 'name'` to gate an enrichment behind `?include=`.
+
+```php
+protected array $currentUserFlags = [
+	'liked' => ['model' => PostLike::class, 'foreignKey' => 'postId']
+];
+
+protected array $enrichments = [
+	'commentCount' => [
+		'type' => 'count',
+		'model' => Comment::class,
+		'foreignKey' => 'postId',
+		'include' => 'stats'
+	]
+];
+```
+
+**Allowlisted includes.** `?include=author,stats` is ignored unless the name is in `$allowedIncludes`. Put always-on extras in `$defaultIncludes`. Models may implement `includeJoins($builder, array $includes)` for optional joins; keep identity/privacy joins in `joins()`.
+
+```php
+protected array $allowedIncludes = ['author', 'stats'];
+protected array $defaultIncludes = [];
+```
+
+**List scopes.** Model `$scopes` run on every `Model::all()` / `getRows()` / `fetchWhere()`, and ResourceController also applies them (plus controller `$scopes` and `Policy::scope()`) on `all()` and `get()`. Direct `Model::get($id)` does not apply scopes, so internal writes can still load a row. `VisibleScope` is owner OR (`privacy=public` AND `status=published`).
+
+**Lookups and PATCH.** `$lookupKeys` accepts uuid/slug after numeric `id`. `rulesForPartialUpdate()` strips `required` for omitted PATCH fields.
+
+```php
+protected array $lookupKeys = ['id', 'guid', 'slug'];
+```
+
+**Lifecycle.** Override `afterAdd` / `afterUpdate` / `afterDelete`. Successful mutations also emit `{model}.created|updated|deleted` via `events()->emit()`.
+
+**Shared cache.** ModelPolicy already namespaces keys by user or session. Set `$cacheSharedPayload = true` only when the row payload is identical for every viewer; viewer flags are stripped before cache and re-applied after a hit. Declare every viewer-specific field in `$currentUserFlags` or `$enrichments` type `flag`.
+
+**Routing.** Use `router()->resourceStrict('post', PostController::class)` instead of `resource()` when the same prefix has item ids and literal children. `ResourceHelper` defers activation in `api.php` and prefers static segments, so `post/feed` wins over `post/:id` in either order. Use `router()->includeApi(__DIR__ . '/Feed/api.php')` to compose sibling api files. Outside `api.php`, call `deferActivation()` / `flushDeferred()` or register the literal child first.
+
+**Services.** `Proto\Services\Service` provides `success()`, `failure()`, `restrictFields()`, and `generateUuid()`. Set `$serviceClass` on the controller instead of constructing a service in `__construct()`. Gateways memoize children with `$this->gateway(ChildGateway::class)`.
+
+**Filters.** Request `filter` JSON cannot carry raw SQL fragments. App-built parameterized entries (`[sql, [params]]`) still work when you append them after `getFilter()`. For sync windows use `Filter::since()` (bound params) or `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates the clause.
+
+```php
+$since = Filter::sinceLiteral('c', (string)$lastSync, ['updatedAt', 'createdAt']);
+if ($since !== null)
+{
+	$sql->orWhere($since);
+}
+```
+
+**Search.** Model `$searchableFields` defaults to `[]` (off). Set `['*']` to infer from `$fields` minus blacklist, audit, and secret columns (`email`, `phone`, `token`, `apiKey`, and similar). An explicit list is used as-is.
+
+**Other helpers.** `UserJoinFields` presets keep email/mobile off public user joins. `BatchMap` is the service-layer version of `BatchEnrichmentTrait`. `UnionFeed`, `PreferenceScorer`, and `SeenDemotion` merge and rank heterogeneous feeds in PHP. `Model::countGroupedBy()` issues `SELECT fk, COUNT(*) … GROUP BY fk`. Resource generation also scaffolds factory, seeder, and service files.
+
 ## Developer Tools
 
 Proto includes a developer application located in `public/developer` that offers:

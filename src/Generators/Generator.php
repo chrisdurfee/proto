@@ -59,6 +59,12 @@ class Generator
 				return new \Proto\Generators\FileTypes\GatewayGenerator();
 			case 'module':
 				return new \Proto\Generators\FileTypes\ModuleGenerator();
+			case 'factory':
+				return new \Proto\Generators\FileTypes\FactoryGenerator();
+			case 'seeder':
+				return new \Proto\Generators\FileTypes\SeederGenerator();
+			case 'service':
+				return new \Proto\Generators\FileTypes\ServiceGenerator();
 			default:
 				return null;
 		}
@@ -234,6 +240,11 @@ class Generator
 
 		$settings->model->moduleName = $moduleName;
 		$settings->model->featurePath = $featurePath;
+		if (empty($settings->model->fields))
+		{
+			$settings->model->fields = $this->inferModelFields($settings);
+		}
+
 		$this->setupClassNamespace($settings->model, "Models", $namespace);
 		$result = $this->generateFileResource('model', $settings->model);
 		if (!$result)
@@ -263,6 +274,10 @@ class Generator
 			return false;
 		}
 
+		$this->generateCompanion($settings, 'factory', 'Models', $namespace, $moduleName, $featurePath);
+		$this->generateCompanion($settings, 'seeder', 'Seeders', $namespace, $moduleName, $featurePath);
+		$this->generateCompanion($settings, 'service', 'Services', $namespace, $moduleName, $featurePath);
+
 		// Setup and generate the policy file if policy settings exist.
 		// $policySettings = $settings->policy ?? null;
 		// if (!empty($policySettings))
@@ -290,5 +305,64 @@ class Generator
 		$storage->featurePath = $featurePath;
 		$this->setupClassNamespace($storage, "Storage", $namespace);
 		return $this->generateFileResource('storage', $storage);
+	}
+
+	/**
+	 * Infer model $fields from table or top-level settings.
+	 *
+	 * @param object $settings
+	 * @return array<int, string>
+	 */
+	protected function inferModelFields(object $settings): array
+	{
+		if (!empty($settings->model->fields) && is_array($settings->model->fields))
+		{
+			return $settings->model->fields;
+		}
+
+		if (!empty($settings->fields) && is_array($settings->fields))
+		{
+			return $settings->fields;
+		}
+
+		$table = $settings->table ?? null;
+		if (is_object($table) && !empty($table->fields) && is_array($table->fields))
+		{
+			return $table->fields;
+		}
+
+		return [];
+	}
+
+	/**
+	 * Generate factory / seeder / service companions. Existing files are skipped.
+	 *
+	 * @param object $settings
+	 * @param string $type
+	 * @param string $namespaceDir
+	 * @param string|null $namespace
+	 * @param string|null $moduleName
+	 * @param string|null $featurePath
+	 * @return void
+	 */
+	protected function generateCompanion(
+		object $settings,
+		string $type,
+		string $namespaceDir,
+		?string $namespace,
+		?string $moduleName,
+		?string $featurePath
+	): void
+	{
+		$companion = $this->getObject($settings, $type);
+		$companion->moduleName = $moduleName;
+		$companion->featurePath = $featurePath;
+		if (empty($companion->fields) && !empty($settings->model->fields))
+		{
+			$companion->fields = $settings->model->fields;
+		}
+
+		$this->setupClassNamespace($companion, $namespaceDir, $namespace);
+		$this->generateFileResource($type, $companion);
 	}
 }

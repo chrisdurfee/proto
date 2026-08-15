@@ -169,6 +169,11 @@ abstract class Policy implements CachePolicyInterface
 	 */
 	protected function getScopeToken(): string
 	{
+		if (method_exists($this->controller, 'usesSharedCache') && $this->controller->usesSharedCache())
+		{
+			return 'shared';
+		}
+
 		$userId = session()->user->id ?? null;
 		return $userId !== null ? 'u' . $userId : 's' . Session::getId();
 	}

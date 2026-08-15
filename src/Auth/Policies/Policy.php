@@ -437,4 +437,20 @@ abstract class Policy
 		$value = (int) $value;
 		return $value > 0 ? $value : null;
 	}
+
+	/**
+	 * Append authorization list-gates to a filter.
+	 *
+	 * Override in resource policies for audience / network / owner
+	 * restrictions that must run on every all() query. The default
+	 * is a no-op so existing policies stay unchanged.
+	 *
+	 * @param mixed $filter
+	 * @param Request $request
+	 * @return mixed
+	 */
+	public function scope(mixed $filter, Request $request): mixed
+	{
+		return $filter;
+	}
 }
