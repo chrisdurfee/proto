@@ -22,6 +22,15 @@ final class ResourceStrictTest extends Test
 	/**
 	 * @return void
 	 */
+	protected function setUp(): void
+	{
+		require_once dirname((new \ReflectionClass(Test::class))->getFileName()) . '/Helpers/TestGlobals.php';
+		parent::setUp();
+	}
+
+	/**
+	 * @return void
+	 */
 	protected function tearDown(): void
 	{
 		HttpRequest::reset();
@@ -192,24 +201,5 @@ final class ResourceStrictTest extends Test
 	{
 		$ref = new \ReflectionProperty(Router::class, 'deferDepth');
 		return (int)$ref->getValue($router);
-	}
-}
-
-namespace
-{
-	if (!function_exists('router'))
-	{
-		/**
-		 * @return \Proto\Http\Router\Router
-		 */
-		function router(): \Proto\Http\Router\Router
-		{
-			if (!isset($GLOBALS['router']) || !$GLOBALS['router'] instanceof \Proto\Http\Router\Router)
-			{
-				throw new \RuntimeException('router() is not bound for this test.');
-			}
-
-			return $GLOBALS['router'];
-		}
 	}
 }

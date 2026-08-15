@@ -23,6 +23,15 @@ final class ResourceControllerIncludesTest extends Test
 	/**
 	 * @return void
 	 */
+	protected function setUp(): void
+	{
+		require_once dirname((new \ReflectionClass(Test::class))->getFileName()) . '/Helpers/TestGlobals.php';
+		parent::setUp();
+	}
+
+	/**
+	 * @return void
+	 */
 	protected function tearDown(): void
 	{
 		unset($GLOBALS['protoTestActor']);
@@ -346,19 +355,5 @@ final class ScopedGetCaptureModel extends Model
 	{
 		self::$lastFilter = $filter;
 		return (object)['rows' => self::$rowsToReturn];
-	}
-}
-
-namespace
-{
-	if (!function_exists('session'))
-	{
-		/**
-		 * @return object
-		 */
-		function session(): object
-		{
-			return (object)['user' => $GLOBALS['protoTestActor'] ?? null];
-		}
 	}
 }

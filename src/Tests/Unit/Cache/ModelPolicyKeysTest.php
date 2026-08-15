@@ -25,6 +25,15 @@ final class ModelPolicyKeysTest extends Test
 	/**
 	 * @return void
 	 */
+	protected function setUp(): void
+	{
+		require_once dirname((new \ReflectionClass(Test::class))->getFileName()) . '/Helpers/TestGlobals.php';
+		parent::setUp();
+	}
+
+	/**
+	 * @return void
+	 */
 	protected function tearDown(): void
 	{
 		unset($GLOBALS['protoTestActor']);
@@ -295,18 +304,4 @@ final class SharedCacheVisibleModel extends Model
 	 * @var array<int, class-string>
 	 */
 	protected static array $scopes = [VisibleScope::class];
-}
-
-namespace
-{
-	if (!function_exists('session'))
-	{
-		/**
-		 * @return object
-		 */
-		function session(): object
-		{
-			return (object)['user' => $GLOBALS['protoTestActor'] ?? null];
-		}
-	}
 }
