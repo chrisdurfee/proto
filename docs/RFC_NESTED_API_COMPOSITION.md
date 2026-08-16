@@ -2,7 +2,7 @@
 
 **Status**: Deferred (design only)  
 **Proto target**: post-1.3.51  
-**Related**: Rally anti-patterns (`one api.php per URL`; `resource()` `:id?` swallows literals)
+**Related**: anti-patterns (`one api.php per URL`; `resource()` `:id?` swallows literals)
 
 ## Problem
 
@@ -10,7 +10,7 @@
    `ResourceHelper` / `ApiRouter` load **one** `api.php` per request (the file the URL path resolves to). Sibling feature folders under the same parent are never auto-included. Apps are forced to register catch-all or parent-level routes for cross-feature subpaths, which is easy to get wrong and hard to discover.
 
 2. **`Router::resource()` optional `:id?`**  
-   `resource('marketplace', …)` registers `marketplace/:id?`, so literal sub-routes registered **after** the resource (e.g. `marketplace/recommended`) are swallowed by the `:id` segment. The documented workaround is “register sub-routes before `->resource()`”, but that is a footgun, not a safeguard.
+   `resource('article', …)` registers `article/:id?`, so literal sub-routes registered **after** the resource (e.g. `article/featured`) are swallowed by the `:id` segment. The documented workaround is “register sub-routes before `->resource()`”, but that is a footgun, not a safeguard.
 
 ## Goals
 
@@ -47,10 +47,10 @@ Alternatively, document and ship `resourceStrict()` that never uses `:id?`, and 
 ### Phase B — Explicit `includeApi()` composition
 
 ```php
-// modules/Marketplace/Api/api.php
-router()->includeApi(__DIR__ . '/../Browse/Api/api.php');
-router()->get('marketplace/recommended', [...]); // before resource
-router()->resource('marketplace', MarketplaceController::class);
+// modules/Article/Api/api.php
+router()->includeApi(__DIR__ . '/../Featured/Api/api.php');
+router()->get('article/featured', [...]); // before resource
+router()->resource('article', ArticleController::class);
 ```
 
 `includeApi()` would `require` the child file in the same router context (shared `$router` / middleware stack). Child files remain independently resolvable by URL when hit directly.
@@ -79,4 +79,4 @@ Ship this RFC under `docs/` so the next slice can implement Phase A (`resourceSt
 - [ ] Literal sub-route registered after `resource()` either works or fails loudly in development.
 - [ ] Parent can compose child route files without changing `ResourceHelper` URL resolution.
 - [ ] Changelog documents migration from `resource()` optional-id to strict form.
-- [ ] Rally anti-pattern docs updated to point at the new helper.
+- [ ] Anti-pattern docs updated to point at the new helper.

@@ -30,9 +30,9 @@ Always use doc blocks for classes, properties, members, functions, types, and me
 **Opening braces ALWAYS on new line** (methods, classes, if/else, loops):
 ```php
 // ✅ CORRECT
-public function getUserCars(int $userId): array
+public function getUserArticles(int $userId): array
 {
-    return CarProfile::fetchWhere(['userId' => $userId]);
+    return Article::fetchWhere(['userId' => $userId]);
 }
 
 if ($condition)
@@ -41,8 +41,8 @@ if ($condition)
 }
 
 // ❌ WRONG
-public function getUserCars(int $userId): array {
-    return CarProfile::fetchWhere(['userId' => $userId]);
+public function getUserArticles(int $userId): array {
+    return Article::fetchWhere(['userId' => $userId]);
 }
 ```
 
@@ -65,14 +65,14 @@ Use tabs for indentation, 4 spaces for alignment.
 **NO blank lines** between variable assignment and immediate condition check:
 ```php
 // ✅ CORRECT
-$carProfile = CarProfile::get($carProfileId);
-if (!$carProfile)
+$article = Article::get($articleId);
+if (!$article)
 {
     return false;
 }
 
 // ❌ WRONG
-$carProfile = CarProfile::get($carProfileId);
+$article = Article::get($articleId);
 
 if (!$carProfile)
 {
@@ -145,9 +145,9 @@ use Modules\User\Controllers\UserController;
 // Resource routes (path: /user/:id?)
 router()->resource('user', UserController::class);
 
-// resourceStrict + ResourceHelper: post/feed wins over post/:id
-router()->resourceStrict('post', PostController::class);
-router()->get('post/feed', [PostController::class, 'feed']);
+// resourceStrict + ResourceHelper: article/featured wins over article/:id
+router()->resourceStrict('article', ArticleController::class);
+router()->get('article/featured', [ArticleController::class, 'featured']);
 
 // Compose a sibling api.php without relying on ResourceHelper
 router()->includeApi(__DIR__ . '/Feed/api.php');
@@ -160,9 +160,9 @@ router()->get('user/stats', [UserController::class, 'stats']);
 
 // Fluent chaining
 router()
-    ->get('garage/portfolio', [GarageController::class, 'portfolio'])
-    ->post('garage/reorder', [GarageController::class, 'reorder'])
-    ->resource('garage', GarageController::class); // Must be last
+    ->get('article/featured', [ArticleController::class, 'featured'])
+    ->post('article/reorder', [ArticleController::class, 'reorder'])
+    ->resource('article', ArticleController::class); // Must be last
 
 // Groups
 router()->group('auth/crm', function(Router $router)
@@ -173,7 +173,7 @@ router()->group('auth/crm', function(Router $router)
 ```
 
 **CRITICAL**:
-- Module routes MUST start with module name: `'garage/...'` NOT `'user/:id/garage/...'`
+- Module routes MUST start with module name: `'article/...'` NOT `'user/:id/article/...'`
 - Controller methods: ALWAYS wrap in array `[Controller::class, 'method']`
 - Use fluent interface for chaining
 - Resource resolution (`src/Api/ResourceHelper.php`): URL `/user/account/details` maps to file `modules/User/Api/Account/Details/api.php` (PascalCase folders, numeric segments stripped, dots removed)
@@ -666,7 +666,7 @@ The router translates these into JSON with status codes.
 
 **CRITICAL**:
 - Controllers NEVER access storage classes directly
-- Always use model methods: `$car = CarProfile::get($id)` NOT `$storage->get($id)`
+- Always use model methods: `$article = Article::get($id)` NOT `$storage->get($id)`
 - Use validation: `$this->validateRules($data, [...])` or `$request->validate([...])`
 
 ## 7. Models
@@ -1167,7 +1167,7 @@ Use this trait in services that need to filter records by geographic proximity. 
 ```php
 use Proto\Services\Traits\LocationFilterTrait;
 
-class VehicleService extends Service
+class StoreService extends Service
 {
     use LocationFilterTrait;
 
@@ -1178,7 +1178,7 @@ class VehicleService extends Service
             'latitude' => $lat,
             'longitude' => $lon,
             'radius' => 50,          // miles (default)
-            'alias' => 'v',          // table alias
+            'alias' => 's',          // table alias
             'column' => 'position',  // POINT column (default)
         ]);
     }
@@ -1198,7 +1198,7 @@ class VehicleService extends Service
             'radius' => $userLocation->radiusMiles ?? 50,
             'table' => 'user_location_preferences',
             'joinColumn' => 'user_id',
-            'parentColumn' => 'v.user_id',
+            'parentColumn' => 's.user_id',
         ]);
     }
 }
@@ -1796,19 +1796,19 @@ Both methods set defaults first (safe for unauthenticated users), then do a sing
 For cases where you need more control, add a static method to each related model that accepts an array of parent IDs and returns the matching related IDs in one query:
 
 ```php
-// In UserFavoriteVehicle model
-public static function getIdsForUser(int $userId, array $vehicleIds): array
+// In UserFavoriteArticle model
+public static function getIdsForUser(int $userId, array $articleIds): array
 {
-    if (empty($vehicleIds))
+    if (empty($articleIds))
     {
         return [];
     }
 
     $results = static::fetchWhere([
         ['userId', $userId],
-        ['vehicleId', 'IN', $vehicleIds]
+        ['articleId', 'IN', $articleIds]
     ]);
-    return array_column($results, 'vehicleId');
+    return array_column($results, 'articleId');
 }
 
 // In Bookmark model
@@ -1833,8 +1833,8 @@ public static function getIdsForUser(int $userId, string $itemType, array $itemI
 Add a static `enrichWithUserData` method that sets default values first (covering the unauthenticated case), then overwrites with real values from the batch lookups:
 
 ```php
-// In Vehicle model
-use Modules\User\Models\UserFavoriteVehicle;
+// In Article model
+use Modules\User\Models\UserFavoriteArticle;
 use Modules\Content\Models\Bookmark;
 
 public static function enrichWithUserData(array $rows, ?int $userId): void
@@ -1851,8 +1851,8 @@ public static function enrichWithUserData(array $rows, ?int $userId): void
     }
 
     $ids = array_map(fn($row) => (int)$row->id, $rows);
-    $favIds = array_flip(UserFavoriteVehicle::getIdsForUser($userId, $ids));
-    $bookmarkIds = array_flip(Bookmark::getIdsForUser($userId, 'vehicle', $ids));
+    $favIds = array_flip(UserFavoriteArticle::getIdsForUser($userId, $ids));
+    $bookmarkIds = array_flip(Bookmark::getIdsForUser($userId, 'article', $ids));
 
     foreach ($rows as $row)
     {
@@ -1876,7 +1876,7 @@ public function get(Request $request): object
         return $result;
     }
 
-    Vehicle::enrichWithUserData([$row], session()->user->id);
+    Article::enrichWithUserData([$row], session()->user->id);
     $result->row = $row;
     return $result;
 }
@@ -1890,7 +1890,7 @@ public function all(Request $request): object
         return $result;
     }
 
-    Vehicle::enrichWithUserData($rows, session()->user->id);
+    Article::enrichWithUserData($rows, session()->user->id);
     $result->rows = $rows;
     return $result;
 }
@@ -1940,10 +1940,10 @@ class PostController extends ResourceController
 ```
 
 **Filters**
-- Unqualified model fields are aliased automatically (`$qualifyFilters`). If a filter service reads named, unprefixed properties off the raw client filter (`$clientFilter->isFeatured`) before building its own SQL, either set `$qualifyFilters = false` and qualify only the final fragments via `Filter::aliased()`, or read from `rawRequestFilter()` instead — see `docs/RALLY_MIGRATION.md`.
+- Unqualified model fields are aliased automatically (`$qualifyFilters`). If a filter service reads named, unprefixed properties off the raw client filter (`$clientFilter->isPinned`) before building its own SQL, either set `$qualifyFilters = false` and qualify only the final fragments via `Filter::aliased()`, or read from `rawRequestFilter()` instead of the auto-qualified filter.
 - Client `filter` JSON is sanitized: raw SQL strings are dropped. Append app-built `[sql, [params]]` **after** `getFilter()`.
-- `protected array $passthroughFilterKeys = [];` lets specific filter keys bypass the model-fields allowlist (still parameterized/IN-capped) instead of hand-rolling a `VIRTUAL_FILTER_KEYS` restore pattern.
-- Sync windows: `Filter::since()` for storage filters; `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates SQL. Never concatenate `lastSync`.
+- `protected array $passthroughFilterKeys = [];` lets specific filter keys bypass the model-fields allowlist (still parameterized/IN-capped) instead of hand-restoring non-column keys after sanitize.
+- Sync windows: `Filter::since()` for storage filters; `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates SQL. Never concatenate a client timestamp into SQL.
 
 **Includes and joins**
 - `?include=` is allowlisted via `$allowedIncludes`. Unknown names are ignored.
@@ -1953,7 +1953,7 @@ class PostController extends ResourceController
 **Scopes and search**
 - Model `$scopes` run on `all()` / `getRows()` / `fetchWhere()` and on ResourceController `get()`. `Model::get($id)` does not apply them.
 - `$searchableFields` defaults to `[]` (off). Use an explicit list or `['*']` to infer; `email` / `phone` / secrets and suffix names (`emailAddress`, `accessToken`) are never inferred.
-- `VisibleScope` (owner OR public+published) is a preset of `Proto\Models\Scopes\OwnershipVisibilityScope`, which takes any list of AND'd `[column, operator, value]` visibility conditions — use it instead of hand-rolling `owner OR (enabled=1 AND moderationStatus='approved' AND hiddenAt IS NULL)`-shaped SQL.
+- `VisibleScope` (owner OR public+published) is a preset of `Proto\Models\Scopes\OwnershipVisibilityScope`, which takes any list of AND'd `[column, operator, value]` visibility conditions — use it instead of hand-rolling `owner OR (status='active' AND archivedAt IS NULL)`-shaped SQL.
 
 **Cache**
 - ModelPolicy keys are already `u{userId}` / `s{sessionId}`.
@@ -2001,7 +2001,7 @@ class PostController extends ResourceController
 | Override `all()` just to alias `status` | `$qualifyFilters = true` (default) |
 | Override `all()` just to attach `liked` | `$currentUserFlags` / `$enrichments` |
 | Override `add()` just to notify / index | `afterAdd()` + `emit()` |
-| `"{$alias}.updated_at >= '{$lastSync}'"` | `Filter::since()` or `Filter::sinceLiteral()` |
+| `"{$alias}.updated_at >= '{$updatedAfter}'"` | `Filter::since()` or `Filter::sinceLiteral()` |
 | Raw SQL in request `filter` JSON | Column tuples only; app-built SQL after `getFilter()` |
 | `router()->resource()` then a child path | `resourceStrict()` in api.php; static children outrank `:id` |
 | Fat `enrichRows()` for simple flags | `$enrichments` + optional `?include=` |

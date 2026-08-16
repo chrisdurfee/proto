@@ -235,25 +235,25 @@ class BookmarkService extends Service
 ```php
 <?php declare(strict_types=1);
 
-namespace Modules\Vehicle\Services;
+namespace Modules\Article\Services;
 
 use Proto\Services\Service;
 use Proto\Services\Traits\VoteableTrait;
-use Modules\Vehicle\Models\VehicleProblem;
-use Modules\Vehicle\Models\VehicleProblemVote;
+use Modules\Article\Models\Comment;
+use Modules\Article\Models\CommentVote;
 
-class VehicleProblemService extends Service
+class CommentService extends Service
 {
     use VoteableTrait;
 
-    public function voteProblem(int $userId, int $problemId, string $direction): object
+    public function voteComment(int $userId, int $commentId, string $direction): object
     {
         return $this->vote(
-            VehicleProblemVote::class,
-            VehicleProblem::class,
+            CommentVote::class,
+            Comment::class,
             $userId,
-            $problemId,
-            'problemId',
+            $commentId,
+            'commentId',
             $direction,
             'score'
         );
@@ -281,7 +281,7 @@ class VehicleProblemService extends Service
 
 **File**: `src/Services/Traits/AudienceTargetingTrait.php` *(new)*
 
-**Problem**: EventAudienceService and GroupAudienceService were structurally identical ~100-line classes differing only in FK names and model classes.
+**Problem**: CampaignAudienceService and NewsletterAudienceService were structurally identical ~100-line classes differing only in FK names and model classes.
 
 **Solution**: Trait with `getTargeting()` and `saveTargets()` methods. Services define their dimension config via `getTargetingConfig()`.
 
@@ -290,36 +290,36 @@ class VehicleProblemService extends Service
 ```php
 <?php declare(strict_types=1);
 
-namespace Modules\Event\Services;
+namespace Modules\Campaign\Services;
 
 use Proto\Services\Service;
 use Proto\Services\Traits\AudienceTargetingTrait;
-use Modules\Event\Models\EventBrandTarget;
-use Modules\Event\Models\EventVehicleTypeTarget;
-use Modules\Event\Models\EventInterestTarget;
+use Modules\Campaign\Models\CampaignTagTarget;
+use Modules\Campaign\Models\CampaignCategoryTarget;
+use Modules\Campaign\Models\CampaignInterestTarget;
 
-class EventAudienceService extends Service
+class CampaignAudienceService extends Service
 {
     use AudienceTargetingTrait;
 
     protected function getTargetingConfig(): array
     {
         return [
-            'brands' => ['model' => EventBrandTarget::class, 'fk' => 'eventId'],
-            'vehicleTypes' => ['model' => EventVehicleTypeTarget::class, 'fk' => 'eventId'],
-            'interests' => ['model' => EventInterestTarget::class, 'fk' => 'eventId', 'valueField' => 'interestId'],
+            'tags' => ['model' => CampaignTagTarget::class, 'fk' => 'campaignId'],
+            'categories' => ['model' => CampaignCategoryTarget::class, 'fk' => 'campaignId'],
+            'interests' => ['model' => CampaignInterestTarget::class, 'fk' => 'campaignId', 'valueField' => 'interestId'],
         ];
     }
 }
 
 // Usage:
-$service = new EventAudienceService();
-$targeting = $service->getTargeting($eventId);
-// Returns: {brands: [...], vehicleTypes: [...], interests: [...]}
+$service = new CampaignAudienceService();
+$targeting = $service->getTargeting($campaignId);
+// Returns: {tags: [...], categories: [...], interests: [...]}
 
-$service->saveTargets($eventId, (object)[
-    'brands' => [1, 2, 3],
-    'vehicleTypes' => [4, 5],
+$service->saveTargets($campaignId, (object)[
+    'tags' => [1, 2, 3],
+    'categories' => [4, 5],
     'interests' => [10, 11, 12]
 ]);
 ```
@@ -385,21 +385,21 @@ protected function getChannel(Request $request): string|array
 **Problem**: 5 different `$type` naming conventions across 60 policies. Developers had to remember to set `$type` and often used inconsistent formats.
 
 **Solution**:
-1. **Auto-inference**: If `$type` is not explicitly set, it's auto-inferred from the class name (`EventPolicy` → `'event'`, `GroupPostPolicy` → `'groupPost'`).
+1. **Auto-inference**: If `$type` is not explicitly set, it's auto-inferred from the class name (`ArticlePolicy` → `'article'`, `OrderItemPolicy` → `'orderItem'`).
 2. **CamelCase validation**: In dev mode, warns if `$type` contains non-camelCase characters (`-`, `.`, `_`).
 
 ### Behavior
 
 ```php
 // Auto-inferred — no need to set $type
-class EventPolicy extends Policy
+class ArticlePolicy extends Policy
 {
-    // $type is automatically 'event'
+    // $type is automatically 'article'
 }
 
-class GroupPostPolicy extends Policy
+class OrderItemPolicy extends Policy
 {
-    // $type is automatically 'groupPost'
+    // $type is automatically 'orderItem'
 }
 
 // Explicit still works and takes priority
@@ -411,7 +411,7 @@ class UserPolicy extends Policy
 // Dev-mode warning for non-standard types
 class BadPolicy extends Policy
 {
-    protected ?string $type = 'group-post'; // ⚠️ Warning: use camelCase
+    protected ?string $type = 'order-item'; // ⚠️ Warning: use camelCase
 }
 ```
 

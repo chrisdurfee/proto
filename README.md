@@ -812,7 +812,7 @@ This feature makes it faster to add new resources without rewriting response log
 protected bool $qualifyFilters = true;
 ```
 
-If a controller's own filter service reads **named, unprefixed** properties off the raw client filter (e.g. `$clientFilter->isFeatured`) before building its own SQL, `$qualifyFilters` auto-prefixing runs on the wrong shape. Either keep `$qualifyFilters = false` and qualify only the final built fragments via `Filter::aliased()`, or read from `rawRequestFilter()` (below) instead of the auto-qualified filter. See `docs/RALLY_MIGRATION.md` for a before/after.
+If a controller's own filter service reads **named, unprefixed** properties off the raw client filter (e.g. `$clientFilter->isPinned`) before building its own SQL, `$qualifyFilters` auto-prefixing runs on the wrong shape. Either keep `$qualifyFilters = false` and qualify only the final built fragments via `Filter::aliased()`, or read from `rawRequestFilter()` (below) instead of the auto-qualified filter.
 
 **Declarative enrichments.** Declare batch flags, copied fields, and counts. They run on `get()` and `all()` before `enrichRows()`. Use `'include' => 'name'` to gate an enrichment behind `?include=`.
 
@@ -838,7 +838,7 @@ protected array $allowedIncludes = ['author', 'stats'];
 protected array $defaultIncludes = [];
 ```
 
-**List scopes.** Model `$scopes` run on every `Model::all()` / `getRows()` / `fetchWhere()`, and ResourceController also applies them (plus controller `$scopes` and `Policy::scope()`) on `all()` and `get()`. Direct `Model::get($id)` does not apply scopes, so internal writes can still load a row. `VisibleScope` is owner OR (`privacy=public` AND `status=published`) — it is a thin preset of `Proto\Models\Scopes\OwnershipVisibilityScope`, which takes an arbitrary list of AND'd `[column, operator, value]` visibility conditions (e.g. `enabled=1 AND moderationStatus='approved' AND hiddenAt IS NULL`) for controllers whose visibility rule isn't the public/published shape. See `docs/RALLY_MIGRATION.md`.
+**List scopes.** Model `$scopes` run on every `Model::all()` / `getRows()` / `fetchWhere()`, and ResourceController also applies them (plus controller `$scopes` and `Policy::scope()`) on `all()` and `get()`. Direct `Model::get($id)` does not apply scopes, so internal writes can still load a row. `VisibleScope` is owner OR (`privacy=public` AND `status=published`) — it is a thin preset of `Proto\Models\Scopes\OwnershipVisibilityScope`, which takes an arbitrary list of AND'd `[column, operator, value]` visibility conditions (e.g. `status='active' AND archivedAt IS NULL`) for controllers whose visibility rule isn't the public/published shape.
 
 **Lookups and PATCH.** `$lookupKeys` accepts uuid/slug after numeric `id`. `rulesForPartialUpdate()` strips `required` for omitted PATCH fields.
 
@@ -850,14 +850,14 @@ protected array $lookupKeys = ['id', 'guid', 'slug'];
 
 **Shared cache.** ModelPolicy namespaces keys by user or session. `$cacheSharedPayload = true` shares **lists only** (`all()` keys include `applyListScopes()`); `get()` stays user/session scoped. Viewer flags are stripped before a shared list is stored and re-applied after a hit. Declare every viewer-specific field in `$currentUserFlags` or `$enrichments` type `flag`.
 
-**Routing.** Use `router()->resourceStrict('post', PostController::class)` instead of `resource()` when the same prefix has item ids and literal children. `ResourceHelper` defers activation in `api.php` and prefers static segments, so `post/feed` wins over `post/:id` in either order. Use `router()->includeApi(__DIR__ . '/Feed/api.php')` to compose sibling api files. Outside `api.php`, call `deferActivation()` / `flushDeferred()` or register the literal child first.
+**Routing.** Use `router()->resourceStrict('article', ArticleController::class)` instead of `resource()` when the same prefix has item ids and literal children. `ResourceHelper` defers activation in `api.php` and prefers static segments, so `article/featured` wins over `article/:id` in either order. Use `router()->includeApi(__DIR__ . '/Featured/api.php')` to compose sibling api files. Outside `api.php`, call `deferActivation()` / `flushDeferred()` or register the literal child first.
 
 **Services.** `Proto\Services\Service` provides `success()`, `failure()`, `restrictFields()`, and `generateUuid()`. Set `$serviceClass` on the controller instead of constructing a service in `__construct()`. Gateways memoize children with `$this->gateway(ChildGateway::class)`. Classes that can't extend `Proto\Services\Service` (e.g. a hand-copied base with its own `success()` that would collide) can `use Proto\Services\Traits\ServiceResultFactory;` for `ok()` / `fail()` helpers that build the same `ServiceResult` without a base-class change.
 
-**Filters.** Request `filter` JSON cannot carry raw SQL fragments. Columns are allowlisted to the model's filterable fields ( `$fields` minus secrets, or `$filterableFields`). Request `IN` / `NOT IN` lists are capped at 100. App-built parameterized entries (`[sql, [params]]`) still work when you append them after `getFilter()`. For sync windows use `Filter::since()` (bound params) or `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates the clause. Keys in `protected array $passthroughFilterKeys = [];` bypass the model-fields allowlist (still parameterized, still IN-capped) for controllers that need a client filter key that isn't a real column. `rawRequestFilter()` returns the raw decoded client filter before allowlisting for controllers that need to read named properties off it directly — see `docs/RALLY_MIGRATION.md`.
+**Filters.** Request `filter` JSON cannot carry raw SQL fragments. Columns are allowlisted to the model's filterable fields ( `$fields` minus secrets, or `$filterableFields`). Request `IN` / `NOT IN` lists are capped at 100. App-built parameterized entries (`[sql, [params]]`) still work when you append them after `getFilter()`. For sync windows use `Filter::since()` (bound params) or `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates the clause. Keys in `protected array $passthroughFilterKeys = [];` bypass the model-fields allowlist (still parameterized, still IN-capped) for controllers that need a client filter key that isn't a real column. `rawRequestFilter()` returns the raw decoded client filter before allowlisting for controllers that need to read named properties off it directly.
 
 ```php
-$since = Filter::sinceLiteral('c', (string)$lastSync, ['updatedAt', 'createdAt']);
+$since = Filter::sinceLiteral('a', (string)$updatedAfter, ['updatedAt', 'createdAt']);
 if ($since !== null)
 {
 	$sql->orWhere($since);
