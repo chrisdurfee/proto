@@ -11,6 +11,7 @@ use Proto\Utils\Strings;
 use Proto\Models\Joins\JoinBuilder;
 use Proto\Models\Joins\ModelJoin;
 use Proto\Database\QueryBuilder\QueryHandler;
+use Proto\Storage\Filter;
 
 /**
  * Class Model
@@ -531,6 +532,34 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public function getAlias(): ?string
 	{
 		return static::alias();
+	}
+
+	/**
+	 * Prefix unqualified model-field filters with the table alias.
+	 *
+	 * `fetchWhere(['id' => $id])` and `getBy(['id' => $id])` stay
+	 * join-safe (`v.id`) so a User / make / model join cannot make
+	 * `WHERE id = ?` ambiguous. Keys that already contain a dot are
+	 * left unchanged.
+	 *
+	 * @param mixed $filter
+	 * @return mixed
+	 */
+	public static function qualifyFilter(mixed $filter): mixed
+	{
+		$alias = static::alias();
+		if ($alias === null || $alias === '' || $filter === null)
+		{
+			return $filter;
+		}
+
+		$fields = static::fields();
+		if ($fields === [])
+		{
+			return $filter;
+		}
+
+		return Filter::qualify($filter, $alias, $fields);
 	}
 
 	/**
@@ -1310,6 +1339,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function fetchWhereWithoutJoins(array $filter): array
 	{
+		$filter = static::qualifyFilter($filter);
 		static::$skipJoins = true;
 		$instance = new static();
 		static::$skipJoins = false;
@@ -1361,6 +1391,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function count(mixed $filter = null, ?array $modifiers = null): object|false
 	{
+		$filter = static::qualifyFilter($filter);
 		static::$skipJoins = true;
 		$instance = new static();
 		static::$skipJoins = false;
@@ -1390,6 +1421,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	 */
 	public static function getBy(array $filter): ?object
 	{
+		$filter = static::qualifyFilter($filter);
 		$instance = new static();
 		$row = $instance->storage->getBy($filter);
 		if ($row)
@@ -1644,6 +1676,8 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		{
 			$filter = static::applyScopes($filter, static::scopeActor());
 		}
+
+		$filter = static::qualifyFilter($filter);
 
 		$includes = $modifiers['include'] ?? [];
 		if (is_array($includes) && $includes !== [])

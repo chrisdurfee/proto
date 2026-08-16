@@ -5,6 +5,13 @@ All notable changes to Proto Framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.5] - 2026-08-16
+
+### Fixed
+- `Filter::aliased()` / `Filter::condition()` skip columns that already contain a dot so `$qualifyFilters` plus a second alias pass cannot produce `ga.ga.status` / `ps.ps.partner_id`.
+- `Model::qualifyFilter()` prefixes unqualified model fields (`id`, `status`, …) on `getRows()` / `fetchWhere()` / `getBy()` / `count()` / `fetchWhereWithoutJoins()` so `WHERE id = ?` is not ambiguous when the model joins `users` (or any table with `id`).
+- `Storage::count()` never returns null. A failed or empty `first()` becomes `{count: 0}` and `count` is always an int. Callers must not assume null.
+
 ## [2.0.4] - 2026-08-15
 
 ### Fixed

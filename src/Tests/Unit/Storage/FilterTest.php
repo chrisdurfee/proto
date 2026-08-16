@@ -15,6 +15,11 @@ use Proto\Tests\Test;
 final class FilterTest extends Test
 {
 	/**
+	 * @var bool
+	 */
+	protected bool $useTransactions = false;
+
+	/**
 	 * Test basic equality filter.
 	 *
 	 * @return void
@@ -302,6 +307,40 @@ final class FilterTest extends Test
 		$this->assertArrayHasKey('ml.status', $result);
 		$this->assertArrayHasKey('ml.sellerId', $result);
 		$this->assertEquals('active', $result['ml.status']);
+	}
+
+	/**
+	 * Associative keys that already contain a dot stay single-aliased.
+	 *
+	 * @return void
+	 */
+	public function testQualifyDoesNotDoublePrefixDottedKeys(): void
+	{
+		$result = Filter::qualify([
+			'ps.partnerId' => 4,
+			'ga.status' => 'published'
+		], 'ps', ['partnerId', 'status']);
+
+		$this->assertArrayHasKey('ps.partnerId', $result);
+		$this->assertArrayHasKey('ga.status', $result);
+		$this->assertArrayNotHasKey('ps.ps.partnerId', $result);
+		$this->assertArrayNotHasKey('ps.ga.status', $result);
+	}
+
+	/**
+	 * Filter::aliased() must not turn `ga.status` into `ga.ga.status`.
+	 *
+	 * @return void
+	 */
+	public function testAliasedSkipsAlreadyQualifiedColumns(): void
+	{
+		$this->assertSame(['ga.status', 'published'], Filter::aliased('ga', 'ga.status', 'published'));
+		$this->assertSame(['ps.partner_id', 4], Filter::aliased('ps', 'ps.partnerId', 4));
+		$this->assertSame(['ga.status', 'published'], Filter::aliased('ga', 'status', 'published'));
+		$this->assertSame(
+			'ga.status IS NULL',
+			Filter::condition('ga', 'ga.status', 'IS NULL')
+		);
 	}
 
 	/**

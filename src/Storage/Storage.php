@@ -1006,6 +1006,13 @@ class Storage extends TableStorage
 		$this->setOrderBy($sql, $modifiers, $params);
 		$this->setGroupBy($sql, $modifiers, $params);
 
-		return $sql->first($params);
+		$row = $sql->first($params);
+		if (!is_object($row))
+		{
+			return (object)['count' => 0];
+		}
+
+		$row->count = (int)($row->count ?? 0);
+		return $row;
 	}
 }

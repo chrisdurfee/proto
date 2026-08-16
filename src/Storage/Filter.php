@@ -488,9 +488,7 @@ class Filter
 	 */
 	public static function aliased(string $alias, string $column, mixed $value, ?string $operator = null): array
 	{
-		$alias = Sanitize::cleanColumn($alias);
-		$column = Sanitize::cleanColumn(Strings::snakeCase($column));
-		$qualified = "{$alias}.{$column}";
+		$qualified = self::aliasedColumn($alias, $column);
 
 		if ($operator !== null)
 		{
@@ -513,8 +511,7 @@ class Filter
 	 */
 	public static function condition(string $alias, string $column, string $expression): string
 	{
-		$alias = Sanitize::cleanColumn($alias);
-		$column = Sanitize::cleanColumn(Strings::snakeCase($column));
+		$qualified = self::aliasedColumn($alias, $column);
 
 		/**
 		 * Whitelist common static expressions to prevent injection.
@@ -539,7 +536,30 @@ class Filter
 			return '1=1';
 		}
 
-		return "{$alias}.{$column} {$expression}";
+		return "{$qualified} {$expression}";
+	}
+
+	/**
+	 * Prefix a column with an alias unless it is already qualified.
+	 *
+	 * Keys that already contain a dot (`ga.status`, `ps.partnerId`) must
+	 * not become `ga.ga.status`. `$qualifyFilters` plus a second
+	 * `Filter::aliased()` pass is the usual source of that.
+	 *
+	 * @param string $alias
+	 * @param string $column
+	 * @return string
+	 */
+	protected static function aliasedColumn(string $alias, string $column): string
+	{
+		$alias = Sanitize::cleanColumn($alias);
+		$column = (string)$column;
+		if ($column === '' || str_contains($column, '.') || str_contains($column, ' ') || str_contains($column, '('))
+		{
+			return Sanitize::cleanColumn(Strings::snakeCase($column));
+		}
+
+		return $alias . '.' . Sanitize::cleanColumn(Strings::snakeCase($column));
 	}
 
 	/**
@@ -736,7 +756,6 @@ class Filter
 		return $entry;
 	}
 
-	/**
 	/**
 	 * Maximum IN / NOT IN list length accepted from a client filter.
 	 *
