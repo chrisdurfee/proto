@@ -50,7 +50,7 @@ final class FetchWhereWithoutJoinsTest extends Test
 	public function testBatchMapExistsUsesGetRows(): void
 	{
 		SpyFetchStorage::$rows = [
-			(object)['postId' => 1, 'userId' => 9]
+			(object)['id' => 10, 'post_id' => 1, 'user_id' => 9]
 		];
 
 		$rows = [(object)['id' => 1], (object)['id' => 2]];
@@ -69,7 +69,7 @@ final class FetchWhereWithoutJoinsTest extends Test
 	public function testBatchMapFieldUsesGetRows(): void
 	{
 		SpyFetchStorage::$rows = [
-			(object)['postId' => 1, 'name' => 'Ada']
+			(object)['id' => 10, 'post_id' => 1, 'name' => 'Ada']
 		];
 
 		$rows = [(object)['id' => 1]];
@@ -77,6 +77,42 @@ final class FetchWhereWithoutJoinsTest extends Test
 
 		$this->assertContains('getRows', SpyFetchStorage::$calls);
 		$this->assertSame('Ada', $rows[0]->authorName);
+	}
+
+	/**
+	 * fetchWhereWithoutJoins camelCases storage columns so BatchMap
+	 * can read `groupId` / `postId` without TypeError.
+	 *
+	 * @return void
+	 */
+	public function testFetchWhereWithoutJoinsConvertsSnakeCaseKeys(): void
+	{
+		SpyFetchStorage::$rows = [
+			(object)['id' => 10, 'post_id' => 9, 'user_id' => 3, 'name' => 'Ada']
+		];
+
+		$rows = SpyFetchModel::fetchWhereWithoutJoins(['userId' => 3]);
+		$this->assertCount(1, $rows);
+		$this->assertSame(9, $rows[0]->postId);
+		$this->assertSame(3, $rows[0]->userId);
+		$this->assertSame('Ada', $rows[0]->name);
+	}
+
+	/**
+	 * Missing FK properties are skipped instead of TypeErroring.
+	 *
+	 * @return void
+	 */
+	public function testBatchMapExistsSkipsMissingForeignKey(): void
+	{
+		SpyFetchStorage::$rows = [
+			(object)['id' => 10, 'user_id' => 9]
+		];
+
+		$rows = [(object)['id' => 1]];
+		BatchMap::exists($rows, SpyFetchModel::class, 'groupId', 'isFavorited');
+
+		$this->assertFalse($rows[0]->isFavorited);
 	}
 }
 

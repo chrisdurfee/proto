@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Support;
 
+use Proto\Utils\Strings;
+
 /**
  * BatchMap
  *
@@ -50,12 +52,18 @@ class BatchMap
 		$map = [];
 		foreach ($results as $r)
 		{
-			$map[$r->$foreignKey] = $r->$valueField;
+			$key = self::value($r, $foreignKey);
+			if ($key === null)
+			{
+				continue;
+			}
+
+			$map[$key] = self::value($r, $valueField);
 		}
 
 		foreach ($rows as &$row)
 		{
-			$key = $row->$sourceKey ?? null;
+			$key = self::value($row, $sourceKey);
 			if ($key !== null && isset($map[$key]))
 			{
 				$row->$targetField = $map[$key];
@@ -99,12 +107,16 @@ class BatchMap
 		$set = [];
 		foreach ($results as $r)
 		{
-			$set[$r->$foreignKey] = true;
+			$key = self::value($r, $foreignKey);
+			if ($key !== null)
+			{
+				$set[$key] = true;
+			}
 		}
 
 		foreach ($rows as &$row)
 		{
-			$key = $row->$sourceKey ?? null;
+			$key = self::value($row, $sourceKey);
 			if ($key !== null)
 			{
 				$row->$targetField = isset($set[$key]);
@@ -140,7 +152,7 @@ class BatchMap
 		unset($row);
 
 		$ids = array_unique(array_filter(
-			array_map(fn($r) => $r->$sourceKey ?? null, $rows)
+			array_map(fn($r) => self::value($r, $sourceKey), $rows)
 		));
 		if ($ids === [] || !is_callable([$modelClass, 'countGroupedBy']))
 		{
@@ -155,7 +167,7 @@ class BatchMap
 
 		foreach ($rows as &$row)
 		{
-			$key = $row->$sourceKey ?? null;
+			$key = self::value($row, $sourceKey);
 			if ($key !== null && isset($counts[$key]))
 			{
 				$row->$targetField = $counts[$key];
@@ -186,7 +198,7 @@ class BatchMap
 		}
 
 		$ids = array_unique(array_filter(
-			array_map(fn($r) => $r->$sourceKey ?? null, $rows)
+			array_map(fn($r) => self::value($r, $sourceKey), $rows)
 		));
 		if (empty($ids))
 		{
@@ -205,5 +217,37 @@ class BatchMap
 		}
 
 		return $modelClass::fetchWhere($filter);
+	}
+
+	/**
+	 * Read a row property without TypeErroring on missing keys.
+	 *
+	 * Accepts camelCase or snake_case so raw storage rows and
+	 * convertRows() output both map.
+	 *
+	 * @param object $row
+	 * @param string $key
+	 * @return mixed
+	 */
+	public static function value(object $row, string $key): mixed
+	{
+		if (isset($row->$key))
+		{
+			return $row->$key;
+		}
+
+		$snake = Strings::snakeCase($key);
+		if ($snake !== $key && isset($row->$snake))
+		{
+			return $row->$snake;
+		}
+
+		$camel = Strings::camelCase($key);
+		if ($camel !== $key && isset($row->$camel))
+		{
+			return $row->$camel;
+		}
+
+		return null;
 	}
 }

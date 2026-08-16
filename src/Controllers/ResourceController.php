@@ -876,6 +876,11 @@ abstract class ResourceController extends ApiController
 	/**
 	 * First row matching a lookup after list scopes are applied.
 	 *
+	 * Lookup keys (`id`, slug, uuid) are always alias-qualified so a
+	 * User (or any `id`) join cannot make `WHERE id = ?` ambiguous.
+	 * This runs even when `$qualifyFilters` is false (list filters are
+	 * already aliased by the app).
+	 *
 	 * @param Request $request
 	 * @param array $lookup
 	 * @return object|null
@@ -887,7 +892,11 @@ abstract class ResourceController extends ApiController
 			return null;
 		}
 
-		$filter = $this->qualifyFilter($this->applyListScopes($lookup, $request));
+		$filter = $this->qualifyLookupKeys(
+			$this->applyListScopes($lookup, $request),
+			array_keys($lookup)
+		);
+		$filter = $this->qualifyFilter($filter);
 		$result = $this->model::all($filter, 0, 1, ['scopesApplied' => true]);
 		if ($result === false || empty($result->rows))
 		{
@@ -895,6 +904,46 @@ abstract class ResourceController extends ApiController
 		}
 
 		return $result->rows[0];
+	}
+
+	/**
+	 * Prefix lookup columns with the model alias.
+	 *
+	 * Independent of `$qualifyFilters` so get() stays join-safe when
+	 * list endpoints disable auto-qualify to avoid double-aliasing.
+	 *
+	 * @param mixed $filter
+	 * @param array<int, int|string> $keys
+	 * @return mixed
+	 */
+	protected function qualifyLookupKeys(mixed $filter, array $keys): mixed
+	{
+		if ($this->model === null || !is_callable([$this->model, 'alias']))
+		{
+			return $filter;
+		}
+
+		$alias = $this->model::alias();
+		if ($alias === null || $alias === '')
+		{
+			return $filter;
+		}
+
+		$columns = [];
+		foreach ($keys as $key)
+		{
+			if (is_string($key) && $key !== '')
+			{
+				$columns[] = $key;
+			}
+		}
+
+		if ($columns === [])
+		{
+			return $filter;
+		}
+
+		return Filter::qualify($filter, $alias, $columns);
 	}
 
 	/**

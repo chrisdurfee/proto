@@ -1314,7 +1314,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$instance = new static();
 		static::$skipJoins = false;
 
-		return $instance->storage->getRows($filter)->rows ?? [];
+		$rows = $instance->storage->getRows($filter)->rows ?? [];
+		if ($rows === [])
+		{
+			return [];
+		}
+
+		return $instance->convertRows($rows);
 	}
 
 	/**

@@ -5,6 +5,13 @@ All notable changes to Proto Framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2026-08-15
+
+### Fixed
+- `ResourceController::firstScoped()` always alias-qualifies lookup keys (`id`, slug, uuid) so `get()` is not `WHERE id = ?` ambiguous when the model joins `users` (or any table with `id`). Runs even when `$qualifyFilters` is false.
+- `BatchEnrichmentTrait` / `BatchMap` no longer TypeError on missing related-row properties (`stdClass::$groupId`). Missing keys are skipped; camelCase and snake_case are both accepted.
+- `Model::fetchWhereWithoutJoins()` runs `convertRows()` so join-free batch fetches expose camelCase FKs (`groupId`, `itemId`) instead of raw `group_id`.
+
 ## [1.3.53] - 2026-08-14
 
 ### Notes

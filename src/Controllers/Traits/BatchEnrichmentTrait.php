@@ -2,6 +2,8 @@
 
 namespace Proto\Controllers\Traits;
 
+use Proto\Support\BatchMap;
+
 /**
  * BatchEnrichmentTrait
  *
@@ -48,7 +50,7 @@ trait BatchEnrichmentTrait
 		}
 
 		$ids = array_unique(array_filter(
-			array_map(fn($r) => $r->$sourceKey ?? null, $rows)
+			array_map(fn($r) => $this->rowValue($r, $sourceKey), $rows)
 		));
 		if (empty($ids))
 		{
@@ -68,12 +70,18 @@ trait BatchEnrichmentTrait
 		$map = [];
 		foreach ($results as $r)
 		{
-			$map[$r->$foreignKey] = $r->$valueField;
+			$key = $this->rowValue($r, $foreignKey);
+			if ($key === null)
+			{
+				continue;
+			}
+
+			$map[$key] = $this->rowValue($r, $valueField);
 		}
 
 		foreach ($rows as &$row)
 		{
-			$key = $row->$sourceKey ?? null;
+			$key = $this->rowValue($row, $sourceKey);
 			if ($key !== null && isset($map[$key]))
 			{
 				$row->$targetField = $map[$key];
@@ -114,7 +122,7 @@ trait BatchEnrichmentTrait
 		}
 
 		$ids = array_unique(array_filter(
-			array_map(fn($r) => $r->$sourceKey ?? null, $rows)
+			array_map(fn($r) => $this->rowValue($r, $sourceKey), $rows)
 		));
 		if (empty($ids))
 		{
@@ -134,12 +142,16 @@ trait BatchEnrichmentTrait
 		$set = [];
 		foreach ($results as $r)
 		{
-			$set[$r->$foreignKey] = true;
+			$key = $this->rowValue($r, $foreignKey);
+			if ($key !== null)
+			{
+				$set[$key] = true;
+			}
 		}
 
 		foreach ($rows as &$row)
 		{
-			$key = $row->$sourceKey ?? null;
+			$key = $this->rowValue($row, $sourceKey);
 			if ($key !== null)
 			{
 				$row->$targetField = isset($set[$key]);
@@ -180,7 +192,7 @@ trait BatchEnrichmentTrait
 		}
 
 		$ids = array_unique(array_filter(
-			array_map(fn($r) => $r->$sourceKey ?? null, $rows)
+			array_map(fn($r) => $this->rowValue($r, $sourceKey), $rows)
 		));
 		if (empty($ids))
 		{
@@ -197,7 +209,7 @@ trait BatchEnrichmentTrait
 
 		foreach ($rows as &$row)
 		{
-			$key = $row->$sourceKey ?? null;
+			$key = $this->rowValue($row, $sourceKey);
 			if ($key !== null && isset($counts[$key]))
 			{
 				$row->$targetField = $counts[$key];
@@ -225,5 +237,20 @@ trait BatchEnrichmentTrait
 		}
 
 		return $modelClass::fetchWhere($filter);
+	}
+
+	/**
+	 * Read a row property without TypeErroring on missing keys.
+	 *
+	 * Accepts camelCase or snake_case so raw storage rows and
+	 * convertRows() output both map.
+	 *
+	 * @param object $row
+	 * @param string $key
+	 * @return mixed
+	 */
+	protected function rowValue(object $row, string $key): mixed
+	{
+		return BatchMap::value($row, $key);
 	}
 }

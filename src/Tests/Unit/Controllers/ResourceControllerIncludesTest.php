@@ -149,6 +149,37 @@ final class ResourceControllerIncludesTest extends Test
 	}
 
 	/**
+	 * get() lookups stay alias-qualified when list auto-qualify is off.
+	 *
+	 * @return void
+	 */
+	public function testFirstScopedQualifiesIdWhenQualifyFiltersIsFalse(): void
+	{
+		FirstScopedCaptureModel::$lastFilter = null;
+
+		$controller = new class extends ResourceController
+		{
+			public function __construct()
+			{
+				$this->model = FirstScopedCaptureModel::class;
+				$this->qualifyFilters = false;
+				parent::__construct();
+			}
+
+			public function exposeFirstScoped(Request $request, array $lookup): ?object
+			{
+				return $this->firstScoped($request, $lookup);
+			}
+		};
+
+		$controller->exposeFirstScoped(new Request(), ['id' => 5]);
+		$this->assertIsArray(FirstScopedCaptureModel::$lastFilter);
+		$this->assertArrayHasKey('p.id', FirstScopedCaptureModel::$lastFilter);
+		$this->assertEquals(5, FirstScopedCaptureModel::$lastFilter['p.id']);
+		$this->assertArrayNotHasKey('id', FirstScopedCaptureModel::$lastFilter);
+	}
+
+	/**
 	 * firstScoped() must apply list scopes so drafts stay hidden on get().
 	 *
 	 * @return void
