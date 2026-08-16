@@ -386,9 +386,16 @@ class Router
 		$route = new Route($method, $uri, $callback);
 		$this->routes[] = $route;
 
-		if ($middleware !== null)
+		/**
+		 * Snapshot the router stack at registration. Deferred flush
+		 * (ResourceHelper::includeResource) must not inherit middleware
+		 * added later in the same api.php, such as a trailing
+		 * router()->middleware([ThrottleMiddleware]).
+		 */
+		$stack = array_merge($this->middleware, $middleware ?? []);
+		if ($stack !== [])
 		{
-			$route->middleware($middleware);
+			$route->middleware($stack);
 		}
 
 		if ($this->matchesRoute($route))
@@ -643,6 +650,10 @@ class Router
 	{
 		$uri = $this->getUri($uri);
 		$redirect = new Redirect($uri, $redirectUrl, $statusCode);
+		if ($this->middleware !== [])
+		{
+			$redirect->middleware($this->middleware);
+		}
 
 		if ($this->matchesRoute($redirect))
 		{
@@ -670,7 +681,7 @@ class Router
 	{
 		try
 		{
-			$result = $route->initialize($this->middleware, $this->request);
+			$result = $route->initialize([], $this->request);
 		}
 		catch (HttpTerminationException $termination)
 		{

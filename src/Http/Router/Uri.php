@@ -123,6 +123,10 @@ abstract class Uri
 	/**
 	 * Initializes the route and executes middleware.
 	 *
+	 * Router::addRoute() snapshots the router stack onto the route, so
+	 * activateRoute() passes an empty global list. Callers that still
+	 * pass a stack have it prepended to the route's own middleware.
+	 *
 	 * @param array $globalMiddleWare The global middleware to apply.
 	 * @param Request $request The request class.
 	 * @return mixed

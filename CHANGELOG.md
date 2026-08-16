@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `Filter::fieldLookup()` skips non-string `$fields` entries and uses the alias from computed `[['SQL'], 'alias']` tuples so `Model::qualifyFilter()` / `Filter::qualify()` no longer emit "Array to string conversion" when a model declares X()/Y()/IF() columns.
+- Router snapshots middleware at registration. Deferred `api.php` flush no longer applies `router()->middleware()` added later in the same file (e.g. `ThrottleMiddleware` leaking onto `GET csrf-token`).
 
 ## [2.0.5] - 2026-08-16
 
