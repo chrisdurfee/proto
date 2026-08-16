@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Module;
 
+use Proto\Module\Traits\LazyGatewayTrait;
+
 /**
  * Gateway
  *
@@ -26,41 +28,16 @@ namespace Proto\Module;
  * }
  * ```
  *
+ * Facade gateways that front multiple models (no single primary model
+ * to satisfy the abstract `model()` below) should `use LazyGatewayTrait`
+ * directly instead of extending this class.
+ *
  * @package Proto\Module
  * @abstract
  */
 abstract class Gateway
 {
-	/**
-	 * Memoized child gateway / service instances.
-	 *
-	 * @var array<string, object>
-	 */
-	private array $lazyInstances = [];
-
-	/**
-	 * Return a memoized instance of a child gateway or service.
-	 *
-	 * @template T of object
-	 * @param class-string<T> $class
-	 * @param mixed ...$constructorArgs
-	 * @return T
-	 */
-	protected function gateway(string $class, mixed ...$constructorArgs): object
-	{
-		$key = $class;
-		if ($constructorArgs !== [])
-		{
-			$key .= ':' . md5(serialize($constructorArgs));
-		}
-
-		if (!isset($this->lazyInstances[$key]))
-		{
-			$this->lazyInstances[$key] = new $class(...$constructorArgs);
-		}
-
-		return $this->lazyInstances[$key];
-	}
+	use LazyGatewayTrait;
 
 	/**
 	 * Returns the primary model class for this gateway.

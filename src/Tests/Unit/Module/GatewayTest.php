@@ -3,6 +3,7 @@
 namespace Proto\Tests\Unit\Module;
 
 use Proto\Module\Gateway;
+use Proto\Module\Traits\LazyGatewayTrait;
 use Proto\Tests\Test;
 
 /**
@@ -65,6 +66,35 @@ final class GatewayTest extends Test
 		$this->assertNotSame($first, $other);
 		$this->assertEquals(1, $first->id);
 		$this->assertEquals(2, $other->id);
+	}
+
+	/**
+	 * Facade gateways with no single primary model can compose
+	 * LazyGatewayTrait directly instead of extending Gateway (which
+	 * requires an abstract model()).
+	 *
+	 * @return void
+	 */
+	public function testLazyGatewayTraitWorksWithoutExtendingGateway(): void
+	{
+		$facade = new class
+		{
+			use LazyGatewayTrait;
+
+			public function child(): object
+			{
+				return $this->gateway(\stdClass::class);
+			}
+
+			public function scoped(int $id): object
+			{
+				return $this->gateway(GatewayArgProbe::class, $id);
+			}
+		};
+
+		$this->assertSame($facade->child(), $facade->child());
+		$this->assertSame($facade->scoped(1), $facade->scoped(1));
+		$this->assertNotSame($facade->scoped(1), $facade->scoped(2));
 	}
 }
 
