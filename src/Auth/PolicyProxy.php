@@ -112,6 +112,13 @@ class PolicyProxy implements ControllerInterface
 	/**
 	 * Checks the `before` policy method.
 	 *
+	 * NOTE: A `false` (or absent/not-implemented, which also resolves
+	 * to `false` via {@see callMethod()}'s default) result does NOT
+	 * deny the request by itself -- see {@see checkPolicy()}, which
+	 * only short-circuits to allow on `true` and otherwise falls
+	 * through to the per-action policy method, which can still
+	 * independently allow the action.
+	 *
 	 * @param array|null $arguments The method arguments.
 	 * @return bool Whether access is allowed.
 	 */
@@ -163,6 +170,13 @@ class PolicyProxy implements ControllerInterface
 
 	/**
 	 * Checks all policy methods before executing a controller action.
+	 *
+	 * `before()` only ever short-circuits this to `true` (allow). A
+	 * `false` or absent `before()` result is NOT a denial -- it simply
+	 * falls through to the per-action policy method ({@see checkPolicyMethod()}),
+	 * which can still independently allow the action. Only when both
+	 * `before()` and the per-action method (or `default()`) fail to
+	 * return `true` is the action actually denied.
 	 *
 	 * @param string $method The method name.
 	 * @param array|null $arguments The method arguments.

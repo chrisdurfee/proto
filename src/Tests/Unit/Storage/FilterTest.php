@@ -242,6 +242,104 @@ final class FilterTest extends Test
 	}
 
 	/**
+	 * A bare `[column, arrayOfValues]` two-tuple is ambiguous with the
+	 * raw `[sql, params]` fragment shape and must be rejected with a
+	 * clear exception rather than silently producing a malformed SQL
+	 * fragment (just the column name) plus orphaned bind params.
+	 *
+	 * @return void
+	 */
+	public function testAmbiguousColumnArrayTupleThrows(): void
+	{
+		$this->expectException(\InvalidArgumentException::class);
+
+		$params = [];
+		Filter::format(['status', [1, 2, 3]], $params, false);
+	}
+
+	/**
+	 * The exception message names the offending column and points the
+	 * caller at the unambiguous 3-tuple form.
+	 *
+	 * @return void
+	 */
+	public function testAmbiguousColumnArrayTupleExceptionMessageIsActionable(): void
+	{
+		$params = [];
+
+		try
+		{
+			Filter::format(['status', [1, 2, 3]], $params, false);
+			$this->fail('Expected InvalidArgumentException was not thrown.');
+		}
+		catch (\InvalidArgumentException $e)
+		{
+			$this->assertStringContainsString('status', $e->getMessage());
+			$this->assertStringContainsString("'IN'", $e->getMessage());
+		}
+	}
+
+	/**
+	 * An aliased bare column (`alias.column`) with an array second
+	 * element is equally ambiguous and must also throw.
+	 *
+	 * @return void
+	 */
+	public function testAmbiguousAliasedColumnArrayTupleThrows(): void
+	{
+		$this->expectException(\InvalidArgumentException::class);
+
+		$params = [];
+		Filter::format(['a.status', [1, 2, 3]], $params, false);
+	}
+
+	/**
+	 * The explicit 3-tuple form recommended by the exception message
+	 * works correctly and is unaffected by the disambiguation.
+	 *
+	 * @return void
+	 */
+	public function testExplicitInTupleWorksAsRecommendedByAmbiguityException(): void
+	{
+		$params = [];
+		$result = Filter::format(['status', 'IN', [1, 2, 3]], $params, false);
+		$this->assertEquals('status IN (?, ?, ?)', $result);
+		$this->assertEquals([1, 2, 3], $params);
+	}
+
+	/**
+	 * A legitimate raw `[sql, params]` fragment (as produced by
+	 * {@see Filter::exists()} / {@see Filter::since()} / hand-built
+	 * fragments) is not mistaken for the ambiguous shorthand because
+	 * its first element is a SQL expression, not a bare column name.
+	 *
+	 * @return void
+	 */
+	public function testLegitimateRawFragmentStillWorksAfterDisambiguation(): void
+	{
+		$params = [];
+		$result = Filter::format(['(p.user_id = ? OR p.privacy = ?)', [1, 'public']], $params, false);
+		$this->assertEquals('(p.user_id = ? OR p.privacy = ?)', $result);
+		$this->assertEquals([1, 'public'], $params);
+	}
+
+	/**
+	 * `Filter::exists()`'s generated fragment still round-trips through
+	 * `format()` unchanged.
+	 *
+	 * @return void
+	 */
+	public function testExistsFragmentStillWorksAfterDisambiguation(): void
+	{
+		$params = [];
+		[$sql, $existsParams] = Filter::exists('event_attendees', 'ea', 'ea.event_id = e.id', [['userId', 5]]);
+
+		$result = Filter::format([$sql, $existsParams], $params, false);
+		$this->assertEquals($sql, $result);
+		$this->assertEquals([5], $params);
+	}
+
+	/**
 	 * Test mixed filter: associative keys combined with numeric-indexed arrays.
 	 *
 	 * This reproduces the bug where isAssoc() returned true for mixed filters,

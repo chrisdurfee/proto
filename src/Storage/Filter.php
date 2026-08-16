@@ -48,10 +48,35 @@ class Filter
 	/**
 	 * Retrieves the value for a filter entry.
 	 *
+	 * Disambiguation rule for a 2-element array whose second element
+	 * is itself an array -- e.g. `["status", [1, 2, 3]]` vs.
+	 * `["EXISTS (SELECT 1 ...)", [1, 'public']]`:
+	 *
+	 * A raw `[sql, params]` fragment (as produced by {@see exists()},
+	 * {@see notExists()}, {@see since()}, or any hand-built
+	 * `[sql, params]` pair) always has a **SQL expression** as its
+	 * first element -- it necessarily contains a space, a
+	 * parenthesis, or an operator (`"id IN (?, ?)"`,
+	 * `"c.updated_at >= ?"`, `"EXISTS (...)"`). A **bare column name**
+	 * never does ({@see isSafeColumn()} is the existing test for this
+	 * shape elsewhere in this class). So:
+	 *
+	 *   - `value[0]` looks like a bare column (passes
+	 *     {@see isSafeColumn()}): `["status", [1, 2, 3]]` is rejected
+	 *     with an {@see \InvalidArgumentException} instead of silently
+	 *     producing a malformed SQL fragment (just the column name,
+	 *     no operator/placeholder) plus orphaned bind params. Callers
+	 *     must use the explicit, unambiguous 3-tuple form instead:
+	 *     `["status", "IN", [1, 2, 3]]`.
+	 *   - `value[0]` does NOT look like a bare column (contains a
+	 *     space/paren/operator, or is not a string at all): treated as
+	 *     a legitimate raw `[sql, params]` fragment, unchanged.
+	 *
 	 * @param mixed $value
 	 * @param array $params
 	 * @param bool $isSnakeCase
 	 * @return mixed
+	 * @throws \InvalidArgumentException When a `[column, arrayOfValues]` two-tuple is ambiguous with a raw `[sql, params]` fragment.
 	 */
 	public static function format(mixed $value, array &$params, bool $isSnakeCase = true): mixed
 	{
@@ -65,14 +90,25 @@ class Filter
 		}
 
 		/**
-		 * If a first item is an array, this is not to be modified, just merge the params
-		 * and return the raw SQL.
+		 * A 2-element array whose second element is an array is either
+		 * a raw `[sql, params]` fragment (merge params, return the SQL
+		 * as-is) or the ambiguous `[column, arrayOfValues]` shorthand
+		 * (reject -- see docblock above).
 		 */
-		$firstItem = $value[1] ?? null;
-		if (is_array($firstItem))
+		if (count($value) === 2 && is_array($value[1] ?? null))
 		{
-			$params = array_merge($params, $firstItem);
-			return $value[0];
+			$rawSql = $value[0] ?? null;
+			if (is_string($rawSql) && self::isSafeColumn($rawSql))
+			{
+				throw new \InvalidArgumentException(
+					"Filter::format(): ambiguous filter entry [\"{$rawSql}\", array] is not supported because it " .
+					"cannot be distinguished from a raw [sql, params] fragment. Use the explicit 3-tuple form " .
+					"instead: [\"{$rawSql}\", 'IN', \$values]."
+				);
+			}
+
+			$params = array_merge($params, $value[1]);
+			return $rawSql;
 		}
 
 		/**

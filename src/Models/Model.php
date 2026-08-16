@@ -1311,8 +1311,14 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public static function getWithoutJoins(mixed $id): ?static
 	{
 		static::$skipJoins = true;
-		$instance = new static();
-		static::$skipJoins = false;
+		try
+		{
+			$instance = new static();
+		}
+		finally
+		{
+			static::$skipJoins = false;
+		}
 
 		$row = $instance->storage->get($id);
 		if (!$row)
@@ -1341,8 +1347,14 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$filter = static::qualifyFilter($filter);
 		static::$skipJoins = true;
-		$instance = new static();
-		static::$skipJoins = false;
+		try
+		{
+			$instance = new static();
+		}
+		finally
+		{
+			static::$skipJoins = false;
+		}
 
 		$rows = $instance->storage->getRows($filter)->rows ?? [];
 		if ($rows === [])
@@ -1393,8 +1405,14 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	{
 		$filter = static::qualifyFilter($filter);
 		static::$skipJoins = true;
-		$instance = new static();
-		static::$skipJoins = false;
+		try
+		{
+			$instance = new static();
+		}
+		finally
+		{
+			static::$skipJoins = false;
+		}
 
 		return $instance->storage->count($filter, $modifiers);
 	}
