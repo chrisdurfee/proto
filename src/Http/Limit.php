@@ -32,6 +32,15 @@ class Limit
 	protected int $requestLimit;
 
 	/**
+	 * Whether this limit is security-critical and must fail closed
+	 * (bounded fallback limiting) instead of fail open (no limiting)
+	 * when the shared cache is unavailable.
+	 *
+	 * @var bool
+	 */
+	protected bool $failClosed = false;
+
+	/**
 	 * Limit constructor.
 	 *
 	 * @param int $requestLimit Number of allowed requests (default: 0 = unlimited).
@@ -158,5 +167,34 @@ class Limit
 	public function id(): string
 	{
 		return $this->requestId;
+	}
+
+	/**
+	 * Marks this limit as security-critical: when the shared cache is
+	 * unavailable, {@see \Proto\Http\RateLimiter::check()} will fail
+	 * closed (bounded in-process/APCu fallback counter) instead of the
+	 * default fail-open behavior (no limiting during a cache outage).
+	 *
+	 * Intended for login, password-reset, and OTP limiters, where
+	 * disabling rate limiting during a cache outage would be a security
+	 * regression. Generic API throttling should stay fail-open (default).
+	 *
+	 * @param bool $failClosed
+	 * @return self
+	 */
+	public function failClosed(bool $failClosed = true): self
+	{
+		$this->failClosed = $failClosed;
+		return $this;
+	}
+
+	/**
+	 * Whether this limit must fail closed during a cache outage.
+	 *
+	 * @return bool
+	 */
+	public function isFailClosed(): bool
+	{
+		return $this->failClosed;
 	}
 }

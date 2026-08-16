@@ -43,31 +43,53 @@ class Mysqli extends Adapter
 	/**
 	 * Starts the database connection.
 	 *
+	 * Uses `mysqli_init()` + `MYSQLI_OPT_CONNECT_TIMEOUT` + `real_connect()`
+	 * instead of `new \mysqli(...)` so an unreachable host fails fast
+	 * (bounded by `ConnectionSettings::$connectTimeout`, default 5s)
+	 * rather than blocking for PHP's default socket timeout (~60s) and
+	 * pinning FPM workers.
+	 *
 	 * @return bool True if connection was successful, false otherwise.
 	 */
 	protected function startConnection() : bool
 	{
 		$settings = $this->settings;
 
-		// Use persistent connections by default, but allow disabling via settings
-		// Persistent connections can cause issues with transactions in tests
-		$host = $settings->host;
-		if (!isset($settings->persistent) || $settings->persistent !== false)
+		// Use persistent connections by default, but allow disabling via settings.
+		// Persistent connections can cause issues with transactions in tests.
+		$host = $settings->persistent ? 'p:' . $settings->host : $settings->host;
+
+		try
 		{
-			$host = 'p:' . $host;
+			$connection = mysqli_init();
+			if ($connection === false)
+			{
+				$this->setLastError('Unable to initialize a MySQLi connection.');
+				return false;
+			}
+
+			$connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, $settings->connectTimeout);
+
+			$connected = $connection->real_connect(
+				$host,
+				$settings->username,
+				$settings->password,
+				$settings->database,
+				$settings->port
+			);
+		}
+		catch (\Exception $e)
+		{
+			// PHP 8.1+ defaults mysqli to MYSQLI_REPORT_ERROR|MYSQLI_REPORT_STRICT,
+			// so connection failures (including timeouts) throw mysqli_sql_exception
+			// instead of merely populating connect_error.
+			$this->setLastError($e->getMessage());
+			return false;
 		}
 
-		$connection = new \mysqli(
-			$host,
-			$settings->username,
-			$settings->password,
-			$settings->database,
-			$settings->port
-		);
-
-		if ($connection->connect_error)
+		if (!$connected)
 		{
-			$this->setLastError($connection->connect_error);
+			$this->setLastError($connection->connect_error ?? 'Unable to connect to the database.');
 			return false;
 		}
 
@@ -76,8 +98,8 @@ class Mysqli extends Adapter
 		$this->transactionLevel = 0;
 
 		// For explicitly non-persistent connections used in testing, disable autocommit
-		// to support proper transaction isolation
-		if (isset($settings->persistent) && $settings->persistent === false)
+		// to support proper transaction isolation.
+		if (!$settings->persistent)
 		{
 			$connection->autocommit(false);
 		}

@@ -8,6 +8,18 @@ namespace Proto\Services;
  * field stripping, and UUID helpers so integrating apps do not
  * reimplement them in Common.
  *
+ * Note: this class deliberately does NOT `use ServiceResultFactory`
+ * (the `ok()`/`fail()` trait) internally, even though the naming
+ * does not collide with `success()`/`failure()` here. Composing the
+ * trait would still be an LSP hazard for any existing subclass that
+ * already declares its own `ok()`/`fail()` methods with an
+ * incompatible signature (e.g. a narrower parameter list) — PHP
+ * treats that as a fatal "Declaration must be compatible" error, not
+ * a warning, once those methods are inherited from a trait on this
+ * base class. See {@see \Proto\Services\Traits\ServiceResultFactory}
+ * for the classes this trait is actually for: those that cannot
+ * extend `Service` at all.
+ *
  * @package Proto\Services
  */
 abstract class Service

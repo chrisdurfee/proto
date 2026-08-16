@@ -2,6 +2,7 @@
 namespace Proto\Http\Router;
 
 use Proto\Http\Middleware\RateLimiterMiddleware;
+use Proto\Http\HttpTerminationException;
 use Proto\Http\Limit;
 
 /**
@@ -654,12 +655,28 @@ class Router
 	/**
 	 * Activates a route and executes its callback.
 	 *
+	 * This is the framework's single request-dispatch entry point, so it
+	 * is the one place that catches {@see HttpTerminationException}.
+	 * Deep call-stack code (validation failures, policy denials, rate
+	 * limiting) throws that exception instead of calling `die`/`exit`
+	 * directly; catching it here renders the same JSON body/status code
+	 * a real HTTP request produced before that refactor while still
+	 * letting `finally`/rollback blocks around the throwing call run.
+	 *
 	 * @param Uri $route
 	 * @return void
 	 */
 	protected function activateRoute(Uri $route): void
 	{
-		$result = $route->initialize($this->middleware, $this->request);
+		try
+		{
+			$result = $route->initialize($this->middleware, $this->request);
+		}
+		catch (HttpTerminationException $termination)
+		{
+			$termination->respond();
+		}
+
 		if ($result !== null)
 		{
 			$statusCode = (is_int($result->code ?? '')) ? $result->code : HttpStatus::OK->value;

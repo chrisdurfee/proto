@@ -37,12 +37,17 @@ class LoginRateLimiterMiddleware
 	/**
 	 * Configures the login attempt limit.
 	 *
+	 * Marked {@see Limit::failClosed()} because login is
+	 * security-critical: if the shared cache is unavailable, this must
+	 * keep limiting via the bounded fallback counter rather than
+	 * silently allowing unlimited login attempts.
+	 *
 	 * @param Request $request The incoming request.
 	 * @return Limit The rate limit configuration.
 	 */
 	protected function getLimit(Request $request): Limit
 	{
 		$rateLimitKey = $request->input('username') . ':' . $request->ip();
-		return Limit::perMinute(self::ATTEMPT_LIMIT)->by($rateLimitKey);
+		return Limit::perMinute(self::ATTEMPT_LIMIT)->by($rateLimitKey)->failClosed();
 	}
 }

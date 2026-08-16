@@ -19,6 +19,18 @@ class Curl
 	protected CurlHandle $curl;
 
 	/**
+	 * Whether to reject requests whose host resolves to a private,
+	 * loopback, or link-local IP address (SSRF guard). Opt-in only: no
+	 * framework helper currently accepts a client-supplied URL, so this
+	 * is disabled by default for backward compatibility. Enable via
+	 * {@see denyPrivateNetworks()} on any helper you build that accepts
+	 * a URL from an untrusted source.
+	 *
+	 * @var bool
+	 */
+	protected bool $denyPrivateNetworksGuard = false;
+
+	/**
 	 * Initializes the cURL session.
 	 *
 	 * @param bool $debug Whether to enable debugging.
@@ -28,6 +40,90 @@ class Curl
 	)
 	{
 		$this->curl = curl_init();
+	}
+
+	/**
+	 * Opts this instance into rejecting requests whose target host
+	 * resolves to a private, loopback, or link-local IP address after
+	 * DNS resolution (SSRF guard). Not enabled by default — call this
+	 * before {@see request()} / {@see get()} / {@see post()} / etc. on
+	 * any helper you build that accepts a URL from an untrusted
+	 * (client-supplied) source.
+	 *
+	 * @return self
+	 */
+	public function denyPrivateNetworks(): self
+	{
+		$this->denyPrivateNetworksGuard = true;
+		return $this;
+	}
+
+	/**
+	 * Whether a URL's host resolves to a private, loopback, link-local,
+	 * or otherwise non-public IP address.
+	 *
+	 * Accepts a literal IP directly, or resolves a hostname's A/AAAA
+	 * records via DNS. A host that cannot be resolved at all is treated
+	 * as unsafe (fails closed).
+	 *
+	 * @param string $url
+	 * @return bool
+	 */
+	public static function isPrivateNetworkUrl(string $url): bool
+	{
+		$host = parse_url($url, PHP_URL_HOST);
+		if (!is_string($host) || $host === '')
+		{
+			return true;
+		}
+
+		$host = trim($host, '[]');
+		$ips = self::resolveHostIps($host);
+		if (empty($ips))
+		{
+			return true;
+		}
+
+		foreach ($ips as $ip)
+		{
+			if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Resolves a hostname to its IPv4/IPv6 addresses, or returns a
+	 * literal IP as a single-element list.
+	 *
+	 * @param string $host
+	 * @return array<int, string>
+	 */
+	protected static function resolveHostIps(string $host): array
+	{
+		if (filter_var($host, FILTER_VALIDATE_IP) !== false)
+		{
+			return [$host];
+		}
+
+		$ips = [];
+		$records = @dns_get_record($host, DNS_A + DNS_AAAA) ?: [];
+		foreach ($records as $record)
+		{
+			if (isset($record['ip']))
+			{
+				$ips[] = $record['ip'];
+			}
+			elseif (isset($record['ipv6']))
+			{
+				$ips[] = $record['ipv6'];
+			}
+		}
+
+		return $ips;
 	}
 
 	/**
@@ -183,6 +279,12 @@ class Curl
 	/**
 	 * Performs an HTTP request.
 	 *
+	 * When {@see denyPrivateNetworks()} has been enabled, requests whose
+	 * host resolves to a private/loopback/link-local address are
+	 * blocked before the cURL request is ever sent, and a `code: 0`
+	 * response is returned instead (no request is made; the cURL
+	 * session is closed).
+	 *
 	 * @param string $url Request URL.
 	 * @param string $method HTTP method.
 	 * @param mixed $params Request parameters.
@@ -190,6 +292,22 @@ class Curl
 	 */
 	public function request(string $url, string $method = 'POST', mixed $params = null): object
 	{
+		if ($this->denyPrivateNetworksGuard && self::isPrivateNetworkUrl($url))
+		{
+			error(
+				'Curl: request blocked by denyPrivateNetworks(); host resolves to a private/loopback/link-local address: ' . $url,
+				__FILE__,
+				__LINE__
+			);
+
+			$this->close();
+
+			return (object)[
+				'code' => 0,
+				'data' => null
+			];
+		}
+
 		$this->configureHeaders();
 		$this->configureOptions();
 

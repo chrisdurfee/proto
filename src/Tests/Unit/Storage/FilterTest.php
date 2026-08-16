@@ -111,6 +111,34 @@ final class FilterTest extends Test
 	}
 
 	/**
+	 * A scalar value with the IN operator is defensively coerced into a
+	 * single-element array instead of producing malformed SQL like
+	 * `status IN ?`.
+	 *
+	 * @return void
+	 */
+	public function testInFilterWithScalarValueIsCoercedToArray(): void
+	{
+		$params = [];
+		$result = Filter::format(['status', 'IN', 'published'], $params, false);
+		$this->assertEquals('status IN (?)', $result);
+		$this->assertEquals(['published'], $params);
+	}
+
+	/**
+	 * A scalar value with the NOT IN operator is likewise coerced.
+	 *
+	 * @return void
+	 */
+	public function testNotInFilterWithScalarValueIsCoercedToArray(): void
+	{
+		$params = [];
+		$result = Filter::format(['status', 'NOT IN', 'banned'], $params, false);
+		$this->assertEquals('status NOT IN (?)', $result);
+		$this->assertEquals(['banned'], $params);
+	}
+
+	/**
 	 * Test IN filter with empty array returns false condition.
 	 *
 	 * @return void
@@ -352,6 +380,32 @@ final class FilterTest extends Test
 	{
 		$filter = ['status' => 'active'];
 		$this->assertSame($filter, Filter::qualify($filter, 'ml', []));
+	}
+
+	/**
+	 * Computed model field tuples must not trigger Array to string conversion.
+	 *
+	 * @return void
+	 */
+	public function testQualifyAcceptsComputedFieldEntries(): void
+	{
+		$fields = [
+			'status',
+			'saleType',
+			[['IF(`ml`.`reserve_price` > 0, 1, 0)'], 'hasReserve'],
+			[['X(`ml`.`position`)'], 'longitude'],
+			[['Y(`ml`.`position`)'], 'latitude']
+		];
+
+		$result = Filter::qualify([
+			'status' => 'active',
+			'saleType' => 'sale',
+			'hasReserve' => 1
+		], 'ml', $fields);
+
+		$this->assertSame('active', $result['ml.status']);
+		$this->assertSame('sale', $result['ml.saleType']);
+		$this->assertSame(1, $result['ml.hasReserve']);
 	}
 
 	/**

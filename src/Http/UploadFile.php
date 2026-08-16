@@ -67,11 +67,21 @@ class UploadFile
 	 * Initializes an uploaded file instance.
 	 *
 	 * @param array $tmpFile PHP file upload array.
+	 * @param array<int, string>|null $allowedExtensions Optional extension
+	 *   allowlist (case-insensitive, without the leading dot) passed to
+	 *   {@see File::createNewName()}. `null` (default) keeps the original
+	 *   unrestricted behavior for backward compatibility — see
+	 *   {@see store()} for why direct callers should supply this.
+	 * @throws \InvalidArgumentException When `$allowedExtensions` is provided
+	 *   and the file's extension is not in the list.
 	 */
-	public function __construct(protected array $tmpFile)
+	public function __construct(
+		protected array $tmpFile,
+		protected ?array $allowedExtensions = null
+	)
 	{
 		$this->tmpDir = sys_get_temp_dir();
-		$this->newFileName = File::createNewName($this->getOriginalName());
+		$this->newFileName = File::createNewName($this->getOriginalName(), $this->allowedExtensions);
 		$this->renameTmpFile();
 	}
 
@@ -326,6 +336,15 @@ class UploadFile
 
 	/**
 	 * Stores the file in a specified storage driver.
+	 *
+	 * WARNING: Calling this directly bypasses `FileValidator` /
+	 * `ImageValidator`'s MIME-type and content checks. Only the
+	 * extension allowlist supplied to this instance's constructor (if
+	 * any) is enforced by the time `store()` runs — by default there is
+	 * none. Code that calls `store()` directly on a controller-built
+	 * `UploadFile` (not one already validated by `FileValidator` /
+	 * `ImageValidator`) must construct it with `$allowedExtensions`, or
+	 * otherwise validate the file before calling `store()`.
 	 *
 	 * @param string $driver The storage driver (e.g., local, S3).
 	 * @param string|null $bucket Optional storage bucket.

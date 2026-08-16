@@ -87,6 +87,25 @@ abstract class ResourceController extends ApiController
 	protected bool $qualifyFilters = true;
 
 	/**
+	 * Request filter keys that bypass the model-fields allowlist in
+	 * {@see \Proto\Storage\Filter::sanitizeRequestFilter()}.
+	 *
+	 * Keys listed here are not restricted to real model columns, but
+	 * still go through the same operator/value safety rules as every
+	 * other request filter key: no raw SQL, still IN-capped
+	 * (`Filter::REQUEST_IN_LIMIT`), still parameterized. Use this for
+	 * client filter keys a controller/filter-service consumes directly
+	 * (e.g. to branch query building) rather than passing straight
+	 * through to SQL as a real column.
+	 *
+	 * Replaces Rally's `VIRTUAL_FILTER_KEYS` + private `rawClientFilter()`
+	 * pattern — see `docs/RALLY_MIGRATION.md`.
+	 *
+	 * @var array<int, string>
+	 */
+	protected array $passthroughFilterKeys = [];
+
+	/**
 	 * Alternate keys accepted by get() when the route id is not numeric.
 	 * `id` is always tried first via getResourceId().
 	 *
@@ -185,11 +204,31 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
-	 * Request filters may only predicate on filterable model fields.
+	 * Request filters may only predicate on filterable model fields,
+	 * plus any `$passthroughFilterKeys` the controller declares.
 	 *
 	 * @return array<int, string>|null
 	 */
 	protected function requestFilterColumns(): ?array
+	{
+		$modelFields = $this->modelFilterColumns();
+		if ($modelFields === null)
+		{
+			return empty($this->passthroughFilterKeys) ? null : $this->passthroughFilterKeys;
+		}
+
+		return empty($this->passthroughFilterKeys)
+			? $modelFields
+			: [...$modelFields, ...$this->passthroughFilterKeys];
+	}
+
+	/**
+	 * The model's filterable field names, or null when the model does
+	 * not expose one (no allowlist restriction to apply).
+	 *
+	 * @return array<int, string>|null
+	 */
+	protected function modelFilterColumns(): ?array
 	{
 		if ($this->model === null)
 		{

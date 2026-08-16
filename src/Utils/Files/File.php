@@ -112,12 +112,38 @@ class File extends Util
 	/**
 	 * Generates a unique file name to prevent upload conflicts.
 	 *
+	 * WARNING: This method does not validate file content and, when
+	 * `$allowedExtensions` is omitted, does not restrict the extension
+	 * either. `Proto\Http\UploadFile::store()` calls this internally;
+	 * any code calling `store()` directly instead of going through
+	 * `Proto\Api\FileValidator` / `Proto\Api\ImageValidator` (which
+	 * validate MIME type and content) must supply `$allowedExtensions`
+	 * itself, or otherwise check the extension/MIME type before storing,
+	 * so a request cannot upload an executable or script disguised as a
+	 * data file.
+	 *
 	 * @param string $fileName The original file name.
+	 * @param array<int, string>|null $allowedExtensions Optional allowlist of
+	 *   extensions (case-insensitive, without the leading dot). `null`
+	 *   (default) keeps the original unrestricted behavior for backward
+	 *   compatibility.
 	 * @return string The new unique file name.
+	 * @throws \InvalidArgumentException When `$allowedExtensions` is provided
+	 *   and the file's extension is not in the list.
 	 */
-	public static function createNewName(string $fileName): string
+	public static function createNewName(string $fileName, ?array $allowedExtensions = null): string
 	{
 		$ext = pathinfo($fileName, PATHINFO_EXTENSION);
+
+		if ($allowedExtensions !== null)
+		{
+			$allowed = array_map('strtolower', $allowedExtensions);
+			if (!in_array(strtolower($ext), $allowed, true))
+			{
+				throw new \InvalidArgumentException("File extension \"{$ext}\" is not allowed.");
+			}
+		}
+
 		return uniqid() . '.' . $ext;
 	}
 

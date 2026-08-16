@@ -1940,8 +1940,9 @@ class PostController extends ResourceController
 ```
 
 **Filters**
-- Unqualified model fields are aliased automatically (`$qualifyFilters`).
+- Unqualified model fields are aliased automatically (`$qualifyFilters`). If a filter service reads named, unprefixed properties off the raw client filter (`$clientFilter->isFeatured`) before building its own SQL, either set `$qualifyFilters = false` and qualify only the final fragments via `Filter::aliased()`, or read from `rawRequestFilter()` instead — see `docs/RALLY_MIGRATION.md`.
 - Client `filter` JSON is sanitized: raw SQL strings are dropped. Append app-built `[sql, [params]]` **after** `getFilter()`.
+- `protected array $passthroughFilterKeys = [];` lets specific filter keys bypass the model-fields allowlist (still parameterized/IN-capped) instead of hand-rolling a `VIRTUAL_FILTER_KEYS` restore pattern.
 - Sync windows: `Filter::since()` for storage filters; `Filter::sinceLiteral()` / `Filter::isSafeTimestamp()` when a query builder interpolates SQL. Never concatenate `lastSync`.
 
 **Includes and joins**
@@ -1952,6 +1953,7 @@ class PostController extends ResourceController
 **Scopes and search**
 - Model `$scopes` run on `all()` / `getRows()` / `fetchWhere()` and on ResourceController `get()`. `Model::get($id)` does not apply them.
 - `$searchableFields` defaults to `[]` (off). Use an explicit list or `['*']` to infer; `email` / `phone` / secrets and suffix names (`emailAddress`, `accessToken`) are never inferred.
+- `VisibleScope` (owner OR public+published) is a preset of `Proto\Models\Scopes\OwnershipVisibilityScope`, which takes any list of AND'd `[column, operator, value]` visibility conditions — use it instead of hand-rolling `owner OR (enabled=1 AND moderationStatus='approved' AND hiddenAt IS NULL)`-shaped SQL.
 
 **Cache**
 - ModelPolicy keys are already `u{userId}` / `s{sessionId}`.
@@ -1962,6 +1964,7 @@ class PostController extends ResourceController
 - Extend `Proto\Services\Service` (`success`, `failure`, `restrictFields`, `generateUuid`).
 - `$serviceClass = PostService::class` — do not `new` the service in the constructor.
 - Memoize child gateways with `$this->gateway(Child::class)`.
+- Can't extend `Proto\Services\Service` (e.g. its own `success()` collides)? `use Proto\Services\Traits\ServiceResultFactory;` for `ok()` / `fail()` instead of copying `ServiceResult` construction by hand.
 
 **Generators**
 - `createResource()` also writes Factory, Seeder, and Service when those files do not already exist.

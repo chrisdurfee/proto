@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Controllers;
 
+use Proto\Http\HttpTerminationException;
 use Proto\Http\Router\Request;
 use Proto\Utils\Format\JsonFormat;
 use Proto\Api\Validator;
@@ -54,9 +55,19 @@ abstract class ApiController extends Controller
 	/**
 	 * Validates the request data.
 	 *
+	 * Note: this never actually returns `false`. On failure it delegates
+	 * to {@see errorValidating()}, which throws {@see HttpTerminationException}
+	 * and terminates the request. The `bool` return exists so callers
+	 * that check the return value (`if (!$this->validateItem(...))`)
+	 * keep compiling; that branch is unreachable in practice because the
+	 * exception is thrown first. Callers do not need to check the
+	 * return value — call `validateRules()`/`validateItem()` and let a
+	 * failure throw.
+	 *
 	 * @param object|array $data The data to validate.
 	 * @param array $rules The validation rules to apply.
-	 * @return bool True if validation passes, false otherwise.
+	 * @return bool Always true when this method returns; throws on failure.
+	 * @throws HttpTerminationException When validation fails.
 	 */
 	protected function validateRules(object|array $data, array $rules = []): bool
 	{
@@ -69,39 +80,50 @@ abstract class ApiController extends Controller
 		if (!$validator->isValid())
 		{
 			$this->errorValidating($validator);
-			return false;
 		}
 
 		return true;
 	}
 
 	/**
-	 * Handles validation errors by rendering a JSON error response
-	 * with both a summary message and field-level error details.
+	 * Handles validation errors by throwing an {@see HttpTerminationException}
+	 * carrying a JSON error response with both a summary message and
+	 * field-level error details.
+	 *
+	 * Previously this rendered the response and called `die` directly,
+	 * which skipped any `finally`/rollback block around the call site
+	 * and made the failure path untestable without killing the PHPUnit
+	 * process. The exception is caught once at the router's dispatch
+	 * entry point ({@see \Proto\Http\Router\Router::activateRoute()}),
+	 * which renders the identical response a real HTTP request produced
+	 * before this change.
 	 *
 	 * @param Validator $validator The validator object containing the errors.
-	 * @return void
+	 * @return never
+	 * @throws HttpTerminationException Always.
 	 */
-	protected function errorValidating(Validator $validator): void
+	protected function errorValidating(Validator $validator): never
 	{
 		$fieldErrors = $validator->getFieldErrors();
 		$error = $this->error($validator->getMessage(), 422, $fieldErrors);
-		JsonFormat::encodeAndRender($error);
-		die;
+		throw new HttpTerminationException($error, 422);
 	}
 
 	/**
 	 * Sets an error response and terminates the request.
 	 *
+	 * Throws {@see HttpTerminationException} instead of calling `die`
+	 * directly; see {@see errorValidating()} for why.
+	 *
 	 * @param string|null $message The error message.
 	 * @param int $code The HTTP status code.
 	 * @return never
+	 * @throws HttpTerminationException Always.
 	 */
 	protected function setError(?string $message = null, int $code = 400): never
 	{
 		$error = $this->error($message ?? 'An error occurred', $code);
-		JsonFormat::encodeAndRender($error);
-        die;
+		throw new HttpTerminationException($error, $code);
 	}
 
 	/**
@@ -220,12 +242,15 @@ abstract class ApiController extends Controller
 	}
 
 	/**
-	 * This will get the filter from the request.
+	 * Decodes the raw client `filter`/`option` request input into an
+	 * object, before any allowlisting or sanitization. Shared by
+	 * {@see getFilter()} and {@see rawRequestFilter()} so both stay in
+	 * sync on how the client payload is parsed.
 	 *
 	 * @param Request $request The request object.
-	 * @return mixed The filter criteria.
+	 * @return object
 	 */
-	public function getFilter(Request $request): mixed
+	protected function decodeRequestFilter(Request $request): object
 	{
 		$filter = $request->input('filter') ?? $request->input('option');
 		if (is_string($filter))
@@ -233,7 +258,39 @@ abstract class ApiController extends Controller
 			$filter = urldecode($filter);
 		}
 
-		$filter = JsonFormat::decode($filter) ?? (object)[];
+		return JsonFormat::decode($filter) ?? (object)[];
+	}
+
+	/**
+	 * Returns the raw, decoded client filter JSON before
+	 * {@see Filter::sanitizeRequestFilter()}'s model-fields allowlist runs.
+	 *
+	 * This is an escape hatch, not the common path: prefer
+	 * `$passthroughFilterKeys` (on `ResourceController`) so client
+	 * filter values still flow through `getFilter()`'s normal
+	 * sanitize/qualify pipeline. Use `rawRequestFilter()` only when a
+	 * filter service reads **named, unprefixed** properties off the raw
+	 * client filter (e.g. `$clientFilter->isFeatured`) before building
+	 * its own SQL — see `docs/RALLY_MIGRATION.md` for the `$qualifyFilters`
+	 * vs custom filter service guidance.
+	 *
+	 * @param Request $request The request object.
+	 * @return object|null The decoded client filter, or an empty object when none was sent.
+	 */
+	public function rawRequestFilter(Request $request): ?object
+	{
+		return $this->decodeRequestFilter($request);
+	}
+
+	/**
+	 * This will get the filter from the request.
+	 *
+	 * @param Request $request The request object.
+	 * @return mixed The filter criteria.
+	 */
+	public function getFilter(Request $request): mixed
+	{
+		$filter = $this->decodeRequestFilter($request);
 		$filter = Filter::sanitizeRequestFilter($filter, $this->requestFilterColumns());
 		return $this->modifyFilter($filter, $request);
 	}
@@ -241,8 +298,9 @@ abstract class ApiController extends Controller
 	/**
 	 * Allowed request-filter columns, or null to skip the field allowlist.
 	 *
-	 * ResourceController passes the model's filterable fields. App-built
-	 * filters appended after getFilter() are not passed through this.
+	 * ResourceController passes the model's filterable fields (unioned
+	 * with `$passthroughFilterKeys`, when set). App-built filters
+	 * appended after getFilter() are not passed through this.
 	 *
 	 * @return array<int, string>|null
 	 */

@@ -5,6 +5,11 @@ All notable changes to Proto Framework are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `Filter::fieldLookup()` skips non-string `$fields` entries and uses the alias from computed `[['SQL'], 'alias']` tuples so `Model::qualifyFilter()` / `Filter::qualify()` no longer emit "Array to string conversion" when a model declares X()/Y()/IF() columns.
+
 ## [2.0.5] - 2026-08-16
 
 ### Fixed

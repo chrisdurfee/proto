@@ -3,7 +3,7 @@ namespace Proto\Auth;
 
 use Proto\Controllers\ControllerInterface;
 use Proto\Controllers\Response;
-use Proto\Http\Response as HttpResponse;
+use Proto\Http\HttpTerminationException;
 use Proto\Auth\Policies\Policy;
 
 /**
@@ -49,16 +49,24 @@ class PolicyProxy implements ControllerInterface
 	}
 
 	/**
-	 * Displays an error response and stops execution.
+	 * Terminates the request with a policy-denied error response.
+	 *
+	 * Throws {@see HttpTerminationException} instead of instantiating a
+	 * response and calling `exit` directly, so the failure is
+	 * unit-testable and any `finally`/rollback around the call site
+	 * still runs. The exception is caught once at the router's dispatch
+	 * entry point ({@see \Proto\Http\Router\Router::activateRoute()}),
+	 * which renders the identical 403 response this produced before.
 	 *
 	 * @param string|null $message The error message.
+	 * @return never
+	 * @throws HttpTerminationException Always.
 	 */
-	protected function showErrorResponse(?string $message = null): void
+	protected function showErrorResponse(?string $message = null): never
 	{
 		$message ??= 'The policy is blocking the user from accessing this action.';
 		$error = $this->error($message);
-		new HttpResponse($error, 403);
-		exit;
+		throw new HttpTerminationException($error, 403);
 	}
 
 	/**

@@ -106,12 +106,22 @@ class Filter
 			return $value[0] . ' IS NULL';
 		}
 
-		// Handle IN/NOT IN with array values: ['field', 'IN', [1, 2, 3]]
-		if ($valueCount === 3 && is_array($param))
+		// Handle IN/NOT IN: ['field', 'IN', [1, 2, 3]] or ['field', 'IN', 'singleValue']
+		if ($valueCount === 3)
 		{
 			$operator = strtoupper(trim((string)$value[1]));
 			if (in_array($operator, ['IN', 'NOT IN'], true))
 			{
+				// Defensive normalization: a scalar value (e.g. from a client
+				// sending a bare string instead of a one-element array) is
+				// coerced into a single-element array so this always produces
+				// a parameterized, parenthesized list instead of malformed
+				// SQL like `status IN ?`.
+				if (!is_array($param))
+				{
+					$param = [$param];
+				}
+
 				if (empty($param))
 				{
 					return ($operator === 'IN') ? '1 = 0' : '1 = 1';
@@ -707,7 +717,13 @@ class Filter
 	}
 
 	/**
-	 * @param array<int, string> $fields
+	 * Build a camelCase / snake_case lookup of filterable column names.
+	 *
+	 * `Model::fields()` may include computed tuples (`[['SQL'], 'alias']`).
+	 * Those are not strings; casting them emitted "Array to string
+	 * conversion" on every `qualify()` / `Model::all()` call.
+	 *
+	 * @param array<int, string|array> $fields
 	 * @return array<string, true>
 	 */
 	protected static function fieldLookup(array $fields): array
@@ -715,13 +731,53 @@ class Filter
 		$fieldSet = [];
 		foreach ($fields as $field)
 		{
-			$field = (string)$field;
-			$fieldSet[$field] = true;
-			$fieldSet[Strings::snakeCase($field)] = true;
-			$fieldSet[Strings::camelCase($field)] = true;
+			$name = self::lookupFieldName($field);
+			if ($name === null)
+			{
+				continue;
+			}
+
+			$fieldSet[$name] = true;
+			$fieldSet[Strings::snakeCase($name)] = true;
+			$fieldSet[Strings::camelCase($name)] = true;
 		}
 
 		return $fieldSet;
+	}
+
+	/**
+	 * Resolve a model field entry to a filterable column name.
+	 *
+	 * String fields are used as-is. Computed entries
+	 * (`[['SQL'], 'alias']` or `['column', 'alias']`) use the alias.
+	 * Nested arrays without a string name are skipped.
+	 *
+	 * @param mixed $field
+	 * @return string|null
+	 */
+	protected static function lookupFieldName(mixed $field): ?string
+	{
+		if (is_string($field) && $field !== '')
+		{
+			return $field;
+		}
+
+		if (!is_array($field))
+		{
+			return null;
+		}
+
+		if (isset($field[1]) && is_string($field[1]) && $field[1] !== '')
+		{
+			return $field[1];
+		}
+
+		if (isset($field[0]) && is_string($field[0]) && $field[0] !== '')
+		{
+			return $field[0];
+		}
+
+		return null;
 	}
 
 	/**
