@@ -915,6 +915,44 @@ class Filter
 	}
 
 	/**
+	 * Unwrap an `['IN', [...]]` / `['NOT IN', [...]]` tuple back into
+	 * its plain array (or return the value unchanged).
+	 *
+	 * `sanitizeRequestFilter()` and `format()` promote a plain
+	 * array/scalar filter value into an `['IN', [...]]` / `['NOT IN',
+	 * [...]]` tuple so `format()` can build a parameterized `IN`
+	 * clause. Consumers that read a filter property directly (instead
+	 * of letting `qualifyFilter()` / `format()` build the whole
+	 * condition) need the raw list back to do their own `in_array()`
+	 * checks or query building — this reverses that promotion.
+	 *
+	 * The operator itself (`IN` vs `NOT IN`) is discarded; callers
+	 * that care about negation must check the original value before
+	 * unwrapping. Anything that is not a two-element `[operator,
+	 * array]` tuple — a scalar, `null`, a plain array, an empty array,
+	 * or a malformed tuple — is returned unchanged.
+	 *
+	 * @param mixed $value
+	 * @return mixed
+	 */
+	public static function unwrapListValue(mixed $value): mixed
+	{
+		if (
+			is_array($value)
+			&& count($value) === 2
+			&& isset($value[0], $value[1])
+			&& is_string($value[0])
+			&& is_array($value[1])
+			&& in_array(strtoupper($value[0]), ['IN', 'NOT IN'], true)
+		)
+		{
+			return $value[1];
+		}
+
+		return $value;
+	}
+
+	/**
 	 * @param string $column
 	 * @return bool
 	 */

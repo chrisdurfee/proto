@@ -610,4 +610,125 @@ final class FilterTest extends Test
 		$capped = Filter::sanitizeRequestFilter((object)['categories' => range(1, 101)]);
 		$this->assertCount(Filter::REQUEST_IN_LIMIT, $capped->categories[1]);
 	}
+
+	/**
+	 * A plain scalar value is returned unchanged.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValuePassesThroughScalar(): void
+	{
+		$this->assertSame('active', Filter::unwrapListValue('active'));
+		$this->assertSame(42, Filter::unwrapListValue(42));
+		$this->assertSame(true, Filter::unwrapListValue(true));
+	}
+
+	/**
+	 * A `null` value is returned unchanged.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValuePassesThroughNull(): void
+	{
+		$this->assertNull(Filter::unwrapListValue(null));
+	}
+
+	/**
+	 * A plain array (not an `[operator, values]` tuple) is returned unchanged.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValuePassesThroughPlainArray(): void
+	{
+		$this->assertSame([1, 2, 3], Filter::unwrapListValue([1, 2, 3]));
+		$this->assertSame(['a', 'b'], Filter::unwrapListValue(['a', 'b']));
+	}
+
+	/**
+	 * An empty array is returned unchanged.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValuePassesThroughEmptyArray(): void
+	{
+		$this->assertSame([], Filter::unwrapListValue([]));
+	}
+
+	/**
+	 * An `['IN', [...]]` tuple is unwrapped to the plain array.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValueUnwrapsInTuple(): void
+	{
+		$this->assertSame([1, 2, 3], Filter::unwrapListValue(['IN', [1, 2, 3]]));
+	}
+
+	/**
+	 * A `['NOT IN', [...]]` tuple is unwrapped to the plain array too —
+	 * the operator is discarded, not treated specially.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValueUnwrapsNotInTuple(): void
+	{
+		$this->assertSame(['banned', 'deleted'], Filter::unwrapListValue(['NOT IN', ['banned', 'deleted']]));
+	}
+
+	/**
+	 * An `['IN', []]` tuple unwraps to an empty array rather than
+	 * passing the tuple through.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValueUnwrapsEmptyInTuple(): void
+	{
+		$this->assertSame([], Filter::unwrapListValue(['IN', []]));
+	}
+
+	/**
+	 * The operator match is case-insensitive.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValueIsCaseInsensitiveOnOperator(): void
+	{
+		$this->assertSame([1, 2], Filter::unwrapListValue(['in', [1, 2]]));
+		$this->assertSame([1, 2], Filter::unwrapListValue(['Not In', [1, 2]]));
+	}
+
+	/**
+	 * A two-element array whose first item is not IN/NOT IN (e.g. a
+	 * `[column, value]` filter tuple) is not mistaken for a list tuple.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValueIgnoresNonListOperatorTuple(): void
+	{
+		$this->assertSame(['status', ['active']], Filter::unwrapListValue(['status', ['active']]));
+		$this->assertSame(['=', 5], Filter::unwrapListValue(['=', 5]));
+	}
+
+	/**
+	 * A three-element `[column, operator, values]` filter entry is not
+	 * a two-element tuple, so it passes through unchanged.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValueIgnoresThreeElementEntries(): void
+	{
+		$entry = ['status', 'IN', ['active', 'pending']];
+		$this->assertSame($entry, Filter::unwrapListValue($entry));
+	}
+
+	/**
+	 * Round-trips the exact shape `sanitizeRequestFilter()` produces.
+	 *
+	 * @return void
+	 */
+	public function testUnwrapListValueRoundTripsSanitizeRequestFilterOutput(): void
+	{
+		$result = Filter::sanitizeRequestFilter((object)['categories' => [1, 2, 3]]);
+		$this->assertSame([1, 2, 3], Filter::unwrapListValue($result->categories));
+	}
 }
