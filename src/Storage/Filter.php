@@ -814,6 +814,23 @@ class Filter
 					continue;
 				}
 
+				/**
+				 * Plain array shorthand: `{"categories": [1, 2, 3]}` is
+				 * promoted to an `IN` tuple so clients do not have to send
+				 * `{"categories": ["IN", [1, 2, 3]]}`. Empty arrays are
+				 * dropped rather than forced to `1 = 0` so an unset/empty
+				 * multi-select does not unintentionally match nothing.
+				 */
+				if (is_array($item) && self::isPlainValueList($item))
+				{
+					if ($item !== [])
+					{
+						$out[$key] = self::capRequestInList(['IN', array_values($item)]);
+					}
+
+					continue;
+				}
+
 				if (is_scalar($item) || $item === null)
 				{
 					$out[$key] = $item;
@@ -869,6 +886,32 @@ class Filter
 
 		$allowed = self::allowedOperators();
 		return in_array(strtoupper($first), $allowed, true);
+	}
+
+	/**
+	 * Whether an array is a plain list of scalar/null values (no nested
+	 * arrays or objects, and not an `[operator, value]` pair). Used to
+	 * auto-promote `{"categories": [1, 2, 3]}` into an `IN` tuple.
+	 *
+	 * @param array $item
+	 * @return bool
+	 */
+	protected static function isPlainValueList(array $item): bool
+	{
+		if (!array_is_list($item))
+		{
+			return false;
+		}
+
+		foreach ($item as $value)
+		{
+			if (!is_scalar($value) && $value !== null)
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**

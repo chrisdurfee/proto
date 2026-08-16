@@ -499,4 +499,61 @@ final class FilterTest extends Test
 		$this->assertStringStartsWith('id IN (', $result);
 		$this->assertCount(101, $params);
 	}
+
+	/**
+	 * A plain array value (`{"categories": [1, 2, 3]}`) is promoted to
+	 * an IN tuple so clients do not need the `["IN", [...]]` wrapper.
+	 *
+	 * @return void
+	 */
+	public function testSanitizeRequestFilterPromotesPlainArrayToIn(): void
+	{
+		$result = Filter::sanitizeRequestFilter((object)[
+			'categories' => [1, 2, 3],
+			'status' => 'active'
+		]);
+
+		$this->assertSame(['IN', [1, 2, 3]], $result->categories);
+		$this->assertSame('active', $result->status);
+
+		$params = [];
+		$formatted = Filter::format(['categories', ...$result->categories], $params);
+		$this->assertSame('categories IN (?, ?, ?)', $formatted);
+		$this->assertSame([1, 2, 3], $params);
+	}
+
+	/**
+	 * An empty array value is dropped rather than forced to `1 = 0`,
+	 * so an empty multi-select filter does not match nothing.
+	 *
+	 * @return void
+	 */
+	public function testSanitizeRequestFilterDropsEmptyArrayValue(): void
+	{
+		$result = Filter::sanitizeRequestFilter((object)[
+			'categories' => [],
+			'status' => 'active'
+		]);
+
+		$this->assertFalse(isset($result->categories));
+		$this->assertSame('active', $result->status);
+	}
+
+	/**
+	 * Plain array promotion still respects the allowlist and the IN cap.
+	 *
+	 * @return void
+	 */
+	public function testSanitizeRequestFilterPlainArrayRespectsAllowlistAndCap(): void
+	{
+		$result = Filter::sanitizeRequestFilter(
+			(object)['categories' => [1, 2], 'secretIds' => [1, 2]],
+			['categories']
+		);
+		$this->assertSame(['IN', [1, 2]], $result->categories);
+		$this->assertFalse(isset($result->secretIds));
+
+		$capped = Filter::sanitizeRequestFilter((object)['categories' => range(1, 101)]);
+		$this->assertCount(Filter::REQUEST_IN_LIMIT, $capped->categories[1]);
+	}
 }
