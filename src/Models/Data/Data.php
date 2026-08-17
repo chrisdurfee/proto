@@ -328,10 +328,18 @@ class Data
 		}
 
 		$firstArg = $args[0];
+		if ($firstArg === null && !array_key_exists(1, $args))
+		{
+			// Model::init() calls set(null) when constructing without data.
+			return;
+		}
+
 		if (!is_object($firstArg))
 		{
 			$value = $args[1] ?? null;
-			$firstArg = (object)[$args[0] => $value];
+			// PHP 8.5+ deprecates null as an array key; coerce to ''.
+			$key = $args[0] ?? '';
+			$firstArg = (object)[$key => $value];
 		}
 
 		$this->setFields($firstArg);

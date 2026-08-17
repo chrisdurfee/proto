@@ -74,4 +74,31 @@ class DataTest extends TestCase
 		$this->assertSame('processing', $mapped->status);
 		$this->assertFalse(property_exists($mapped, 'userStatus'), 'Aliased join fields must be excluded from writes');
 	}
+
+	/**
+	 * Bare set(null) must be a no-op (Model::init with no data) and must
+	 * not trigger PHP 8.5 "null as array offset" deprecations.
+	 */
+	public function testSetNullIsNoOp(): void
+	{
+		$data = new Data(['id', 'status']);
+		$data->set('status', 'active');
+		$data->set(null);
+
+		$this->assertSame('active', $data->get('status'));
+	}
+
+	/**
+	 * Key/value set with a null key coerces to '' without deprecation
+	 * and does not overwrite real fields.
+	 */
+	public function testSetNullKeyCoercesToEmptyString(): void
+	{
+		$data = new Data(['id', 'status']);
+		$data->set('status', 'active');
+		$data->set(null, 'ignored');
+
+		$this->assertSame('active', $data->get('status'));
+		$this->assertNull($data->get(''));
+	}
 }

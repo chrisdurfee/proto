@@ -31,6 +31,8 @@ final class ReadOnlyArray implements \ArrayAccess, \IteratorAggregate, \Countabl
 	 */
 	public function offsetGet(mixed $offset): mixed
 	{
+		// PHP 8.5+ deprecates null as an array key; coerce to ''.
+		$offset = $offset ?? '';
 		if (! isset($this->inner[$offset]))
 		{
 			return null;
@@ -47,6 +49,8 @@ final class ReadOnlyArray implements \ArrayAccess, \IteratorAggregate, \Countabl
 	 */
 	public function offsetExists(mixed $offset): bool
 	{
+		// PHP 8.5+ deprecates null as an array key; coerce to ''.
+		$offset = $offset ?? '';
 		return isset($this->inner[$offset]);
 	}
 
