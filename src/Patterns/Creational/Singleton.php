@@ -7,16 +7,17 @@ namespace Proto\Patterns\Creational;
  * A creational design pattern that ensures a class has only one
  * instance, while providing a global access point to this instance.
  *
+ * PHP 8.5+: instances are stored in a private map keyed by class name
+ * so subclasses need not redeclare incompatible typed $instance props.
+ *
  * @package Proto\Patterns\Creational
  */
 abstract class Singleton
 {
 	/**
-	 * Holds the single instance of this class.
-	 *
-	 * @var static|null
+	 * @var array<class-string, static>
 	 */
-	protected static ?self $instance = null;
+	private static array $instances = [];
 
 	/**
 	 * Prevents direct instantiation to enforce the singleton pattern.
@@ -32,24 +33,23 @@ abstract class Singleton
 	 */
 	public static function getInstance(): static
 	{
-		if (static::$instance === null)
+		$class = static::class;
+		if (!isset(self::$instances[$class]))
 		{
-			static::$instance = new static();
+			self::$instances[$class] = new static();
 		}
 
-		return static::$instance;
+		return self::$instances[$class];
 	}
 
 	/**
-	 * Resets the Singleton instance.
-	 *
-	 * Primarily used for testing purposes to ensure a fresh instance.
+	 * Resets the Singleton instance (primarily for testing).
 	 *
 	 * @return void
 	 */
 	public static function reset(): void
 	{
-		static::$instance = null;
+		unset(self::$instances[static::class]);
 	}
 
 	/**

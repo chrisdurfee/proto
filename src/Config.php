@@ -16,11 +16,6 @@ namespace Proto
 	final class Config extends Singleton
 	{
 		/**
-		 * @var Config $instance The instance of the Config class
-		 */
-		protected static ?self $instance = null;
-
-		/**
 		 * @var object $settings The configuration settings
 		 */
 		protected object $settings;

@@ -12,12 +12,6 @@ namespace Proto
 	 */
 	class Auth extends Registry
 	{
-		/**
-		 * The singleton instance.
-		 *
-		 * @var self|null
-		 */
-		protected static ?self $instance = null;
 	}
 }
 

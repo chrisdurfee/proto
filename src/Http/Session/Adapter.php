@@ -13,10 +13,4 @@ use Proto\Patterns\Creational\Singleton;
  */
 abstract class Adapter extends Singleton implements SessionInterface
 {
-	/**
-	 * Singleton instance of the adapter.
-	 *
-	 * @var static|null
-	 */
-	protected static ?self $instance = null;
 }

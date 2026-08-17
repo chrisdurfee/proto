@@ -20,11 +20,6 @@ use Proto\Cache\Drivers\RedisDriver;
 class Events extends Singleton
 {
 	/**
-	 * @var self|null The singleton instance.
-	 */
-	protected static ?self $instance = null;
-
-	/**
 	 * @var string The prefix used to identify Redis-based events.
 	 */
 	protected const REDIS_PREFIX = 'redis:';

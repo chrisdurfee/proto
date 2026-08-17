@@ -14,13 +14,6 @@ use Proto\Cache\Drivers\Driver;
 class Cache extends Singleton
 {
 	/**
-	 * The singleton instance.
-	 *
-	 * @var self|null
-	 */
-	protected static ?self $instance = null;
-
-	/**
 	 * The cache driver instance.
 	 *
 	 * @var Driver|null
