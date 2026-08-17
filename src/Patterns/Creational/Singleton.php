@@ -61,22 +61,12 @@ abstract class Singleton
 
 	/**
 	 * Prevents unserialization of the singleton instance.
-	 */
-	public function __wakeup(): void
-	{
-		throw new \Exception("Cannot unserialize a singleton.");
-	}
-
-	/**
-	 * Prevents the unserialize method from being called.
 	 *
-	 * This method prevents the creation of another instance through
-	 * deserialization, which would bypass the Singleton pattern.
-	 *
-	 * @param array $serializedData Serialized data
+	 * @param array $data Serialized data
 	 * @return void
 	 */
-	public function __unserialize(array $serializedData): void
+	public function __unserialize(array $data): void
 	{
+		throw new \Exception("Cannot unserialize a singleton.");
 	}
 }
