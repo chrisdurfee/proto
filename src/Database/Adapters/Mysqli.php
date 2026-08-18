@@ -123,6 +123,10 @@ class Mysqli extends Adapter
 	/**
 	 * Prepares a SQL statement.
 	 *
+	 * SHOW / DESCRIBE statements cannot take bound `?` placeholders on
+	 * MariaDB/MySQL. Those are rewritten to quoted literals before prepare
+	 * (see {@see MysqliQueryHelper::resolveNonPreparableSql()}).
+	 *
 	 * @param string $sql The SQL query.
 	 * @param array|object $params The parameters to bind.
 	 * @return \mysqli_stmt|bool The prepared statement or false on failure.
@@ -133,6 +137,12 @@ class Mysqli extends Adapter
 		{
 			return false;
 		}
+
+		[$sql, $params] = $this->queryHelper->resolveNonPreparableSql(
+			$sql,
+			$params,
+			$this->connection instanceof \mysqli ? $this->connection : null
+		);
 
 		try
 		{

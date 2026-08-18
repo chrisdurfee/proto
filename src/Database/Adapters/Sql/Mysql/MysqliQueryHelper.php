@@ -112,4 +112,106 @@ class MysqliQueryHelper
 		$types  = str_repeat('s', count($params));
 		$stmt->bind_param($types, ...$params);
 	}
+
+	/**
+	 * MariaDB/MySQL reject bound `?` placeholders for SHOW / DESCRIBE /
+	 * DESC statements (e.g. `SHOW TABLES LIKE ?`). Detect those verbs.
+	 *
+	 * @param string $sql SQL to inspect.
+	 * @return bool
+	 */
+	public function isNonPreparableStatement(string $sql): bool
+	{
+		return (bool) preg_match('/^\s*(SHOW|DESCRIBE|DESC)\b/i', $sql);
+	}
+
+	/**
+	 * Inline-escape placeholders for statements that cannot be prepared.
+	 *
+	 * Returns `[sql, params]`. When the statement is preparable, the
+	 * original pair is returned unchanged. When it is a SHOW/DESCRIBE
+	 * with `?` placeholders, each placeholder is replaced with a quoted
+	 * literal and params are cleared so `prepare()` succeeds.
+	 *
+	 * Callers that pass `?` with an empty or short params list keep the
+	 * original SQL (so prepare still fails visibly) rather than emitting
+	 * a half-rewritten query.
+	 *
+	 * @param string $sql SQL that may contain `?`.
+	 * @param array|object $params Bind values matching placeholders.
+	 * @param \mysqli|null $connection Optional live connection for
+	 *        `real_escape_string`; falls back to `addslashes` when null.
+	 * @return array{0: string, 1: array}
+	 */
+	public function resolveNonPreparableSql(
+		string $sql,
+		array|object $params = [],
+		?\mysqli $connection = null
+	): array
+	{
+		$params = $this->setupParams($params);
+		if (!$this->isNonPreparableStatement($sql))
+		{
+			return [$sql, $params];
+		}
+
+		$placeholderCount = substr_count($sql, '?');
+		if ($placeholderCount === 0)
+		{
+			return [$sql, []];
+		}
+
+		if (count($params) < $placeholderCount)
+		{
+			return [$sql, $params];
+		}
+
+		$offset = 0;
+		$rewritten = preg_replace_callback(
+			'/\?/',
+			function () use (&$offset, $params, $connection): string
+			{
+				$literal = $this->quoteLiteral($params[$offset], $connection);
+				$offset++;
+				return $literal;
+			},
+			$sql,
+			$placeholderCount
+		);
+
+		return [$rewritten ?? $sql, []];
+	}
+
+	/**
+	 * Quote a scalar for safe inlining into SHOW / DESCRIBE SQL.
+	 *
+	 * @param mixed $value Value to quote.
+	 * @param \mysqli|null $connection Optional mysqli for escaping.
+	 * @return string
+	 */
+	public function quoteLiteral(mixed $value, ?\mysqli $connection = null): string
+	{
+		if ($value === null)
+		{
+			return 'NULL';
+		}
+
+		if (is_bool($value))
+		{
+			return $value ? '1' : '0';
+		}
+
+		if (is_int($value) || is_float($value))
+		{
+			return (string) $value;
+		}
+
+		$str = (string) $value;
+		if ($connection instanceof \mysqli)
+		{
+			return "'" . $connection->real_escape_string($str) . "'";
+		}
+
+		return "'" . addslashes($str) . "'";
+	}
 }

@@ -137,6 +137,54 @@ abstract class Adapter
 	}
 
 	/**
+	 * Whether a table exists in the current database.
+	 *
+	 * Uses `information_schema` with real bind parameters. Prefer this
+	 * over `SHOW TABLES LIKE ?`, which MariaDB/MySQL cannot prepare.
+	 *
+	 * @param string $tableName Table name (no schema qualifier).
+	 * @return bool
+	 */
+	public function tableExists(string $tableName): bool
+	{
+		$row = $this->first(
+			'SELECT 1 AS present
+			FROM information_schema.tables
+			WHERE table_schema = DATABASE()
+				AND table_name = ?
+			LIMIT 1',
+			[$tableName]
+		);
+
+		return $row !== null;
+	}
+
+	/**
+	 * Whether a column exists on a table in the current database.
+	 *
+	 * Uses `information_schema` with real bind parameters. Prefer this
+	 * over `SHOW COLUMNS FROM ... LIKE ?`, which MariaDB/MySQL cannot prepare.
+	 *
+	 * @param string $tableName Table name (no schema qualifier).
+	 * @param string $columnName Column name.
+	 * @return bool
+	 */
+	public function columnExists(string $tableName, string $columnName): bool
+	{
+		$row = $this->first(
+			'SELECT 1 AS present
+			FROM information_schema.columns
+			WHERE table_schema = DATABASE()
+				AND table_name = ?
+				AND column_name = ?
+			LIMIT 1',
+			[$tableName, $columnName]
+		);
+
+		return $row !== null;
+	}
+
+	/**
 	 * Sets the database connection instance.
 	 *
 	 * @param object|null $connection Connection instance.
