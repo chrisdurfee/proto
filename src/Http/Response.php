@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Http;
 
+use Proto\Http\Router\Headers;
 use Proto\Utils\Format\JsonFormat as Formatter;
 
 /**
@@ -80,6 +81,10 @@ class Response
 		if (!headers_sent())
 		{
 			header('Content-Type: application/json');
+
+			// Honor a directive the request already chose rather than leaving
+			// whatever default was sent while the router was booting.
+			Headers::sendCacheHeaders();
 		}
 
 		Formatter::encodeAndRender($this->data);

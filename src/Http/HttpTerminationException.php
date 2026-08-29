@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Http;
 
+use Proto\Http\Router\Headers;
 use Proto\Utils\Format\JsonFormat;
 
 /**
@@ -80,6 +81,11 @@ class HttpTerminationException extends \RuntimeException
 			http_response_code($this->statusCode);
 			header('Content-Type: application/json');
 		}
+
+		// Terminating early must not lose a directive the request already
+		// chose. A route that opted into no-store still needs it here: this
+		// path renders validation failures, which can echo submitted input.
+		Headers::sendCacheHeaders();
 
 		JsonFormat::encodeAndRender($this->payload);
 		exit;
