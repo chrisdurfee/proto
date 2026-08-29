@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Router;
 
+use Proto\Http\Request as HttpRequest;
 use Proto\Utils\Format\JsonFormat as Formatter;
 
 /**
@@ -86,12 +87,27 @@ class Response
 		}
 
 		$contentType = $contentType ?? $this->contentType;
-		$message = $this->getResponseMessage($code);
-
-		header("HTTP/2.0 {$code} {$message}");
+		$this->sendStatus($code);
 		header("Content-Type: {$contentType}; charset=utf-8");
 
 		return $this;
+	}
+
+	/**
+	 * Sends the status line without declaring a content type.
+	 *
+	 * @param int $code
+	 * @return void
+	 */
+	protected function sendStatus(int $code): void
+	{
+		if (headers_sent())
+		{
+			return;
+		}
+
+		$message = $this->getResponseMessage($code);
+		header("HTTP/2.0 {$code} {$message}");
 	}
 
 	/**
@@ -107,7 +123,27 @@ class Response
 	}
 
 	/**
+	 * Sets the cache directive for the response being built.
+	 *
+	 * ```php
+	 * Response::cache(CacheDirective::privateFor(60));
+	 * ```
+	 *
+	 * @param CacheDirective $directive
+	 * @return void
+	 */
+	public static function cache(CacheDirective $directive): void
+	{
+		Headers::cache($directive);
+	}
+
+	/**
 	 * Sends a JSON response.
+	 *
+	 * When the response is a cacheable representation, it is fingerprinted
+	 * with an ETag. A client that returns the same tag in `If-None-Match`
+	 * gets a bodyless 304, which is what makes a repeat request cost one
+	 * round trip and a few bytes instead of the whole payload.
 	 *
 	 * @param mixed $data
 	 * @param int $code
@@ -115,11 +151,89 @@ class Response
 	 */
 	public function json(mixed $data, int $code = 200): void
 	{
-		$this->sendHeaders($code, 'application/json');
+		$body = ($data === null) ? null : Formatter::encode($data);
+		$etag = ($body !== null && $this->isValidatable($code)) ? EntityTag::generate($body) : null;
 
-		if ($data !== null)
+		if ($etag !== null && EntityTag::matches($etag, EntityTag::requestedTag()))
 		{
-			Formatter::encodeAndRender($data);
+			$this->sendNotModified($etag);
+			return;
+		}
+
+		$this->sendHeaders($code, 'application/json');
+		Headers::sendCacheHeaders();
+
+		if ($etag !== null)
+		{
+			$this->sendEntityTag($etag);
+		}
+
+		if ($data === null)
+		{
+			return;
+		}
+
+		echo $body ?? 'Unable to encode the data to JSON.';
+	}
+
+	/**
+	 * Determines whether a response may carry a validator.
+	 *
+	 * Only a successful representation of a safe request is worth
+	 * revalidating: error bodies and the results of mutations are not
+	 * reusable, and a `no-store` directive forbids the client from keeping
+	 * the copy a 304 would refer to.
+	 *
+	 * @param int $code
+	 * @return bool
+	 */
+	protected function isValidatable(int $code): bool
+	{
+		if ($code !== 200 || !Headers::conditionalRequestsEnabled())
+		{
+			return false;
+		}
+
+		$method = strtoupper(HttpRequest::method());
+		if ($method !== 'GET' && $method !== 'HEAD')
+		{
+			return false;
+		}
+
+		return Headers::directive()->isStorable();
+	}
+
+	/**
+	 * Sends a 304 Not Modified with no body.
+	 *
+	 * A 304 describes a representation the client already holds, so it
+	 * carries no content type and no payload: only the validator and the
+	 * refreshed cache directive.
+	 *
+	 * @param string $etag
+	 * @return void
+	 */
+	protected function sendNotModified(string $etag): void
+	{
+		if (!headers_sent())
+		{
+			header_remove('Content-Type');
+		}
+
+		$this->sendStatus(304);
+		Headers::sendCacheHeaders();
+		$this->sendEntityTag($etag);
+	}
+
+	/**
+	 * @param string $etag
+	 * @return void
+	 */
+	protected function sendEntityTag(string $etag): void
+	{
+		if (!headers_sent())
+		{
+			header('ETag: ' . $etag);
 		}
 	}
 }
