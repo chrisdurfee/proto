@@ -127,4 +127,71 @@ abstract class Driver
 	 * @return bool True on success, false on failure.
 	 */
 	abstract public function clear(): bool;
+
+	/**
+	 * Retrieves many keys at once.
+	 *
+	 * Drivers that support a native multi-get should override this: the
+	 * default costs one round trip per key, which is the whole reason for
+	 * having the method. Missing keys are returned as null so the caller can
+	 * tell "absent" from "cached empty string" without a second lookup.
+	 *
+	 * @param array<int, string> $keys
+	 * @return array<string, string|null> Keyed by cache key, in the order requested.
+	 */
+	public function getMultiple(array $keys): array
+	{
+		$values = [];
+		foreach ($keys as $key)
+		{
+			$values[$key] = $this->get($key);
+		}
+
+		return $values;
+	}
+
+	/**
+	 * Deletes many keys at once.
+	 *
+	 * @param array<int, string> $keys
+	 * @return int Number of keys removed.
+	 */
+	public function deleteMultiple(array $keys): int
+	{
+		$removed = 0;
+		foreach ($keys as $key)
+		{
+			if ($this->delete($key))
+			{
+				$removed++;
+			}
+		}
+
+		return $removed;
+	}
+
+	/**
+	 * Sets a value only when the key does not already exist.
+	 *
+	 * This is the primitive a stampede lock is built on, so the winner must
+	 * be decided by the cache server rather than by the caller. The default
+	 * implementation is check-then-set and therefore racy: two callers can
+	 * both see the key missing and both believe they won. Any driver that
+	 * can do this atomically must override it.
+	 *
+	 * @param string $key
+	 * @param string $value
+	 * @param int|null $expire Expiration in seconds.
+	 * @return bool True when this caller created the key.
+	 */
+	public function add(string $key, string $value, ?int $expire = null): bool
+	{
+		if ($this->has($key))
+		{
+			return false;
+		}
+
+		$this->set($key, $value, $expire);
+		return true;
+	}
 }

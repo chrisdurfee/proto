@@ -180,14 +180,37 @@ class Cache extends Singleton
 	}
 
 	/**
+	 * Whether caching is enabled for this environment.
+	 *
+	 * Defaults to off in `dev` so a developer sees every change immediately
+	 * without reasoning about stale keys. That default has a cost: the cache
+	 * path is then never exercised locally, so a keying or invalidation bug
+	 * only surfaces in an environment where it is expensive to debug. Set
+	 * `cache.enabled` to override in either direction and exercise the real
+	 * path locally.
+	 *
+	 * @return bool
+	 */
+	public static function isEnabled(): bool
+	{
+		$cache = env('cache');
+		if (is_object($cache) && isset($cache->enabled))
+		{
+			return (bool)$cache->enabled;
+		}
+
+		return static::getEnv() !== 'dev';
+	}
+
+	/**
 	 * Checks if caching is supported.
 	 *
 	 * @return bool True if caching is enabled and supported.
 	 */
 	public static function isSupported(): bool
 	{
-		if (static::getEnv() === 'dev')
-        {
+		if (!static::isEnabled())
+		{
 			return false;
 		}
 
@@ -234,5 +257,43 @@ class Cache extends Singleton
         {
 			$driver->set($key, $value, $expire);
 		}
+	}
+
+	/**
+	 * Retrieves many keys in one call.
+	 *
+	 * @param array<int, string> $keys
+	 * @return array<string, string|null> Keyed by cache key; null where absent.
+	 */
+	public static function getMultiple(array $keys): array
+	{
+		$driver = static::driver();
+		return $driver ? $driver->getMultiple($keys) : array_fill_keys($keys, null);
+	}
+
+	/**
+	 * Deletes many keys in one call.
+	 *
+	 * @param array<int, string> $keys
+	 * @return int Number of keys removed.
+	 */
+	public static function deleteMultiple(array $keys): int
+	{
+		$driver = static::driver();
+		return $driver ? $driver->deleteMultiple($keys) : 0;
+	}
+
+	/**
+	 * Stores a value only when the key does not already exist.
+	 *
+	 * @param string $key The cache key.
+	 * @param string $value The value to store.
+	 * @param int|null $expire Expiration time in seconds.
+	 * @return bool True when this caller created the key.
+	 */
+	public static function add(string $key, string $value, ?int $expire = null): bool
+	{
+		$driver = static::driver();
+		return $driver ? $driver->add($key, $value, $expire) : false;
 	}
 }

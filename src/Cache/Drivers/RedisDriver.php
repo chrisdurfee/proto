@@ -298,6 +298,89 @@ class RedisDriver extends Driver
 	}
 
 	/**
+	 * Retrieves many keys in a single round trip.
+	 *
+	 * Replaces the N-round-trip loop in the base driver, which is what turns
+	 * a batch hydration into a per-item latency multiplier on a remote Redis.
+	 *
+	 * @param array<int, string> $keys
+	 * @return array<string, string|null> Keyed by cache key; null where absent.
+	 */
+	public function getMultiple(array $keys): array
+	{
+		if ($keys === [])
+		{
+			return [];
+		}
+
+		$keys = array_values(array_unique($keys));
+		$fallback = array_fill_keys($keys, null);
+
+		return $this->attempt(function (Redis $db) use ($keys, $fallback): array
+		{
+			$values = $db->mGet($keys);
+			if (!is_array($values))
+			{
+				return $fallback;
+			}
+
+			$result = [];
+			foreach ($keys as $index => $key)
+			{
+				$value = $values[$index] ?? false;
+				$result[$key] = ($value !== false) ? $value : null;
+			}
+
+			return $result;
+		}, $fallback);
+	}
+
+	/**
+	 * Deletes many keys in a single round trip.
+	 *
+	 * @param array<int, string> $keys
+	 * @return int Number of keys removed.
+	 */
+	public function deleteMultiple(array $keys): int
+	{
+		if ($keys === [])
+		{
+			return 0;
+		}
+
+		$keys = array_values(array_unique($keys));
+
+		return $this->attempt(fn (Redis $db): int => (int) $db->del($keys), 0);
+	}
+
+	/**
+	 * Sets a value only when the key does not already exist.
+	 *
+	 * Uses `SET key value NX EX ttl`, which decides the winner atomically on
+	 * the server, so this is safe to use as a stampede lock. The TTL is set
+	 * in the same command as the value: a separate EXPIRE could fail after
+	 * the SET succeeded and leave a lock that never releases.
+	 *
+	 * @param string $key
+	 * @param string $value
+	 * @param int|null $expire Expiration in seconds.
+	 * @return bool True when this caller created the key.
+	 */
+	public function add(string $key, string $value, ?int $expire = null): bool
+	{
+		return $this->attempt(function (Redis $db) use ($key, $value, $expire): bool
+		{
+			$options = ['NX'];
+			if ($expire !== null && $expire > 0)
+			{
+				$options = ['NX', 'EX' => $expire];
+			}
+
+			return $db->set($key, $value, $options) === true;
+		}, false);
+	}
+
+	/**
 	 * Publishes a message to a Redis channel.
 	 *
 	 * @param string $channel The channel name.
