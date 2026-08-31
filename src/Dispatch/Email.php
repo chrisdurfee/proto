@@ -308,18 +308,78 @@ class Email extends Dispatch
 	}
 
 	/**
-	 * Retrieves the unsubscribe header if an unsubscribe URL is set.
+	 * Retrieves the unsubscribe URL set for this message.
+	 *
+	 * @return string
+	 */
+	public function getUnsubscribeUrl(): string
+	{
+		return $this->unsubscribeUrl;
+	}
+
+	/**
+	 * RFC 8058 header pairs when an unsubscribe URL is set.
+	 *
+	 * @return array<int, array{0: string, 1: string}>
+	 */
+	public function getUnsubscribeHeaderPairs(): array
+	{
+		if ($this->unsubscribeUrl === '')
+		{
+			return [];
+		}
+
+		return [
+			['List-Unsubscribe', '<' . $this->unsubscribeUrl . '>'],
+			['List-Unsubscribe-Post', 'List-Unsubscribe=One-Click']
+		];
+	}
+
+	/**
+	 * Attaches RFC 8058 headers to the PHPMailer instance so Gmail/Yahoo
+	 * can show a one-click Unsubscribe button. No-op when no URL is set
+	 * or the mailer is missing.
+	 *
+	 * @return self
+	 */
+	public function applyUnsubscribeHeaders(): self
+	{
+		if ($this->mailer === null)
+		{
+			return $this;
+		}
+
+		foreach ($this->getUnsubscribeHeaderPairs() as [$name, $value])
+		{
+			$this->mailer->addCustomHeader($name, $value);
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Retrieves the unsubscribe headers if an unsubscribe URL is set.
+	 *
+	 * Used by the unused raw-header path. The SMTP path calls
+	 * {@see applyUnsubscribeHeaders()} instead.
 	 *
 	 * @return string
 	 */
 	protected function getUnsubscribeHeader(): string
 	{
-		if (empty($this->unsubscribeUrl))
+		$pairs = $this->getUnsubscribeHeaderPairs();
+		if ($pairs === [])
 		{
 			return '';
 		}
 
-		return "List-Unsubscribe: <{$this->unsubscribeUrl}>\r\n";
+		$header = '';
+		foreach ($pairs as [$name, $value])
+		{
+			$header .= $name . ': ' . $value . "\r\n";
+		}
+
+		return $header;
 	}
 
 	/**
@@ -549,6 +609,8 @@ class Email extends Dispatch
 					$this->mailer->addAttachment($file, $filename);
 				}
 			}
+
+			$this->applyUnsubscribeHeaders();
 
 			// Send the email
 			return $this->mailer->send();

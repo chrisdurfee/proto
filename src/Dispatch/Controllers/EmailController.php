@@ -3,6 +3,7 @@ namespace Proto\Dispatch\Controllers;
 
 use Proto\Dispatch\Email\Template;
 use Proto\Dispatch\Email;
+use Proto\Dispatch\Email\Unsubscribe\EmailCategory;
 use Proto\Dispatch\Email\Unsubscribe\EmailHelper;
 use Proto\Dispatch\Response;
 
@@ -42,9 +43,31 @@ class EmailController extends Controller
 			'from' => $settings->from ?? $email->default,
 			'fromName' => $settings->fromName ?? $email->fromName,
 			'subject' => $settings->subject,
-			'unsubscribeUrl' => $settings->unsubscribeUrl ?? EmailHelper::createUnsubscribeUrl($settings->to),
+			'unsubscribeUrl' => self::resolveHeaderUnsubscribeUrl($settings),
 			'attachments' => $settings->attachments ?? null
 		];
+	}
+
+	/**
+	 * Header URL for RFC 8058. Empty for transactional / internal mail
+	 * unless the caller passed `$settings->unsubscribeUrl`.
+	 *
+	 * @param object $settings
+	 * @return string
+	 */
+	protected static function resolveHeaderUnsubscribeUrl(object $settings): string
+	{
+		if (!EmailCategory::wantsUnsubscribe($settings))
+		{
+			return '';
+		}
+
+		if (!empty($settings->unsubscribeUrl))
+		{
+			return (string)$settings->unsubscribeUrl;
+		}
+
+		return EmailHelper::createUnsubscribeUrl($settings->to ?? null) ?? '';
 	}
 
 	/**
@@ -66,7 +89,7 @@ class EmailController extends Controller
 			'fromName' => $settings->fromName ?? $email->fromName,
 			'subject' => $settings->subject,
 			'message' => (string) $template,
-			'unsubscribeUrl' => $settings->unsubscribeUrl ?? EmailHelper::createUnsubscribeUrl($settings->to),
+			'unsubscribeUrl' => self::resolveHeaderUnsubscribeUrl($settings),
 			'attachments' => $settings->attachments ?? null
 		];
 	}
@@ -102,7 +125,9 @@ class EmailController extends Controller
 		 * We want to add the public unsubscribe URL to the email data.
 		 */
 		$data = (is_object($data) ? $data : new \stdClass());
-		$data->unsubscribeUrl = static::setPublicUnsubscribeUrl($settings->to);
+		$data->unsubscribeUrl = EmailCategory::wantsUnsubscribe($settings)
+			? static::setPublicUnsubscribeUrl($settings->to ?? null)
+			: '';
 		return $data;
 	}
 

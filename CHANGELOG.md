@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **RFC 8058 List-Unsubscribe on SMTP mail** — `Email::applyUnsubscribeHeaders()` writes `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` onto the PHPMailer instance before send. The pairs already existed on the unused raw-header path (`setupHeader()`); the SMTP path never called it, so Gmail/Yahoo never showed one-click Unsubscribe.
+  - `$settings->emailCategory` (`transactional` default, `marketing`, `digest`, `internal`) gates both the header URL and the footer `unsubscribeUrl` injected into template data. Only `marketing` and `digest` generate a token. An explicit `$settings->unsubscribeUrl` still wins for tests and callers that already built one.
+  - `Proto\Dispatch\Email\Unsubscribe\EmailCategory` owns the classification so dispatch and enqueue stay in sync.
 - **Conditional requests (ETag / 304) on JSON responses** — `Router\Response::json()` now fingerprints the encoded body with `Proto\Http\Router\EntityTag` and answers a matching `If-None-Match` with a bodyless `304 Not Modified`. A repeat request for unchanged data costs one round trip and a few bytes instead of the whole payload, which is the dominant cost for mobile and geographically distant clients. Validators are only attached to a representation that is actually reusable: `200` responses to `GET`/`HEAD` whose directive permits storage. Mutations, error bodies, and `no-store` responses are always sent in full.
   - Tag comparison is weak per RFC 9110 and normalizes the content-coding suffix a compressing intermediary appends (Apache `mod_deflate`/`mod_brotli` rewrite an origin tag as `"hash-gzip"` and the client echoes that value back). Without this, every browser revalidation behind Apache would miss and return a full `200`.
   - `ETag` is added to `Access-Control-Expose-Headers`, and `If-None-Match` to `Access-Control-Allow-Headers`.
