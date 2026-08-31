@@ -92,6 +92,20 @@ abstract class Policy implements CachePolicyInterface
 	}
 
 	/**
+	 * Deletes many keys in a single round trip.
+	 *
+	 * Invalidation runs on the write path, so deleting one key per round trip
+	 * adds latency to the write in proportion to how much was cached.
+	 *
+	 * @param array<int, string> $keys
+	 * @return int Number of keys removed.
+	 */
+	public function deleteKeys(array $keys): int
+	{
+		return Cache::deleteMultiple($keys);
+	}
+
+	/**
 	 * Stores a value in the cache.
 	 *
 	 * Null responses (e.g. SSE/sync endpoints) and values that fail JSON
@@ -198,10 +212,7 @@ abstract class Policy implements CachePolicyInterface
 		$keys = $this->getKeys($pattern);
 		if (!empty($keys))
 		{
-			foreach ($keys as $key)
-			{
-				$this->deleteKey($key);
-			}
+			$this->deleteKeys(array_values($keys));
 		}
 	}
 

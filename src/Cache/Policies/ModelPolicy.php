@@ -240,34 +240,64 @@ class ModelPolicy extends Policy
 	}
 
 	/**
+	 * Resource methods whose keys are invalidated by targeted deletes or by
+	 * the list generation token, and so must survive this sweep.
+	 *
+	 * @var array<int, string>
+	 */
+	protected const STANDARD_METHODS = ['get', 'all', 'setup', 'add', 'merge', 'update', 'updateStatus', 'delete'];
+
+	/**
 	 * Deletes cached generic method keys.
+	 *
+	 * Only keys shaped like a cached response (`Class:scope:method:params`)
+	 * are considered. The generation token shares the controller prefix but
+	 * is bookkeeping, not a response, and deleting it would undo the INCR
+	 * `deleteAll()` just performed: the counter would restart at 1 on the
+	 * next write and a worker that had not memoized it would resolve the
+	 * generation to 0, making `all()` keys cached before the write reachable
+	 * after it.
 	 *
 	 * @return void
 	 */
 	protected function deleteGenericMethodCaches(): void
 	{
-		// Get all cache keys for this controller
 		$controllerPrefix = $this->controller::class . ':';
 		$allKeys = $this->getKeys($controllerPrefix . '*');
-
-		if (!empty($allKeys))
+		if (empty($allKeys))
 		{
-			$standardMethods = ['get', 'all', 'setup', 'add', 'merge', 'update', 'updateStatus', 'delete'];
+			return;
+		}
 
-			foreach ($allKeys as $key)
+		$reserved = $this->listGenerationKey();
+		$stale = [];
+
+		foreach ($allKeys as $key)
+		{
+			if ($key === $reserved)
 			{
-				// Extract method name from cache key (format: Class:scope:method:params)
-				$keyParts = explode(':', $key);
-				if (count($keyParts) >= 3)
-				{
-					$method = $keyParts[2];
-					// If it's not a standard CRUD method, it's likely a generic cached method
-					if (!in_array($method, $standardMethods))
-					{
-						$this->deleteKey($key);
-					}
-				}
+				continue;
 			}
+
+			/**
+			 * A response key has a scope, a method, and a params segment.
+			 * Anything shorter is not a cached response.
+			 */
+			$keyParts = explode(':', $key);
+			if (count($keyParts) < 4)
+			{
+				continue;
+			}
+
+			if (!in_array($keyParts[2], self::STANDARD_METHODS, true))
+			{
+				$stale[] = $key;
+			}
+		}
+
+		if ($stale !== [])
+		{
+			$this->deleteKeys($stale);
 		}
 	}
 

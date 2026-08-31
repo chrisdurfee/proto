@@ -374,6 +374,139 @@ final class ModelPolicyKeysTest extends Test
 			}
 		}
 	}
+
+	/**
+	 * Builds a policy whose SCAN returns $keys and whose deletes are recorded.
+	 *
+	 * @param array<int, string> $keys
+	 * @return object
+	 */
+	private function sweepPolicy(array $keys): object
+	{
+		$controller = new class extends Controller {};
+		return new class($controller, $keys) extends ModelPolicy
+		{
+			/**
+			 * @var array<int, string>
+			 */
+			public array $deleted = [];
+
+			/**
+			 * @var int
+			 */
+			public int $deleteCalls = 0;
+
+			/**
+			 * @param Controller $controller
+			 * @param array<int, string> $keys
+			 */
+			public function __construct(Controller $controller, private array $keys)
+			{
+				parent::__construct($controller);
+			}
+
+			/**
+			 * @param string $pattern
+			 * @return array<int, string>
+			 */
+			public function getKeys(string $pattern): ?array
+			{
+				return $this->keys;
+			}
+
+			/**
+			 * @param array<int, string> $keys
+			 * @return int
+			 */
+			public function deleteKeys(array $keys): int
+			{
+				$this->deleteCalls++;
+				$this->deleted = array_merge($this->deleted, $keys);
+				return count($keys);
+			}
+
+			/**
+			 * @param string $key
+			 * @return bool
+			 */
+			public function deleteKey(string $key): bool
+			{
+				$this->deleted[] = $key;
+				return true;
+			}
+
+			public function exposeSweep(): void
+			{
+				$this->deleteGenericMethodCaches();
+			}
+
+			public function exposeGenerationKey(): string
+			{
+				return $this->listGenerationKey();
+			}
+		};
+	}
+
+	/**
+	 * The generation token shares the controller prefix but is bookkeeping,
+	 * not a cached response. Deleting it would undo the INCR that deleteAll()
+	 * just performed and let pre-write all() keys be reused afterwards.
+	 *
+	 * @return void
+	 */
+	public function testSweepPreservesListGenerationKey(): void
+	{
+		$policy = $this->sweepPolicy([]);
+		$generationKey = $policy->exposeGenerationKey();
+
+		$policy = $this->sweepPolicy([$generationKey]);
+		$policy->exposeSweep();
+
+		$this->assertNotContains($generationKey, $policy->deleted);
+		$this->assertSame([], $policy->deleted);
+	}
+
+	/**
+	 * @return void
+	 */
+	public function testSweepDeletesGenericMethodKeysOnly(): void
+	{
+		$policy = $this->sweepPolicy([]);
+		$prefix = explode(':', $policy->exposeGenerationKey())[0];
+
+		$generic = $prefix . ':u1:customReport:a=1';
+		$policy = $this->sweepPolicy([
+			$policy->exposeGenerationKey(),
+			$prefix . ':u1:get:5',
+			$prefix . ':shared:all:g2',
+			$generic
+		]);
+		$policy->exposeSweep();
+
+		$this->assertSame([$generic], $policy->deleted);
+	}
+
+	/**
+	 * Invalidation runs on the write path, so the sweep must not spend one
+	 * round trip per key.
+	 *
+	 * @return void
+	 */
+	public function testSweepBatchesDeletesIntoOneCall(): void
+	{
+		$policy = $this->sweepPolicy([]);
+		$prefix = explode(':', $policy->exposeGenerationKey())[0];
+
+		$policy = $this->sweepPolicy([
+			$prefix . ':u1:reportA:x',
+			$prefix . ':u1:reportB:y',
+			$prefix . ':u2:reportC:z'
+		]);
+		$policy->exposeSweep();
+
+		$this->assertCount(3, $policy->deleted);
+		$this->assertSame(1, $policy->deleteCalls);
+	}
 }
 
 /**

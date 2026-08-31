@@ -316,7 +316,7 @@ class RedisDriver extends Driver
 		$keys = array_values(array_unique($keys));
 		$fallback = array_fill_keys($keys, null);
 
-		return $this->attempt(function (Redis $db) use ($keys, $fallback): array
+		return $this->attempt(function (object $db) use ($keys, $fallback): array
 		{
 			$values = $db->mGet($keys);
 			if (!is_array($values))
@@ -350,7 +350,7 @@ class RedisDriver extends Driver
 
 		$keys = array_values(array_unique($keys));
 
-		return $this->attempt(fn (Redis $db): int => (int) $db->del($keys), 0);
+		return $this->attempt(fn (object $db): int => (int) $db->del($keys), 0);
 	}
 
 	/**
@@ -368,7 +368,7 @@ class RedisDriver extends Driver
 	 */
 	public function add(string $key, string $value, ?int $expire = null): bool
 	{
-		return $this->attempt(function (Redis $db) use ($key, $value, $expire): bool
+		return $this->attempt(function (object $db) use ($key, $value, $expire): bool
 		{
 			$options = ['NX'];
 			if ($expire !== null && $expire > 0)
