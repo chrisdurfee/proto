@@ -159,15 +159,34 @@ class RedisSession extends Adapter
 	/**
 	 * Loads session data from the cache.
 	 *
+	 * The entry's TTL is extended on every successful load so the lifetime
+	 * measures inactivity rather than absolute age. Only writes would
+	 * otherwise refresh it, and most authenticated requests never write to
+	 * the session, so an active user would be signed out a fixed interval
+	 * after signing in no matter how recently they used the app.
+	 *
 	 * @return void
 	 */
 	protected function loadData(): void
 	{
 		$raw = Cache::get($this->cacheKey());
-		if ($raw !== null)
+		if ($raw === null)
 		{
-			$this->data = (array)JsonFormat::decode($raw) ?: [];
+			return;
 		}
+
+		$this->data = (array)JsonFormat::decode($raw) ?: [];
+		$this->touch();
+	}
+
+	/**
+	 * Extends the session's expiry to a full lifetime from now.
+	 *
+	 * @return void
+	 */
+	protected function touch(): void
+	{
+		Cache::expire($this->cacheKey(), $this->lifetime);
 	}
 
 	/**
