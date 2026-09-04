@@ -262,7 +262,7 @@ class ModelPolicy extends Policy
 	 */
 	protected function deleteGenericMethodCaches(): void
 	{
-		$controllerPrefix = $this->controller::class . ':';
+		$controllerPrefix = static::escapePattern($this->controller::class) . ':';
 		$allKeys = $this->getKeys($controllerPrefix . '*');
 		if (empty($allKeys))
 		{

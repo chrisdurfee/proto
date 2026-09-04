@@ -161,6 +161,27 @@ abstract class Policy implements CachePolicyInterface
 	}
 
 	/**
+	 * Escapes glob metacharacters in a literal part of a key pattern.
+	 *
+	 * Cache keys are prefixed with a namespaced class name, and a backslash
+	 * is the escape character in the glob syntax `SCAN MATCH` uses. Passing
+	 * the class name through unescaped makes the pattern match nothing at
+	 * all, so every pattern-based invalidation silently succeeds while
+	 * deleting no keys.
+	 *
+	 * Parameters are escaped for the opposite reason: a slug or guid is
+	 * client-supplied, and an unescaped `*` or `[` there would widen the
+	 * pattern and delete cache entries belonging to other records.
+	 *
+	 * @param string $literal
+	 * @return string
+	 */
+	protected static function escapePattern(string $literal): string
+	{
+		return addcslashes($literal, '\\*?[]');
+	}
+
+	/**
 	 * Builds a wildcard key pattern matching a method across every scope.
 	 *
 	 * Used to invalidate cached responses for every user when the
@@ -173,7 +194,11 @@ abstract class Policy implements CachePolicyInterface
 	 */
 	protected function createKeyPattern(string $method, mixed $params): string
 	{
-		return $this->controller::class . ':*:' . $method . ':' . $this->normalizeParams($params);
+		return static::escapePattern($this->controller::class)
+			. ':*:'
+			. static::escapePattern($method)
+			. ':'
+			. static::escapePattern($this->normalizeParams($params));
 	}
 
 	/**

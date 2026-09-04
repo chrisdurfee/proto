@@ -376,6 +376,48 @@ final class ModelPolicyKeysTest extends Test
 	}
 
 	/**
+	 * A namespaced class name contains backslashes, and a backslash is the
+	 * escape character in the glob syntax `SCAN MATCH` uses. Left unescaped,
+	 * the pattern matches nothing and every pattern-based invalidation
+	 * silently deletes no keys.
+	 *
+	 * @return void
+	 */
+	public function testKeyPatternEscapesNamespaceSeparators(): void
+	{
+		$pattern = $this->policy()->exposePattern('get', 5);
+
+		$this->assertStringNotContainsString('Proto\\Controllers', $pattern);
+		$this->assertStringContainsString('Proto\\\\Controllers', $pattern);
+	}
+
+	/**
+	 * A slug or guid is client-supplied. An unescaped wildcard there would
+	 * widen the delete pattern to cache entries of other records.
+	 *
+	 * @return void
+	 */
+	public function testKeyPatternEscapesWildcardsInParams(): void
+	{
+		$policy = $this->policy();
+
+		$this->assertStringEndsWith(':get:\\*', $policy->exposePattern('get', '*'));
+		$this->assertStringEndsWith(':get:a\\[b\\]', $policy->exposePattern('get', 'a[b]'));
+		$this->assertStringEndsWith(':get:a\\?b', $policy->exposePattern('get', 'a?b'));
+	}
+
+	/**
+	 * The scope wildcard must survive escaping, or the pattern would only
+	 * match a literal asterisk scope and invalidate nothing.
+	 *
+	 * @return void
+	 */
+	public function testKeyPatternKeepsScopeWildcardUnescaped(): void
+	{
+		$this->assertStringContainsString(':*:get:', $this->policy()->exposePattern('get', 5));
+	}
+
+	/**
 	 * Builds a policy whose SCAN returns $keys and whose deletes are recorded.
 	 *
 	 * @param array<int, string> $keys
