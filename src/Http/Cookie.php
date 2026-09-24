@@ -70,7 +70,17 @@ class Cookie
 	 */
 	public function set(): void
 	{
-		setcookie($this->name, $this->value, $this->getOptions());
+		$options = $this->getOptions();
+		setcookie($this->name, $this->value, $options);
+
+		// A host-only cookie with the same name outranks the parent-domain
+		// cookie. Drop it so the shared session is the one the browser sends.
+		if (isset($options['domain']))
+		{
+			unset($options['domain']);
+			$options['expires'] = 1;
+			setcookie($this->name, '', $options);
+		}
 	}
 
 	/**
@@ -109,13 +119,120 @@ class Cookie
 	{
 		$isProd = ($this->getEnv() !== 'dev');
 
-		return [
+		$options = [
 			'expires' => $this->expires,
 			'path' => '/',
 			'secure' => $isProd, // Secure flag enabled for HTTPS in production
 			'httponly' => true, // Prevents JavaScript access
 			'samesite' => $isProd ? 'Strict' : 'Lax'
 		];
+
+		$domain = self::resolveSharedDomain(
+			self::requestHost(),
+			self::domainWideEnabled(),
+			self::configuredParent()
+		);
+		if ($domain !== null)
+		{
+			$options['domain'] = $domain;
+		}
+
+		return $options;
+	}
+
+	/**
+	 * Parent-domain cookie scope when `cookieDomainWide` is on.
+	 *
+	 * Returns `.example.com` only for a production host that is the
+	 * configured parent or one of its subdomains. Localhost, IP hosts,
+	 * and every non-production env stay host-only.
+	 *
+	 * @param string $host Request host, without a port.
+	 * @param bool $enabled `cookieDomainWide` from config.
+	 * @param string|null $parent Registrable parent, such as `example.com`.
+	 * @return string|null Leading-dot domain, or null to stay host-only.
+	 */
+	public static function resolveSharedDomain(string $host, bool $enabled, ?string $parent): ?string
+	{
+		if (!$enabled)
+		{
+			return null;
+		}
+
+		$host = self::normalizeHost($host);
+		$parent = self::normalizeHost((string)$parent);
+		if ($host === '' || $parent === '' || !str_contains($parent, '.'))
+		{
+			return null;
+		}
+
+		if (filter_var($host, FILTER_VALIDATE_IP) || filter_var($parent, FILTER_VALIDATE_IP))
+		{
+			return null;
+		}
+
+		if ($host !== $parent && !str_ends_with($host, '.' . $parent))
+		{
+			return null;
+		}
+
+		return '.' . $parent;
+	}
+
+	/**
+	 * @return bool
+	 */
+	protected static function domainWideEnabled(): bool
+	{
+		$flag = env('cookieDomainWide');
+		return $flag === true || $flag === 1 || $flag === '1' || $flag === 'true';
+	}
+
+	/**
+	 * Production parent only. Staging and dev stay host-only so a
+	 * staging host under the same registrable domain cannot mint a
+	 * cookie the production apps will accept.
+	 *
+	 * @return string|null
+	 */
+	protected static function configuredParent(): ?string
+	{
+		if (Config::getInstance()->getEnv() !== 'prod')
+		{
+			return null;
+		}
+
+		$domain = env('domain');
+		if (!is_object($domain))
+		{
+			return null;
+		}
+
+		$parent = trim((string)($domain->production ?? ''));
+		$parent = preg_replace('#^https?://#i', '', $parent) ?? $parent;
+		$parent = explode('/', $parent, 2)[0];
+
+		return $parent !== '' ? $parent : null;
+	}
+
+	/**
+	 * @return string
+	 */
+	protected static function requestHost(): string
+	{
+		$host = $_SERVER['HTTP_HOST'] ?? '';
+		return is_string($host) ? $host : '';
+	}
+
+	/**
+	 * @param string $host
+	 * @return string
+	 */
+	protected static function normalizeHost(string $host): string
+	{
+		$host = strtolower(trim($host));
+		$host = explode(':', $host, 2)[0];
+		return rtrim($host, '.');
 	}
 
 	/**
@@ -139,6 +256,11 @@ class Cookie
 	public static function remove(string $name): void
 	{
 		$opts = (new static($name, '', 1))->getOptions();
-    	setcookie($name, '', $opts);
+		setcookie($name, '', $opts);
+		if (isset($opts['domain']))
+		{
+			unset($opts['domain']);
+			setcookie($name, '', $opts);
+		}
 	}
 }
