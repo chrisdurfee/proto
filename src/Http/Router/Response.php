@@ -213,7 +213,7 @@ class Response
 	 * @param string $etag
 	 * @return void
 	 */
-	protected function sendNotModified(string $etag): void
+	public function sendNotModified(string $etag): void
 	{
 		if (!headers_sent())
 		{

@@ -3,7 +3,11 @@ namespace Proto\Cache\Policies;
 
 use Proto\Cache\Cache;
 use Proto\Controllers\Controller;
+use Proto\Http\NotModifiedException;
+use Proto\Http\Router\EntityTag;
+use Proto\Http\Router\Headers;
 use Proto\Http\Router\Request;
+use Proto\Utils\Format\JsonFormat;
 
 /**
  * ModelPolicy
@@ -210,29 +214,19 @@ class ModelPolicy extends Policy
 		?Request $request
 	): mixed
 	{
-		$cached = $this->getValue($key);
+		[$cached, $etag] = $this->getValueAndTag($key);
 		if ($cached !== null)
 		{
-			if ($stripAndReenrich && $request !== null)
-			{
-				$this->reenrichCached($cached, $request);
-			}
-
-			return $cached;
+			return $this->serveHit($key, $cached, $etag, $stripAndReenrich, $request);
 		}
 
 		$won = $this->acquireLock($key);
 		if (!$won)
 		{
-			$cached = $this->awaitValue($key);
+			[$cached, $etag] = $this->awaitValueAndTag($key);
 			if ($cached !== null)
 			{
-				if ($stripAndReenrich && $request !== null)
-				{
-					$this->reenrichCached($cached, $request);
-				}
-
-				return $cached;
+				return $this->serveHit($key, $cached, $etag, $stripAndReenrich, $request);
 			}
 		}
 
@@ -240,7 +234,7 @@ class ModelPolicy extends Policy
 		{
 			$response = $compute();
 			$store = $stripAndReenrich ? $this->stripViewerFlags($response) : $response;
-			$this->setValue($key, $store, $expire);
+			$this->storeRemembered($key, $store, $expire, $stripAndReenrich);
 			return $response;
 		}
 		finally
@@ -250,6 +244,155 @@ class ModelPolicy extends Policy
 				$this->releaseLock($key);
 			}
 		}
+	}
+
+	/**
+	 * Reads the payload and its stored validator in one round trip.
+	 *
+	 * @param string $key
+	 * @return array{0: mixed, 1: string|null}
+	 */
+	protected function getValueAndTag(string $key): array
+	{
+		$etagKey = $key . ':etag';
+		$raw = Cache::getMultiple([$key, $etagKey]);
+		$payload = $raw[$key] ?? null;
+		if ($payload === null)
+		{
+			return [null, null];
+		}
+
+		$tag = $raw[$etagKey] ?? null;
+		return [
+			JsonFormat::decode($payload),
+			(is_string($tag) && $tag !== '') ? $tag : null
+		];
+	}
+
+	/**
+	 * @param string $key
+	 * @return array{0: mixed, 1: string|null}
+	 */
+	protected function awaitValueAndTag(string $key): array
+	{
+		for ($i = 0; $i < $this->lockWaitAttempts; $i++)
+		{
+			usleep($this->lockWaitMicros);
+			[$cached, $etag] = $this->getValueAndTag($key);
+			if ($cached !== null)
+			{
+				return [$cached, $etag];
+			}
+		}
+
+		return [null, null];
+	}
+
+	/**
+	 * A matching stored validator skips encode + hash. Viewer-flagged
+	 * responses are never served this way: re-enrichment changes the bytes.
+	 *
+	 * @param string $key
+	 * @param mixed $cached
+	 * @param string|null $etag
+	 * @param bool $stripAndReenrich
+	 * @param Request|null $request
+	 * @return mixed
+	 */
+	protected function serveHit(
+		string $key,
+		mixed $cached,
+		?string $etag,
+		bool $stripAndReenrich,
+		?Request $request
+	): mixed
+	{
+		if (
+			$etag !== null
+			&& $this->canServeStoredValidator($stripAndReenrich)
+			&& EntityTag::matches($etag, EntityTag::requestedTag())
+		)
+		{
+			throw new NotModifiedException($etag);
+		}
+
+		if ($stripAndReenrich && $request !== null)
+		{
+			$this->reenrichCached($cached, $request);
+		}
+
+		return $cached;
+	}
+
+	/**
+	 * @param string $key
+	 * @param mixed $store
+	 * @param int $expire
+	 * @param bool $stripAndReenrich
+	 * @return void
+	 */
+	protected function storeRemembered(
+		string $key,
+		mixed $store,
+		int $expire,
+		bool $stripAndReenrich
+	): void
+	{
+		if ($store === null)
+		{
+			return;
+		}
+
+		$encoded = JsonFormat::encode($store);
+		if ($encoded === null)
+		{
+			return;
+		}
+
+		Cache::set($key, $encoded, $expire);
+		if ($this->canServeStoredValidator($stripAndReenrich))
+		{
+			Cache::set($key . ':etag', EntityTag::generate($encoded), $expire);
+			return;
+		}
+
+		Cache::delete($key . ':etag');
+	}
+
+	/**
+	 * Stored validators are only safe when the bytes we cached are the
+	 * bytes we would send. Viewer flags mutate the payload after the
+	 * cache read, so one tag cannot cover every viewer.
+	 *
+	 * @param bool $stripAndReenrich
+	 * @return bool
+	 */
+	protected function canServeStoredValidator(bool $stripAndReenrich): bool
+	{
+		if ($stripAndReenrich && $this->hasViewerFlags())
+		{
+			return false;
+		}
+
+		if (!Headers::conditionalRequestsEnabled())
+		{
+			return false;
+		}
+
+		return Headers::directive()->isStorable();
+	}
+
+	/**
+	 * @return bool
+	 */
+	protected function hasViewerFlags(): bool
+	{
+		if (!method_exists($this->controller, 'viewerFlagFields'))
+		{
+			return false;
+		}
+
+		return $this->controller->viewerFlagFields() !== [];
 	}
 
 	/**
@@ -268,25 +411,6 @@ class ModelPolicy extends Policy
 	protected function releaseLock(string $key): void
 	{
 		Cache::delete($key . ':lock');
-	}
-
-	/**
-	 * @param string $key
-	 * @return mixed
-	 */
-	protected function awaitValue(string $key): mixed
-	{
-		for ($i = 0; $i < $this->lockWaitAttempts; $i++)
-		{
-			usleep($this->lockWaitMicros);
-			$cached = $this->getValue($key);
-			if ($cached !== null)
-			{
-				return $cached;
-			}
-		}
-
-		return null;
 	}
 
 	/**

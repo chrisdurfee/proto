@@ -583,14 +583,39 @@ final class ModelPolicyKeysTest extends Test
 			 */
 			public int $lockCalls = 0;
 
-			public function getValue(string $key): mixed
+			/**
+			 * @var bool
+			 */
+			public bool $allowStoredValidator = false;
+
+			/**
+			 * @var string|null
+			 */
+			public ?string $storedEtag = null;
+
+			protected function getValueAndTag(string $key): array
 			{
-				return $this->values[$key] ?? null;
+				return [$this->values[$key] ?? null, $this->storedEtag];
 			}
 
-			public function setValue(string $key, mixed $value, ?int $expire = null): void
+			protected function awaitValueAndTag(string $key): array
 			{
-				$this->values[$key] = $value;
+				return [$this->awaited, $this->storedEtag];
+			}
+
+			protected function storeRemembered(
+				string $key,
+				mixed $store,
+				int $expire,
+				bool $stripAndReenrich
+			): void
+			{
+				$this->values[$key] = $store;
+			}
+
+			protected function canServeStoredValidator(bool $stripAndReenrich): bool
+			{
+				return $this->allowStoredValidator;
 			}
 
 			protected function acquireLock(string $key): bool
@@ -601,11 +626,6 @@ final class ModelPolicyKeysTest extends Test
 
 			protected function releaseLock(string $key): void
 			{
-			}
-
-			protected function awaitValue(string $key): mixed
-			{
-				return $this->awaited;
 			}
 
 			public function exposeRemember(): mixed
@@ -691,6 +711,59 @@ final class ModelPolicyKeysTest extends Test
 
 		$this->assertSame(1, $result->n);
 		$this->assertSame(1, $policy->computes);
+	}
+
+	/**
+	 * A stored validator that matches If-None-Match skips compute and
+	 * decode-to-encode. Viewer-flagged responses must not take this path.
+	 *
+	 * @return void
+	 */
+	public function testRememberThrowsNotModifiedWhenStoredTagMatches(): void
+	{
+		$policy = $this->stampedePolicy();
+		$policy->values['k'] = (object)['n' => 1];
+		$policy->storedEtag = '"abc"';
+		$policy->allowStoredValidator = true;
+		$_SERVER['HTTP_IF_NONE_MATCH'] = '"abc"';
+
+		try
+		{
+			$policy->exposeRemember();
+			$this->fail('Expected NotModifiedException');
+		}
+		catch (\Proto\Http\NotModifiedException $e)
+		{
+			$this->assertSame('"abc"', $e->getEtag());
+			$this->assertSame(0, $policy->computes);
+		}
+		finally
+		{
+			unset($_SERVER['HTTP_IF_NONE_MATCH']);
+		}
+	}
+
+	/**
+	 * @return void
+	 */
+	public function testRememberDoesNotUseStoredTagWhenFlagsWouldRewrite(): void
+	{
+		$policy = $this->stampedePolicy();
+		$policy->values['k'] = (object)['n' => 1];
+		$policy->storedEtag = '"abc"';
+		$policy->allowStoredValidator = false;
+		$_SERVER['HTTP_IF_NONE_MATCH'] = '"abc"';
+
+		try
+		{
+			$result = $policy->exposeRemember();
+			$this->assertSame(1, $result->n);
+			$this->assertSame(0, $policy->computes);
+		}
+		finally
+		{
+			unset($_SERVER['HTTP_IF_NONE_MATCH']);
+		}
 	}
 }
 
