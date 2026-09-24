@@ -151,23 +151,142 @@ class ModelPolicy extends Policy
 		$cacheId = $id ?? ($request->input('id') ?? $request->params()->id ?? null);
 		$key = $this->createKey('get', $this->cacheIdWithIncludes($request, $cacheId));
 
-		/**
-		 * A single GET replaces the previous EXISTS + GET pair: setValue()
-		 * never stores a literal null (@see Policy::setValue), so a null
-		 * result here unambiguously means "not cached" — halving the Redis
-		 * round trips on every cache hit.
-		 */
+		return $this->remember(
+			$key,
+			fn(): object => $this->controller->get($request),
+			$this->getMethodExpiration('get'),
+			true,
+			$request
+		);
+	}
+
+	/**
+	 * Seconds a miss lock is held. Long enough for a slow controller, short
+	 * enough that a crashed winner cannot stall later requests.
+	 *
+	 * @var int
+	 */
+	protected int $lockSeconds = 15;
+
+	/**
+	 * How many times a lock loser re-reads the key before computing itself.
+	 *
+	 * @var int
+	 */
+	protected int $lockWaitAttempts = 5;
+
+	/**
+	 * Pause between loser re-reads, in microseconds.
+	 *
+	 * @var int
+	 */
+	protected int $lockWaitMicros = 20000;
+
+	/**
+	 * Returns a cached value, or computes it once under a stampede lock.
+	 *
+	 * `Cache::add()` (SET NX) decides the winner on the server. Losers wait
+	 * and re-read so a thundering herd does not replay the same SQL. If the
+	 * winner never writes (compute failed, cache down), losers fall through
+	 * and compute themselves rather than wait forever.
+	 *
+	 * setValue() never stores a literal null, so a null getValue() means
+	 * "not cached".
+	 *
+	 * @param string $key
+	 * @param callable $compute
+	 * @param int $expire
+	 * @param bool $stripAndReenrich Whether to strip viewer flags on store
+	 *        and re-apply them on a hit (get/all). Generic methods store
+	 *        the response as-is.
+	 * @param Request|null $request
+	 * @return mixed
+	 */
+	protected function remember(
+		string $key,
+		callable $compute,
+		int $expire,
+		bool $stripAndReenrich,
+		?Request $request
+	): mixed
+	{
 		$cached = $this->getValue($key);
 		if ($cached !== null)
 		{
-			$this->reenrichCached($cached, $request);
+			if ($stripAndReenrich && $request !== null)
+			{
+				$this->reenrichCached($cached, $request);
+			}
+
 			return $cached;
 		}
 
-		$response = $this->controller->get($request);
-		$this->setValue($key, $this->stripViewerFlags($response), $this->getMethodExpiration('get'));
+		$won = $this->acquireLock($key);
+		if (!$won)
+		{
+			$cached = $this->awaitValue($key);
+			if ($cached !== null)
+			{
+				if ($stripAndReenrich && $request !== null)
+				{
+					$this->reenrichCached($cached, $request);
+				}
 
-		return $response;
+				return $cached;
+			}
+		}
+
+		try
+		{
+			$response = $compute();
+			$store = $stripAndReenrich ? $this->stripViewerFlags($response) : $response;
+			$this->setValue($key, $store, $expire);
+			return $response;
+		}
+		finally
+		{
+			if ($won)
+			{
+				$this->releaseLock($key);
+			}
+		}
+	}
+
+	/**
+	 * @param string $key
+	 * @return bool True when this caller created the lock.
+	 */
+	protected function acquireLock(string $key): bool
+	{
+		return Cache::add($key . ':lock', '1', $this->lockSeconds);
+	}
+
+	/**
+	 * @param string $key
+	 * @return void
+	 */
+	protected function releaseLock(string $key): void
+	{
+		Cache::delete($key . ':lock');
+	}
+
+	/**
+	 * @param string $key
+	 * @return mixed
+	 */
+	protected function awaitValue(string $key): mixed
+	{
+		for ($i = 0; $i < $this->lockWaitAttempts; $i++)
+		{
+			usleep($this->lockWaitMicros);
+			$cached = $this->getValue($key);
+			if ($cached !== null)
+			{
+				return $cached;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -472,17 +591,13 @@ class ModelPolicy extends Policy
 		$params = $this->setupAllParams($filter, $offset, $limit, $this->modifiersWithIncludes($request, $inputs->modifiers));
 		$key = $this->createKey('all', 'g' . $this->getListGeneration() . ':' . $params);
 
-		$cached = $this->getValue($key);
-		if ($cached !== null)
-		{
-			$this->reenrichCached($cached, $request);
-			return $cached;
-		}
-
-		$response = $this->controller->all($request);
-		$this->setValue($key, $this->stripViewerFlags($response), $this->getMethodExpiration('all'));
-
-		return $response;
+		return $this->remember(
+			$key,
+			fn(): object => $this->controller->all($request),
+			$this->getMethodExpiration('all'),
+			true,
+			$request
+		);
 	}
 
 	/**
@@ -667,18 +782,13 @@ class ModelPolicy extends Policy
 		$cacheParams = $this->generateGenericCacheParams($method, $request);
 		$key = $this->createKey($method, $cacheParams);
 
-		// Check if we have a cached result
-		$cached = $this->getValue($key);
-		if ($cached !== null)
-		{
-			return $cached;
-		}
-
-		// Call the controller method and cache the result
-		$response = $this->controller->{$method}(...$arguments);
-		$this->setValue($key, $response, $this->getMethodExpiration($method));
-
-		return $response;
+		return $this->remember(
+			$key,
+			fn(): mixed => $this->controller->{$method}(...$arguments),
+			$this->getMethodExpiration($method),
+			false,
+			null
+		);
 	}
 
 	/**

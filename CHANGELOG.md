@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Cache stampede lock on ModelPolicy** — `get()`, `all()`, and generic cached GET methods go through `remember()`. A miss takes `Cache::add($key . ':lock')` (SET NX EX 15s). The winner computes and stores; losers re-read instead of replaying the same SQL. If the winner never writes, losers compute themselves rather than wait forever. `ControllerHelper` no longer hard-disables wrapping in `dev`; `Cache::isSupported()` / `cache.enabled` is the only gate.
+- **Dedicated Redis for sessions** — `RedisDriver` accepts an optional connection object. `RedisSession` uses `sessionConnection` when set (host/port/password) so cache LRU cannot evict `session:` keys. Unset, it still uses the application cache driver.
 - **RFC 8058 List-Unsubscribe on SMTP mail** — `Email::applyUnsubscribeHeaders()` writes `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` onto the PHPMailer instance before send. The pairs already existed on the unused raw-header path (`setupHeader()`); the SMTP path never called it, so Gmail/Yahoo never showed one-click Unsubscribe.
   - `$settings->emailCategory` (`transactional` default, `marketing`, `digest`, `internal`) gates both the header URL and the footer `unsubscribeUrl` injected into template data. Only `marketing` and `digest` generate a token. An explicit `$settings->unsubscribeUrl` still wins for tests and callers that already built one.
   - `Proto\Dispatch\Email\Unsubscribe\EmailCategory` owns the classification so dispatch and enqueue stay in sync.

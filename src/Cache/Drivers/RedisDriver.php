@@ -32,15 +32,28 @@ class RedisDriver extends Driver
 	protected bool $connected = false;
 
 	/**
+	 * Optional connection settings. When set, this instance does not read
+	 * `env('cache')->connection`, so a session store can point at a
+	 * different Redis than the application cache.
+	 *
+	 * @var object|null
+	 */
+	protected ?object $connectionOverride = null;
+
+	/**
 	 * Constructor method that initializes the Redis connection.
 	 *
 	 * Never throws: a Redis outage must degrade the app to "no cache" (falls
 	 * through to the database) rather than fatal every cacheable request.
 	 * connect() catches its own failures; isSupported()/every accessor below
 	 * checks $connected before touching $db.
+	 *
+	 * @param object|null $connection Optional host/port/password for a
+	 *        dedicated instance (sessions). Null uses the cache config.
 	 */
-	public function __construct()
+	public function __construct(?object $connection = null)
 	{
+		$this->connectionOverride = $connection;
 		$this->connect();
 	}
 
@@ -66,6 +79,13 @@ class RedisDriver extends Driver
 	 */
 	protected function getCacheSettings(): stdClass
 	{
+		if ($this->connectionOverride !== null)
+		{
+			return $this->connectionOverride instanceof stdClass
+				? $this->connectionOverride
+				: (object)(array)$this->connectionOverride;
+		}
+
 		return env('cache')->connection;
 	}
 

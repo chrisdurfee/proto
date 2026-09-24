@@ -2,6 +2,7 @@
 namespace Proto\Http\Session;
 
 use Proto\Cache\Cache;
+use Proto\Cache\Drivers\RedisDriver;
 use Proto\Http\Token;
 use Proto\Utils\Format\JsonFormat;
 
@@ -12,8 +13,9 @@ use Proto\Utils\Format\JsonFormat;
  * configured cache driver (Redis) keyed by a secure cookie token, enabling
  * shared session state across multiple application instances.
  *
- * Requires a configured cache driver. When no driver is available, the
- * Session manager falls back to file-based sessions.
+ * Prefers `sessionConnection` (a dedicated Redis) so cache eviction cannot
+ * drop sign-ins. When that is unset, falls back to the application cache
+ * driver. When neither is reachable, Session::init() falls back to files.
  *
  * @package Proto\Http\Session
  */
@@ -46,6 +48,20 @@ class RedisSession extends Adapter
 	 * @var string
 	 */
 	protected const KEY_PREFIX = 'session:';
+
+	/**
+	 * Dedicated Redis when `sessionConnection` is configured.
+	 *
+	 * @var RedisDriver|null
+	 */
+	protected ?RedisDriver $sessionDriver = null;
+
+	/**
+	 * Whether reads and writes go to `$sessionDriver` instead of Cache.
+	 *
+	 * @var bool
+	 */
+	protected bool $useDedicatedStore = false;
 
 	/**
 	 * Initializes and starts a new session or resumes an existing one.
@@ -149,9 +165,9 @@ class RedisSession extends Adapter
 		$encoded = JsonFormat::encode($this->data);
 		if ($encoded !== false)
 		{
-			Cache::set($this->cacheKey($new), $encoded, $this->lifetime);
+			$this->storeSet($this->cacheKey($new), $encoded, $this->lifetime);
 		}
-		Cache::delete($this->cacheKey($old));
+		$this->storeDelete($this->cacheKey($old));
 
 		return $new;
 	}
@@ -169,7 +185,7 @@ class RedisSession extends Adapter
 	 */
 	protected function loadData(): void
 	{
-		$raw = Cache::get($this->cacheKey());
+		$raw = $this->storeGet($this->cacheKey());
 		if ($raw === null)
 		{
 			return;
@@ -186,7 +202,7 @@ class RedisSession extends Adapter
 	 */
 	protected function touch(): void
 	{
-		Cache::expire($this->cacheKey(), $this->lifetime);
+		$this->storeExpire($this->cacheKey(), $this->lifetime);
 	}
 
 	/**
@@ -202,7 +218,7 @@ class RedisSession extends Adapter
 			return false;
 		}
 
-		Cache::set($this->cacheKey(), $encoded, $this->lifetime);
+		$this->storeSet($this->cacheKey(), $encoded, $this->lifetime);
 		return true;
 	}
 
@@ -219,14 +235,93 @@ class RedisSession extends Adapter
 			return;
 		}
 
-		if (Cache::driver() === null)
-		{
-			throw new \RuntimeException('A cache driver is required for RedisSession.');
-		}
+		$this->resolveStore();
 
 		$this->setupLifetime();
 		$this->setupToken();
 		$this->loadData();
+	}
+
+	/**
+	 * Picks a dedicated session Redis when configured, otherwise the cache.
+	 *
+	 * @return void
+	 * @throws \RuntimeException When neither store is reachable.
+	 */
+	protected function resolveStore(): void
+	{
+		$connection = env('sessionConnection');
+		if (is_object($connection) && !empty($connection->host))
+		{
+			$this->sessionDriver = new RedisDriver($connection);
+			if ($this->sessionDriver->isSupported())
+			{
+				$this->useDedicatedStore = true;
+				return;
+			}
+
+			throw new \RuntimeException('sessionConnection is set but Redis is unreachable.');
+		}
+
+		if (Cache::driver() === null)
+		{
+			throw new \RuntimeException('A cache driver is required for RedisSession.');
+		}
+	}
+
+	/**
+	 * @param string $key
+	 * @return string|null
+	 */
+	protected function storeGet(string $key): ?string
+	{
+		return $this->useDedicatedStore
+			? $this->sessionDriver->get($key)
+			: Cache::get($key);
+	}
+
+	/**
+	 * @param string $key
+	 * @param string $value
+	 * @param int|null $expire
+	 * @return void
+	 */
+	protected function storeSet(string $key, string $value, ?int $expire = null): void
+	{
+		if ($this->useDedicatedStore)
+		{
+			$this->sessionDriver->set($key, $value, $expire);
+			return;
+		}
+
+		Cache::set($key, $value, $expire);
+	}
+
+	/**
+	 * @param string $key
+	 * @param int $seconds
+	 * @return void
+	 */
+	protected function storeExpire(string $key, int $seconds): void
+	{
+		if ($this->useDedicatedStore)
+		{
+			$this->sessionDriver->expire($key, $seconds);
+			return;
+		}
+
+		Cache::expire($key, $seconds);
+	}
+
+	/**
+	 * @param string $key
+	 * @return bool
+	 */
+	protected function storeDelete(string $key): bool
+	{
+		return $this->useDedicatedStore
+			? $this->sessionDriver->delete($key)
+			: Cache::delete($key);
 	}
 
 	/**
@@ -285,7 +380,7 @@ class RedisSession extends Adapter
 	{
 		Token::remove();
 
-		$result = Cache::delete($this->cacheKey());
+		$result = $this->storeDelete($this->cacheKey());
 		$this->data = [];
 		static::$token = null;
 

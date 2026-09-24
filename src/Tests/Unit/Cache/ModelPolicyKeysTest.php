@@ -549,6 +549,149 @@ final class ModelPolicyKeysTest extends Test
 		$this->assertCount(3, $policy->deleted);
 		$this->assertSame(1, $policy->deleteCalls);
 	}
+
+	/**
+	 * @return object
+	 */
+	private function stampedePolicy(): object
+	{
+		$controller = new class extends Controller {};
+		return new class($controller) extends ModelPolicy
+		{
+			/**
+			 * @var array<string, mixed>
+			 */
+			public array $values = [];
+
+			/**
+			 * @var int
+			 */
+			public int $computes = 0;
+
+			/**
+			 * @var bool
+			 */
+			public bool $won = true;
+
+			/**
+			 * @var mixed
+			 */
+			public mixed $awaited = null;
+
+			/**
+			 * @var int
+			 */
+			public int $lockCalls = 0;
+
+			public function getValue(string $key): mixed
+			{
+				return $this->values[$key] ?? null;
+			}
+
+			public function setValue(string $key, mixed $value, ?int $expire = null): void
+			{
+				$this->values[$key] = $value;
+			}
+
+			protected function acquireLock(string $key): bool
+			{
+				$this->lockCalls++;
+				return $this->won;
+			}
+
+			protected function releaseLock(string $key): void
+			{
+			}
+
+			protected function awaitValue(string $key): mixed
+			{
+				return $this->awaited;
+			}
+
+			public function exposeRemember(): mixed
+			{
+				return $this->remember(
+					'k',
+					function (): object
+					{
+						$this->computes++;
+						return (object)['n' => $this->computes];
+					},
+					60,
+					false,
+					null
+				);
+			}
+		};
+	}
+
+	/**
+	 * A hit must not take the lock or re-run the controller.
+	 *
+	 * @return void
+	 */
+	public function testRememberReturnsHitWithoutLocking(): void
+	{
+		$policy = $this->stampedePolicy();
+		$policy->values['k'] = (object)['n' => 9];
+
+		$result = $policy->exposeRemember();
+
+		$this->assertSame(9, $result->n);
+		$this->assertSame(0, $policy->computes);
+		$this->assertSame(0, $policy->lockCalls);
+	}
+
+	/**
+	 * The winner computes once and stores the result.
+	 *
+	 * @return void
+	 */
+	public function testRememberWinnerComputesAndStores(): void
+	{
+		$policy = $this->stampedePolicy();
+		$policy->won = true;
+
+		$result = $policy->exposeRemember();
+
+		$this->assertSame(1, $result->n);
+		$this->assertSame(1, $policy->computes);
+		$this->assertSame(1, $policy->values['k']->n);
+	}
+
+	/**
+	 * A loser that finds the winner's value must not compute again.
+	 *
+	 * @return void
+	 */
+	public function testRememberLoserUsesAwaitedValue(): void
+	{
+		$policy = $this->stampedePolicy();
+		$policy->won = false;
+		$policy->awaited = (object)['n' => 3];
+
+		$result = $policy->exposeRemember();
+
+		$this->assertSame(3, $result->n);
+		$this->assertSame(0, $policy->computes);
+	}
+
+	/**
+	 * If the winner never writes, losers compute rather than stall.
+	 *
+	 * @return void
+	 */
+	public function testRememberLoserComputesWhenAwaitMisses(): void
+	{
+		$policy = $this->stampedePolicy();
+		$policy->won = false;
+		$policy->awaited = null;
+
+		$result = $policy->exposeRemember();
+
+		$this->assertSame(1, $result->n);
+		$this->assertSame(1, $policy->computes);
+	}
 }
 
 /**

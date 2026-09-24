@@ -36,8 +36,7 @@ class ControllerHelper
 	{
 		if (
 			$controller->isCacheable() !== true ||
-			Cache::isSupported() !== true ||
-			env('env') === 'dev'
+			Cache::isSupported() !== true
 		)
 		{
 			return $controller;
