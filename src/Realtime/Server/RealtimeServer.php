@@ -1,11 +1,13 @@
 <?php declare(strict_types=1);
 namespace Proto\Realtime\Server;
 
+use Amp\DeferredFuture;
 use Amp\Http\Server\DefaultErrorHandler;
 use Amp\Http\Server\Middleware\ForwardedHeaderType;
 use Amp\Http\Server\SocketHttpServer;
 use Amp\Redis\RedisSubscriber;
 use Psr\Log\LoggerInterface;
+use Revolt\EventLoop\UnsupportedFeatureException;
 use function Amp\Redis\createRedisClient;
 use function Amp\Redis\createRedisConnector;
 use function Amp\trapSignal;
@@ -55,9 +57,20 @@ final class RealtimeServer
 	{
 		$this->start();
 
-		$signal = trapSignal(defined('SIGINT') ? [SIGINT, SIGTERM] : [2, 15]);
-		$this->logger->info('Draining realtime server', ['signal' => $signal]);
+		try
+		{
+			$signal = trapSignal(defined('SIGINT') ? [SIGINT, SIGTERM] : [2, 15]);
+		}
+		catch (UnsupportedFeatureException)
+		{
+			// Signals need ext-pcntl (or ev/uv). Serve without a graceful
+			// drain: on stop, browsers reconnect after their retry delay.
+			$this->logger->warning('Signal handling unavailable (install ext-pcntl for graceful drain); serving until killed.');
+			(new DeferredFuture())->getFuture()->await();
+			return;
+		}
 
+		$this->logger->info('Draining realtime server', ['signal' => $signal]);
 		$this->stop();
 	}
 
