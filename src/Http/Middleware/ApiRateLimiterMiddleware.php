@@ -4,6 +4,7 @@ namespace Proto\Http\Middleware;
 use Proto\Http\Limit;
 use Proto\Http\RateLimiter;
 use Proto\Http\Router\Request;
+use Proto\Realtime\RealtimeBridge;
 
 /**
  * ApiRateLimiterMiddleware
@@ -30,7 +31,14 @@ class ApiRateLimiterMiddleware
 	 */
 	public function handle(Request $request, callable $next): mixed
 	{
-		RateLimiter::check($this->getLimit());
+		// Per-message hydrate calls come from the realtime server, not the
+		// user, and would otherwise burn the viewer's budget on every
+		// published event. Authorize calls are user-initiated and still count.
+		if (RealtimeBridge::mode() !== RealtimeBridge::MODE_HYDRATE)
+		{
+			RateLimiter::check($this->getLimit());
+		}
+
 		return $next($request);
 	}
 

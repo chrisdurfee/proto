@@ -1,0 +1,69 @@
+#!/usr/bin/env php
+<?php declare(strict_types=1);
+
+/**
+ * proto-realtime
+ *
+ * Starts the Proto realtime (SSE) server. Run from the app root so the
+ * app's .env is found:
+ *
+ *   vendor/bin/proto-realtime [--host=0.0.0.0] [--port=9100]
+ *                             [--upstream=http://web] [--log=info]
+ *
+ * Settings come from the `realtime` block in the app .env; Redis comes
+ * from `cache.connection` unless `realtime.redisUri` is set.
+ */
+
+$candidates = [
+	getcwd() . '/vendor/autoload.php',
+	__DIR__ . '/../vendor/autoload.php',
+	__DIR__ . '/../../../autoload.php'
+];
+
+$autoload = null;
+foreach ($candidates as $candidate)
+{
+	if (is_file($candidate))
+	{
+		$autoload = $candidate;
+		break;
+	}
+}
+
+if ($autoload === null)
+{
+	fwrite(STDERR, "proto-realtime: vendor/autoload.php not found. Run from the app root.\n");
+	exit(1);
+}
+
+require $autoload;
+
+if (!defined('BASE_PATH'))
+{
+	define('BASE_PATH', (string)getcwd());
+}
+
+$options = getopt('', ['host:', 'port:', 'upstream:', 'log:']);
+$overrides = array_filter([
+	'host' => $options['host'] ?? null,
+	'port' => $options['port'] ?? null,
+	'upstream' => $options['upstream'] ?? null
+], fn($value) => is_string($value) && $value !== '');
+
+try
+{
+	Proto\Config::getInstance();
+	$config = Proto\Realtime\Server\RealtimeConfig::fromEnv(
+		Proto\Config::access('realtime'),
+		Proto\Config::access('cache'),
+		$overrides
+	);
+}
+catch (Throwable $e)
+{
+	fwrite(STDERR, 'proto-realtime: ' . $e->getMessage() . "\n");
+	exit(1);
+}
+
+$logger = new Proto\Realtime\Server\StderrLogger((string)($options['log'] ?? 'info'));
+(new Proto\Realtime\Server\RealtimeServer($config, $logger))->run();

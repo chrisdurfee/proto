@@ -3,6 +3,7 @@ namespace Proto\Controllers\Traits;
 
 use Proto\Http\Router\Request;
 use Proto\Http\ServerEvents\SseConfig;
+use Proto\Realtime\RealtimeBridge;
 
 /**
  * SyncableTrait
@@ -47,8 +48,29 @@ trait SyncableTrait
 		redisEvent(
 			$channel,
 			fn(string $ch, array $msg) => $this->handleSyncMessage($ch, $msg, $request),
-			$this->getSyncConfig($request)
+			$this->getSyncConfig($request),
+			$this->getSyncHydrateMode($request)
 		);
+	}
+
+	/**
+	 * How the realtime server runs handleSyncMessage() for this stream.
+	 *
+	 * - `viewer` (default): once per message for each viewer. Always
+	 *   correct, including when the output reads session() or depends on
+	 *   who is watching.
+	 * - `shared`: once per message, result sent to every viewer of the
+	 *   same URL. Use when the output is the same for everyone (a bid row,
+	 *   a chat message). One call per event instead of one per viewer.
+	 *
+	 * Ignored for classic PHP-FPM streams.
+	 *
+	 * @param Request $request
+	 * @return string One of the RealtimeBridge::HYDRATE_* constants.
+	 */
+	protected function getSyncHydrateMode(Request $request): string
+	{
+		return RealtimeBridge::HYDRATE_VIEWER;
 	}
 
 	/**

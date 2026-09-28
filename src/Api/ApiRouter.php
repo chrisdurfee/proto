@@ -10,6 +10,7 @@ namespace
 	use Proto\Http\ServerEvents\ServerEvents;
 	use Proto\Http\ServerEvents\RedisServerEvents;
 	use Proto\Http\ServerEvents\SseConfig;
+	use Proto\Realtime\RealtimeBridge;
 
 	/**
 	 * @var Base $base This will boostrap the application.
@@ -124,10 +125,23 @@ namespace
 	 *   SSE message, false to terminate. If not provided, messages are sent as-is.
 	 * @param array<string, int>|SseConfig|null $config Optional SSE config
 	 *   overrides (see `SseConfig`) — e.g. `['maxDuration' => 600]`.
+	 * @param string $hydrate How the realtime server runs `$callback`:
+	 *   `RealtimeBridge::HYDRATE_VIEWER` (per viewer, safe default) or
+	 *   `HYDRATE_SHARED` (once per message, when the output does not
+	 *   depend on who is watching). Ignored for classic PHP streams.
 	 * @return void
 	 */
-	function redisEvent(array|string $channels, ?callable $callback = null, array|SseConfig|null $config = null): void
+	function redisEvent(
+		array|string $channels,
+		?callable $callback = null,
+		array|SseConfig|null $config = null,
+		string $hydrate = RealtimeBridge::HYDRATE_VIEWER
+	): void
 	{
+		// Requests from the realtime server get a JSON answer here and
+		// never open a PHP stream.
+		RealtimeBridge::intercept($channels, $callback, $hydrate);
+
 		$server = new RedisServerEvents(null, $config);
 		$server->subscribe($channels, $callback);
 	}

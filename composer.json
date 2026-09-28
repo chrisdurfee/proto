@@ -18,17 +18,23 @@
 	],
 	"require": {
 		"php": ">=8.4",
+		"amphp/http-client": "^5.3",
+		"amphp/http-server": "^3.4",
+		"amphp/redis": "^2.0",
 		"aws/aws-sdk-php": "^3.356",
 		"minishlink/web-push": "^9.0",
+		"phpmailer/phpmailer": "^6.10",
 		"twilio/sdk": "^7.16",
-		"web-token/jwt-library": "*",
-		"phpmailer/phpmailer": "^6.10"
+		"web-token/jwt-library": "*"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^10.5",
 		"fakerphp/faker": "^1.24",
 		"phpstan/phpstan": "^1.12"
 	},
+	"bin": [
+		"bin/proto-realtime"
+	],
 	"scripts": {
 		"test": "phpunit",
 		"analyze": "phpstan analyse"
