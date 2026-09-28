@@ -28,7 +28,7 @@ class Headers
 	[
 		'Access-Control-Allow-Origin' => null, // Will be set dynamically based on request origin
 		'Access-Control-Allow-Credentials' => 'true',
-		'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, Cache-Control, If-None-Match, csrf-token',
+		'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, Cache-Control, If-None-Match, csrf-token, X-XSRF-TOKEN',
 		'Access-Control-Allow-Methods' => null, // placeholder
 		'Access-Control-Expose-Headers' => 'ETag',
 		'Access-Control-Max-Age' => '86400',

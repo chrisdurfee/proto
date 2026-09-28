@@ -24,11 +24,14 @@ class Cookie
 	 * @param string $name Cookie name.
 	 * @param string $value Cookie value.
 	 * @param int $expires Expiration timestamp (default: 0).
+	 * @param bool $httpOnly When false, JavaScript can read the cookie
+	 *                       (required for the XSRF double-submit cookie).
 	 */
 	public function __construct(
 		protected string $name,
 		protected string $value,
-		protected int $expires = 0
+		protected int $expires = 0,
+		protected bool $httpOnly = true
 	)
 	{
 	}
@@ -123,7 +126,7 @@ class Cookie
 			'expires' => $this->expires,
 			'path' => '/',
 			'secure' => $isProd, // Secure flag enabled for HTTPS in production
-			'httponly' => true, // Prevents JavaScript access
+			'httponly' => $this->httpOnly,
 			'samesite' => $isProd ? 'Strict' : 'Lax'
 		];
 
@@ -251,11 +254,13 @@ class Cookie
 	 * Removes a cookie by setting it to expire in the past.
 	 *
 	 * @param string $name Cookie name.
+	 * @param bool $httpOnly Must match the attributes used when the cookie
+	 *                       was set so the browser clears the same entry.
 	 * @return void
 	 */
-	public static function remove(string $name): void
+	public static function remove(string $name, bool $httpOnly = true): void
 	{
-		$opts = (new static($name, '', 1))->getOptions();
+		$opts = (new static($name, '', 1, $httpOnly))->getOptions();
 		setcookie($name, '', $opts);
 		if (isset($opts['domain']))
 		{

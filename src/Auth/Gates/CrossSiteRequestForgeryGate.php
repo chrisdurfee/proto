@@ -1,24 +1,40 @@
 <?php declare(strict_types=1);
 namespace Proto\Auth\Gates;
 
+use Proto\Http\Cookie;
 use Proto\Http\Request;
 
 /**
  * CrossSiteRequestForgeryGate
  *
- * This will create a CSRF gate.
+ * Session-bound CSRF gate with a readable double-submit cookie for SPAs.
+ *
+ * The token lives in the session (source of truth). A non-HttpOnly
+ * `XSRF-TOKEN` cookie mirrors it so client JS can copy the value into
+ * the `X-XSRF-TOKEN` header on mutations. Validation always checks the
+ * header against the session token, never cookie-equals-header alone.
  *
  * @package Proto\Auth\Gates
  */
 class CrossSiteRequestForgeryGate extends Gate
 {
 	/**
-	 * This is the session key name.
+	 * Session key and legacy request header name.
 	 */
 	const CSRF_TOKEN = 'csrf-token';
 
 	/**
-	 * This is the token length.
+	 * Readable cookie that delivers the token to SPA JavaScript.
+	 */
+	const COOKIE_NAME = 'XSRF-TOKEN';
+
+	/**
+	 * Preferred mutation header (lowercase for Request::header()).
+	 */
+	const HEADER_NAME = 'x-xsrf-token';
+
+	/**
+	 * Token length in bytes before hex encoding.
 	 */
 	const TOKEN_LENGTH = 128;
 
@@ -33,21 +49,23 @@ class CrossSiteRequestForgeryGate extends Gate
 	}
 
 	/**
-	 * This will create the request token.
+	 * Ensure a session CSRF token exists and sync the readable cookie.
+	 *
+	 * Calling this on an existing token still refreshes the cookie so a
+	 * boot GET can mint `XSRF-TOKEN` without rotating the session value.
 	 *
 	 * @return string
 	 */
 	public function setToken(): string
 	{
-		// this will check to resume previous token
 		$token = $this->getToken();
-		if (isset($token))
+		if (!isset($token))
 		{
-			return $token;
+			$token = $this->createToken();
+			$this->set(self::CSRF_TOKEN, $token);
 		}
 
-		$token = $this->createToken();
-		$this->set(self::CSRF_TOKEN, $token);
+		$this->syncCookie($token);
 		return $token;
 	}
 
@@ -72,6 +90,7 @@ class CrossSiteRequestForgeryGate extends Gate
 	public function reset(): void
 	{
 		$this->set(self::CSRF_TOKEN, null);
+		$this->clearCookie();
 	}
 
 	/**
@@ -88,12 +107,15 @@ class CrossSiteRequestForgeryGate extends Gate
 	/**
 	 * This will check if the token is valid.
 	 *
+	 * Accepts `X-XSRF-TOKEN` (preferred) or the legacy `csrf-token` header.
+	 * Both are checked against the session token.
+	 *
 	 * @return bool
 	 */
 	public function isValid(): bool
 	{
-		$csrfHeader = Request::header(self::CSRF_TOKEN);
-		if (empty($csrfHeader))
+		$csrfHeader = $this->readRequestToken();
+		if ($csrfHeader === null || $csrfHeader === '')
 		{
 			return false;
 		}
@@ -116,5 +138,56 @@ class CrossSiteRequestForgeryGate extends Gate
 		}
 
 		return hash_equals($storedToken, $token);
+	}
+
+	/**
+	 * Read the CSRF token from the preferred or legacy request header.
+	 *
+	 * @return string|null
+	 */
+	protected function readRequestToken(): ?string
+	{
+		foreach ([self::HEADER_NAME, self::CSRF_TOKEN] as $header)
+		{
+			$value = Request::header($header);
+			if (!empty($value))
+			{
+				return $value;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Mirror the session token into a non-HttpOnly cookie for SPA clients.
+	 *
+	 * @param string $token
+	 * @return void
+	 */
+	protected function syncCookie(string $token): void
+	{
+		(new Cookie(self::COOKIE_NAME, $token, $this->cookieExpiresAt(), false))->set();
+	}
+
+	/**
+	 * Remove the readable XSRF cookie (e.g. on logout / rotate).
+	 *
+	 * @return void
+	 */
+	protected function clearCookie(): void
+	{
+		Cookie::remove(self::COOKIE_NAME, false);
+	}
+
+	/**
+	 * Cookie expiry aligned with session idle lifetime when configured.
+	 *
+	 * @return int Unix timestamp, or 0 for a session cookie.
+	 */
+	protected function cookieExpiresAt(): int
+	{
+		$lifetime = (int)(env('sessionLifetime') ?? 0);
+		return $lifetime > 0 ? time() + $lifetime : 0;
 	}
 }

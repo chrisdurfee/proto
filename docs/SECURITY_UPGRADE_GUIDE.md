@@ -151,25 +151,30 @@ Run through this checklist when upgrading:
 
 **What changed:** All POST, PUT, PATCH, and DELETE routes now automatically apply `CrossSiteProtectionMiddleware`. This validates a CSRF token on every mutation request.
 
-**Frontend integration:**
-
-Your frontend must include a CSRF token with every mutation request. The token is available from the CSRF gate:
-
-```php
-// Server-side: expose token to frontend
-$token = csrf()->getToken();
-```
+**SPA delivery (recommended):** `CrossSiteRequestForgeryGate::setToken()` / `rotate()` also set a readable (non-HttpOnly) `XSRF-TOKEN` cookie that mirrors the session token. The client copies that cookie into the `X-XSRF-TOKEN` header on mutations. Validation stays session-bound (header vs session), not naive cookie-equals-header.
 
 ```javascript
-// Client-side: include in requests
-fetch('/api/resource', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-Token': csrfToken,  // or 'csrf-token' header
-    },
-    body: JSON.stringify(data),
+// Base Ajax: attach on every mutation
+base.beforeSend((xhr, settings) => {
+    if (/^(GET|HEAD|OPTIONS)$/i.test(settings.method) || settings.crossDomain) {
+        return;
+    }
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+    const token = match ? decodeURIComponent(match[1]) : null;
+    if (token) {
+        xhr.setRequestHeader('X-XSRF-TOKEN', token);
+    }
 });
+```
+
+Mint the cookie once at boot with `GET /api/auth/csrf-token` (or any call that runs `setToken()`). Auth transitions that call `rotate()` refresh the cookie via `Set-Cookie`.
+
+**Legacy header:** The `csrf-token` request header is still accepted for older clients.
+
+**Server-side helpers:**
+
+```php
+$token = (new \Proto\Auth\Gates\CrossSiteRequestForgeryGate())->setToken();
 ```
 
 **Opt out for specific routes:**
