@@ -3,6 +3,7 @@ namespace Proto\Realtime\Server;
 
 use Amp\DeferredFuture;
 use Amp\Http\Server\DefaultErrorHandler;
+use Amp\Http\Server\Driver\DefaultHttpDriverFactory;
 use Amp\Http\Server\Middleware\ForwardedHeaderType;
 use Amp\Http\Server\SocketHttpServer;
 use Amp\Redis\RedisSubscriber;
@@ -92,13 +93,25 @@ final class RealtimeServer
 		$handler = new SseRequestHandler($this->config, $hub, $upstream, $registry, $metrics, $this->logger);
 
 		// No compression (it buffers SSE frames) and no concurrency limit
-		// (every open stream is a "concurrent request").
+		// (every open stream is a "concurrent request"). Amp's default
+		// 15s idle timeout would race the heartbeat and drop idle streams,
+		// so it is set from config and always exceeds the heartbeat.
+		$timeout = $this->config->idleTimeoutSeconds;
+		if ($timeout <= $this->config->heartbeatSeconds)
+		{
+			throw new \LogicException('Realtime idle timeout must exceed the heartbeat interval.');
+		}
 		$server = SocketHttpServer::createForBehindProxy(
 			$this->logger,
 			ForwardedHeaderType::XForwardedFor,
 			$this->config->trustedProxies,
 			enableCompression: false,
-			concurrencyLimit: null
+			concurrencyLimit: null,
+			httpDriverFactory: new DefaultHttpDriverFactory(
+				$this->logger,
+				streamTimeout: $timeout,
+				connectionTimeout: $timeout
+			)
 		);
 		$server->expose($this->config->host . ':' . $this->config->port);
 		$server->start($handler, new DefaultErrorHandler());

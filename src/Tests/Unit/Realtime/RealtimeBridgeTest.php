@@ -161,6 +161,22 @@ final class RealtimeBridgeTest extends TestCase
 		$this->assertSame('redis://:p%40ss@redis:6379', $config->redisUri);
 		$this->assertSame('http://web', $config->upstream);
 		$this->assertSame(9200, $config->port);
+		$this->assertSame(60, $config->idleTimeoutSeconds, 'Default idle timeout leaves heartbeat slack.');
+
+		$long = RealtimeConfig::fromEnv(
+			(object)['secret' => self::SECRET, 'upstream' => 'http://web', 'heartbeatSeconds' => 30, 'idleTimeoutSeconds' => 10],
+			null
+		);
+		$this->assertGreaterThan($long->heartbeatSeconds, $long->idleTimeoutSeconds, 'Env can never set the timeout at or under the heartbeat.');
+
+		try
+		{
+			new RealtimeConfig(secret: self::SECRET, upstream: 'http://web', redisUri: 'redis://x', heartbeatSeconds: 15, idleTimeoutSeconds: 15);
+			$this->fail('A heartbeat at the idle timeout must be rejected.');
+		}
+		catch (\InvalidArgumentException)
+		{
+		}
 
 		$this->expectException(\InvalidArgumentException::class);
 		RealtimeConfig::fromEnv((object)['secret' => 'short', 'upstream' => 'http://web'], null);

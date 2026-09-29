@@ -196,6 +196,68 @@ final class RealtimeServerEndToEndTest extends TestCase
 	}
 
 	/**
+	 * Production regression: with the default 15s heartbeat, Amp's default
+	 * 15s idle timeout dropped every stream at ~14.5s and browsers looped.
+	 * The idle timeout now always exceeds the heartbeat.
+	 *
+	 * @return void
+	 */
+	public function testIdleStreamSurvivesPastDefaultDriverTimeout(): void
+	{
+		$uri = (string)getenv('PROTO_REALTIME_REDIS_URI');
+		$upstream = 'http://' . $this->upstream->getServers()[0]->getAddress()->toString();
+		$slow = new RealtimeServer(
+			new RealtimeConfig(
+				secret: self::SECRET,
+				upstream: $upstream,
+				redisUri: $uri,
+				host: '127.0.0.1',
+				port: 0,
+				heartbeatSeconds: 15
+			),
+			new StderrLogger('error')
+		);
+		$base = 'http://' . $slow->start();
+
+		try
+		{
+			$request = new ClientRequest($base . '/raw/sync');
+			$request->setTransferTimeout(40);
+			$request->setInactivityTimeout(40);
+			$body = HttpClientBuilder::buildDefault()->request($request)->getBody();
+
+			$started = microtime(true);
+			$seen = '';
+			while (!str_contains($seen, ': heartbeat') && microtime(true) - $started < 20)
+			{
+				$chunk = $body->read();
+				if ($chunk === null)
+				{
+					break;
+				}
+				$seen .= $chunk;
+			}
+
+			$this->assertStringContainsString(': heartbeat', $seen, 'Stream closed before its first heartbeat.');
+			$this->assertGreaterThan(14.5, microtime(true) - $started);
+
+			// Still open after crossing Amp's old 15s limit.
+			delay(2);
+			$this->redis->publish("{$this->prefix}:raw", '{"after":"timeout"}');
+			$more = '';
+			while (!str_contains($more, 'after') && ($chunk = $body->read()) !== null)
+			{
+				$more .= $chunk;
+			}
+			$this->assertStringContainsString('"after":"timeout"', $more);
+		}
+		finally
+		{
+			$slow->stop();
+		}
+	}
+
+	/**
 	 * @param string $path
 	 * @return ReadableStream
 	 */
