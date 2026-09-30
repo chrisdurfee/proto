@@ -77,13 +77,44 @@ final class OriginRequest
 	}
 
 	/**
-	 * Path plus query, the key that identifies "the same stream" for
-	 * shared hydration.
+	 * Query parameters that identify the browser tab, not the stream.
+	 * They never change what a shared stream sends.
+	 *
+	 * @var array<int, string>
+	 */
+	private const TAB_PARAMS = ['sseClient'];
+
+	/**
+	 * Path plus query as the browser sent it (used for upstream calls).
 	 *
 	 * @return string
 	 */
 	public function target(): string
 	{
 		return $this->query !== '' ? $this->path . '?' . $this->query : $this->path;
+	}
+
+	/**
+	 * The key that makes two viewers "the same stream" for shared
+	 * hydration: the path plus the query without per-tab parameters,
+	 * sorted so parameter order does not split a group.
+	 *
+	 * @return string
+	 */
+	public function sharedKey(): string
+	{
+		parse_str($this->query, $params);
+		foreach (self::TAB_PARAMS as $name)
+		{
+			unset($params[$name]);
+		}
+
+		if ($params === [])
+		{
+			return $this->path;
+		}
+
+		ksort($params);
+		return $this->path . '?' . http_build_query($params);
 	}
 }

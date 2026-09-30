@@ -182,13 +182,14 @@ final class Connection
 	}
 
 	/**
-	 * Streams with the same URL get the same shared hydration result.
+	 * Streams for the same resource get the same shared hydration
+	 * result, whichever tab opened them.
 	 *
 	 * @return string
 	 */
 	public function groupKey(): string
 	{
-		return $this->origin->target();
+		return $this->origin->sharedKey();
 	}
 
 	/**

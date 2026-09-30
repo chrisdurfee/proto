@@ -141,8 +141,9 @@ final class RealtimeServerEndToEndTest extends TestCase
 	 */
 	public function testSharedHydrationRunsOncePerMessage(): void
 	{
-		$first = $this->open('/shared/sync');
-		$second = $this->open('/shared/sync');
+		// Two browser tabs: different per-tab ids, same resource.
+		$first = $this->open('/shared/sync?sseClient=tabAAAAAAAA');
+		$second = $this->open('/shared/sync?sseClient=tabBBBBBBBB');
 		$this->readUntil($first, ": connected\n\n");
 		$this->readUntil($second, ": connected\n\n");
 

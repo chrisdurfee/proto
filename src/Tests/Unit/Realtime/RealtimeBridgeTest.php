@@ -8,6 +8,7 @@ use Proto\Realtime\Server\SseFormat;
 use Proto\Realtime\Server\StreamDescriptor;
 use Proto\Realtime\Server\RealtimeConfig;
 use Proto\Realtime\Server\ConnectionRegistry;
+use Proto\Realtime\Server\OriginRequest;
 
 /**
  * RealtimeBridgeTest
@@ -145,6 +146,28 @@ final class RealtimeBridgeTest extends TestCase
 			'sse:connection:42:nosession:' . md5('/p') . ':sse_x',
 			ConnectionRegistry::key($noTab, '/p', 'sse_x')
 		);
+	}
+
+	/**
+	 * Shared hydration groups by resource, not by tab: per-tab ids are
+	 * dropped and parameter order does not matter.
+	 *
+	 * @return void
+	 */
+	public function testSharedKeyIgnoresTabIdAndOrder(): void
+	{
+		$tabA = new OriginRequest('/api/vehicle/7/bid/sync', 'sseClient=tabAAAAAAAA', []);
+		$tabB = new OriginRequest('/api/vehicle/7/bid/sync', 'sseClient=tabBBBBBBBB', []);
+		$this->assertSame('/api/vehicle/7/bid/sync', $tabA->sharedKey());
+		$this->assertSame($tabA->sharedKey(), $tabB->sharedKey());
+		$this->assertNotSame($tabA->target(), $tabB->target(), 'Upstream calls still carry the tab id.');
+
+		$ordered = new OriginRequest('/api/tracking/activity/sync', 'type=vehicle&refId=9&sseClient=x1234567', []);
+		$reversed = new OriginRequest('/api/tracking/activity/sync', 'refId=9&type=vehicle', []);
+		$this->assertSame($ordered->sharedKey(), $reversed->sharedKey());
+
+		$other = new OriginRequest('/api/tracking/activity/sync', 'refId=10&type=vehicle', []);
+		$this->assertNotSame($ordered->sharedKey(), $other->sharedKey(), 'Different resources never share.');
 	}
 
 	/**
