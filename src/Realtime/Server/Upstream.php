@@ -9,6 +9,8 @@ use Amp\Http\Client\Request;
 use Amp\Socket\ClientTlsContext;
 use Amp\Socket\ConnectContext;
 use Proto\Realtime\RealtimeBridge;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Upstream
@@ -30,17 +32,25 @@ final class Upstream
 	private HttpClient $client;
 
 	/**
+	 * @var LoggerInterface
+	 */
+	private LoggerInterface $logger;
+
+	/**
 	 * @param RealtimeConfig $config
 	 * @param Metrics $metrics
 	 * @param HttpClient|null $client
+	 * @param LoggerInterface|null $logger
 	 */
 	public function __construct(
 		private readonly RealtimeConfig $config,
 		private readonly Metrics $metrics,
-		?HttpClient $client = null
+		?HttpClient $client = null,
+		?LoggerInterface $logger = null
 	)
 	{
 		$this->client = $client ?? $this->buildClient();
+		$this->logger = $logger ?? new NullLogger();
 	}
 
 	/**
@@ -101,9 +111,9 @@ final class Upstream
 			$status = $response->getStatus();
 			$body = $response->getBody()->buffer();
 		}
-		catch (\Throwable)
+		catch (\Throwable $e)
 		{
-			$this->metrics->hydrateFailures++;
+			$this->hydrateFailed($origin, $channel, 0, get_debug_type($e) . ': ' . $e->getMessage());
 			return null;
 		}
 		finally
@@ -114,7 +124,7 @@ final class Upstream
 		$decoded = json_decode($body, true);
 		if ($status !== 200 || !is_array($decoded) || !array_key_exists('result', $decoded))
 		{
-			$this->metrics->hydrateFailures++;
+			$this->hydrateFailed($origin, $channel, $status, 'unexpected body: ' . substr(trim($body), 0, 160));
 			return null;
 		}
 
@@ -122,6 +132,27 @@ final class Upstream
 			'result' => $decoded['result'],
 			'close' => (bool)($decoded['close'] ?? false)
 		];
+	}
+
+	/**
+	 * Count and log one dropped message. The path is logged without its
+	 * query string, and never the cookie, so nothing identifies a user.
+	 *
+	 * @param OriginRequest $origin
+	 * @param string $channel
+	 * @param int $status 0 when the request itself failed
+	 * @param string $reason
+	 * @return void
+	 */
+	private function hydrateFailed(OriginRequest $origin, string $channel, int $status, string $reason): void
+	{
+		$this->metrics->hydrateFailures++;
+		$this->logger->warning('Hydrate failed; message dropped for this stream', [
+			'path' => $origin->path,
+			'channel' => $channel,
+			'status' => $status,
+			'reason' => $reason
+		]);
 	}
 
 	/**

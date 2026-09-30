@@ -89,7 +89,7 @@ final class RealtimeServer
 			$this->logger
 		);
 		$registry = new ConnectionRegistry(createRedisClient($this->config->redisUri), $this->logger);
-		$upstream = new Upstream($this->config, $metrics);
+		$upstream = new Upstream($this->config, $metrics, null, $this->logger);
 		$handler = new SseRequestHandler($this->config, $hub, $upstream, $registry, $metrics, $this->logger);
 
 		// No compression (it buffers SSE frames) and no concurrency limit

@@ -15,6 +15,8 @@ use PHPUnit\Framework\TestCase;
 use Proto\Realtime\Server\RealtimeConfig;
 use Proto\Realtime\Server\RealtimeServer;
 use Proto\Realtime\Server\StderrLogger;
+use Psr\Log\AbstractLogger;
+use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use function Amp\delay;
 use function Amp\Redis\createRedisClient;
@@ -259,6 +261,71 @@ final class RealtimeServerEndToEndTest extends TestCase
 	}
 
 	/**
+	 * A callback that answers with something other than a hydrate result
+	 * drops that message and says why, without logging the query string.
+	 *
+	 * @return void
+	 */
+	public function testFailedHydrateIsLoggedWithReason(): void
+	{
+		$logger = new class extends AbstractLogger
+		{
+			/** @var array<int, array{message: string, context: array}> */
+			public array $warnings = [];
+
+			public function log($level, string|\Stringable $message, array $context = []): void
+			{
+				if ($level === LogLevel::WARNING)
+				{
+					$this->warnings[] = ['message' => (string)$message, 'context' => $context];
+				}
+			}
+		};
+
+		$upstream = 'http://' . $this->upstream->getServers()[0]->getAddress()->toString();
+		$server = new RealtimeServer(
+			new RealtimeConfig(
+				secret: self::SECRET,
+				upstream: $upstream,
+				redisUri: (string)getenv('PROTO_REALTIME_REDIS_URI'),
+				host: '127.0.0.1',
+				port: 0,
+				heartbeatSeconds: 1
+			),
+			$logger
+		);
+		$base = 'http://' . $server->start();
+
+		try
+		{
+			$request = new ClientRequest($base . '/broken/sync?secretToken=abc');
+			$request->setTransferTimeout(10);
+			$request->setInactivityTimeout(10);
+			$body = HttpClientBuilder::buildDefault()->request($request)->getBody();
+			$this->readUntil($body, ": connected\n\n");
+
+			$this->publishSoon("{$this->prefix}:broken", '{"id":1}');
+			delay(1.0);
+
+			$failures = array_values(array_filter(
+				$logger->warnings,
+				fn(array $w) => str_starts_with($w['message'], 'Hydrate failed')
+			));
+			$this->assertCount(1, $failures);
+			$context = $failures[0]['context'];
+			$this->assertSame('/broken/sync', $context['path']);
+			$this->assertSame("{$this->prefix}:broken", $context['channel']);
+			$this->assertSame(200, $context['status']);
+			$this->assertStringContainsString('not a hydrate result', $context['reason']);
+			$this->assertStringNotContainsString('secretToken', json_encode($context));
+		}
+		finally
+		{
+			$server->stop();
+		}
+	}
+
+	/**
 	 * @param string $path
 	 * @return ReadableStream
 	 */
@@ -340,6 +407,11 @@ final class RealtimeServerEndToEndTest extends TestCase
 		}
 
 		$kind = explode('/', trim($path, '/'))[0];
+		if ($kind === 'broken' && $request->getHeader('x-proto-realtime-mode') === 'hydrate')
+		{
+			return new Response(200, ['content-type' => 'text/html'], 'not a hydrate result');
+		}
+
 		if ($request->getHeader('x-proto-realtime-mode') === 'hydrate')
 		{
 			$this->hydrateCalls++;
