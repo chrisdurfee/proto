@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - **Active-content upload names** — without an `$allowedExtensions` list, `File::createNewName()` (and so `UploadFile`) no longer keeps executable or page-rendering extensions (`php*`, `phtml`, `html`, `xhtml`, `xml`, `xsl`, `js`, `cgi`, `sh`, …); they are stored as `.txt`. An image/HTML polyglot named `x.html` could otherwise pass a MIME check and be served as a page (stored XSS). New `File::isActiveContentExtension()`. Extensions are also reduced to `[a-zA-Z0-9]`.
+- **PUT runs the update hook on existing rows** — `setup()` (resource PUT) is authorized like `update()` and overwrites an existing row, but it ran `modifyAddItem()`, so every field restriction an app placed in `modifyUpdateItem()` (and the base immutable-field strip there) could be skipped by sending PUT instead of PATCH. `setup()` and `merge()` now run `modifyUpdateItem()` when the id exists and `modifyAddItem()` otherwise (new `modifyUpsertItem()` / `upsertTargetExists()`).
 
 ### Fixed
 - **Route-parent binding only uses model fields** — `$routeParams` entries that are not model fields (a param mapped to a differently named column, e.g. `:messageId` → `ticket_id`) are skipped by the 2.0.30 route-parent binding instead of producing an invalid filter.

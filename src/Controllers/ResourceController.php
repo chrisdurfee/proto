@@ -333,7 +333,7 @@ abstract class ResourceController extends ApiController
 		}
 
 		$this->stripGuardedFields($data);
-		$this->modifyAddItem($data, $request);
+		$this->modifyUpsertItem($data, $request);
 		$this->pinRouteParents($data, $request);
 		if (!$this->validateItem($data, false))
 		{
@@ -498,6 +498,7 @@ abstract class ResourceController extends ApiController
 		}
 
 		$this->stripGuardedFields($data);
+		$this->modifyUpsertItem($data, $request);
 		$this->pinRouteParents($data, $request);
 		if (!$this->validateItem($data, false))
 		{
@@ -606,6 +607,47 @@ abstract class ResourceController extends ApiController
 		$response = $this->updateItem($data);
 		$this->dispatchLifecycle('afterUpdate', $data, $request, $response);
 		return $response;
+	}
+
+	/**
+	 * Whether an upsert payload targets a row that already exists.
+	 *
+	 * @param object $data
+	 * @return bool
+	 */
+	protected function upsertTargetExists(object $data): bool
+	{
+		$id = $data->id ?? null;
+		if ($id === null || $id === '' || $this->model === null)
+		{
+			return false;
+		}
+
+		return $this->findRouteBoundRow(['id' => $id]) !== null;
+	}
+
+	/**
+	 * Runs the write hook that matches what an upsert will do.
+	 *
+	 * setup() (PUT) and merge() are authorized like update() and write to
+	 * an existing row when the id exists, so they must run
+	 * modifyUpdateItem(). Running modifyAddItem() instead skipped every
+	 * field restriction an app placed in its update hook, and the
+	 * immutable-field strip in the base hook.
+	 *
+	 * @param object $data
+	 * @param Request $request
+	 * @return void
+	 */
+	protected function modifyUpsertItem(object &$data, Request $request): void
+	{
+		if ($this->upsertTargetExists($data))
+		{
+			$this->modifyUpdateItem($data, $request);
+			return;
+		}
+
+		$this->modifyAddItem($data, $request);
 	}
 
 	/**
