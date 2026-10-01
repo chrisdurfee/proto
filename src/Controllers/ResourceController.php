@@ -165,6 +165,17 @@ abstract class ResourceController extends ApiController
 	protected bool $cacheSharedPayload = false;
 
 	/**
+	 * Custom GET methods whose cached responses may be shared across
+	 * viewers when $cacheSharedPayload is true. Only list methods that
+	 * never read the session user (catalog stats, public lookups):
+	 * these responses are cached as-is, without viewer-flag stripping.
+	 * Methods not listed are cached per user/session.
+	 *
+	 * @var array<int, string>
+	 */
+	protected array $sharedCacheMethods = [];
+
+	/**
 	 * Initializes the resource controller.
 	 *
 	 * @return void
@@ -1298,6 +1309,16 @@ abstract class ResourceController extends ApiController
 	public function usesSharedCache(): bool
 	{
 		return $this->cacheSharedPayload;
+	}
+
+	/**
+	 * Custom GET methods that may use the shared cache scope.
+	 *
+	 * @return array<int, string>
+	 */
+	public function sharedCacheMethods(): array
+	{
+		return $this->sharedCacheMethods;
 	}
 
 	/**

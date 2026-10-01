@@ -204,26 +204,51 @@ abstract class Policy implements CachePolicyInterface
 	/**
 	 * Gets a token identifying the acting user, or the anonymous session.
 	 *
-	 * `$cacheSharedPayload` shares list keys only. `get()` stays
+	 * `$cacheSharedPayload` shares `all()` keys. `get()` stays
 	 * user/session scoped so an owner draft or guest `{row:null}`
-	 * cannot be served to the other viewer.
+	 * cannot be served to the other viewer. Custom GET methods are only
+	 * shared when the controller lists them in `sharedCacheMethods()`:
+	 * their responses are stored as-is (no viewer-flag stripping), so a
+	 * method that reads the session must never be shared by default.
 	 *
 	 * @param string|null $method The cache method name (`get`, `all`, …).
 	 * @return string
 	 */
 	protected function getScopeToken(?string $method = null): string
 	{
-		if (
-			$method !== 'get'
-			&& method_exists($this->controller, 'usesSharedCache')
-			&& $this->controller->usesSharedCache()
-		)
+		if ($method !== 'get' && $this->isSharedMethod($method))
 		{
 			return 'shared';
 		}
 
 		$userId = session()->user->id ?? null;
 		return $userId !== null ? 'u' . $userId : 's' . Session::getId();
+	}
+
+	/**
+	 * Whether a method's cached response may be shared across viewers.
+	 *
+	 * @param string|null $method
+	 * @return bool
+	 */
+	protected function isSharedMethod(?string $method): bool
+	{
+		if (!method_exists($this->controller, 'usesSharedCache') || !$this->controller->usesSharedCache())
+		{
+			return false;
+		}
+
+		if ($method === 'all')
+		{
+			return true;
+		}
+
+		if ($method === null || !method_exists($this->controller, 'sharedCacheMethods'))
+		{
+			return false;
+		}
+
+		return in_array($method, $this->controller->sharedCacheMethods(), true);
 	}
 
 	/**

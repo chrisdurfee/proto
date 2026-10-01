@@ -45,8 +45,7 @@ class ModelPolicy extends Policy
 	 */
 	public function setup(Request $request): object
 	{
-		$this->deleteAll();
-		return $this->controller->setup($request);
+		return $this->writeThrough($request, fn(): object => $this->controller->setup($request), true);
 	}
 
 	/**
@@ -57,8 +56,7 @@ class ModelPolicy extends Policy
 	 */
 	public function add(Request $request): object
 	{
-		$this->deleteAll();
-		return $this->controller->add($request);
+		return $this->writeThrough($request, fn(): object => $this->controller->add($request), false);
 	}
 
 	/**
@@ -69,8 +67,91 @@ class ModelPolicy extends Policy
 	 */
 	public function merge(Request $request): object
 	{
+		return $this->writeThrough($request, fn(): object => $this->controller->merge($request), true);
+	}
+
+	/**
+	 * Invalidates a cacheable controller's responses from outside it.
+	 *
+	 * Writes made by services, jobs or other controllers never pass
+	 * through this policy. Call this after such a write so lists, custom
+	 * GET methods and (when $id is given) the row's get() keys refresh.
+	 *
+	 * @param class-string<Controller> $controllerClass
+	 * @param mixed $id Row id whose get() keys to drop, or null for lists only.
+	 * @return void
+	 */
+	public static function invalidateFor(string $controllerClass, mixed $id = null): void
+	{
+		if (Cache::isSupported() !== true || !is_subclass_of($controllerClass, Controller::class))
+		{
+			return;
+		}
+
+		/** @var Controller $controller */
+		$controller = (new \ReflectionClass($controllerClass))->newInstanceWithoutConstructor();
+		$policy = new static($controller);
+		$policy->deleteAll();
+
+		if ($id !== null && $id !== '')
+		{
+			$pattern = $policy->createKeyPattern('get', $id);
+			$policy->deleteKeysMatching($pattern);
+			$policy->deleteKeysMatching($pattern . ':*');
+		}
+	}
+
+	/**
+	 * Runs a write and invalidates the cache before and after it.
+	 *
+	 * Invalidating only before the write leaves a window where a
+	 * concurrent read re-caches the old row for a full TTL. The second
+	 * pass closes that window.
+	 *
+	 * @param Request $request
+	 * @param callable $write
+	 * @param bool $touchesRow Whether the write can change an existing row's get() key.
+	 * @return mixed
+	 */
+	protected function writeThrough(Request $request, callable $write, bool $touchesRow): mixed
+	{
+		$item = null;
+		$id = null;
+		if ($touchesRow)
+		{
+			if (method_exists($this->controller, 'getRequestItem'))
+			{
+				$item = $this->controller->getRequestItem($request);
+			}
+
+			// Route id first, matching the controller (slug/guid from the
+			// payload are still invalidated by invalidateGetKeys()).
+			$id = $this->getResourceId($request) ?? ($item->id ?? null);
+		}
+
+		$this->invalidateWrite($request, $id, $item, $touchesRow);
+		$response = $write();
+		$this->invalidateWrite($request, $id, $item, $touchesRow);
+		return $response;
+	}
+
+	/**
+	 * Drops list, generic and (optionally) get() keys for a write.
+	 *
+	 * @param Request $request
+	 * @param mixed $id
+	 * @param object|null $item
+	 * @param bool $touchesRow
+	 * @return void
+	 */
+	protected function invalidateWrite(Request $request, mixed $id, ?object $item, bool $touchesRow): void
+	{
+		if ($touchesRow)
+		{
+			$this->invalidateGetKeys($request, $id, $item);
+		}
+
 		$this->deleteAll();
-		return $this->controller->merge($request);
 	}
 
 	/**
@@ -95,12 +176,7 @@ class ModelPolicy extends Policy
 	 */
 	public function update(Request $request): object
 	{
-		$item = $this->controller->getRequestItem($request);
-		$id = $item->id ?? $this->getResourceId($request);
-		$this->invalidateGetKeys($request, $id, $item);
-
-		$this->deleteAll();
-		return $this->controller->update($request);
+		return $this->writeThrough($request, fn(): object => $this->controller->update($request), true);
 	}
 
 	/**
@@ -111,16 +187,11 @@ class ModelPolicy extends Policy
 	 */
 	public function updateStatus(Request $request): object
 	{
-		$id = $this->getResourceId($request);
-		$this->invalidateGetKeys($request, $id);
-
-		$this->deleteAll();
-
 		/**
 		 * @SuppressWarnings PHP0406
 		 * @SuppressWarnings PHP0423
 		 */
-		return $this->controller->updateStatus($request);
+		return $this->writeThrough($request, fn(): object => $this->controller->updateStatus($request), true);
 	}
 
 	/**
@@ -131,18 +202,7 @@ class ModelPolicy extends Policy
 	 */
 	public function delete(Request $request): object
 	{
-		$item = null;
-		$id = $this->getResourceId($request);
-		if ($id === null)
-		{
-			$item = $this->controller->getRequestItem($request);
-			$id = $item->id ?? null;
-		}
-
-		$this->invalidateGetKeys($request, $id, $item);
-
-		$this->deleteAll();
-		return $this->controller->delete($request);
+		return $this->writeThrough($request, fn(): object => $this->controller->delete($request), true);
 	}
 
 	/**
@@ -155,7 +215,8 @@ class ModelPolicy extends Policy
 	{
 		$id = $this->getResourceId($request);
 		$cacheId = $id ?? ($request->params()->id ?? $request->input('id') ?? null);
-		$key = $this->createKey('get', $this->cacheIdWithIncludes($request, $cacheId));
+		$cacheId = $this->cacheIdWithRouteParams($request, $this->cacheIdWithIncludes($request, $cacheId));
+		$key = $this->createKey('get', $cacheId);
 
 		return $this->remember(
 			$key,
@@ -340,7 +401,7 @@ class ModelPolicy extends Policy
 		bool $stripAndReenrich
 	): void
 	{
-		if ($store === null)
+		if ($store === null || $this->isErrorResponse($store))
 		{
 			return;
 		}
@@ -359,6 +420,28 @@ class ModelPolicy extends Policy
 		}
 
 		Cache::delete($key . ':etag');
+	}
+
+	/**
+	 * Error responses are never cached: a transient failure (or a denial
+	 * computed for one viewer) would otherwise be replayed for a full TTL.
+	 *
+	 * @param mixed $response
+	 * @return bool
+	 */
+	protected function isErrorResponse(mixed $response): bool
+	{
+		if (!is_object($response))
+		{
+			return false;
+		}
+
+		if (isset($response->success) && $response->success === false)
+		{
+			return true;
+		}
+
+		return isset($response->code) && is_numeric($response->code) && (int)$response->code >= 400;
 	}
 
 	/**
@@ -775,6 +858,53 @@ class ModelPolicy extends Policy
 	}
 
 	/**
+	 * Route params other than `:id`, sorted, for cache keys.
+	 *
+	 * `/user/:userId/posts` and `/vehicle/:vehicleId/x/:id` return
+	 * different data per parent, so the parent must be part of the key.
+	 *
+	 * @param Request $request
+	 * @return array<string, string>
+	 */
+	protected function extraRouteParams(Request $request): array
+	{
+		$params = [];
+		foreach ((array)($request->params() ?? []) as $name => $value)
+		{
+			if ($name === 'id' || $value === null || is_array($value) || is_object($value))
+			{
+				continue;
+			}
+
+			$params[(string)$name] = (string)$value;
+		}
+
+		ksort($params);
+		return $params;
+	}
+
+	/**
+	 * Fold non-`:id` route params into the get() cache key.
+	 *
+	 * Appended as a suffix so `Class:*:get:{id}:*` invalidation still
+	 * matches every variant of the row.
+	 *
+	 * @param Request $request
+	 * @param mixed $id
+	 * @return mixed
+	 */
+	protected function cacheIdWithRouteParams(Request $request, mixed $id): mixed
+	{
+		$params = $this->extraRouteParams($request);
+		if ($params === [])
+		{
+			return $id;
+		}
+
+		return (string)$id . ':rp=' . http_build_query($params);
+	}
+
+	/**
 	 * Re-apply viewer flags after a shared-cache hit.
 	 *
 	 * @param mixed $response
@@ -879,8 +1009,22 @@ class ModelPolicy extends Policy
 			return $this->handleGenericGetRequest($method, $arguments);
 		}
 
-		// For non-GET requests or methods that don't exist, call controller directly
-		return $this->controller->{$method}(...$arguments);
+		if (!method_exists($this->controller, $method))
+		{
+			return $this->controller->{$method}(...$arguments);
+		}
+
+		// Custom writes (like, pin, price change, …) change what reads
+		// return, so they invalidate like the standard write methods.
+		$request = $arguments[0] ?? null;
+		if (!($request instanceof Request))
+		{
+			$response = $this->controller->{$method}(...$arguments);
+			$this->deleteAll();
+			return $response;
+		}
+
+		return $this->writeThrough($request, fn(): mixed => $this->controller->{$method}(...$arguments), true);
 	}
 
 	/**
@@ -938,6 +1082,12 @@ class ModelPolicy extends Policy
 		if ($id !== null)
 		{
 			$params[] = "id:{$id}";
+		}
+
+		// Route params (`:userId`, `:slug`, …) select different data.
+		foreach ($this->extraRouteParams($request) as $name => $value)
+		{
+			$params[] = "route.{$name}:{$value}";
 		}
 
 		// Include query parameters that might affect caching
