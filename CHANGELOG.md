@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- **Active-content upload names** — without an `$allowedExtensions` list, `File::createNewName()` (and so `UploadFile`) no longer keeps executable or page-rendering extensions (`php*`, `phtml`, `html`, `xhtml`, `xml`, `xsl`, `js`, `cgi`, `sh`, …); they are stored as `.txt`. An image/HTML polyglot named `x.html` could otherwise pass a MIME check and be served as a page (stored XSS). New `File::isActiveContentExtension()`. Extensions are also reduced to `[a-zA-Z0-9]`.
+
+### Fixed
+- **Route-parent binding only uses model fields** — `$routeParams` entries that are not model fields (a param mapped to a differently named column, e.g. `:messageId` → `ticket_id`) are skipped by the 2.0.30 route-parent binding instead of producing an invalid filter.
+
+## [2.0.30] - 2026-10-01
+
+### Security
 - **Route id binding** — `ApiController::getResourceId()`, the base `Policy::getResourceId()` and `ModelPolicy` now resolve the route `:id` first; the request `id` is only a fallback for routes without `:id`. Previously the controller read `?id=` / form `id` first while policies checked the route id, so a client could pass its own row in the route and read, update or delete any other row. `update()`, `setup()` and `merge()` reject a body `id` that differs from the route id with `400` and fill a missing one from the route.
 - **Nested rows bound to their route parent** — controllers that declare `$routeParams` now require a child row to belong to the parents in the URL: `get()` adds the parent values to the lookup; `update`/`updateStatus`/`delete`/`merge` return `404` for a row under another parent; `setup` may create a new id but not take over another parent's row. Writes pin route parent values so the body cannot move a row.
 - **`Model::$guarded`** — fields a client may never write. Stripped from client input on add/update/setup/merge before `modifyAddItem()`/`modifyUpdateItem()`, so server code can still set them. `immutableFields` only ever protected updates.

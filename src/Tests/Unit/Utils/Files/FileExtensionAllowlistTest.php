@@ -23,14 +23,28 @@ final class FileExtensionAllowlistTest extends Test
 	protected bool $useTransactions = false;
 
 	/**
-	 * Default behavior (no allowlist) is unchanged: any extension passes.
+	 * Without an allowlist, ordinary extensions are kept.
 	 *
 	 * @return void
 	 */
-	public function testCreateNewNameWithoutAllowlistAcceptsAnyExtension(): void
+	public function testCreateNewNameWithoutAllowlistKeepsOrdinaryExtension(): void
 	{
-		$name = File::createNewName('malicious.php');
-		$this->assertStringEndsWith('.php', $name);
+		$this->assertStringEndsWith('.jpg', File::createNewName('photo.jpg'));
+		$this->assertStringEndsWith('.svg', File::createNewName('logo.svg'));
+	}
+
+	/**
+	 * Without an allowlist, executable and page-rendering extensions are
+	 * never kept (stored XSS / RCE via a disguised upload).
+	 *
+	 * @return void
+	 */
+	public function testCreateNewNameWithoutAllowlistNeutralizesActiveContent(): void
+	{
+		foreach (['malicious.php', 'x.html', 'x.HTM', 'x.xhtml', 'x.xml', 'x.js', 'x.phtml', '.htaccess'] as $file)
+		{
+			$this->assertStringEndsWith('.txt', File::createNewName($file), $file);
+		}
 	}
 
 	/**

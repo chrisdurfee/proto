@@ -143,8 +143,39 @@ class File extends Util
 				throw new \InvalidArgumentException("File extension \"{$ext}\" is not allowed.");
 			}
 		}
+		elseif (self::isActiveContentExtension($ext))
+		{
+			// Without an allowlist, never keep an extension a web server
+			// would execute or render as a page: an image/HTML polyglot
+			// named x.html passes MIME checks and becomes stored XSS.
+			$ext = 'txt';
+		}
 
+		$ext = preg_replace('/[^a-zA-Z0-9]/', '', (string)$ext) ?: 'bin';
 		return uniqid() . '.' . $ext;
+	}
+
+	/**
+	 * Extensions a web server may execute or render as an active page.
+	 *
+	 * @var array<int, string>
+	 */
+	protected const ACTIVE_CONTENT_EXTENSIONS = [
+		'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'pht', 'phps',
+		'cgi', 'pl', 'py', 'sh', 'bash', 'exe', 'dll', 'bat', 'cmd', 'com',
+		'jsp', 'asp', 'aspx', 'htaccess', 'htpasswd',
+		'html', 'htm', 'xhtml', 'xht', 'shtml', 'xml', 'xsl', 'js', 'mjs'
+	];
+
+	/**
+	 * Whether an extension is executable or renders as an active page.
+	 *
+	 * @param string $ext
+	 * @return bool
+	 */
+	public static function isActiveContentExtension(string $ext): bool
+	{
+		return in_array(strtolower($ext), self::ACTIVE_CONTENT_EXTENSIONS, true);
 	}
 
 	/**
