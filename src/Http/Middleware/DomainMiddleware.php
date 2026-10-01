@@ -15,18 +15,17 @@ use Proto\Utils\Format\JsonFormat;
 class DomainMiddleware
 {
 	/**
-	 * Checks if the request's origin or referer is allowed.
+	 * Builds the list of allowed hosts from the `domain` config.
 	 *
-	 * @param Request $request
-	 * @return bool
+	 * @return array<int, string>
 	 */
-	protected function isSupportedDomain(Request $request): bool
+	protected function allowedHosts(): array
 	{
 		$domainConfig = (array)env('domain');
 
 		// Get base domains (strings only)
 		$baseDomains = array_map(fn($u) =>
-			parse_url($u, PHP_URL_HOST) ?: strtolower($u),
+			strtolower(parse_url($u, PHP_URL_HOST) ?: $u),
 			array_filter($domainConfig, 'is_string')
 		);
 
@@ -46,10 +45,60 @@ class DomainMiddleware
 			}
 		}
 
-		$hostHeader = $request->header('host');
-		$hostOnly = strtolower(explode(':', $hostHeader)[0]);
+		return array_values($allowedHosts);
+	}
 
-		return in_array($hostOnly, $allowedHosts, true);
+	/**
+	 * Lower-cased host of a URL, or null when it has none.
+	 *
+	 * @param string $url
+	 * @return string|null
+	 */
+	protected function hostOf(string $url): ?string
+	{
+		$host = parse_url($url, PHP_URL_HOST);
+		return is_string($host) && $host !== '' ? strtolower($host) : null;
+	}
+
+	/**
+	 * Checks if the request's origin or referer is allowed.
+	 *
+	 * The caller is identified by its Origin header, or its Referer when
+	 * no Origin is sent. The API's own Host header says nothing about the
+	 * caller, so it only counts as allowed for same-origin requests.
+	 * Requests with neither header (server-to-server, CLI) are allowed;
+	 * `Origin: null` (sandboxed frames, file://) is not.
+	 *
+	 * @param Request $request
+	 * @return bool
+	 */
+	protected function isSupportedDomain(Request $request): bool
+	{
+		$source = $request->header('origin');
+		if ($source === null || $source === '')
+		{
+			$source = $request->header('referer');
+		}
+
+		if ($source === null || $source === '')
+		{
+			return true;
+		}
+
+		$sourceHost = $this->hostOf((string)$source);
+		if ($sourceHost === null)
+		{
+			return false;
+		}
+
+		$allowedHosts = $this->allowedHosts();
+		$ownHost = strtolower(explode(':', (string)($request->header('host') ?? ''))[0]);
+		if ($ownHost !== '')
+		{
+			$allowedHosts[] = $ownHost;
+		}
+
+		return in_array($sourceHost, $allowedHosts, true);
 	}
 
 	/**
@@ -61,12 +110,6 @@ class DomainMiddleware
 	 */
 	public function handle(Request $request, callable $next): mixed
 	{
-		$origin = $request->header('origin');
-		if ($origin === null)
-		{
-			return $next($request);
-		}
-
 		if (!$this->isSupportedDomain($request))
 		{
 			$this->error('Domain not allowed', 403);
