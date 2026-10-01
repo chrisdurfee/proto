@@ -231,6 +231,7 @@ class Mysqli extends Adapter
 			}
 		}
 
+		$this->setAffectedRows(null);
 		$stmt = $this->prepareAndExecute($sql, $params);
 		if (!$stmt)
 		{
@@ -239,6 +240,7 @@ class Mysqli extends Adapter
 		}
 
 		$this->setLastId($db->insert_id);
+		$this->setAffectedRows(max(0, (int)$stmt->affected_rows));
 		$stmt->close();
 
 		// Don't disconnect during transactions - it would auto-commit

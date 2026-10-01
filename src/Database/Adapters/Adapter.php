@@ -41,6 +41,11 @@ abstract class Adapter
 	protected ?int $lastId = null;
 
 	/**
+	 * @var int|null $affectedRows Rows changed by the last execute().
+	 */
+	protected ?int $affectedRows = null;
+
+	/**
 	 * @var bool $caching Enables or disables query caching.
 	 */
 	protected bool $caching = false;
@@ -391,5 +396,50 @@ abstract class Adapter
 	public function getLastId(): ?int
 	{
 		return $this->lastId;
+	}
+
+	/**
+	 * Sets the number of rows changed by the last execute().
+	 *
+	 * @param int|null $count Affected rows, or null when unknown.
+	 * @return void
+	 */
+	protected function setAffectedRows(?int $count): void
+	{
+		$this->affectedRows = $count;
+	}
+
+	/**
+	 * Retrieves the number of rows changed by the last execute().
+	 *
+	 * execute() returns true whenever the statement runs, even when a
+	 * `WHERE` guard matched nothing. Check this after a guarded write
+	 * (`UPDATE … WHERE balance >= ?`) to know whether it applied.
+	 *
+	 * @return int|null Affected rows, or null if the last statement failed.
+	 */
+	public function getAffectedRows(): ?int
+	{
+		return $this->affectedRows;
+	}
+
+	/**
+	 * Executes a statement and returns how many rows it changed.
+	 *
+	 * Use this for guarded writes where 0 rows means the guard failed,
+	 * e.g. a conditional balance debit or a single-use claim.
+	 *
+	 * @param string $sql The SQL statement.
+	 * @param array|object $params The parameters to bind.
+	 * @return int|false Affected rows, or false when the statement failed.
+	 */
+	public function executeAffected(string $sql, array|object $params = []): int|false
+	{
+		if (!$this->execute($sql, $params))
+		{
+			return false;
+		}
+
+		return $this->affectedRows ?? 0;
 	}
 }

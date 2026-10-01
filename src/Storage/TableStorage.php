@@ -242,6 +242,21 @@ class TableStorage implements StorageInterface
 	}
 
 	/**
+	 * Execute a SQL statement and return how many rows it changed.
+	 *
+	 * execute() returns true even when a `WHERE` guard matched nothing.
+	 * Use this for guarded writes, where 0 means the guard failed.
+	 *
+	 * @param string|object $sql SQL or query builder.
+	 * @param array $params Parameter values.
+	 * @return int|false Affected rows, or false when the statement failed.
+	 */
+	public function executeAffected(string|object $sql, array $params = []): int|false
+	{
+		return $this->db->executeAffected((string)$sql, $params);
+	}
+
+	/**
 	 * Execute a transaction.
 	 *
 	 * @param string|object $sql SQL or query builder.
