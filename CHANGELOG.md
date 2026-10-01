@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Route id binding** — `ApiController::getResourceId()`, the base `Policy::getResourceId()` and `ModelPolicy` now resolve the route `:id` first; the request `id` is only a fallback for routes without `:id`. Previously the controller read `?id=` / form `id` first while policies checked the route id, so a client could pass its own row in the route and read, update or delete any other row. `update()`, `setup()` and `merge()` reject a body `id` that differs from the route id with `400` and fill a missing one from the route.
+- **Nested rows bound to their route parent** — controllers that declare `$routeParams` now require a child row to belong to the parents in the URL: `get()` adds the parent values to the lookup; `update`/`updateStatus`/`delete`/`merge` return `404` for a row under another parent; `setup` may create a new id but not take over another parent's row. Writes pin route parent values so the body cannot move a row.
+- **`Model::$guarded`** — fields a client may never write. Stripped from client input on add/update/setup/merge before `modifyAddItem()`/`modifyUpdateItem()`, so server code can still set them. `immutableFields` only ever protected updates.
+- **`DomainMiddleware` checks the caller** — it compared the `Host` header (always the API host) against the allow-list, so a foreign `Origin` was never blocked. It now checks the `Origin` host, or the `Referer` host when there is no `Origin`, against the allow-list plus the API's own host. `Origin: null` is refused; requests with neither header still pass.
+- **Affected rows** — `Adapter::getAffectedRows()` / `executeAffected()` and `TableStorage::executeAffected()`. `execute()` returns `true` whenever a statement runs, so guarded writes (`UPDATE … WHERE balance >= ?`) must check affected rows to detect a failed guard.
+- **Cache keys and scope** — generic GET and `get()` cache keys include every route param, not only `:id`. Custom GET methods on `$cacheSharedPayload` controllers are cached per user unless listed in the new `$sharedCacheMethods`. Error responses are never cached. Custom non-GET methods invalidate, writes invalidate before and after the controller call, and `setup`/`merge` drop the row's `get()` keys. `ModelPolicy::invalidateFor($controllerClass, $id)` lets services and jobs invalidate after writes that bypass the controller.
+
+### Changed (upgrade notes)
+- A write whose body `id` differs from the route `:id` now fails with `400` instead of acting on the body id.
+- With `$routeParams` declared, a child id from another parent now returns `null` on get and `404` on writes.
+- Custom GET methods on shared-cache controllers are no longer shared by default; list viewer-independent ones in `$sharedCacheMethods` to keep sharing them.
+- `DomainMiddleware` now blocks cross-site requests identified only by `Referer`; browsers must call protected routes from an allowed origin.
+
 ### Added
 - **Readable `XSRF-TOKEN` cookie for SPA CSRF** — `CrossSiteRequestForgeryGate::setToken()` / `rotate()` now mirror the session CSRF token into a non-HttpOnly `XSRF-TOKEN` cookie (same domain / Secure / SameSite rules as other cookies; expiry follows `sessionLifetime`). Clients read the cookie and send it back as `X-XSRF-TOKEN` (legacy `csrf-token` header still accepted). Validation remains session-bound: the gate never trusts cookie-equals-header alone. `Cookie` gains an optional `$httpOnly` constructor flag and `Cookie::remove($name, $httpOnly)` so the readable cookie can be cleared with matching attributes. CORS `Access-Control-Allow-Headers` includes `X-XSRF-TOKEN`.
 - **Optional parent-domain cookies** — set `cookieDomainWide` to `true` and, in production only, `Cookie` sets `Domain=.{domain.production}` when the request host is that parent or a subdomain. `Secure`, `HttpOnly`, and `SameSite` are unchanged. Localhost, IP hosts, and non-production envs stay host-only. Setting or clearing the cookie also clears the host-only copy of the same name so it cannot shadow the shared session.
