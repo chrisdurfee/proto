@@ -327,7 +327,14 @@ abstract class ResourceController extends ApiController
 			return $this->error('The item id does not match the route id.', 400);
 		}
 
+		if (!$this->rowBelongsToRoute($data->id ?? null, $request, true))
+		{
+			return $this->error('The item was not found.', 404);
+		}
+
+		$this->stripGuardedFields($data);
 		$this->modifyAddItem($data, $request);
+		$this->pinRouteParents($data, $request);
 		if (!$this->validateItem($data, false))
 		{
 			return $this->error('Invalid item data.');
@@ -369,6 +376,7 @@ abstract class ResourceController extends ApiController
 			return $this->error('No item provided.');
 		}
 
+		$this->stripGuardedFields($data);
 		$this->modifyAddItem($data, $request);
 		if (!$this->validateItem($data, false))
 		{
@@ -484,6 +492,13 @@ abstract class ResourceController extends ApiController
 			return $this->error('The item id does not match the route id.', 400);
 		}
 
+		if (!$this->rowBelongsToRoute($data->id ?? null, $request))
+		{
+			return $this->error('The item was not found.', 404);
+		}
+
+		$this->stripGuardedFields($data);
+		$this->pinRouteParents($data, $request);
 		if (!$this->validateItem($data, false))
 		{
 			return $this->error('Invalid item data.');
@@ -524,6 +539,11 @@ abstract class ResourceController extends ApiController
 		if ($id === null || $status === null)
 		{
 			return $this->error('The ID and status are required.');
+		}
+
+		if (!$this->rowBelongsToRoute($id, $request))
+		{
+			return $this->error('The item was not found.', 404);
 		}
 
 		return $this->updateItemStatus((object) [
@@ -570,6 +590,13 @@ abstract class ResourceController extends ApiController
 		}
 
 		$data->id = $data->id ?? $this->getResourceId($request);
+		if (!$this->rowBelongsToRoute($data->id ?? null, $request))
+		{
+			return $this->error('The item was not found.', 404);
+		}
+
+		$this->stripGuardedFields($data);
+		$this->pinRouteParents($data, $request);
 		$this->modifyUpdateItem($data, $request);
 		if (!$this->validateItem($data, true))
 		{
@@ -579,6 +606,114 @@ abstract class ResourceController extends ApiController
 		$response = $this->updateItem($data);
 		$this->dispatchLifecycle('afterUpdate', $data, $request, $response);
 		return $response;
+	}
+
+	/**
+	 * Removes the model's guarded fields from client input.
+	 *
+	 * Runs before modifyAddItem()/modifyUpdateItem(), so server code can
+	 * still set guarded fields after this.
+	 *
+	 * @param object $data
+	 * @return void
+	 */
+	protected function stripGuardedFields(object $data): void
+	{
+		if ($this->model === null || !is_callable([$this->model, 'guardedFields']))
+		{
+			return;
+		}
+
+		foreach ($this->model::guardedFields() as $field)
+		{
+			unset($data->$field);
+		}
+	}
+
+	/**
+	 * Parent values from $routeParams present on this request.
+	 *
+	 * For `/vehicle/:vehicleId/option/:id` with `$routeParams =
+	 * ['vehicleId' => true]` this is `['vehicleId' => 12]`.
+	 *
+	 * @param Request $request
+	 * @return array<string, int>
+	 */
+	protected function routeParentFilter(Request $request): array
+	{
+		if (empty($this->routeParams))
+		{
+			return [];
+		}
+
+		$params = $request->params();
+		$filter = [];
+		foreach ($this->routeParams as $param => $required)
+		{
+			$value = (int)($params->$param ?? 0);
+			if ($value)
+			{
+				$filter[$param] = $value;
+			}
+		}
+
+		return $filter;
+	}
+
+	/**
+	 * Looks up a row by id and route parent values.
+	 *
+	 * @param array<string, mixed> $filter
+	 * @return object|null
+	 */
+	protected function findRouteBoundRow(array $filter): ?object
+	{
+		return $this->model !== null ? $this->model::getBy($filter) : null;
+	}
+
+	/**
+	 * Whether row $id belongs to the parents named in the route.
+	 *
+	 * Policies on nested routes usually authorize the parent only, so a
+	 * child id from another parent must not be readable or writable
+	 * through this parent's URL.
+	 *
+	 * @param mixed $id
+	 * @param Request $request
+	 * @param bool $allowMissing True for upserts: a row that does not
+	 *        exist yet is allowed; one that exists under another parent is not.
+	 * @return bool
+	 */
+	protected function rowBelongsToRoute(mixed $id, Request $request, bool $allowMissing = false): bool
+	{
+		$parent = $this->routeParentFilter($request);
+		if ($parent === [] || $id === null || $id === '')
+		{
+			return true;
+		}
+
+		if ($this->findRouteBoundRow(array_merge(['id' => $id], $parent)) !== null)
+		{
+			return true;
+		}
+
+		return $allowMissing && $this->findRouteBoundRow(['id' => $id]) === null;
+	}
+
+	/**
+	 * Pins route parent values on a write payload so a row cannot be
+	 * moved to another parent through the body.
+	 *
+	 * @param object $data
+	 * @param Request $request
+	 * @return void
+	 */
+	protected function pinRouteParents(object $data, Request $request): void
+	{
+		foreach ($this->routeParentFilter($request) as $param => $value)
+		{
+			$data->$param = $value;
+		}
 	}
 
 	/**
@@ -689,6 +824,11 @@ abstract class ResourceController extends ApiController
 		if ($id === null)
 		{
 			return $this->error('The ID is required to delete.');
+		}
+
+		if (!$this->rowBelongsToRoute($id, $request))
+		{
+			return $this->error('The item was not found.', 404);
 		}
 
 		$item = (object) ['id' => $id];
@@ -939,10 +1079,13 @@ abstract class ResourceController extends ApiController
 	 */
 	protected function resolveGetModel(Request $request): ?object
 	{
+		// Nested routes: the row must belong to the parents in the URL.
+		$parent = $this->routeParentFilter($request);
+
 		$id = $this->getResourceId($request);
 		if ($id !== null)
 		{
-			return $this->firstScoped($request, ['id' => $id]);
+			return $this->firstScoped($request, array_merge(['id' => $id], $parent));
 		}
 
 		$raw = $request->params()->id ?? $request->input('id') ?? null;
@@ -958,7 +1101,7 @@ abstract class ResourceController extends ApiController
 				continue;
 			}
 
-			$found = $this->firstScoped($request, [$key => $raw]);
+			$found = $this->firstScoped($request, array_merge([$key => $raw], $parent));
 			if ($found !== null)
 			{
 				return $found;

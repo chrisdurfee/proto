@@ -168,6 +168,22 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	protected static array $immutableFields = [];
 
 	/**
+	 * Fields a client may never write, on create or update.
+	 *
+	 * ResourceController strips these from client input on add, update,
+	 * setup and merge before modifyAddItem()/modifyUpdateItem() run, so
+	 * server code can still set them. Use for moderation, verification,
+	 * money and counter fields (`verified`, `status`, `price`,
+	 * `likeCount`, …). immutableFields only protects updates.
+	 *
+	 * Example:
+	 * protected static array $guarded = ['verified', 'isFeatured', 'reviewCount'];
+	 *
+	 * @var array
+	 */
+	protected static array $guarded = [];
+
+	/**
 	 * Storage connection instance.
 	 *
 	 * @var StorageProxy|null
@@ -926,6 +942,16 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	public static function immutableFields(): array
 	{
 		return static::$immutableFields;
+	}
+
+	/**
+	 * Get the fields a client may never write.
+	 *
+	 * @return array
+	 */
+	public static function guardedFields(): array
+	{
+		return static::$guarded;
 	}
 
 	/**
