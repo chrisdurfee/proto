@@ -115,6 +115,24 @@ final class ResourceControllerRouteParentTest extends Test
 	}
 
 	/**
+	 * A route param that is not a model field (it maps to another
+	 * column name) is not used for binding, so the lookup stays valid.
+	 *
+	 * @return void
+	 */
+	public function testRouteParamThatIsNotAFieldIsIgnored(): void
+	{
+		$controller = new RouteParentController();
+		$controller->useMismatchedParam();
+
+		$request = new Request();
+		$request->setParams((object)['ticketParam' => '1', 'id' => '6']);
+		$controller->get($request);
+
+		$this->assertSame(['id' => 6], $controller->lastLookup);
+	}
+
+	/**
 	 * Setup (upsert) may create a new id but not take over another parent's row.
 	 *
 	 * @return void
@@ -168,6 +186,11 @@ final class RouteParentController extends ResourceController
 	public function getRequestItem(Request $request): object
 	{
 		return $this->payload !== null ? clone $this->payload : (object)[];
+	}
+
+	public function useMismatchedParam(): void
+	{
+		$this->routeParams = ['ticketParam' => true];
 	}
 
 	protected function findRouteBoundRow(array $filter): ?object

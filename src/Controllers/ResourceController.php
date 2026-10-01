@@ -636,20 +636,30 @@ abstract class ResourceController extends ApiController
 	 * For `/vehicle/:vehicleId/option/:id` with `$routeParams =
 	 * ['vehicleId' => true]` this is `['vehicleId' => 12]`.
 	 *
+	 * Only params that are also model fields are used. A route param
+	 * that maps to a differently named column (`:messageId` → ticketId)
+	 * cannot be bound here; bind it in the policy or controller.
+	 *
 	 * @param Request $request
 	 * @return array<string, int>
 	 */
 	protected function routeParentFilter(Request $request): array
 	{
-		if (empty($this->routeParams))
+		if (empty($this->routeParams) || $this->model === null)
 		{
 			return [];
 		}
 
+		$fields = is_callable([$this->model, 'fields']) ? $this->model::fields() : [];
 		$params = $request->params();
 		$filter = [];
 		foreach ($this->routeParams as $param => $required)
 		{
+			if (!in_array($param, $fields, true))
+			{
+				continue;
+			}
+
 			$value = (int)($params->$param ?? 0);
 			if ($value)
 			{
