@@ -68,6 +68,21 @@ final class AdapterAffectedRowsTest extends Test
 	}
 
 	/**
+	 * The query builder proxy exposes the same count.
+	 *
+	 * @return void
+	 */
+	public function testQueryBuilderProxyReturnsAffectedRows(): void
+	{
+		$proxy = new \Proto\Database\QueryBuilder\AdapterProxy(
+			new class { public function __toString(): string { return 'UPDATE t SET n = n - 1 WHERE id = ? AND n >= 1'; } },
+			$this->adapter(true, 0)
+		);
+
+		$this->assertSame(0, $proxy->executeAffected([5]));
+	}
+
+	/**
 	 * A failed statement returns false and clears the count.
 	 *
 	 * @return void

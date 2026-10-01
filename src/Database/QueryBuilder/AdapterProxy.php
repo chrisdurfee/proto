@@ -156,6 +156,27 @@ class AdapterProxy
 	}
 
 	/**
+	 * Executes a query and returns how many rows it changed.
+	 *
+	 * execute() returns true even when a `WHERE` guard matched nothing.
+	 * Use this for guarded writes (`… WHERE balance >= ?`, single-use
+	 * claims), where 0 means the guard failed.
+	 *
+	 * @param array $params The query parameters.
+	 * @return int|false Affected rows, or false when the statement failed.
+	 */
+	public function executeAffected(array $params = []): int|false
+	{
+		if ($this->hasAdapter() === false)
+		{
+			return false;
+		}
+
+		$params = array_merge($this->params, $params);
+		return $this->db->executeAffected((string) $this->sql, $params);
+	}
+
+	/**
 	 * Executes a transaction using the adapter.
 	 *
 	 * @param array $params The transaction parameters.
