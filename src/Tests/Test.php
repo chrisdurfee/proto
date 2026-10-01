@@ -47,6 +47,16 @@ abstract class Test extends TestCase
 	protected array $seeders = [];
 
 	/**
+	 * @var callable|null $outerErrorHandler The error handler active before setUp
+	 */
+	private $outerErrorHandler = null;
+
+	/**
+	 * @var callable|null $outerExceptionHandler The exception handler active before setUp
+	 */
+	private $outerExceptionHandler = null;
+
+	/**
 	 * Initializes the test case.
 	 *
 	 * @return void
@@ -54,6 +64,7 @@ abstract class Test extends TestCase
 	protected function setUp(): void
 	{
 		parent::setUp();
+		$this->captureOuterHandlers();
 		$this->setupSystem();
 		$this->setupTestEnvironment();
 	}
@@ -66,7 +77,59 @@ abstract class Test extends TestCase
 	protected function tearDown(): void
 	{
 		$this->cleanupTestEnvironment();
+		$this->restoreOuterHandlers();
 		parent::tearDown();
+	}
+
+	/**
+	 * Records the error and exception handlers active before setupSystem()
+	 * pushes the framework's own.
+	 *
+	 * @return void
+	 */
+	private function captureOuterHandlers(): void
+	{
+		$this->outerErrorHandler = set_error_handler(null);
+		restore_error_handler();
+
+		$this->outerExceptionHandler = set_exception_handler(null);
+		restore_exception_handler();
+	}
+
+	/**
+	 * Pops every handler that setupSystem() (Base, Error::silent) pushed.
+	 *
+	 * Without this, PHPUnit's own cleanup pops the framework's handler
+	 * instead of PHPUnit's, leaving PHPUnit's error handler installed after
+	 * the test. In a @runInSeparateProcess child, the next suppressed warning
+	 * then throws, the framework's exception handler swallows it, and the
+	 * child exits before reporting ("ended unexpectedly").
+	 *
+	 * @return void
+	 */
+	private function restoreOuterHandlers(): void
+	{
+		for ($i = 0; $i < 32; $i++)
+		{
+			$current = set_error_handler(null);
+			restore_error_handler();
+			if ($current === $this->outerErrorHandler || $current === null)
+			{
+				break;
+			}
+			restore_error_handler();
+		}
+
+		for ($i = 0; $i < 32; $i++)
+		{
+			$current = set_exception_handler(null);
+			restore_exception_handler();
+			if ($current === $this->outerExceptionHandler || $current === null)
+			{
+				break;
+			}
+			restore_exception_handler();
+		}
 	}
 
 	/**
