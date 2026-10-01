@@ -210,12 +210,17 @@ abstract class Policy
 	/**
 	 * This will get the resource ID from the request.
 	 *
+	 * Must resolve the same id as ApiController::getResourceId(): the
+	 * route `:id` wins, and the request `id` is only a fallback when the
+	 * route has none. If the two ever disagree, a policy can approve one
+	 * row while the controller acts on another.
+	 *
 	 * @param Request $request
 	 * @return int|null
 	 */
 	protected function getResourceId(Request $request): ?int
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		$id = $request->params()->id ?? $request->getInt('id') ?? null;
 		return (isset($id) && is_numeric($id)) ? (int) $id : null;
 	}
 

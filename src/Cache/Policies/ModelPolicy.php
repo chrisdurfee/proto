@@ -81,7 +81,9 @@ class ModelPolicy extends Policy
 	 */
 	protected function getResourceId(Request $request): ?int
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		// Same precedence as ApiController::getResourceId(): route id first,
+		// so the cache key always names the row the controller returns.
+		$id = $request->params()->id ?? $request->getInt('id') ?? null;
 		return (isset($id) && is_numeric($id)) ? (int) $id : null;
 	}
 
@@ -152,7 +154,7 @@ class ModelPolicy extends Policy
 	public function get(Request $request): object
 	{
 		$id = $this->getResourceId($request);
-		$cacheId = $id ?? ($request->input('id') ?? $request->params()->id ?? null);
+		$cacheId = $id ?? ($request->params()->id ?? $request->input('id') ?? null);
 		$key = $this->createKey('get', $this->cacheIdWithIncludes($request, $cacheId));
 
 		return $this->remember(
@@ -574,7 +576,7 @@ class ModelPolicy extends Policy
 			}
 		}
 
-		$raw = $request->input('id') ?? $request->params()->id ?? null;
+		$raw = $request->params()->id ?? $request->input('id') ?? null;
 		if ($raw !== null && $raw !== '')
 		{
 			$identities[] = $raw;

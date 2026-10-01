@@ -129,12 +129,34 @@ abstract class ApiController extends Controller
 	/**
 	 * Retrieves the resource ID from the request.
 	 *
+	 * The route `:id` always wins. Policies authorize the route id, so a
+	 * query or body `id` must never redirect the action to another row.
+	 * The request `id` is only used when the route has no `:id`.
+	 *
 	 * @param Request $request The request object.
 	 * @return int|null The resource ID or null if not found.
 	 */
 	protected function getResourceId(Request $request): ?int
 	{
-		$id = $request->getInt('id') ?? $request->params()->id ?? null;
+		$routeId = $this->getRouteId($request);
+		if ($routeId !== null)
+		{
+			return $routeId;
+		}
+
+		$id = $request->getInt('id');
+		return (isset($id) && is_numeric($id)) ? (int) $id : null;
+	}
+
+	/**
+	 * Retrieves the numeric `:id` route parameter, if the route has one.
+	 *
+	 * @param Request $request The request object.
+	 * @return int|null
+	 */
+	protected function getRouteId(Request $request): ?int
+	{
+		$id = $request->params()->id ?? null;
 		return (isset($id) && is_numeric($id)) ? (int) $id : null;
 	}
 

@@ -311,6 +311,11 @@ abstract class ResourceController extends ApiController
 			return $this->error('No item provided.');
 		}
 
+		if (!$this->bindRouteId($data, $request))
+		{
+			return $this->error('The item id does not match the route id.', 400);
+		}
+
 		$this->modifyAddItem($data, $request);
 		if (!$this->validateItem($data, false))
 		{
@@ -463,6 +468,11 @@ abstract class ResourceController extends ApiController
 			return $this->error('No item provided.');
 		}
 
+		if (!$this->bindRouteId($data, $request))
+		{
+			return $this->error('The item id does not match the route id.', 400);
+		}
+
 		if (!$this->validateItem($data, false))
 		{
 			return $this->error('Invalid item data.');
@@ -543,6 +553,11 @@ abstract class ResourceController extends ApiController
 			return $this->error('No item provided.');
 		}
 
+		if (!$this->bindRouteId($data, $request))
+		{
+			return $this->error('The item id does not match the route id.', 400);
+		}
+
 		$data->id = $data->id ?? $this->getResourceId($request);
 		$this->modifyUpdateItem($data, $request);
 		if (!$this->validateItem($data, true))
@@ -553,6 +568,36 @@ abstract class ResourceController extends ApiController
 		$response = $this->updateItem($data);
 		$this->dispatchLifecycle('afterUpdate', $data, $request, $response);
 		return $response;
+	}
+
+	/**
+	 * Binds a write payload to the route `:id`.
+	 *
+	 * Policies authorize the route id, so the payload must act on the same
+	 * row. When the route has an `:id`, a payload `id` that differs from it
+	 * is rejected and a missing one is filled from the route. Routes
+	 * without an `:id` are left unchanged.
+	 *
+	 * @param object $data The request item.
+	 * @param Request $request The request object.
+	 * @return bool False when the payload id conflicts with the route id.
+	 */
+	protected function bindRouteId(object $data, Request $request): bool
+	{
+		$routeId = $this->getRouteId($request);
+		if ($routeId === null)
+		{
+			return true;
+		}
+
+		$bodyId = $data->id ?? null;
+		if ($bodyId !== null && $bodyId !== '' && (string)$bodyId !== (string)$routeId)
+		{
+			return false;
+		}
+
+		$data->id = $routeId;
+		return true;
 	}
 
 	/**
@@ -889,7 +934,7 @@ abstract class ResourceController extends ApiController
 			return $this->firstScoped($request, ['id' => $id]);
 		}
 
-		$raw = $request->input('id') ?? $request->params()->id ?? null;
+		$raw = $request->params()->id ?? $request->input('id') ?? null;
 		if (!is_string($raw) || $raw === '')
 		{
 			return null;
