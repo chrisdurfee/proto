@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.32] - 2026-10-02
+## [2.0.33] - 2026-10-02
 
 ### Security
 - **Shared streams split by access** — a `shared` stream's result is computed with one viewer's session and sent to every viewer of the same URL. Viewers are now grouped by URL *and* their authorized channel list, so two viewers PHP authorized differently never receive each other's result.
