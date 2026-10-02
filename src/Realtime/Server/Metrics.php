@@ -18,6 +18,10 @@ final class Metrics
 	public int $upstreamErrors = 0;
 	public int $hydrateCalls = 0;
 	public int $hydrateFailures = 0;
+	public int $upstreamInFlight = 0;
+	public int $upstreamQueued = 0;
+	public int $upstreamQueuedPeak = 0;
+	public int $hydrateShed = 0;
 	private float $hydrateSeconds = 0.0;
 	private float $startedAt;
 
@@ -54,6 +58,10 @@ final class Metrics
 			'hydrateCalls' => $this->hydrateCalls,
 			'hydrateFailures' => $this->hydrateFailures,
 			'hydrateAvgMs' => $this->hydrateCalls > 0 ? round(($this->hydrateSeconds / $this->hydrateCalls) * 1000, 1) : 0.0,
+			'hydrateShed' => $this->hydrateShed,
+			'upstreamInFlight' => $this->upstreamInFlight,
+			'upstreamQueued' => $this->upstreamQueued,
+			'upstreamQueuedPeak' => $this->upstreamQueuedPeak,
 			'memoryBytes' => memory_get_usage(true)
 		];
 	}

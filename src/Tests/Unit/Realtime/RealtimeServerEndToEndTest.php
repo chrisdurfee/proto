@@ -49,6 +49,14 @@ final class RealtimeServerEndToEndTest extends TestCase
 	private int $hydrateCalls = 0;
 
 	/**
+	 * Hydrate calls running in the fake upstream right now, and the peak.
+	 *
+	 * @var int
+	 */
+	private int $hydrateRunning = 0;
+	private int $hydratePeak = 0;
+
+	/**
 	 * @return void
 	 */
 	protected function setUp(): void
@@ -153,6 +161,85 @@ final class RealtimeServerEndToEndTest extends TestCase
 		$this->assertStringContainsString('"id":9', $this->readUntil($first, "\n\n", 'event: message'));
 		$this->assertStringContainsString('"id":9', $this->readUntil($second, "\n\n", 'event: message'));
 		$this->assertSame(1, $this->hydrateCalls);
+	}
+
+	/**
+	 * A shared result is computed with one viewer's session, so viewers
+	 * PHP authorized differently (different channel lists) must not share
+	 * it, even on the same URL.
+	 *
+	 * @return void
+	 */
+	public function testSharedHydrationSplitsViewersWithDifferentAccess(): void
+	{
+		$alice = $this->open('/audience/sync?sseClient=tabAAAAAAAA', 'alice');
+		$bob = $this->open('/audience/sync?sseClient=tabBBBBBBBB', 'bob');
+		$this->readUntil($alice, ": connected\n\n");
+		$this->readUntil($bob, ": connected\n\n");
+
+		$this->publishSoon("{$this->prefix}:audience", '{"id":7}');
+		$this->assertStringContainsString('"viewer":"alice"', $this->readUntil($alice, "\n\n", 'event: message'));
+		$this->assertStringContainsString('"viewer":"bob"', $this->readUntil($bob, "\n\n", 'event: message'));
+		$this->assertSame(2, $this->hydrateCalls);
+	}
+
+	/**
+	 * With `upstreamConcurrency: 1`, hydrate calls for many viewers run
+	 * one at a time, and every viewer still gets its message.
+	 *
+	 * @return void
+	 */
+	public function testUpstreamConcurrencyIsCapped(): void
+	{
+		$server = $this->startServer(['upstreamConcurrency' => 1]);
+		try
+		{
+			$streams = [];
+			foreach (['a', 'b', 'c'] as $viewer)
+			{
+				$streams[] = $body = $this->open('/slow/sync', $viewer, $server['base']);
+				$this->readUntil($body, ": connected\n\n");
+			}
+
+			$this->publishSoon("{$this->prefix}:slow", '{"id":1}');
+			foreach ($streams as $body)
+			{
+				$this->assertStringContainsString('"id":1', $this->readUntil($body, "\n\n", 'event: message'));
+			}
+
+			$this->assertSame(3, $this->hydrateCalls);
+			$this->assertSame(1, $this->hydratePeak);
+		}
+		finally
+		{
+			$server['server']->stop();
+		}
+	}
+
+	/**
+	 * A drain asks browsers to come back after 1-5s, not all after the
+	 * same fixed second.
+	 *
+	 * @return void
+	 */
+	public function testDrainSpreadsReconnectDelay(): void
+	{
+		$server = $this->startServer();
+		$body = $this->open('/raw/sync', 'alice', $server['base']);
+		$this->readUntil($body, ": connected\n\n");
+
+		\Amp\async(fn() => $server['server']->stop());
+		$rest = '';
+		while (($chunk = $body->read()) !== null)
+		{
+			$rest .= $chunk;
+		}
+
+		$this->assertMatchesRegularExpression('/retry: (\d+)\n\n/', $rest);
+		preg_match_all('/retry: (\d+)\n\n/', $rest, $matches);
+		$delay = (int)end($matches[1]);
+		$this->assertGreaterThanOrEqual(1000, $delay);
+		$this->assertLessThanOrEqual(5000, $delay);
 	}
 
 	/**
@@ -326,13 +413,39 @@ final class RealtimeServerEndToEndTest extends TestCase
 	}
 
 	/**
+	 * A second realtime server on the same fake upstream, with config
+	 * overrides.
+	 *
+	 * @param array<string, mixed> $overrides
+	 * @return array{server: RealtimeServer, base: string}
+	 */
+	private function startServer(array $overrides = []): array
+	{
+		$server = new RealtimeServer(
+			new RealtimeConfig(...$overrides + [
+				'secret' => self::SECRET,
+				'upstream' => 'http://' . $this->upstream->getServers()[0]->getAddress()->toString(),
+				'redisUri' => (string)getenv('PROTO_REALTIME_REDIS_URI'),
+				'host' => '127.0.0.1',
+				'port' => 0,
+				'heartbeatSeconds' => 1
+			]),
+			new StderrLogger('error')
+		);
+
+		return ['server' => $server, 'base' => 'http://' . $server->start()];
+	}
+
+	/**
 	 * @param string $path
+	 * @param string $viewer Session cookie value.
+	 * @param string|null $base
 	 * @return ReadableStream
 	 */
-	private function open(string $path): ReadableStream
+	private function open(string $path, string $viewer = 'alice', ?string $base = null): ReadableStream
 	{
-		$request = new ClientRequest($this->base . $path);
-		$request->setHeader('cookie', 'session=alice');
+		$request = new ClientRequest(($base ?? $this->base) . $path);
+		$request->setHeader('cookie', 'session=' . $viewer);
 		$request->setTransferTimeout(30);
 		$request->setInactivityTimeout(30);
 
@@ -412,15 +525,24 @@ final class RealtimeServerEndToEndTest extends TestCase
 			return new Response(200, ['content-type' => 'text/html'], 'not a hydrate result');
 		}
 
+		$viewer = str_replace('session=', '', (string)$request->getHeader('cookie'));
 		if ($request->getHeader('x-proto-realtime-mode') === 'hydrate')
 		{
 			$this->hydrateCalls++;
-			$input = json_decode($request->getBody()->buffer(), true);
-			$message = json_decode((string)$input['message'], true);
+			$this->hydrateRunning++;
+			$this->hydratePeak = max($this->hydratePeak, $this->hydrateRunning);
+			try
+			{
+				$input = json_decode($request->getBody()->buffer(), true);
+				$message = json_decode((string)$input['message'], true);
 
-			// Earlier messages answer slower, to prove delivery stays ordered.
-			delay(max(0, 0.05 * (4 - (int)($message['id'] ?? 0))));
-			$viewer = str_replace('session=', '', (string)$request->getHeader('cookie'));
+				// Earlier messages answer slower, to prove delivery stays ordered.
+				delay($kind === 'slow' ? 0.2 : max(0, 0.05 * (4 - (int)($message['id'] ?? 0))));
+			}
+			finally
+			{
+				$this->hydrateRunning--;
+			}
 
 			return new Response(200, ['content-type' => 'application/json'], (string)json_encode([
 				'result' => ['id' => $message['id'] ?? null, 'viewer' => $viewer],
@@ -428,10 +550,17 @@ final class RealtimeServerEndToEndTest extends TestCase
 			]));
 		}
 
+		// `audience`: same URL, but alice is authorized for one more channel.
+		$channels = ["{$this->prefix}:{$kind}"];
+		if ($kind === 'audience' && $viewer === 'alice')
+		{
+			$channels[] = "{$this->prefix}:audience-extra";
+		}
+
 		return new Response(200, ['content-type' => 'application/json'], (string)json_encode([
 			'allow' => true,
-			'channels' => ["{$this->prefix}:{$kind}"],
-			'hydrate' => ['raw' => 'raw', 'viewer' => 'viewer', 'shared' => 'shared'][$kind] ?? 'viewer',
+			'channels' => $channels,
+			'hydrate' => ['raw' => 'raw', 'viewer' => 'viewer', 'shared' => 'shared', 'audience' => 'shared'][$kind] ?? 'viewer',
 			'userId' => $this->prefix,
 			'sessionId' => 'alice',
 			'sseClient' => ''

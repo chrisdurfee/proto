@@ -36,6 +36,8 @@ final class RealtimeConfig
 	 * @param int $retryMilliseconds
 	 * @param array<int, string> $trustedProxies IPs or CIDR ranges allowed to set X-Forwarded-For.
 	 * @param int $idleTimeoutSeconds Connection dropped after this long with no bytes written. Must exceed $heartbeatSeconds.
+	 * @param int $upstreamConcurrency Calls into PHP (authorize + hydrate) in flight at once; the rest wait.
+	 * @param int $upstreamMaxQueued Hydrate calls allowed to wait; past this, messages are dropped instead of piling up.
 	 */
 	public function __construct(
 		public readonly string $secret,
@@ -51,9 +53,16 @@ final class RealtimeConfig
 		public readonly float $upstreamTimeoutSeconds = 5.0,
 		public readonly int $retryMilliseconds = 3000,
 		public readonly array $trustedProxies = ['127.0.0.1', '::1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
-		public readonly int $idleTimeoutSeconds = 60
+		public readonly int $idleTimeoutSeconds = 60,
+		public readonly int $upstreamConcurrency = 32,
+		public readonly int $upstreamMaxQueued = 2048
 	)
 	{
+		if ($upstreamConcurrency < 1 || $upstreamMaxQueued < 0)
+		{
+			throw new \InvalidArgumentException('realtime.upstreamConcurrency must be at least 1 and upstreamMaxQueued at least 0.');
+		}
+
 		if ($idleTimeoutSeconds <= $heartbeatSeconds)
 		{
 			// The HTTP driver drops a connection that writes nothing for
@@ -115,7 +124,9 @@ final class RealtimeConfig
 				? array_values(array_map('strval', $realtime->trustedProxies))
 				: ['127.0.0.1', '::1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
 			// Default: four heartbeats of slack, never under 60s.
-			idleTimeoutSeconds: max($heartbeat + 1, (int)($realtime->idleTimeoutSeconds ?? max(60, $heartbeat * 4)))
+			idleTimeoutSeconds: max($heartbeat + 1, (int)($realtime->idleTimeoutSeconds ?? max(60, $heartbeat * 4))),
+			upstreamConcurrency: max(1, (int)($realtime->upstreamConcurrency ?? 32)),
+			upstreamMaxQueued: max(0, (int)($realtime->upstreamMaxQueued ?? 2048))
 		);
 	}
 }

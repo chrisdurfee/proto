@@ -7,7 +7,9 @@ use Amp\Http\Client\Connection\DefaultConnectionFactory;
 use Amp\Http\Client\Connection\UnlimitedConnectionPool;
 use Amp\Http\Client\Request;
 use Amp\Socket\ClientTlsContext;
+use Amp\Http\Client\Response;
 use Amp\Socket\ConnectContext;
+use Amp\Sync\LocalSemaphore;
 use Proto\Realtime\RealtimeBridge;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -22,6 +24,10 @@ use Psr\Log\NullLogger;
  *    that is relayed to the browser unchanged.
  *  - hydrate: the controller callback's result for one message.
  *
+ * At most `upstreamConcurrency` calls run at once, so a burst of messages
+ * (or a reconnect wave) queues here instead of flooding PHP-FPM. Hydrate
+ * calls past `upstreamMaxQueued` are dropped and counted as shed.
+ *
  * @package Proto\Realtime\Server
  */
 final class Upstream
@@ -30,6 +36,11 @@ final class Upstream
 	 * @var HttpClient
 	 */
 	private HttpClient $client;
+
+	/**
+	 * @var LocalSemaphore
+	 */
+	private LocalSemaphore $slots;
 
 	/**
 	 * @var LoggerInterface
@@ -51,6 +62,7 @@ final class Upstream
 	{
 		$this->client = $client ?? $this->buildClient();
 		$this->logger = $logger ?? new NullLogger();
+		$this->slots = new LocalSemaphore($config->upstreamConcurrency);
 	}
 
 	/**
@@ -63,9 +75,8 @@ final class Upstream
 
 		try
 		{
-			$response = $this->client->request($request);
+			[$response, $body] = $this->send($request);
 			$status = $response->getStatus();
-			$body = $response->getBody()->buffer();
 		}
 		catch (\Throwable $e)
 		{
@@ -100,6 +111,13 @@ final class Upstream
 	 */
 	public function hydrate(OriginRequest $origin, string $channel, string $message): ?array
 	{
+		if ($this->metrics->upstreamQueued >= $this->config->upstreamMaxQueued
+			&& $this->metrics->upstreamInFlight >= $this->config->upstreamConcurrency)
+		{
+			$this->metrics->hydrateShed++;
+			return null;
+		}
+
 		$request = $this->request($origin, RealtimeBridge::MODE_HYDRATE);
 		$request->setBody((string)json_encode(['channel' => $channel, 'message' => $message]));
 		$request->setHeader('content-type', 'application/json');
@@ -107,9 +125,8 @@ final class Upstream
 		$started = microtime(true);
 		try
 		{
-			$response = $this->client->request($request);
+			[$response, $body] = $this->send($request);
 			$status = $response->getStatus();
-			$body = $response->getBody()->buffer();
 		}
 		catch (\Throwable $e)
 		{
@@ -132,6 +149,39 @@ final class Upstream
 			'result' => $decoded['result'],
 			'close' => (bool)($decoded['close'] ?? false)
 		];
+	}
+
+	/**
+	 * Send one request once a slot is free, buffering the whole body
+	 * before the slot is released.
+	 *
+	 * @param Request $request
+	 * @return array{0: Response, 1: string}
+	 */
+	private function send(Request $request): array
+	{
+		$this->metrics->upstreamQueued++;
+		$this->metrics->upstreamQueuedPeak = max($this->metrics->upstreamQueuedPeak, $this->metrics->upstreamQueued);
+		try
+		{
+			$lock = $this->slots->acquire();
+		}
+		finally
+		{
+			$this->metrics->upstreamQueued--;
+		}
+
+		$this->metrics->upstreamInFlight++;
+		try
+		{
+			$response = $this->client->request($request);
+			return [$response, $response->getBody()->buffer()];
+		}
+		finally
+		{
+			$this->metrics->upstreamInFlight--;
+			$lock->release();
+		}
 	}
 
 	/**

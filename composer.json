@@ -21,6 +21,7 @@
 		"amphp/http-client": "^5.3",
 		"amphp/http-server": "^3.4",
 		"amphp/redis": "^2.0",
+		"amphp/sync": "^2.3",
 		"aws/aws-sdk-php": "^3.356",
 		"minishlink/web-push": "^9.0",
 		"phpmailer/phpmailer": "^6.10",

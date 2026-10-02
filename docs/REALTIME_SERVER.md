@@ -96,7 +96,8 @@ A pool of worker processes (`amphp/parallel`) that bootstrap Proto normally. Blo
 - `viewer`: one call per `(handler, route, message, userId)`. Right for one-subscriber inboxes. For large rooms, the stream moves to `shared` once the viewer bits leave the payload (see migration).
 - The worker runs the controller's existing `handleSyncMessage($channel, $message, $request)` with a synthetic `Request` (route params + viewer). `null` skips; `false` closes that subscriber.
 - Per-message work is isolated: a worker crash retries once, then drops that message for that stream instead of taking down the process.
-- Worker pool size is bounded, with a short queue. Under overload, `shared` hydration is coalesced (the latest message per stream wins) rather than queued forever.
+- Calls into PHP are bounded: at most `upstreamConcurrency` (default 32) authorize/hydrate calls run at once, and hydrate calls past `upstreamMaxQueued` (default 2048) waiting are shed (dropped and counted) rather than queued forever. Keep `upstreamConcurrency` below the PHP-FPM pool that serves the callbacks.
+- `shared` results are grouped by stream URL (minus the per-tab `sseClient`) **and** the viewer's authorized channel list, so viewers PHP authorized differently never share a result. The callback must still not read the session.
 
 ### 5. Deployment (Rally on OVH)
 
@@ -104,8 +105,25 @@ A pool of worker processes (`amphp/parallel`) that bootstrap Proto normally. Blo
 - **Phase 1 routing:** Apache sends `GET .../sync` to the realtime container with `mod_proxy_http` and `flushpackets=on`, replacing the `SetHandler` to the FPM `sse` pool. An idle proxied connection costs an Apache event thread (small) instead of a PHP process (large). `MaxRequestWorkers` rises accordingly.
 - **Later:** move TLS termination to the edge nginx (HTTP mode) and route `/sync` there directly, which removes Apache from the stream path.
 - The FPM `sse` pool stays in place as the fallback until every stream has moved, then shrinks to near zero.
-- Graceful restart: on `SIGTERM`, stop accepting, send `retry: 1000` to every client, close. The swap script restarts the realtime container after web is healthy.
-- Metrics at `/metrics` on an internal port: open connections, channels, messages/s, hydrate latency and queue depth. The CRM server panel reads the connection count.
+- Graceful restart: on `SIGTERM`, stop accepting, send each client a random `retry:` of 1–5s, close. Max-duration cuts and the first re-authorize are also spread, so a reconnect wave does not repeat in lockstep. The swap script restarts the realtime container after web is healthy.
+- Metrics at `/__realtime/metrics` (shared-secret header): open connections, channels, hydrate latency, failures, shed messages, and upstream queue depth. The CRM server panel reads them.
+
+### Settings (`realtime` block in `.env`)
+
+| Key | Default | Notes |
+|---|---|---|
+| `secret` | required | 32+ characters, shared with PHP |
+| `upstream` | required | PHP app base URL the server calls back to |
+| `heartbeatSeconds` | 15 | comment frame interval |
+| `idleTimeoutSeconds` | max(60, 4 × heartbeat) | must exceed the heartbeat |
+| `maxDurationSeconds` | 1800 | streams are cut (spread 90–100%) and the browser reconnects |
+| `reauthorizeSeconds` | 300 | access re-check; first one spread over 50–100% |
+| `maxPendingWrites` | 256 | frames buffered for one client before it is dropped |
+| `upstreamTimeoutSeconds` | 5.0 | per PHP call |
+| `upstreamConcurrency` | 32 | PHP calls in flight at once |
+| `upstreamMaxQueued` | 2048 | hydrate calls allowed to wait before shedding |
+| `retryMilliseconds` | 3000 | normal reconnect hint |
+| `trustedProxies` | private ranges | who may set `X-Forwarded-For` |
 
 ## Security
 

@@ -23,6 +23,18 @@ use function Amp\async;
 final class Connection
 {
 	/**
+	 * Reconnect delay window for streams closed with `$retrySoon`.
+	 *
+	 * @var int
+	 */
+	public const RETRY_SOON_MIN_MS = 1000;
+
+	/**
+	 * @var int
+	 */
+	public const RETRY_SOON_SPREAD_MS = 4000;
+
+	/**
 	 * @var int
 	 */
 	private static int $sequence = 0;
@@ -159,13 +171,26 @@ final class Connection
 			$this->config->heartbeatSeconds,
 			fn() => $this->write(SseFormat::comment('heartbeat'))
 		);
+		// Spread the max-duration cut and the first re-check: streams that
+		// opened together (after a deploy) would otherwise expire and hit
+		// PHP together, every cycle.
 		$this->timers[] = EventLoop::delay(
-			$this->config->maxDurationSeconds,
+			$this->config->maxDurationSeconds * self::spread(0.9, 1.0),
 			fn() => $this->close('max duration', true)
 		);
-		$this->timers[] = EventLoop::repeat(
-			$this->config->reauthorizeSeconds,
-			fn() => $this->reauthorize()
+		$this->timers[] = EventLoop::delay(
+			$this->config->reauthorizeSeconds * self::spread(0.5, 1.0),
+			function (): void
+			{
+				$this->reauthorize();
+				if (!$this->closed)
+				{
+					$this->timers[] = EventLoop::repeat(
+						$this->config->reauthorizeSeconds,
+						fn() => $this->reauthorize()
+					);
+				}
+			}
 		);
 
 		$this->metrics->connectionsOpen++;
@@ -185,11 +210,18 @@ final class Connection
 	 * Streams for the same resource get the same shared hydration
 	 * result, whichever tab opened them.
 	 *
+	 * The authorized channel list is part of the key: the result is
+	 * computed with one viewer's session, so two viewers PHP gave
+	 * different access (different channels) never share it.
+	 *
 	 * @return string
 	 */
 	public function groupKey(): string
 	{
-		return $this->origin->sharedKey();
+		$channels = $this->descriptor->channels;
+		sort($channels);
+
+		return $this->origin->sharedKey() . '#' . md5(implode("\n", $channels));
 	}
 
 	/**
@@ -287,7 +319,8 @@ final class Connection
 
 	/**
 	 * Close the stream. With `$retrySoon`, the browser reconnects after
-	 * one second instead of its default delay.
+	 * one to five seconds (spread so a drain does not bring every browser
+	 * back in the same second) instead of its default delay.
 	 *
 	 * @param string $reason
 	 * @param bool $retrySoon
@@ -302,7 +335,7 @@ final class Connection
 
 		if ($retrySoon)
 		{
-			$this->push(SseFormat::retry(1000));
+			$this->push(SseFormat::retry(self::RETRY_SOON_MIN_MS + random_int(0, self::RETRY_SOON_SPREAD_MS)));
 		}
 
 		$this->closed = true;
@@ -427,6 +460,18 @@ final class Connection
 			$this->hub->leave($channel, $this);
 		}
 		$this->joined = $wanted;
+	}
+
+	/**
+	 * Random factor in [$min, $max].
+	 *
+	 * @param float $min
+	 * @param float $max
+	 * @return float
+	 */
+	private static function spread(float $min, float $max): float
+	{
+		return $min + (($max - $min) * (random_int(0, 1000) / 1000));
 	}
 
 	/**

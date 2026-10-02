@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.32] - 2026-10-02
+
+### Security
+- **Shared streams split by access** — a `shared` stream's result is computed with one viewer's session and sent to every viewer of the same URL. Viewers are now grouped by URL *and* their authorized channel list, so two viewers PHP authorized differently never receive each other's result.
+
+### Added
+- **Upstream concurrency limit** — at most `realtime.upstreamConcurrency` (default 32) authorize and hydrate calls run against PHP at once; the rest wait. Hydrate calls beyond `realtime.upstreamMaxQueued` (default 2048) waiting are dropped and counted as `hydrateShed` instead of piling onto PHP-FPM. New metrics: `upstreamInFlight`, `upstreamQueued`, `upstreamQueuedPeak`, `hydrateShed`. `amphp/sync` is now a direct dependency.
+
+### Changed
+- **Reconnects are spread out** — streams closed with a "come back soon" hint (drain on deploy, max duration, revoked access, slow client) now tell the browser to retry after a random 1–5s instead of exactly 1s. The max-duration cut is spread over 90–100% of `maxDurationSeconds`, and each stream's first re-authorize over 50–100% of `reauthorizeSeconds`, so streams that opened together no longer expire or re-check together.
+
 ## [2.0.31] - 2026-10-02
 
 ### Security
