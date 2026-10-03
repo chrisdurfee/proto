@@ -5,6 +5,8 @@ use Proto\Cache\Cache;
 use Proto\Utils\Format\JsonFormat;
 use Proto\Controllers\Controller;
 use Proto\Http\Session;
+use Proto\Http\Token;
+use Proto\Utils\Filter\Input;
 
 /**
  * Policy
@@ -223,6 +225,32 @@ abstract class Policy implements CachePolicyInterface
 
 		$userId = session()->user->id ?? null;
 		return $userId !== null ? 'u' . $userId : 's' . Session::getId();
+	}
+
+	/**
+	 * Whether a key built for this method can be read again.
+	 *
+	 * A guest whose request carried no session cookie gets a new session
+	 * id each time, so a per-session key would never be hit; every such
+	 * request (bots, link previews, health checks) only filled the cache
+	 * and pushed out live keys.
+	 *
+	 * @param string|null $method
+	 * @return bool
+	 */
+	protected function hasStableScope(?string $method = null): bool
+	{
+		if ($method !== 'get' && $this->isSharedMethod($method))
+		{
+			return true;
+		}
+
+		if ((session()->user->id ?? null) !== null)
+		{
+			return true;
+		}
+
+		return Token::get() !== null || Input::cookie(session_name() ?: 'PHPSESSID') !== '';
 	}
 
 	/**

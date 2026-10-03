@@ -72,8 +72,8 @@ final class ModelPolicyScopeAndInvalidationTest extends Test
 	}
 
 	/**
-	 * get() keys include the parent route param but stay invalidatable
-	 * by the `get:{id}:*` pattern.
+	 * get() keys include the parent route param and end with the row's
+	 * generation, so every variant of the row retires together.
 	 *
 	 * @return void
 	 */
@@ -86,7 +86,67 @@ final class ModelPolicyScopeAndInvalidationTest extends Test
 		$policy->get($this->request(['vehicleId' => '2', 'id' => '5']));
 
 		$this->assertNotSame($policy->keys[0], $policy->keys[1]);
-		$this->assertMatchesRegularExpression('/:get:5:rp=vehicleId%3D1$|:get:5:rp=vehicleId=1$/', $policy->keys[0]);
+		$this->assertMatchesRegularExpression('/:get:5:rp=vehicleId(%3D|=)1:r\d+$/', $policy->keys[0]);
+	}
+
+	/**
+	 * Custom GET keys carry the list generation, so a write retires them
+	 * without scanning the keyspace.
+	 *
+	 * @return void
+	 */
+	public function testGenericKeyChangesAfterListGenerationBump(): void
+	{
+		$policy = new GenerationRecordingPolicy(new ScopeTestController());
+		$GLOBALS['protoTestActor'] = (object)['id' => 1];
+
+		$policy->stats($this->request([]));
+		$policy->bumpList();
+		$policy->stats($this->request([]));
+
+		$this->assertNotSame($policy->keys[0], $policy->keys[1]);
+		$this->assertMatchesRegularExpression('/:stats:g\d+:/', $policy->keys[0]);
+	}
+
+	/**
+	 * A row's get() keys change once its identity is invalidated, and
+	 * other rows keep theirs.
+	 *
+	 * @return void
+	 */
+	public function testGetKeyChangesAfterRowInvalidation(): void
+	{
+		$policy = new GenerationRecordingPolicy(new ScopeTestController());
+		$GLOBALS['protoTestActor'] = (object)['id' => 1];
+
+		$policy->get($this->request(['id' => '5']));
+		$policy->get($this->request(['id' => '6']));
+		$policy->invalidateRow(5);
+		$policy->get($this->request(['id' => '5']));
+		$policy->get($this->request(['id' => '6']));
+
+		$this->assertNotSame($policy->keys[0], $policy->keys[2]);
+		$this->assertSame($policy->keys[1], $policy->keys[3]);
+	}
+
+	/**
+	 * A guest without a session cookie gets a new session id per request,
+	 * so per-session keys are never built for them. Shared keys still are.
+	 *
+	 * @return void
+	 */
+	public function testCookielessGuestSkipsPerSessionKeys(): void
+	{
+		unset($GLOBALS['protoTestActor']);
+		$policy = new ScopeRecordingPolicy(new ScopeTestController());
+
+		$policy->get($this->request(['id' => '5']));
+		$policy->fitsVehicle($this->request([]));
+		$this->assertSame([], $policy->keys);
+
+		$policy->stats($this->request([]));
+		$this->assertCount(1, $policy->keys);
+		$this->assertStringContainsString(':shared:', $policy->keys[0]);
 	}
 
 	/**
@@ -217,6 +277,55 @@ final class ScopeRecordingPolicy extends ModelPolicy
 	public function exposeIsError(mixed $response): bool
 	{
 		return $this->isErrorResponse($response);
+	}
+}
+
+/**
+ * Records keys and uses real generation bookkeeping (in-process fallback).
+ */
+final class GenerationRecordingPolicy extends ModelPolicy
+{
+	/** @var array<int, string> */
+	public array $keys = [];
+
+	protected function createKey(string $method, mixed $params): string
+	{
+		$key = parent::createKey($method, $params);
+		$this->keys[] = $key;
+		return $key;
+	}
+
+	protected function getValueAndTag(string $key): array
+	{
+		return [null, null];
+	}
+
+	protected function acquireLock(string $key): bool
+	{
+		return true;
+	}
+
+	protected function releaseLock(string $key): void
+	{
+	}
+
+	protected function storeRemembered(string $key, mixed $store, int $expire, bool $stripAndReenrich): void
+	{
+	}
+
+	protected function isGetRequest(): bool
+	{
+		return true;
+	}
+
+	public function bumpList(): void
+	{
+		$this->deleteAll();
+	}
+
+	public function invalidateRow(mixed $id): void
+	{
+		$this->invalidateGetKeys(new Request(), $id);
 	}
 }
 

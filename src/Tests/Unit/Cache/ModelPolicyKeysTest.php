@@ -306,11 +306,12 @@ final class ModelPolicyKeysTest extends Test
 	}
 
 	/**
-	 * invalidateGetKeys() must drop get:{id}, get:{id}:*, and slug/guid identities.
+	 * invalidateGetKeys() must retire the id and the slug/guid identities,
+	 * once each, without scanning the keyspace.
 	 *
 	 * @return void
 	 */
-	public function testInvalidateGetKeysDeletesIdIncludeAndSlugPatterns(): void
+	public function testInvalidateGetKeysBumpsEachIdentityOnce(): void
 	{
 		$previous = $_REQUEST['id'] ?? null;
 		unset($_GET['id'], $_REQUEST['id']);
@@ -323,11 +324,23 @@ final class ModelPolicyKeysTest extends Test
 				/**
 				 * @var array<int, string>
 				 */
-				public array $patterns = [];
+				public array $bumped = [];
 
-				protected function deleteKeysMatching(string $pattern): void
+				/**
+				 * @var int
+				 */
+				public int $scans = 0;
+
+				protected function bumpGeneration(string $key): int
 				{
-					$this->patterns[] = $pattern;
+					$this->bumped[] = $key;
+					return 1;
+				}
+
+				public function getKeys(string $key): ?array
+				{
+					$this->scans++;
+					return [];
 				}
 
 				public function exposeInvalidate(Request $request, mixed $id = null, ?object $item = null): void
@@ -335,9 +348,9 @@ final class ModelPolicyKeysTest extends Test
 					$this->invalidateGetKeys($request, $id, $item);
 				}
 
-				public function exposePattern(string $method, mixed $params): string
+				public function exposeToken(mixed $identity): string
 				{
-					return $this->createKeyPattern($method, $params);
+					return $this->rowGenerationKey($identity);
 				}
 			};
 
@@ -347,19 +360,14 @@ final class ModelPolicyKeysTest extends Test
 				(object)['id' => 5, 'slug' => 'my-slug', 'guid' => 'abc']
 			);
 
-			$five = $policy->exposePattern('get', 5);
-			$fifty = $policy->exposePattern('get', 50);
-			// Class:*:get:5 must not match Class:*:get:50 (no trailing wildcard on the id).
-			$this->assertStringEndsWith(':get:5', $five);
-			$this->assertStringEndsWith(':get:50', $fifty);
-			$this->assertFalse(str_ends_with($fifty, ':get:5'));
-
-			$this->assertContains($five, $policy->patterns);
-			$this->assertContains($five . ':*', $policy->patterns);
-			$this->assertContains($policy->exposePattern('get', 'my-slug'), $policy->patterns);
-			$this->assertContains($policy->exposePattern('get', 'my-slug') . ':*', $policy->patterns);
-			$this->assertContains($policy->exposePattern('get', 'abc'), $policy->patterns);
-			$this->assertContains($policy->exposePattern('get', 'abc') . ':*', $policy->patterns);
+			$this->assertEqualsCanonicalizing([
+				$policy->exposeToken(5),
+				$policy->exposeToken('my-slug'),
+				$policy->exposeToken('abc')
+			], $policy->bumped);
+			$this->assertCount(3, $policy->bumped);
+			$this->assertNotSame($policy->exposeToken(5), $policy->exposeToken(50));
+			$this->assertSame(0, $policy->scans);
 		}
 		finally
 		{

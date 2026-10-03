@@ -95,9 +95,7 @@ class ModelPolicy extends Policy
 
 		if ($id !== null && $id !== '')
 		{
-			$pattern = $policy->createKeyPattern('get', $id);
-			$policy->deleteKeysMatching($pattern);
-			$policy->deleteKeysMatching($pattern . ':*');
+			$policy->bumpGeneration($policy->rowGenerationKey($id));
 		}
 	}
 
@@ -213,10 +211,16 @@ class ModelPolicy extends Policy
 	 */
 	public function get(Request $request): object
 	{
+		if (!$this->hasStableScope('get'))
+		{
+			return $this->controller->get($request);
+		}
+
 		$id = $this->getResourceId($request);
-		$cacheId = $id ?? ($request->params()->id ?? $request->input('id') ?? null);
-		$cacheId = $this->cacheIdWithRouteParams($request, $this->cacheIdWithIncludes($request, $cacheId));
-		$key = $this->createKey('get', $cacheId);
+		$identity = $id ?? ($request->params()->id ?? $request->input('id') ?? null);
+		$cacheId = $this->cacheIdWithRouteParams($request, $this->cacheIdWithIncludes($request, $identity));
+		$generation = $this->readGeneration($this->rowGenerationKey($identity));
+		$key = $this->createKey('get', (string)$cacheId . ':r' . $generation);
 
 		return $this->remember(
 			$key,
@@ -506,19 +510,97 @@ class ModelPolicy extends Policy
 	protected static array $listGenerations = [];
 
 	/**
-	 * Invalidate list caches by bumping the generation token.
+	 * Generation tokens outlive every cached response they name. They are
+	 * refreshed on each bump.
 	 *
-	 * Reads include the gen in the `all()` key, so one INCR (or get/set)
-	 * replaces SCAN+DEL of every `Class:*:all:*` key. Targeted
-	 * `invalidateGetKeys()` still deletes get keys. Generic method
-	 * caches still SCAN.
+	 * @var int
+	 */
+	protected const GENERATION_TTL = 604800;
+
+	/**
+	 * Invalidate list and custom GET caches by bumping the generation token.
+	 *
+	 * `all()` and generic method keys carry the generation, so one INCR
+	 * replaces a SCAN of the whole keyspace on every write. Orphaned keys
+	 * age out with their TTL.
 	 *
 	 * @return void
 	 */
 	protected function deleteAll(): void
 	{
 		$this->incrementListGeneration();
-		$this->deleteGenericMethodCaches();
+	}
+
+	/**
+	 * Generation token for one row's get() keys.
+	 *
+	 * @param mixed $identity Id, slug, guid or uuid.
+	 * @return string
+	 */
+	protected function rowGenerationKey(mixed $identity): string
+	{
+		return $this->controller::class . ':getgen:' . $this->normalizeParams($identity);
+	}
+
+	/**
+	 * A fresh generation starts at the clock (ms), never at 0 or 1. If a
+	 * token is evicted or expires, restarting low could make keys cached
+	 * under an old generation reachable again.
+	 *
+	 * @return int
+	 */
+	protected function generationSeed(): int
+	{
+		return (int) floor(microtime(true) * 1000);
+	}
+
+	/**
+	 * Current generation for a token, seeding it when missing.
+	 *
+	 * @param string $key
+	 * @return int
+	 */
+	protected function readGeneration(string $key): int
+	{
+		$cached = Cache::get($key);
+		if ($cached !== null && $cached !== '')
+		{
+			return (int) $cached;
+		}
+
+		// Re-read even when add() lost: a concurrent request seeded it.
+		Cache::add($key, (string) $this->generationSeed(), self::GENERATION_TTL);
+		$cached = Cache::get($key);
+		if ($cached !== null && $cached !== '')
+		{
+			return (int) $cached;
+		}
+
+		return self::$listGenerations[$key] ?? 0;
+	}
+
+	/**
+	 * Moves a token to a new generation so keys built on the old one miss.
+	 *
+	 * @param string $key
+	 * @return int
+	 */
+	protected function bumpGeneration(string $key): int
+	{
+		// Seed first: INCR on a missing key would restart at 1.
+		Cache::add($key, (string) $this->generationSeed(), self::GENERATION_TTL);
+		$next = Cache::incr($key);
+		if ($next < 1)
+		{
+			$next = (self::$listGenerations[$key] ?? 0) + 1;
+		}
+		else
+		{
+			Cache::expire($key, self::GENERATION_TTL);
+		}
+
+		self::$listGenerations[$key] = $next;
+		return $next;
 	}
 
 	/**
@@ -538,33 +620,17 @@ class ModelPolicy extends Policy
 	 */
 	protected function getListGeneration(): int
 	{
-		$key = $this->listGenerationKey();
-		$cached = Cache::get($key);
-		if ($cached !== null && $cached !== '')
-		{
-			return (int) $cached;
-		}
-
-		return self::$listGenerations[$key] ?? 0;
+		return $this->readGeneration($this->listGenerationKey());
 	}
 
 	/**
-	 * Bump the list generation so prior `all()` keys miss.
+	 * Bump the list generation so prior `all()` and custom GET keys miss.
 	 *
 	 * @return int
 	 */
 	protected function incrementListGeneration(): int
 	{
-		$key = $this->listGenerationKey();
-		$next = Cache::incr($key);
-		if ($next < 1)
-		{
-			$next = $this->getListGeneration() + 1;
-			Cache::set($key, (string) $next);
-		}
-
-		self::$listGenerations[$key] = $next;
-		return $next;
+		return $this->bumpGeneration($this->listGenerationKey());
 	}
 
 	/**
@@ -576,7 +642,10 @@ class ModelPolicy extends Policy
 	protected const STANDARD_METHODS = ['get', 'all', 'setup', 'add', 'merge', 'update', 'updateStatus', 'delete'];
 
 	/**
-	 * Deletes cached generic method keys.
+	 * Deletes cached generic method keys with a SCAN of the controller prefix.
+	 *
+	 * No longer part of deleteAll(): generic keys carry the list generation.
+	 * Kept for subclasses that want an eager sweep.
 	 *
 	 * Only keys shaped like a cached response (`Class:scope:method:params`)
 	 * are considered. The generation token shares the controller prefix but
@@ -630,9 +699,11 @@ class ModelPolicy extends Policy
 	}
 
 	/**
-	 * Drop get() keys for an id, include suffixes, and slug/guid identities.
+	 * Retire get() keys for an id and its slug/guid/uuid identities.
 	 *
-	 * `Class:*:get:5` does not match `Class:*:get:5:inc=author` or slug keys.
+	 * Each identity has its own generation token, and every get() key for
+	 * that identity (any scope, include or route-param variant) carries it,
+	 * so one INCR per identity replaces two keyspace SCANs.
 	 *
 	 * @param Request $request
 	 * @param mixed $id
@@ -665,11 +736,15 @@ class ModelPolicy extends Policy
 			$identities[] = $raw;
 		}
 
-		foreach (array_unique($identities, SORT_REGULAR) as $identity)
+		$tokens = [];
+		foreach ($identities as $identity)
 		{
-			$pattern = $this->createKeyPattern('get', $identity);
-			$this->deleteKeysMatching($pattern);
-			$this->deleteKeysMatching($pattern . ':*');
+			$tokens[$this->rowGenerationKey($identity)] = true;
+		}
+
+		foreach (array_keys($tokens) as $token)
+		{
+			$this->bumpGeneration($token);
 		}
 	}
 
@@ -791,8 +866,8 @@ class ModelPolicy extends Policy
 		$limit = $inputs->limit;
 		$search = $inputs->modifiers['search'] ?? null;
 
-		// Skip caching for searches
-		if ($this->isSearching($search))
+		// Skip caching for searches and for keys no later request can read.
+		if ($this->isSearching($search) || !$this->hasStableScope('all'))
 		{
 			return $this->controller->all($request);
 		}
@@ -1047,10 +1122,15 @@ class ModelPolicy extends Policy
 	 */
 	protected function handleGenericGetRequest(string $method, array $arguments): mixed
 	{
+		if (!$this->hasStableScope($method))
+		{
+			return $this->controller->{$method}(...$arguments);
+		}
+
 		// Generate a cache key based on method name and serialized arguments
 		$request = $arguments[0] ?? null;
 		$cacheParams = $this->generateGenericCacheParams($method, $request);
-		$key = $this->createKey($method, $cacheParams);
+		$key = $this->createKey($method, 'g' . $this->getListGeneration() . ':' . $cacheParams);
 
 		return $this->remember(
 			$key,
