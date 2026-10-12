@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Database;
 
+use Proto\Error\ServiceUnavailableException;
+
 /**
  * DatabaseUnavailableException
  *
@@ -11,6 +13,6 @@ namespace Proto\Database;
  *
  * @package Proto\Database
  */
-class DatabaseUnavailableException extends \RuntimeException
+class DatabaseUnavailableException extends ServiceUnavailableException
 {
 }

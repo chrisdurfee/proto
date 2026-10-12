@@ -1,6 +1,8 @@
 <?php declare(strict_types=1);
 namespace Proto\Http\Session;
 
+use Proto\Http\Cookie;
+
 /**
  * FileSession
  *
@@ -54,11 +56,30 @@ class FileSession extends Adapter
 	 */
 	public function refreshId(): string
 	{
-		if (session_status() === PHP_SESSION_ACTIVE)
+		/**
+		 * init() closes the session right after starting it (to avoid
+		 * lock contention), so it is normally not active here. Reopen
+		 * it: skipping the regenerate silently kept the pre-login id,
+		 * which defeats session-fixation protection.
+		 */
+		$wasOpen = session_status() === PHP_SESSION_ACTIVE;
+		if (!$wasOpen)
+		{
+			$this->open();
+		}
+
+		if (session_status() === PHP_SESSION_ACTIVE && !headers_sent())
 		{
 			session_regenerate_id(true);
 		}
-		return session_id();
+
+		$id = session_id();
+		if (!$wasOpen)
+		{
+			$this->close();
+		}
+
+		return $id;
 	}
 
 	/**
@@ -111,10 +132,24 @@ class FileSession extends Adapter
 	 */
 	protected function configureSession(): void
 	{
+		// Settings can only change before a session starts.
+		if (session_status() === PHP_SESSION_ACTIVE)
+		{
+			return;
+		}
+
 		ini_set('session.use_only_cookies', '1');
 		ini_set('session.use_cookies', '1');
 		ini_set('session.use_trans_sid', '0');
 		ini_set('session.cache_limiter', 'nocache');
+
+		// Reject session ids the server never issued (fixation), and
+		// never hand the id to scripts or send it over plain HTTP.
+		ini_set('session.use_strict_mode', '1');
+		if (!headers_sent())
+		{
+			session_set_cookie_params(Cookie::sessionCookieParams());
+		}
 	}
 
 	/**

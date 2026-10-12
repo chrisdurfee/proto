@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 namespace Proto\Error
 {
-	use Proto\Database\DatabaseUnavailableException;
 	use Proto\Error\Models\ErrorLog;
 	use Proto\Http\Request;
 	use Proto\Http\Response;
@@ -373,7 +372,7 @@ namespace Proto\Error
 
 			static::clearOutputBuffers();
 
-			$unavailable = $exception instanceof DatabaseUnavailableException;
+			$unavailable = $exception instanceof ServiceUnavailableException;
 			$status = $unavailable ? 503 : 500;
 			$message = $unavailable
 				? 'The service is temporarily unavailable. Please try again shortly.'

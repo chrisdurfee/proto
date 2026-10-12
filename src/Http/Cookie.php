@@ -114,6 +114,20 @@ class Cookie
 	}
 
 	/**
+	 * Cookie attributes for PHP's native session cookie, matching the
+	 * framework's own cookies (Secure + Strict outside dev, HttpOnly,
+	 * shared domain when configured). Feed to session_set_cookie_params().
+	 *
+	 * @return array{lifetime: int, path: string, domain?: string, secure: bool, httponly: bool, samesite: string}
+	 */
+	public static function sessionCookieParams(): array
+	{
+		$options = (new static('', ''))->getOptions();
+		unset($options['expires']);
+		return ['lifetime' => 0] + $options;
+	}
+
+	/**
 	 * Retrieves cookie security options.
 	 *
 	 * @return array

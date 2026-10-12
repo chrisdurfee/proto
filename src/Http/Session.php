@@ -5,6 +5,7 @@ use Proto\Http\Session\DatabaseSession;
 use Proto\Http\Session\FileSession;
 use Proto\Http\Session\RedisSession;
 use Proto\Http\Session\SessionInterface;
+use Proto\Http\Session\SessionUnavailableException;
 use Proto\Config;
 
 /**
@@ -95,6 +96,19 @@ class Session
 		}
 		catch (\Exception $e)
 		{
+			if (self::getType() === FileSession::class || env('sessionFallback') !== 'file')
+			{
+				/**
+				 * Fail closed: silently switching to per-server file
+				 * sessions during a Redis/DB outage signs users out
+				 * unpredictably and splits state across servers. Set
+				 * `"sessionFallback": "file"` to opt back into it.
+				 */
+				error_log('Session store unavailable: ' . $e->getMessage());
+				throw new SessionUnavailableException('The session store is unavailable.', 0, $e);
+			}
+
+			error_log('Session store unavailable, falling back to file sessions: ' . $e->getMessage());
 			self::$type = FileSession::class;
 			self::$type::reset();
 			self::$instance = self::$type::getInstance();

@@ -15,7 +15,8 @@ use Proto\Utils\Format\JsonFormat;
  *
  * Prefers `sessionConnection` (a dedicated Redis) so cache eviction cannot
  * drop sign-ins. When that is unset, falls back to the application cache
- * driver. When neither is reachable, Session::init() falls back to files.
+ * driver. When neither is reachable, Session::init() throws a
+ * SessionUnavailableException (503) unless `sessionFallback` is "file".
  *
  * @package Proto\Http\Session
  */
