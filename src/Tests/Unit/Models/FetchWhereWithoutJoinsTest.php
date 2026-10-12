@@ -30,7 +30,7 @@ final class FetchWhereWithoutJoinsTest extends Test
 	}
 
 	/**
-	 * fetchWhereWithoutJoins must call getRows on storage, not a missing fetchWhere.
+	 * fetchWhereWithoutJoins must use the hook-free storage fetch, not getRows or a missing fetchWhere.
 	 *
 	 * @return void
 	 */
@@ -38,12 +38,13 @@ final class FetchWhereWithoutJoinsTest extends Test
 	{
 		$rows = SpyFetchModel::fetchWhereWithoutJoins(['userId' => 1]);
 		$this->assertSame([], $rows);
-		$this->assertContains('getRows', SpyFetchStorage::$calls);
+		$this->assertContains('fetchWithoutHooks', SpyFetchStorage::$calls);
 		$this->assertNotContains('fetchWhere', SpyFetchStorage::$calls);
+		$this->assertNotContains('getRows', SpyFetchStorage::$calls, 'getRows runs app order/where hooks that may reference joined aliases.');
 	}
 
 	/**
-	 * BatchMap::exists uses fetchWhereWithoutJoins and therefore hits getRows.
+	 * BatchMap::exists uses fetchWhereWithoutJoins and therefore the hook-free fetch.
 	 *
 	 * @return void
 	 */
@@ -56,7 +57,7 @@ final class FetchWhereWithoutJoinsTest extends Test
 		$rows = [(object)['id' => 1], (object)['id' => 2]];
 		BatchMap::exists($rows, SpyFetchModel::class, 'postId', 'liked');
 
-		$this->assertContains('getRows', SpyFetchStorage::$calls);
+		$this->assertContains('fetchWithoutHooks', SpyFetchStorage::$calls);
 		$this->assertTrue($rows[0]->liked);
 		$this->assertFalse($rows[1]->liked);
 	}
@@ -75,7 +76,7 @@ final class FetchWhereWithoutJoinsTest extends Test
 		$rows = [(object)['id' => 1]];
 		BatchMap::field($rows, SpyFetchModel::class, 'postId', 'name', 'authorName', null);
 
-		$this->assertContains('getRows', SpyFetchStorage::$calls);
+		$this->assertContains('fetchWithoutHooks', SpyFetchStorage::$calls);
 		$this->assertSame('Ada', $rows[0]->authorName);
 	}
 
@@ -96,6 +97,33 @@ final class FetchWhereWithoutJoinsTest extends Test
 		$this->assertSame(9, $rows[0]->postId);
 		$this->assertSame(3, $rows[0]->userId);
 		$this->assertSame('Ada', $rows[0]->name);
+	}
+
+	/**
+	 * Storage::fetchWithoutHooks() must not run setOrderBy() /
+	 * setCustomWhere() / setGroupBy(), which apps write against joined
+	 * aliases (e.g. ORDER BY c.last_message_at).
+	 *
+	 * @return void
+	 */
+	public function testFetchWithoutHooksSkipsOrderAndCustomWhereHooks(): void
+	{
+		$adapter = $this->getMockBuilder(\Proto\Database\Adapters\Adapter::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$adapter->method('fetch')->willReturnCallback(function (string $sql): array
+		{
+			HookedStorage::$sql = $sql;
+			return [(object)['id' => 1]];
+		});
+		HookedStorage::$adapter = $adapter;
+
+		$storage = new HookedStorage(new HookedModel());
+		$rows = $storage->fetchWithoutHooks(['userId' => 3]);
+
+		$this->assertCount(1, $rows);
+		$this->assertStringNotContainsString('last_message_at', HookedStorage::$sql);
+		$this->assertStringContainsString('user_id', HookedStorage::$sql);
 	}
 
 	/**
@@ -148,6 +176,16 @@ final class SpyFetchStorage extends Storage
 	 * @param mixed $filter
 	 * @return array
 	 */
+	public function fetchWithoutHooks(mixed $filter = null): array
+	{
+		self::$calls[] = 'fetchWithoutHooks';
+		return self::$rows;
+	}
+
+	/**
+	 * @param mixed $filter
+	 * @return array
+	 */
 	public function fetchWhere(mixed $filter): array
 	{
 		self::$calls[] = 'fetchWhere';
@@ -174,4 +212,83 @@ final class SpyFetchModel extends Model
 	 * @var string
 	 */
 	protected static string $storageType = SpyFetchStorage::class;
+}
+
+/**
+ * Storage whose hooks reference a joined alias, like Rally's
+ * ConversationParticipantStorage.
+ *
+ * @package Proto\Tests\Unit\Models
+ */
+final class HookedStorage extends Storage
+{
+	/**
+	 * @var \Proto\Database\Adapters\Adapter|null
+	 */
+	public static ?\Proto\Database\Adapters\Adapter $adapter = null;
+
+	/**
+	 * @var string
+	 */
+	public static string $sql = '';
+
+	/**
+	 * @param mixed ...$fields
+	 * @return object
+	 */
+	public function select(...$fields): object
+	{
+		return new \Proto\Database\QueryBuilder\AdapterProxy(
+			(new \Proto\Database\QueryBuilder\Select('hooked', 'h'))->select('h.*'),
+			self::$adapter
+		);
+	}
+
+	/**
+	 * @param object $sql
+	 * @param array|null $modifiers
+	 * @param array|null $params
+	 * @return void
+	 */
+	protected function setOrderBy(object $sql, ?array $modifiers = null, ?array &$params = null): void
+	{
+		$sql->orderBy('COALESCE(c.last_message_at, c.created_at) DESC');
+	}
+
+	/**
+	 * @param object $sql
+	 * @param array|null $modifiers
+	 * @param array|null $params
+	 * @return void
+	 */
+	protected function setCustomWhere(object $sql, ?array $modifiers = null, ?array &$params = null): void
+	{
+		$sql->where('c.last_message_at IS NOT NULL');
+	}
+}
+
+/**
+ * @package Proto\Tests\Unit\Models
+ */
+final class HookedModel extends Model
+{
+	/**
+	 * @var string|null
+	 */
+	protected static ?string $tableName = 'hooked';
+
+	/**
+	 * @var string|null
+	 */
+	protected static ?string $alias = 'h';
+
+	/**
+	 * @var array
+	 */
+	protected static array $fields = ['id', 'userId'];
+
+	/**
+	 * @var string
+	 */
+	protected static string $storageType = HookedStorage::class;
 }

@@ -1382,7 +1382,7 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			static::$skipJoins = false;
 		}
 
-		$rows = $instance->storage->getRows($filter)->rows ?? [];
+		$rows = $instance->storage->fetchWithoutHooks($filter);
 		if ($rows === [])
 		{
 			return [];

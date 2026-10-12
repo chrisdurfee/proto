@@ -862,6 +862,30 @@ class Storage extends TableStorage
 	}
 
 	/**
+	 * Fetches rows by filter with the model's own columns only, skipping
+	 * the storage's `setCustomWhere()` / `setOrderBy()` / `setGroupBy()`
+	 * hooks.
+	 *
+	 * Used by join-free lookups (Model::fetchWhereWithoutJoins(),
+	 * BatchMap): app hooks often reference aliases of joined tables
+	 * (e.g. `ORDER BY c.last_message_at`), which do not exist without the
+	 * joins and made the query fail and return nothing.
+	 *
+	 * @param mixed $filter Filter criteria.
+	 * @return array
+	 */
+	public function fetchWithoutHooks(mixed $filter = null): array
+	{
+		$sql = $this->select();
+		$params =& $sql->params();
+
+		$where = $this->getWhere($params, $filter, null);
+		$sql->where(...$where);
+
+		return $sql->fetch();
+	}
+
+	/**
 	 * Retrieve all records by filter.
 	 *
 	 * @param array|object|null $filter Filter criteria.
