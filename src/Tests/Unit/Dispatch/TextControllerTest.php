@@ -4,6 +4,7 @@ namespace Proto\Tests\Unit\Dispatch;
 
 use Proto\Dispatch\Controllers\TextController;
 use Proto\Dispatch\Response;
+use Proto\Dispatch\Sms;
 use Proto\Tests\Test;
 
 /**
@@ -55,6 +56,34 @@ final class TextControllerTest extends Test
 		]);
 
 		$this->assertSame('Stored queue body', $driver->settings->message);
+	}
+
+	/**
+	 * A per-message custom driver used to replace the shared static
+	 * driver, so every later SMS in the process went through it.
+	 *
+	 * @return void
+	 */
+	public function testCustomDriverDoesNotLeakIntoLaterSends(): void
+	{
+		$default = new CapturingTextDriver();
+		$custom = new CapturingTextDriver();
+		$property = new \ReflectionProperty(Sms::class, 'driver');
+		$previous = $property->getValue();
+		$property->setValue(null, $default);
+
+		try
+		{
+			(new Sms((object)['message' => 'one'], $custom))->send();
+			(new Sms((object)['message' => 'two']))->send();
+		}
+		finally
+		{
+			$property->setValue(null, $previous);
+		}
+
+		$this->assertSame('one', $custom->settings->message);
+		$this->assertSame('two', $default->settings->message);
 	}
 
 	/**

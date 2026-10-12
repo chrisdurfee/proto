@@ -44,7 +44,17 @@ class Sms extends Dispatch
 	}
 
 	/**
+	 * Driver used by this instance (custom or the shared default).
+	 *
+	 * @var object
+	 */
+	protected object $instanceDriver;
+
+	/**
 	 * Constructor for the Sms class.
+	 *
+	 * A custom driver applies to this message only; it no longer
+	 * replaces the shared default driver for every later send.
 	 *
 	 * @param object $settings SMS settings.
 	 * @param object|null $customDriver Optional custom SMS driver.
@@ -53,34 +63,26 @@ class Sms extends Dispatch
 	 */
 	public function __construct(object $settings, ?object $customDriver = null)
 	{
-		self::setupDriver($customDriver);
+		$this->instanceDriver = $customDriver ?? static::getDefaultDriver();
 		$this->settings = $settings;
 	}
 
 	/**
-	 * Sets up the SMS driver.
+	 * Gets (and caches) the configured default SMS driver.
 	 *
-	 * @param object|null $customDriver Optional custom driver instance.
-	 *
-	 * @return void
+	 * @return object
 	 */
-	protected static function setupDriver(?object $customDriver = null): void
+	protected static function getDefaultDriver(): object
 	{
-		if ($customDriver !== null)
-		{
-			self::$driver = $customDriver;
-			return;
-		}
-
 		if (self::$driver !== null)
 		{
-			return;
+			return self::$driver;
 		}
 
 		$config = self::getConfig();
 		$driverName = $config->sms->driver ?? 'TwilioDriver';
 		$className = __NAMESPACE__ . '\\Drivers\\Sms\\' . $driverName;
-		self::$driver = new $className();
+		return self::$driver = new $className();
 	}
 
 	/**
@@ -90,6 +92,6 @@ class Sms extends Dispatch
 	 */
 	public function send(): Response
 	{
-		return self::$driver->send($this->settings);
+		return $this->instanceDriver->send($this->settings);
 	}
 }
