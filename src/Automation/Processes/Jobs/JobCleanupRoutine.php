@@ -2,8 +2,7 @@
 namespace Proto\Automation\Processes\Jobs;
 
 use Proto\Automation\Processes\Routine;
-use Proto\Jobs\Models\JobModel;
-use Proto\Jobs\Models\FailedJobModel;
+use Proto\Jobs\Drivers\DatabaseDriver;
 
 /**
  * Class JobCleanupRoutine
@@ -45,6 +44,11 @@ class JobCleanupRoutine extends Routine
 	 * @var bool $verbose Whether to output verbose information
 	 */
 	protected bool $verbose = false;
+
+	/**
+	 * @var DatabaseDriver|null $driver Job storage driver (created on first use)
+	 */
+	protected ?DatabaseDriver $driver = null;
 
 	/**
 	 * Constructor.
@@ -121,6 +125,16 @@ class JobCleanupRoutine extends Routine
 	}
 
 	/**
+	 * Returns the job storage driver.
+	 *
+	 * @return DatabaseDriver
+	 */
+	protected function getDriver(): DatabaseDriver
+	{
+		return $this->driver ??= new DatabaseDriver();
+	}
+
+	/**
 	 * Clean up old completed jobs.
 	 *
 	 * @return int Number of jobs cleaned up
@@ -136,22 +150,9 @@ class JobCleanupRoutine extends Routine
 				echo "Cleaning completed jobs older than: {$cutoffDate}\n";
 			}
 
-			// Get old completed jobs
-			$filter = [
-				'status' => 'completed',
-				'completed_at <' => $cutoffDate
-			];
-
-			$oldJobs = JobModel::all($filter);
-			$count = 0;
-
-			foreach ($oldJobs as $job)
-            {
-				if ($job->delete())
-                {
-					$count++;
-				}
-			}
+			// Completed jobs record their finish time in `processed_at`
+			// (there is no `completed_at` column in the jobs table).
+			$count = $this->getDriver()->cleanupCompletedJobs($this->completedJobRetentionDays);
 
 			if ($count > 0)
             {
@@ -197,21 +198,7 @@ class JobCleanupRoutine extends Routine
 				echo "Cleaning failed jobs older than: {$cutoffDate}\n";
 			}
 
-			// Get old failed jobs
-			$filter = [
-				'failed_at <' => $cutoffDate
-			];
-
-			$oldFailedJobs = FailedJobModel::all($filter);
-			$count = 0;
-
-			foreach ($oldFailedJobs as $failedJob)
-            {
-				if ($failedJob->delete())
-                {
-					$count++;
-				}
-			}
+			$count = $this->getDriver()->cleanupFailedJobs($this->failedJobRetentionDays);
 
 			if ($count > 0)
             {
