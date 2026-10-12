@@ -4,6 +4,7 @@ namespace Proto\Jobs;
 use Proto\Base;
 use Proto\Jobs\Drivers\DriverInterface;
 use Proto\Jobs\Drivers\DatabaseDriver;
+use Proto\Jobs\Drivers\ReleasesStaleJobs;
 use Proto\Jobs\Events\JobEvent;
 use Proto\Events\Events;
 
@@ -30,6 +31,11 @@ class JobQueue extends Base
 	 * @var bool $isProcessing Whether the queue is currently processing
 	 */
 	protected bool $isProcessing = false;
+
+	/**
+	 * @var int|null $lastReapAt When the stale-job reaper last ran (kept across work() calls)
+	 */
+	protected ?int $lastReapAt = null;
 
 	/**
 	 * @var Events $events Event dispatcher
@@ -79,6 +85,11 @@ class JobQueue extends Base
 			'max_idle' => 0,
 			// Return from work() after this many seconds. 0 = no limit.
 			'max_time' => 0,
+			// Seconds a job may stay reserved (processing) before the
+			// reaper returns it to the queue; a job's own longer timeout wins.
+			'reserve_timeout' => 900,
+			// Seconds between reaper passes while work() runs. 0 disables.
+			'reap_interval' => 60,
 		];
 	}
 
@@ -197,6 +208,7 @@ class JobQueue extends Base
 		$maxIdle = max(0, (int) ($this->config['max_idle'] ?? 0));
 		$maxTime = max(0, (int) ($this->config['max_time'] ?? 0));
 		$sleep = max(0, (int) ($this->config['sleep'] ?? 3));
+		$reapInterval = max(0, (int) ($this->config['reap_interval'] ?? 60));
 
 		$startedAt = time();
 		$idleSince = $startedAt;
@@ -210,6 +222,12 @@ class JobQueue extends Base
 			{
 				$reason = 'max_time';
 				break;
+			}
+
+			if ($reapInterval > 0 && ($this->lastReapAt === null || (time() - $this->lastReapAt) >= $reapInterval))
+			{
+				$this->releaseStaleJobs();
+				$this->lastReapAt = time();
 			}
 
 			$job = $this->pop($queue);
@@ -260,6 +278,33 @@ class JobQueue extends Base
 		$this->isProcessing = false;
 
 		return $processedJobs;
+	}
+
+	/**
+	 * Returns jobs abandoned in `processing` by dead workers to the queue.
+	 *
+	 * Called by work() on start and every `reap_interval` seconds; safe to
+	 * call from a cron routine as well. Drivers that do not reserve jobs
+	 * in shared storage are skipped.
+	 *
+	 * @param int|null $timeout Reservation timeout in seconds (default: `reserve_timeout`)
+	 * @return int Number of jobs released or failed
+	 */
+	public function releaseStaleJobs(?int $timeout = null): int
+	{
+		if (!$this->driver instanceof ReleasesStaleJobs)
+		{
+			return 0;
+		}
+
+		$timeout ??= (int) ($this->config['reserve_timeout'] ?? 900);
+		$released = $this->driver->releaseStaleJobs($timeout);
+		if ($released > 0)
+		{
+			$this->fireEvent('worker.released_stale', ['released' => $released]);
+		}
+
+		return $released;
 	}
 
 	/**
