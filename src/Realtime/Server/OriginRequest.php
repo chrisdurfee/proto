@@ -29,9 +29,7 @@ final class OriginRequest
 		'referer',
 		'x-forwarded-for',
 		'x-forwarded-proto',
-		'x-forwarded-host',
-		'x-real-ip',
-		'cf-connecting-ip'
+		'x-forwarded-host'
 	];
 
 	/**
@@ -63,17 +61,43 @@ final class OriginRequest
 			}
 		}
 
-		// Our own caller's address is the proxy in front; record it so PHP
-		// sees the same client IP chain it would have seen directly.
-		$remote = $request->getClient()->getRemoteAddress()->toString();
-		$remoteIp = preg_replace('/:\d+$/', '', trim($remote, '[]')) ?? '';
-		if (!isset($headers['x-forwarded-for']) && $remoteIp !== '')
+		// Append our own caller's address, as a compliant proxy does, so
+		// PHP's right-to-left trusted-proxy walk sees the real chain. Keeping
+		// a client-sent X-Forwarded-For as-is let any client choose its IP.
+		// Pass-through headers (X-Real-IP, CF-Connecting-IP) are not
+		// forwarded: a client could set them when connecting directly.
+		$remoteIp = self::remoteIp($request->getClient()->getRemoteAddress()->toString());
+		if ($remoteIp !== '')
 		{
-			$headers['x-forwarded-for'] = $remoteIp;
+			$headers['x-forwarded-for'] = isset($headers['x-forwarded-for'])
+				? $headers['x-forwarded-for'] . ', ' . $remoteIp
+				: $remoteIp;
 		}
 
 		$uri = $request->getUri();
 		return new self($uri->getPath(), $uri->getQuery(), $headers);
+	}
+
+	/**
+	 * Strips the port (and IPv6 brackets) from a socket address.
+	 *
+	 * @param string $address e.g. "10.0.0.5:51234" or "[2001:db8::1]:443".
+	 * @return string
+	 */
+	public static function remoteIp(string $address): string
+	{
+		if (preg_match('/^\[([^\]]+)\](?::\d+)?$/', $address, $match))
+		{
+			return $match[1];
+		}
+
+		// A bare IPv6 address has several colons and no port.
+		if (substr_count($address, ':') > 1)
+		{
+			return $address;
+		}
+
+		return preg_replace('/:\d+$/', '', $address) ?? '';
 	}
 
 	/**

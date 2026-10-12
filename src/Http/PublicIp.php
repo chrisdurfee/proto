@@ -47,17 +47,27 @@ class PublicIp
 	protected static ?array $trustedProxies = null;
 
 	/**
-	 * Proxy headers in priority order.
+	 * Cached `$_SERVER` keys of the proxy headers to trust.
 	 *
-	 * @var array<string>
+	 * @var array<int, string>|null
 	 */
-	protected const PROXY_HEADERS = [
-		'HTTP_CF_CONNECTING_IP',
-		'HTTP_X_REAL_IP',
-		'HTTP_X_CLUSTER_CLIENT_IP',
-		'HTTP_X_FORWARDED_FOR',
-		'HTTP_CLIENT_IP',
-	];
+	protected static ?array $proxyHeaders = null;
+
+	/**
+	 * Proxy headers trusted by default.
+	 *
+	 * Only `X-Forwarded-For`: compliant proxies append to it, so the
+	 * right-to-left walk recovers the real client even through several
+	 * hops (e.g. Cloudflare → edge → web, with both ranges listed in
+	 * `trustedProxies`). Headers a proxy passes through untouched
+	 * (`CF-Connecting-IP`, `X-Real-IP`, `Client-IP`) can be set by the
+	 * client whenever a request reaches a trusted hop without going
+	 * through the proxy that would overwrite them, so they are only
+	 * read when listed in `trustedProxyHeaders`.
+	 *
+	 * @var array<int, string>
+	 */
+	protected const DEFAULT_PROXY_HEADERS = ['X-Forwarded-For'];
 
 	/**
 	 * Retrieves the public IP address.
@@ -92,7 +102,7 @@ class PublicIp
 
 		if (static::isTrustedProxy($remoteAddr))
 		{
-			foreach (self::PROXY_HEADERS as $header)
+			foreach (static::getProxyHeaders() as $header)
 			{
 				$value = $_SERVER[$header] ?? null;
 				if (empty($value))
@@ -202,9 +212,15 @@ class PublicIp
 			return false;
 		}
 
+		$packed = @inet_pton($ip);
 		foreach ($proxies as $proxy)
 		{
-			if ($proxy === $ip)
+			if (!is_string($proxy))
+			{
+				continue;
+			}
+
+			if ($proxy === $ip || ($packed !== false && !str_contains($proxy, '/') && @inet_pton($proxy) === $packed))
 			{
 				return true;
 			}
@@ -217,6 +233,42 @@ class PublicIp
 		}
 
 		return false;
+	}
+
+	/**
+	 * Retrieves the `$_SERVER` keys of the proxy headers to trust, in
+	 * priority order, from `trustedProxyHeaders` (header names such as
+	 * "X-Forwarded-For" or "CF-Connecting-IP").
+	 *
+	 * @return array<int, string>
+	 */
+	protected static function getProxyHeaders(): array
+	{
+		if (static::$proxyHeaders !== null)
+		{
+			return static::$proxyHeaders;
+		}
+
+		$names = self::DEFAULT_PROXY_HEADERS;
+		if (function_exists('env'))
+		{
+			$config = env('trustedProxyHeaders');
+			if (is_array($config) && $config !== [])
+			{
+				$names = $config;
+			}
+		}
+
+		$keys = [];
+		foreach ($names as $name)
+		{
+			if (is_string($name) && preg_match('/^[A-Za-z0-9-]+$/', $name))
+			{
+				$keys[] = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+			}
+		}
+
+		return (static::$proxyHeaders = $keys);
 	}
 
 	/**
@@ -256,16 +308,35 @@ class PublicIp
 		[$subnet, $bits] = explode('/', $cidr, 2);
 		$bits = (int) $bits;
 
-		$ipLong = ip2long($ip);
-		$subnetLong = ip2long($subnet);
-
-		if ($ipLong === false || $subnetLong === false)
+		// inet_pton handles IPv4 and IPv6 (Cloudflare and most clouds
+		// publish IPv6 ranges; ip2long silently never matched them).
+		$ipBin = @inet_pton($ip);
+		$subnetBin = @inet_pton($subnet);
+		if ($ipBin === false || $subnetBin === false || strlen($ipBin) !== strlen($subnetBin))
 		{
 			return false;
 		}
 
-		$mask = -1 << (32 - $bits);
-		return ($ipLong & $mask) === ($subnetLong & $mask);
+		$maxBits = strlen($ipBin) * 8;
+		if ($bits < 0 || $bits > $maxBits)
+		{
+			return false;
+		}
+
+		$fullBytes = intdiv($bits, 8);
+		if (substr($ipBin, 0, $fullBytes) !== substr($subnetBin, 0, $fullBytes))
+		{
+			return false;
+		}
+
+		$remaining = $bits % 8;
+		if ($remaining === 0)
+		{
+			return true;
+		}
+
+		$mask = (0xFF << (8 - $remaining)) & 0xFF;
+		return (ord($ipBin[$fullBytes]) & $mask) === (ord($subnetBin[$fullBytes]) & $mask);
 	}
 
 	/**
@@ -293,5 +364,6 @@ class PublicIp
 	{
 		static::$ipAddress = null;
 		static::$trustedProxies = null;
+		static::$proxyHeaders = null;
 	}
 }
