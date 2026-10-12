@@ -1,5 +1,7 @@
 <?php declare(strict_types=1);
 
+namespace Proto\Tests\Unit\Http\Loop;
+
 use PHPUnit\Framework\TestCase;
 use Proto\Http\Loop\EventLoop;
 use Proto\Http\Loop\UpdateEvent;

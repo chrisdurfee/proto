@@ -7,7 +7,7 @@
  * and processing background jobs in the Proto framework.
  */
 
-require_once __DIR__ . '/../../../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Proto\Jobs\Jobs;
 
