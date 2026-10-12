@@ -29,7 +29,8 @@ class Jwt
 		string $expires = '+1 minute'
 	): string
 	{
-		$header = self::encodeJson($header ?? ['typ' => 'JWT', 'alg' => 'HS256']);
+		// Tokens are always signed with HMAC-SHA256; never advertise another alg.
+		$header = self::encodeJson(array_merge($header ?? ['typ' => 'JWT'], ['alg' => 'HS256']));
 		$payload = self::encodeJson(array_merge(self::getPayloadDefaults($expires), $payload));
 		$signature = self::generateSignature($secret, $header, $payload);
 
@@ -73,11 +74,16 @@ class Jwt
 	/**
 	 * Decodes a JWT token and validates its integrity.
 	 *
+	 * Rejects (returns null) a token that is malformed, not HS256, badly
+	 * signed, expired, not yet valid (`nbf`), or, unless `$requireExp` is
+	 * false, has no `exp` claim (it would never expire).
+	 *
 	 * @param string $token JWT token.
 	 * @param string $secret Secret key for verification.
+	 * @param bool $requireExp Whether a token without `exp` is rejected.
 	 * @return array|null Decoded payload if valid, otherwise null.
 	 */
-	public static function decode(string $token, string $secret): ?array
+	public static function decode(string $token, string $secret, bool $requireExp = true): ?array
 	{
 		$parts = explode('.', $token);
 		if (count($parts) !== 3)
@@ -88,18 +94,46 @@ class Jwt
 		[$header, $payload, $signature] = $parts;
 		$calculatedSignature = self::generateSignature($secret, $header, $payload);
 
-		if (!hash_equals($signature, $calculatedSignature))
+		if (!hash_equals($calculatedSignature, $signature))
+		{
+			return null;
+		}
+
+		$decodedHeader = json_decode(self::base64UrlDecode($header), true);
+		if (!is_array($decodedHeader) || ($decodedHeader['alg'] ?? null) !== 'HS256')
 		{
 			return null;
 		}
 
 		$decodedPayload = json_decode(self::base64UrlDecode($payload), true);
-		if (!self::isTokenExpired($decodedPayload))
+		if (!is_array($decodedPayload))
 		{
-			return $decodedPayload;
+			return null;
 		}
 
-		return null;
+		if ($requireExp && !isset($decodedPayload['exp']))
+		{
+			return null;
+		}
+
+		if (self::isTokenExpired($decodedPayload) || self::isNotYetValid($decodedPayload))
+		{
+			return null;
+		}
+
+		return $decodedPayload;
+	}
+
+	/**
+	 * Checks the `nbf` (not before) claim.
+	 *
+	 * @param array $payload Decoded payload.
+	 * @return bool True if the token is not valid yet.
+	 */
+	protected static function isNotYetValid(array $payload): bool
+	{
+		return isset($payload['nbf']) && is_numeric($payload['nbf'])
+			&& (int)$payload['nbf'] > (new DateTimeImmutable())->getTimestamp();
 	}
 
 	/**
@@ -111,7 +145,7 @@ class Jwt
 	protected static function isTokenExpired(array $payload): bool
 	{
 		$currentTime = (new DateTimeImmutable())->getTimestamp();
-		return isset($payload['exp']) && $payload['exp'] < $currentTime;
+		return isset($payload['exp']) && (!is_numeric($payload['exp']) || (int)$payload['exp'] < $currentTime);
 	}
 
 	/**
