@@ -366,6 +366,22 @@ class AdapterProxy
 	}
 
 	/**
+	 * This will add a JSON_CONTAINS condition to the WHERE clause,
+	 * binding the encoded value.
+	 *
+	 * @param string $columnName
+	 * @param array|object $value
+	 * @param string|null $path JSON path, default '$'.
+	 * @return self
+	 */
+	public function whereJson(string $columnName, array|object $value, ?string $path = '$'): self
+	{
+		$this->addParam(json_encode($value));
+		$this->sql->whereJson($columnName, '?', $path);
+		return $this;
+	}
+
+	/**
 	 * Add a JSON condition to the WHERE clause for a join, binding $params by reference.
 	 *
 	 * @param string $columnName The JSON column (e.g. "ou.organizations").

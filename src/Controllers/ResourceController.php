@@ -234,6 +234,27 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
+	 * Request `orderBy` / `groupBy` / `dates.field` may only name the
+	 * model's sortable fields (no blacklisted, secret, or PII columns).
+	 *
+	 * @return array<int, string>|null
+	 */
+	protected function requestSortColumns(): ?array
+	{
+		if ($this->model === null)
+		{
+			return null;
+		}
+
+		if (is_callable([$this->model, 'sortableFields']))
+		{
+			return $this->model::sortableFields();
+		}
+
+		return is_callable([$this->model, 'fields']) ? $this->model::fields() : null;
+	}
+
+	/**
 	 * The model's filterable field names, or null when the model does
 	 * not expose one (no allowlist restriction to apply).
 	 *

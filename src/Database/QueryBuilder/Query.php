@@ -452,6 +452,8 @@ abstract class Query extends Template
 	 */
 	public function whereBetween(string $columnName, mixed $start, mixed $end): self
 	{
+		$start = self::boundOperand($start, 'whereBetween');
+		$end = self::boundOperand($end, 'whereBetween');
 		$condition = "{$columnName} BETWEEN {$start} AND {$end}";
 		$this->conditions[] = $condition;
 		return $this;
@@ -460,17 +462,73 @@ abstract class Query extends Template
 	/**
 	 * This will add a JSON condition to the WHERE clause.
 	 *
+	 * The raw query builder has no parameter list, so the value is
+	 * always emitted as a `?` placeholder: bind `json_encode($value)`
+	 * yourself, or call whereJson() through the table builder
+	 * (AdapterProxy), which binds it for you.
+	 *
 	 * @param string $columnName
-	 * @param array|object $value
-	 * @param mixed $path
+	 * @param array|object|string $value The value to match, or '?' when already bound.
+	 * @param string|null $path JSON path, e.g. '$' or '$.tags'.
 	 * @return self
 	 */
-	public function whereJson(string $columnName, array|object $value, ?string $path = '$'): self
+	public function whereJson(string $columnName, array|object|string $value = '?', ?string $path = '$'): self
 	{
-		$encodedValue = json_encode($value);
-		$condition = "JSON_CONTAINS({$columnName}, '{$encodedValue}', '{$path}')";
+		if ($value !== '?')
+		{
+			throw new \InvalidArgumentException(
+				'Query::whereJson() cannot inline values; pass "?" and bind json_encode($value), ' .
+				'or call whereJson() on the table builder, which binds it.'
+			);
+		}
+
+		$path = self::jsonPath($path);
+		$condition = "JSON_CONTAINS({$columnName}, ?, '{$path}')";
 		$this->conditions[] = $condition;
 		return $this;
+	}
+
+	/**
+	 * Allows only a `?` placeholder or a numeric literal in a raw SQL
+	 * operand, so values can never be spliced into the statement.
+	 *
+	 * @param mixed $value
+	 * @param string $method Calling method, for the error message.
+	 * @return string
+	 */
+	protected static function boundOperand(mixed $value, string $method): string
+	{
+		if ($value === '?')
+		{
+			return '?';
+		}
+
+		if (is_int($value) || is_float($value))
+		{
+			return (string)$value;
+		}
+
+		throw new \InvalidArgumentException(
+			"Query::{$method}() cannot inline non-numeric values; pass \"?\" and bind the value, " .
+			"or call {$method}() on the table builder, which binds it."
+		);
+	}
+
+	/**
+	 * Validates a JSON path literal ('$', '$.key', '$.list[0]', '$."odd key"').
+	 *
+	 * @param string|null $path
+	 * @return string
+	 */
+	protected static function jsonPath(?string $path): string
+	{
+		$path ??= '$';
+		if (!preg_match('/^\$(?:\.[A-Za-z0-9_]+|\.\*|\[\d+\]|\[\*\]|\*\*)*$/', $path))
+		{
+			throw new \InvalidArgumentException("Invalid JSON path: {$path}");
+		}
+
+		return $path;
 	}
 
 	/**
@@ -496,6 +554,7 @@ abstract class Query extends Template
 		$params[] = $encodedValue;
 
 		// Use a placeholder for the JSON value in the condition
+		$path = self::jsonPath($path);
 		$condition = "JSON_CONTAINS({$columnName}, ?, '{$path}')";
 		$this->conditions[] = $condition;
 		return $this;

@@ -79,7 +79,11 @@ class BidirectionalPaginationTest extends TestCase
 	 */
 	protected function createMockModel(string $idKeyName = 'id', bool $isSnakeCase = true, string $alias = 'a'): Model
 	{
-		$model = $this->createMock(Model::class);
+		// Only stub instance accessors so static helpers (isSensitiveField) stay real
+		$model = $this->getMockBuilder(Model::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['getIdKeyName', 'isSnakeCase', 'getAlias'])
+			->getMock();
 		$model->method('getIdKeyName')->willReturn($idKeyName);
 		$model->method('isSnakeCase')->willReturn($isSnakeCase);
 		$model->method('getAlias')->willReturn($alias);
@@ -197,5 +201,37 @@ class BidirectionalPaginationTest extends TestCase
 		$this->assertArrayHasKey('created_at', $decoded);
 		$this->assertArrayHasKey('priority', $decoded);
 		$this->assertArrayHasKey('id', $decoded);
+	}
+
+	/**
+	 * A sort on a secret column must not echo its raw value in the cursor.
+	 */
+	public function testCompoundCursorNeverEchoesSensitiveColumn(): void
+	{
+		$rows = [
+			(object)['id' => 3, 'password' => '$2y$10$hashA'],
+			(object)['id' => 4, 'password' => '$2y$10$hashB'],
+		];
+
+		$model = $this->createMockModel();
+		$modifiers = ['orderBy' => ['password' => 'asc']];
+		$lastCursor = Limit::getLastCursor($rows, $model, $modifiers);
+
+		$this->assertSame(4, $lastCursor);
+		$this->assertStringNotContainsString('$2y$', (string)$lastCursor);
+	}
+
+	/**
+	 * Token-like columns are treated as sensitive too.
+	 */
+	public function testCompoundCursorSkipsTokenColumns(): void
+	{
+		$rows = [
+			(object)['id' => 9, 'reset_token' => 'abc123'],
+		];
+
+		$model = $this->createMockModel();
+		$modifiers = ['orderBy' => ['resetToken' => 'desc', 'id' => 'desc']];
+		$this->assertSame(9, Limit::getLastCursor($rows, $model, $modifiers));
 	}
 }

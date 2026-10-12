@@ -1540,9 +1540,10 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$fields = [];
 		foreach (static::$fields as $field)
 		{
-			if (!static::isInferredSkipField($field, true))
+			$name = static::fieldName($field);
+			if ($name !== null && !static::isInferredSkipField($name, true))
 			{
-				$fields[] = $field;
+				$fields[] = $name;
 			}
 		}
 
@@ -1564,9 +1565,10 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		$fields = [];
 		foreach (static::$fields as $field)
 		{
-			if (!static::isInferredSkipField($field, false))
+			$name = static::fieldName($field);
+			if ($name !== null && !static::isInferredSkipField($name, false))
 			{
-				$fields[] = $field;
+				$fields[] = $name;
 			}
 		}
 
@@ -1589,30 +1591,85 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			return true;
 		}
 
-		$exact = array_flip(array_merge(
-			static::$fieldsBlacklist,
-			[
-				'password',
-				'passwordHash',
-				'token',
-				'apiKey',
-				'secret',
-				'email',
-				'phone',
-				'mobile',
-				'ssn',
-				'createdAt',
-				'updatedAt',
-				'deletedAt',
-				'createdBy',
-				'updatedBy',
-				'deletedBy'
-			]
-		));
+		$audit = [
+			'createdAt',
+			'updatedAt',
+			'deletedAt',
+			'createdBy',
+			'updatedBy',
+			'deletedBy'
+		];
 
-		if (isset($exact[$field]))
+		if (in_array($field, $audit, true))
 		{
 			return true;
+		}
+
+		return static::isSensitiveField($field);
+	}
+
+	/**
+	 * Columns a client may sort, group, or date-range on via request
+	 * `orderBy` / `groupBy` / `dates` JSON.
+	 *
+	 * `null` (default) = `$fields` minus blacklisted, secret, and PII
+	 * columns (audit timestamps and `id` stay sortable). Sorting or
+	 * range-filtering on a secret column is a comparison oracle, so
+	 * those columns are never inferred. An explicit list is used as-is.
+	 *
+	 * @var array<int, string>|null
+	 */
+	protected static ?array $sortableFields = null;
+
+	/**
+	 * Columns a client may use in request `orderBy`, `groupBy`, and
+	 * `dates.field`.
+	 *
+	 * @return array<int, string>
+	 */
+	public static function sortableFields(): array
+	{
+		if (static::$sortableFields !== null)
+		{
+			return static::$sortableFields;
+		}
+
+		$fields = [];
+		foreach (static::$fields as $field)
+		{
+			$name = static::fieldName($field);
+			if ($name !== null && !static::isSensitiveField($name))
+			{
+				$fields[] = $name;
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Whether a field holds a secret or PII value that must never be
+	 * echoed, compared, or sorted on by a client: blacklisted fields
+	 * plus anything whose name contains password, token, secret, key,
+	 * email, phone, mobile, or ssn.
+	 *
+	 * @param string $field camelCase or snake_case field name.
+	 * @return bool
+	 */
+	public static function isSensitiveField(string $field): bool
+	{
+		$camel = Strings::camelCase($field);
+		foreach (static::$fieldsBlacklist as $blacklisted)
+		{
+			if (!is_string($blacklisted))
+			{
+				continue;
+			}
+
+			if ($blacklisted === $field || Strings::camelCase($blacklisted) === $camel)
+			{
+				return true;
+			}
 		}
 
 		$lower = strtolower($field);
@@ -1625,6 +1682,29 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 		}
 
 		return false;
+	}
+
+	/**
+	 * Resolve a `$fields` entry to its result name. Plain strings are
+	 * used as-is; computed tuples (`[['SQL'], 'alias']` or
+	 * `['column', 'alias']`) use the alias.
+	 *
+	 * @param mixed $field
+	 * @return string|null
+	 */
+	protected static function fieldName(mixed $field): ?string
+	{
+		if (is_string($field) && $field !== '')
+		{
+			return $field;
+		}
+
+		if (is_array($field) && isset($field[1]) && is_string($field[1]) && $field[1] !== '')
+		{
+			return $field[1];
+		}
+
+		return null;
 	}
 
 	/**

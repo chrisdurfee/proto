@@ -173,15 +173,17 @@ abstract class ApiController extends Controller
 		$limit = $request->getInt('limit') ?? 50;
 		$search = $request->input('search');
 		$custom = $request->input('custom');
-		$lastCursor = $request->input('lastCursor') ?? null;
-		$dates = $this->setDateModifier($request);
-		$orderBy = $this->setOrderByModifier($request);
-		$groupBy = $this->setGroupByModifier($request);
-		$since = $request->input('since') ?? null;
+		$lastCursor = $this->scalarInput($request->input('lastCursor'));
+		$sortColumns = $this->requestSortColumns();
+		$dates = $this->sanitizeDateModifier($this->setDateModifier($request), $sortColumns);
+		$orderBy = $this->sanitizeOrderByModifier($this->setOrderByModifier($request), $sortColumns);
+		$groupBy = $this->sanitizeGroupByModifier($this->setGroupByModifier($request), $sortColumns);
+		$since = $this->scalarInput($request->input('since'));
 
-		// Enforce maximum limit to prevent unbounded queries
+		// Enforce limit bounds to prevent unbounded or invalid queries
 		$maxLimit = $this->maxLimit ?? 1000;
-		$limit = min($limit, $maxLimit);
+		$limit = max(1, min($limit, $maxLimit));
+		$offset = max(0, $offset);
 
 		return (object) [
 			'filter' => $filter,
@@ -329,6 +331,126 @@ abstract class ApiController extends Controller
 	protected function requestFilterColumns(): ?array
 	{
 		return null;
+	}
+
+	/**
+	 * Allowed request `orderBy` / `groupBy` / `dates.field` columns, or
+	 * null to skip the allowlist (identifier sanitizing still applies).
+	 *
+	 * ResourceController passes the model's sortable fields, which
+	 * exclude blacklisted, secret, and PII columns.
+	 *
+	 * @return array<int, string>|null
+	 */
+	protected function requestSortColumns(): ?array
+	{
+		return null;
+	}
+
+	/**
+	 * Keeps a cursor/marker input only when it is a scalar.
+	 *
+	 * @param mixed $value
+	 * @return int|string|null
+	 */
+	protected function scalarInput(mixed $value): int|string|null
+	{
+		if (is_int($value) || is_string($value))
+		{
+			return $value === '' ? null : $value;
+		}
+
+		return is_float($value) ? (string)$value : null;
+	}
+
+	/**
+	 * Drops `orderBy` keys that are not allowed sort columns.
+	 *
+	 * @param mixed $orderBy
+	 * @param array<int, string>|null $allowed
+	 * @return object|null
+	 */
+	protected function sanitizeOrderByModifier(mixed $orderBy, ?array $allowed): ?object
+	{
+		if (!is_object($orderBy) && !is_array($orderBy))
+		{
+			return null;
+		}
+
+		$out = [];
+		foreach ((array)$orderBy as $field => $direction)
+		{
+			if (!is_string($field) || !is_scalar($direction) || !Filter::isAllowedRequestColumn($field, $allowed))
+			{
+				continue;
+			}
+
+			$out[$field] = strtoupper((string)$direction) === 'DESC' ? 'desc' : 'asc';
+		}
+
+		return $out === [] ? null : (object)$out;
+	}
+
+	/**
+	 * Drops `groupBy` entries that are not allowed sort columns.
+	 *
+	 * @param mixed $groupBy
+	 * @param array<int, string>|null $allowed
+	 * @return array<int, string>|null
+	 */
+	protected function sanitizeGroupByModifier(mixed $groupBy, ?array $allowed): ?array
+	{
+		if (!is_object($groupBy) && !is_array($groupBy))
+		{
+			return null;
+		}
+
+		$out = [];
+		foreach ((array)$groupBy as $field)
+		{
+			if (is_string($field) && Filter::isAllowedRequestColumn($field, $allowed))
+			{
+				$out[] = $field;
+			}
+		}
+
+		return $out === [] ? null : $out;
+	}
+
+	/**
+	 * Validates the `dates` modifier: the field must be an allowed sort
+	 * column and `start` / `end` must be plain dates or datetimes.
+	 * Anything else drops the whole modifier, so a client cannot run a
+	 * BETWEEN comparison against an arbitrary column or value.
+	 *
+	 * @param object|null $dates
+	 * @param array<int, string>|null $allowed
+	 * @return object|null
+	 */
+	protected function sanitizeDateModifier(?object $dates, ?array $allowed): ?object
+	{
+		if ($dates === null)
+		{
+			return null;
+		}
+
+		$field = $dates->field ?? null;
+		$start = $dates->start ?? null;
+		$end = $dates->end ?? null;
+		if (
+			!is_string($field) || !Filter::isAllowedRequestColumn($field, $allowed)
+			|| !is_string($start) || !Filter::isSafeTimestamp($start)
+			|| !is_string($end) || !Filter::isSafeTimestamp($end)
+		)
+		{
+			return null;
+		}
+
+		return (object)[
+			'field' => $field,
+			'start' => $start,
+			'end' => $end
+		];
 	}
 
 	/**

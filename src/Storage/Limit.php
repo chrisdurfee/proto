@@ -276,6 +276,20 @@ class Limit
 			return $last->{$idField} ?? null;
 		}
 
+		/**
+		 * The cursor is built from raw rows (before export conversion
+		 * strips `$fieldsBlacklist`), so a sort on a secret or PII
+		 * column would echo its value to the client. Fall back to the
+		 * plain ID cursor rather than leak it.
+		 */
+		foreach ($orderByColumns as $col)
+		{
+			if ($col['resultKey'] !== $idField && $model::isSensitiveField($col['resultKey']))
+			{
+				return $last->{$idField} ?? null;
+			}
+		}
+
 		// Compound cursor: encode all sort column values + ID
 		$cursor = [];
 		foreach ($orderByColumns as $col)

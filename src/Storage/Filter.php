@@ -989,6 +989,21 @@ class Filter
 	}
 
 	/**
+	 * Whether a client-supplied column name (for `orderBy`, `groupBy`,
+	 * `dates.field`) is a safe identifier and, when an allowlist is
+	 * given, appears in it (camelCase or snake_case, alias optional).
+	 *
+	 * @param string $column
+	 * @param array<int, string>|null $allowedColumns Null skips the allowlist.
+	 * @return bool
+	 */
+	public static function isAllowedRequestColumn(string $column, ?array $allowedColumns): bool
+	{
+		return self::isSafeColumn($column)
+			&& self::isAllowedColumn($column, self::allowedColumnSet($allowedColumns));
+	}
+
+	/**
 	 * @param string $column
 	 * @return bool
 	 */
