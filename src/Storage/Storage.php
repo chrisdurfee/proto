@@ -967,7 +967,10 @@ class Storage extends TableStorage
 	{
 		if ($callBack)
 		{
-			call_user_func_array($callBack, [$sql, $params]);
+			// Call directly so a callback declared fn($sql, &$params) can
+			// bind values; call_user_func_array passed a copy, and params
+			// the callback added were silently lost.
+			$callBack($sql, $params);
 		}
 	}
 

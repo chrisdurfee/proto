@@ -127,6 +127,34 @@ final class FetchWhereWithoutJoinsTest extends Test
 	}
 
 	/**
+	 * findAll() callbacks that bind params by reference keep them.
+	 *
+	 * @return void
+	 */
+	public function testFindAllCallbackParamsByReferenceAreBound(): void
+	{
+		$captured = [];
+		$adapter = $this->getMockBuilder(\Proto\Database\Adapters\Adapter::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$adapter->method('fetch')->willReturnCallback(function (string $sql, array $params) use (&$captured): array
+		{
+			$captured = $params;
+			return [];
+		});
+		HookedStorage::$adapter = $adapter;
+
+		$storage = new HookedStorage(new HookedModel());
+		$storage->findAll(function (object $sql, array &$params): void
+		{
+			$sql->where('h.user_id = ?');
+			$params[] = 42;
+		});
+
+		$this->assertSame([42], $captured);
+	}
+
+	/**
 	 * Missing FK properties are skipped instead of TypeErroring.
 	 *
 	 * @return void

@@ -932,8 +932,9 @@ public static function getActiveUsers(): array
 // Using closures (compact syntax). Undeclared static calls on a model are
 // forwarded to its storage, so static::findAll() / static::find() reach
 // Storage::findAll() / Storage::find(). Bind values with [column, value]
-// tuples or $sql->addParam(): the callback's $params argument is passed by
-// value, so `fn($sql, &$p) => $p[] = ...` silently loses the parameter.
+// tuples, $sql->addParam(), or a by-reference callback:
+// function ($sql, array &$params) { $sql->where('id = ?'); $params[] = $id; }
+// (arrow functions cannot take $params by reference).
 public static function getActiveUsers(): array
 {
     return static::findAll(
@@ -2053,7 +2054,7 @@ class PostController extends ResourceController
 | `$this->session->get('user')` in a Gate | `static::get('user')` |
 | `User::storage()->findAll(...)` | `static::findAll(fn($sql) => ...)` in the model, or `$user->storage()` |
 | `$data = $this->validateRules(...)` | `$this->validateRules($data, $rules);` then use `$data` |
-| `fn($sql, &$params) => $params[] = $v` in `find()`/`findAll()` | `$sql->where(['column', $v])` or `$sql->addParam($v)` |
+| `fn($sql, &$params) => $params[] = $v` in `find()`/`findAll()` (arrow fns capture by value) | `$sql->where(['column', $v])`, `$sql->addParam($v)`, or `function ($sql, array &$params)` |
 | Catch `DatabaseUnavailableException` and return `[]` | Let it propagate (renders a 503) |
 | `\Modules\User\Models\User::get()` | `use Modules\User\Models\User; User::get()` |
 | `$request->route('id')` | `$request->getInt('id')` or `$request->input('id')` |
