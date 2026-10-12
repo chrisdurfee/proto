@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.45] - 2026-10-12
+
+### Fixed
+- **CI passes on MySQL 8** — `TransactionIsolationTest` read `@@in_transaction`, which only MariaDB has, so it failed on the MySQL 8 CI service. It now checks the adapter's transaction level and the server variable only where it exists. (Test-only; no runtime change.)
+- **`RedisDriver` without a cache block** — with no `cache` config it read `->connection` on `null` (a PHP warning); it now stays offline quietly.
+
+## [2.0.44] - 2026-10-12
+
+Same code as 2.0.42 (re-tag on `main`).
+
 ## [2.0.42] - 2026-10-12
 
 ### Security
