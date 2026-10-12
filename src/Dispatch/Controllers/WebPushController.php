@@ -35,7 +35,7 @@ class WebPushController extends Controller
 	 */
 	public static function enqueue(object $settings, ?object $data = null): object
 	{
-		$template = self::createPush($settings->template, $data);
+		$template = static::createPush($settings->template, $data);
 
 		return (object)[
 			'subscriptions' => $settings->subscriptions,
@@ -52,7 +52,7 @@ class WebPushController extends Controller
 	 */
 	public static function dispatch(object $settings, ?object $data = null): Response
 	{
-		$template = $settings->compiledTemplate ?? self::createPush($settings->template, $data);
-		return self::send(new WebPush($settings->subscriptions, $template));
+		$template = $settings->compiledTemplate ?? static::createPush($settings->template, $data);
+		return static::send(new WebPush($settings->subscriptions, $template));
 	}
 }

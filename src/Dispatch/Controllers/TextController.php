@@ -35,7 +35,7 @@ class TextController extends Controller
 	 */
 	public static function enqueue(object $settings, ?object $data = null): object
 	{
-		$template = self::createText($settings->template, $data);
+		$template = static::createText($settings->template, $data);
 
 		return (object)[
 			'recipient' => $settings->to,
@@ -59,7 +59,7 @@ class TextController extends Controller
 		}
 		else if (isset($settings->template))
 		{
-			$settings->message = self::createText($settings->template, $data);
+			$settings->message = static::createText($settings->template, $data);
 		}
 
 		/**
@@ -78,6 +78,6 @@ class TextController extends Controller
 
 		// Custom driver can override the default driver
 		$customDriver = $settings->customDriver ?? null;
-		return self::send(new Sms($settings, $customDriver));
+		return static::send(new Sms($settings, $customDriver));
 	}
 }
