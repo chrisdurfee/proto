@@ -197,6 +197,40 @@ final class ResourceControllerListModifiersTest extends Test
 	}
 
 	/**
+	 * CSV export uses the same sort/date allow-lists as list endpoints.
+	 *
+	 * @return void
+	 */
+	public function testCsvExportSanitizesModifiers(): void
+	{
+		$_REQUEST = [
+			'orderBy' => json_encode(['resetToken' => 'asc', 'name' => 'desc']),
+			'dates' => json_encode(['field' => 'password', 'start' => '2026-01-01', 'end' => '2026-02-01'])
+		];
+
+		$controller = new class extends ResourceController
+		{
+			use \Proto\Controllers\Traits\CsvExportTrait;
+
+			public function __construct()
+			{
+				$this->model = ExportCaptureModel::class;
+				parent::__construct();
+			}
+
+			public function exposeExport(Request $request): array
+			{
+				return $this->fetchExportRows($request);
+			}
+		};
+
+		$controller->exposeExport(new Request());
+
+		$this->assertEquals((object)['name' => 'desc'], ExportCaptureModel::$modifiers['orderBy']);
+		$this->assertNull(ExportCaptureModel::$modifiers['dates']);
+	}
+
+	/**
 	 * @return ResourceController
 	 */
 	private function controller(): ResourceController
@@ -231,4 +265,40 @@ final class ListModifiersModel extends Model
 	 * @var array
 	 */
 	protected static array $fieldsBlacklist = ['internalNote'];
+}
+
+/**
+ * Captures the modifiers passed to all() instead of querying.
+ *
+ * @package Proto\Tests\Unit\Controllers
+ */
+final class ExportCaptureModel extends Model
+{
+	/**
+	 * @var array|null
+	 */
+	public static ?array $modifiers = null;
+
+	/**
+	 * @var string|null
+	 */
+	protected static ?string $tableName = 'export_capture';
+
+	/**
+	 * @var array
+	 */
+	protected static array $fields = ['id', 'name', 'password', 'resetToken', 'createdAt'];
+
+	/**
+	 * @param mixed $filter
+	 * @param int|null $offset
+	 * @param int|null $limit
+	 * @param array|null $modifiers
+	 * @return object|false
+	 */
+	public static function all(mixed $filter = null, ?int $offset = null, ?int $limit = null, ?array $modifiers = null): object|false
+	{
+		self::$modifiers = $modifiers;
+		return (object)['rows' => []];
+	}
 }

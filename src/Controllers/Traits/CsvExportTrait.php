@@ -30,11 +30,15 @@ trait CsvExportTrait
 	protected function fetchExportRows(Request $request): array
 	{
 		$filter = $this->getFilter($request);
+
+		// Same allow-lists as list endpoints: an export must not sort or
+		// range-filter on secret columns (comparison oracle).
+		$sortColumns = $this->requestSortColumns();
 		$modifiers = [
 			'search' => $request->input('search'),
-			'dates' => $this->setDateModifier($request),
-			'orderBy' => $this->setOrderByModifier($request),
-			'groupBy' => $this->setGroupByModifier($request),
+			'dates' => $this->sanitizeDateModifier($this->setDateModifier($request), $sortColumns),
+			'orderBy' => $this->sanitizeOrderByModifier($this->setOrderByModifier($request), $sortColumns),
+			'groupBy' => $this->sanitizeGroupByModifier($this->setGroupByModifier($request), $sortColumns),
 			'custom' => $request->input('custom'),
 		];
 
