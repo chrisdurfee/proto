@@ -23,6 +23,26 @@ class Cipher extends Util
 	private const HMAC_LENGTH = 32;
 
 	/**
+	 * Prefix of the current ciphertext format: separate derived keys for
+	 * encryption and MAC, and a MAC over IV + ciphertext checked before
+	 * decrypting. Values without it use the legacy format.
+	 */
+	private const VERSION_PREFIX = 'v2.';
+
+	/**
+	 * Derives a purpose-bound subkey so the cipher and the MAC never share
+	 * key material.
+	 *
+	 * @param string $key Master key.
+	 * @param string $purpose "enc" or "mac".
+	 * @return string Raw 32-byte key.
+	 */
+	protected static function deriveKey(string $key, string $purpose): string
+	{
+		return \hash_hkdf('sha256', $key, 32, 'proto-cipher-' . $purpose);
+	}
+
+	/**
 	 * Retrieves the length of the initialization vector.
 	 *
 	 * @return int
@@ -90,13 +110,13 @@ class Cipher extends Util
 		$encrypted = \openssl_encrypt(
 			$plainText,
 			self::CIPHER,
-			$key,
+			self::deriveKey($key, 'enc'),
 			OPENSSL_RAW_DATA,
 			$iv
 		);
-		$hash = self::hash($encrypted, $key);
+		$hash = self::hash($iv . $encrypted, self::deriveKey($key, 'mac'));
 
-		return self::safeB64Encode($iv . $hash . $encrypted);
+		return self::VERSION_PREFIX . self::safeB64Encode($iv . $hash . $encrypted);
 	}
 
 	/**
@@ -125,6 +145,12 @@ class Cipher extends Util
 			return null;
 		}
 
+		if (\str_starts_with($encodedText, self::VERSION_PREFIX))
+		{
+			return self::decryptVersioned(\substr($encodedText, \strlen(self::VERSION_PREFIX)), $key);
+		}
+
+		// Legacy format: one key for cipher and MAC, MAC over ciphertext only.
 		$text = self::safeB64Decode($encodedText);
 		$ivLength = self::getIvLength();
 		if (\strlen($text) < ($ivLength + self::HMAC_LENGTH))
@@ -136,13 +162,44 @@ class Cipher extends Util
 		$hash = \substr($text, $ivLength, self::HMAC_LENGTH);
 		$rawText = \substr($text, $ivLength + self::HMAC_LENGTH);
 
-		$decrypted = \openssl_decrypt($rawText, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv);
-		if (!$decrypted)
+		$calculatedHash = self::hash($rawText, $key);
+		if (!\hash_equals($hash, $calculatedHash))
 		{
-			return null; // Failed to decrypt
+			return null;
 		}
 
-		$calculatedHash = self::hash($rawText, $key);
-		return \hash_equals($hash, $calculatedHash) ? $decrypted : null;
+		$decrypted = \openssl_decrypt($rawText, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv);
+		return $decrypted === false ? null : $decrypted;
+	}
+
+	/**
+	 * Decrypts the current format, verifying the MAC (over IV and
+	 * ciphertext) before touching the cipher.
+	 *
+	 * @param string $encoded Base64 body after the version prefix.
+	 * @param string $key Master key.
+	 * @return string|null
+	 */
+	protected static function decryptVersioned(string $encoded, string $key): ?string
+	{
+		$text = self::safeB64Decode($encoded);
+		$ivLength = self::getIvLength();
+		if (\strlen($text) < ($ivLength + self::HMAC_LENGTH))
+		{
+			return null;
+		}
+
+		$iv = \substr($text, 0, $ivLength);
+		$hash = \substr($text, $ivLength, self::HMAC_LENGTH);
+		$rawText = \substr($text, $ivLength + self::HMAC_LENGTH);
+
+		$calculatedHash = self::hash($iv . $rawText, self::deriveKey($key, 'mac'));
+		if (!\hash_equals($hash, $calculatedHash))
+		{
+			return null;
+		}
+
+		$decrypted = \openssl_decrypt($rawText, self::CIPHER, self::deriveKey($key, 'enc'), OPENSSL_RAW_DATA, $iv);
+		return $decrypted === false ? null : $decrypted;
 	}
 }

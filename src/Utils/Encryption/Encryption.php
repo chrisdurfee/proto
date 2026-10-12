@@ -26,7 +26,7 @@ class Encryption extends Util
 			$data = \json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 		}
 
-		$key = env('encryption')->key;
+		$key ??= env('encryption')->key;
 		return Cipher::encrypt($data, $key);
 	}
 
@@ -39,7 +39,7 @@ class Encryption extends Util
 	 */
 	public static function decrypt(string $text, ?string $key = null): ?string
 	{
-		$key = env('encryption')->key;
+		$key ??= env('encryption')->key;
 		return Cipher::decrypt($text, $key);
 	}
 }
