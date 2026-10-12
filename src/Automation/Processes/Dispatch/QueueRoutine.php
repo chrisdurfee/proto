@@ -163,11 +163,25 @@ abstract class QueueRoutine extends Routine
 	{
 		$this->updateQueueStatus('sending');
 
+		/**
+		 * Stop sending once half the stale window has passed: rows still
+		 * in `sending` after `$staleMinutes` are reclaimed by the next run,
+		 * and a slow batch (300 items x a 15s SMTP timeout) would otherwise
+		 * be sent a second time. Unsent rows are handed back untouched.
+		 */
+		$deadline = $this->now() + ($this->staleMinutes * 60) / 2;
+
 		$success = true;
 		foreach ($queue as $item)
 		{
 			if (!$item)
 			{
+				continue;
+			}
+
+			if ($this->now() > $deadline)
+			{
+				$this->releaseItem($item);
 				continue;
 			}
 
@@ -205,6 +219,28 @@ abstract class QueueRoutine extends Routine
 			);
 			return false;
 		}
+	}
+
+	/**
+	 * Current time in seconds (overridable in tests).
+	 *
+	 * @return float
+	 */
+	protected function now(): float
+	{
+		return microtime(true);
+	}
+
+	/**
+	 * Hands an unsent item back to the queue without using an attempt.
+	 *
+	 * @param object $item
+	 * @return bool
+	 */
+	protected function releaseItem(object $item): bool
+	{
+		$model = $this->getModel();
+		return (bool)$model->release($item->id, $this->agentId);
 	}
 
 	/**

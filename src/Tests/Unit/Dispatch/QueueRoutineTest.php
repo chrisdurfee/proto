@@ -85,6 +85,30 @@ final class QueueRoutineTest extends Test
 	}
 
 	/**
+	 * A batch that outlives half the stale window hands the rest back
+	 * instead of sending rows the next run may already have reclaimed.
+	 *
+	 * @return void
+	 */
+	public function testSlowBatchReleasesRemainingItems(): void
+	{
+		$store = new FakeQueueStore([
+			(object)['id' => 1, 'attempts' => 0, 'result' => true],
+			(object)['id' => 2, 'attempts' => 0, 'result' => true],
+			(object)['id' => 3, 'attempts' => 0, 'result' => true]
+		]);
+
+		$routine = new FakeQueueRoutine($store);
+		$routine->secondsPerItem = 1000.0;
+		$routine->run();
+
+		$this->assertSame([1], $routine->dispatched);
+		$released = array_values(array_filter($store->calls, fn(array $call): bool => $call[0] === 'release'));
+		$this->assertSame([2, 3], array_map(fn(array $call): mixed => $call[1][0], $released));
+		$this->assertSame([], $store->failed, 'Released items must not use an attempt.');
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testStaleSendingRowsAreReclaimedBeforeClaiming(): void
@@ -194,6 +218,26 @@ final class FakeQueueRoutine extends QueueRoutine
 	public array $dispatched = [];
 
 	/**
+	 * Simulated seconds each dispatch takes (0 = real clock).
+	 *
+	 * @var float
+	 */
+	public float $secondsPerItem = 0.0;
+
+	/**
+	 * @var float
+	 */
+	private float $clock = 0.0;
+
+	/**
+	 * @return float
+	 */
+	protected function now(): float
+	{
+		return $this->secondsPerItem > 0 ? $this->clock : parent::now();
+	}
+
+	/**
 	 * @param FakeQueueStore $store
 	 */
 	public function __construct(private FakeQueueStore $store)
@@ -217,6 +261,7 @@ final class FakeQueueRoutine extends QueueRoutine
 	protected function dispatch(object $item): bool
 	{
 		$this->dispatched[] = $item->id;
+		$this->clock += $this->secondsPerItem;
 		if ($item->result === 'throw')
 		{
 			throw new \RuntimeException('provider exploded');

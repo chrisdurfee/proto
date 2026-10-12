@@ -122,6 +122,26 @@ class QueueStorage extends Storage
 	}
 
 	/**
+	 * This will hand a claimed but unsent item back to the queue
+	 * without counting an attempt.
+	 *
+	 * @param int|string $id
+	 * @param string $agentId
+	 * @return bool
+	 */
+	public function release(int|string $id, string $agentId): bool
+	{
+		$sql = $this->table()
+			->update()
+			->setRaw('status = "pending"')
+			->setRaw('agent_id = NULL')
+			->setRaw('updated_at = NOW()')
+			->where('id = ?', 'agent_id = ?');
+
+		return $this->execute($sql, [$id, $agentId]);
+	}
+
+	/**
 	 * This will reclaim rows left in `sending` by a crashed worker.
 	 *
 	 * A reclaim counts as an attempt so a message that crashes the
