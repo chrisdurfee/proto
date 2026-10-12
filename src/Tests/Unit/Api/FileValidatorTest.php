@@ -117,6 +117,21 @@ final class FileValidatorTest extends Test
 	}
 
 	/**
+	 * libmagic aliases (audio/x-wav) match canonical allow-list entries.
+	 *
+	 * @return void
+	 */
+	public function testWavAliasMatchesDefaultList(): void
+	{
+		$wav = 'RIFF' . pack('V', 36) . 'WAVEfmt ' . pack('VvvVVvv', 16, 1, 1, 8000, 8000, 1, 8) . 'data' . pack('V', 0);
+		$result = FileValidator::validate($this->upload('clip.wav', 'audio/wav', $wav));
+
+		$this->assertTrue($result['valid'], implode('; ', $result['errors']));
+		$this->assertSame('audio/wav', \Proto\Http\UploadFile::canonicalMime('audio/x-wav'));
+		$this->assertSame('application/x-rar-compressed', \Proto\Http\UploadFile::canonicalMime('application/x-rar'));
+	}
+
+	/**
 	 * @param string $name
 	 * @param string $declaredType
 	 * @param string $contents

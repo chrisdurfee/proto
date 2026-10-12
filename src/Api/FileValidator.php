@@ -163,8 +163,8 @@ class FileValidator
 	{
 		// Only the detected type counts: the declared type is whatever the
 		// client chose to send (e.g. an SVG or HTML file labeled image/png).
-		$actualMime = static::resolveMimeType($file);
-		return $actualMime !== '' && in_array($actualMime, $allowedMimes, true);
+		$actualMime = UploadFile::canonicalMime(static::resolveMimeType($file));
+		return $actualMime !== '' && in_array($actualMime, static::canonicalList($allowedMimes), true);
 	}
 
 	/**
@@ -229,7 +229,7 @@ class FileValidator
 			return true;
 		}
 
-		$actualMime = static::resolveMimeType($file);
+		$actualMime = UploadFile::canonicalMime(static::resolveMimeType($file));
 
 		// If we can't determine actual MIME, deny the file (fail-closed for security)
 		if (empty($actualMime))
@@ -237,7 +237,19 @@ class FileValidator
 			return false;
 		}
 
-		return in_array($actualMime, $allowedMimes, true);
+		return in_array($actualMime, static::canonicalList($allowedMimes), true);
+	}
+
+	/**
+	 * Canonical names of an allow-list (so `audio/x-wav` in a list and
+	 * `audio/wav` from libmagic match).
+	 *
+	 * @param array<int, string> $mimes
+	 * @return array<int, string>
+	 */
+	protected static function canonicalList(array $mimes): array
+	{
+		return array_map(fn(string $mime): string => UploadFile::canonicalMime($mime), $mimes);
 	}
 
 	/**

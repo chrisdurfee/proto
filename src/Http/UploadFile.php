@@ -54,6 +54,56 @@ class UploadFile
 	protected const OOXML_EXTENSIONS = ['docx', 'xlsx', 'pptx'];
 
 	/**
+	 * Legacy Office (CFB/OLE) files; libmagic often reports a generic
+	 * container type for them.
+	 *
+	 * @var array<string, string>
+	 */
+	protected const LEGACY_OFFICE_TYPES = [
+		'doc' => 'application/msword',
+		'xls' => 'application/vnd.ms-excel',
+		'ppt' => 'application/vnd.ms-powerpoint',
+	];
+
+	/**
+	 * Alternate names libmagic reports for the same format, mapped to the
+	 * canonical type used in allow-lists.
+	 *
+	 * @var array<string, string>
+	 */
+	public const MIME_ALIASES = [
+		'audio/x-wav' => 'audio/wav',
+		'audio/wave' => 'audio/wav',
+		'audio/vnd.wave' => 'audio/wav',
+		'audio/mp3' => 'audio/mpeg',
+		'audio/x-mpeg' => 'audio/mpeg',
+		'image/x-ms-bmp' => 'image/bmp',
+		'image/x-bmp' => 'image/bmp',
+		'image/pjpeg' => 'image/jpeg',
+		'image/jpg' => 'image/jpeg',
+		'application/x-rar' => 'application/x-rar-compressed',
+		'application/vnd.rar' => 'application/x-rar-compressed',
+		'application/x-gzip' => 'application/gzip',
+		'application/x-zip-compressed' => 'application/zip',
+		'application/x-7z-compressed' => 'application/x-7z-compressed',
+		'text/x-csv' => 'text/csv',
+		'application/csv' => 'text/csv',
+		'video/x-quicktime' => 'video/quicktime',
+	];
+
+	/**
+	 * Canonical name of a MIME type (see MIME_ALIASES).
+	 *
+	 * @param string $mime
+	 * @return string
+	 */
+	public static function canonicalMime(string $mime): string
+	{
+		$mime = strtolower(trim($mime));
+		return self::MIME_ALIASES[$mime] ?? $mime;
+	}
+
+	/**
 	 * Holds the newly generated unique file name.
 	 *
 	 * @var string
@@ -219,8 +269,13 @@ class UploadFile
 		{
 			$mime = static::mimeFromExtension($this->getOriginalName());
 		}
+		elseif (in_array(strtolower($mime), ['application/vnd.ms-office', 'application/cdfv2', 'application/x-ole-storage'], true))
+		{
+			$ext = strtolower(pathinfo($this->getOriginalName(), PATHINFO_EXTENSION));
+			$mime = self::LEGACY_OFFICE_TYPES[$ext] ?? $mime;
+		}
 
-		return $this->mime = $mime;
+		return $this->mime = static::canonicalMime($mime);
 	}
 
 	/**
