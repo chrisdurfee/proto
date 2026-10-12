@@ -130,13 +130,11 @@ class DatabaseDriver extends Base implements DriverInterface, ReleasesStaleJobs
 	/**
 	 * Runs a callback inside a transaction.
 	 *
-	 * When the connection already has a transaction open (a caller's unit of
-	 * work, or a test's isolation transaction) the callback joins it: no
-	 * nested BEGIN, and no COMMIT/ROLLBACK that would end the outer one.
-	 * The outer owner decides whether the work is kept.
-	 *
-	 * Otherwise a transaction is opened, committed when the callback returns
-	 * anything but false, and rolled back on false or on a thrown error.
+	 * Committed when the callback returns anything but false, rolled back
+	 * on false or on a thrown error. Inside an open transaction (a caller's
+	 * unit of work, or a test's isolation transaction) this is a savepoint,
+	 * so a failed callback undoes only its own writes and never ends the
+	 * outer transaction.
 	 *
 	 * @param callable(Mysqli): mixed $callback Unit of work.
 	 * @return mixed The callback's result, or false when the transaction could not start or commit.
@@ -144,11 +142,6 @@ class DatabaseDriver extends Base implements DriverInterface, ReleasesStaleJobs
 	protected function transactional(callable $callback): mixed
 	{
 		$db = $this->getConnection();
-		if ($db->inTransaction())
-		{
-			return $callback($db);
-		}
-
 		if (!$db->beginTransaction())
 		{
 			return false;
@@ -171,6 +164,41 @@ class DatabaseDriver extends Base implements DriverInterface, ReleasesStaleJobs
 		}
 
 		return $db->commit() ? $result : false;
+	}
+
+	/**
+	 * Current transaction nesting level of the driver's connection.
+	 *
+	 * @return int
+	 */
+	public function transactionLevel(): int
+	{
+		return $this->getConnection()->getTransactionLevel();
+	}
+
+	/**
+	 * Rolls back anything above `$level` left open on the connection
+	 * (a job handler that began a transaction and threw). Returns how
+	 * many levels were open beyond it.
+	 *
+	 * @param int $level
+	 * @return int
+	 */
+	public function rollbackLeakedTransactions(int $level): int
+	{
+		$db = $this->getConnection();
+		$leaked = $db->getTransactionLevel() - $level;
+		if ($leaked <= 0)
+		{
+			return 0;
+		}
+
+		if (!$db->rollbackToLevel($level))
+		{
+			$db->abortTransaction();
+		}
+
+		return $leaked;
 	}
 
 	/**

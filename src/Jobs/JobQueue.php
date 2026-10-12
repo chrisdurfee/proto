@@ -215,6 +215,7 @@ class JobQueue extends Base
 		$reason = 'stopped';
 
 		$this->fireEvent('worker.starting', ['queue' => $queue]);
+		$baseLevel = $this->driverTransactionLevel();
 
 		while ($this->isProcessing)
         {
@@ -251,6 +252,7 @@ class JobQueue extends Base
 			}
 
 			$this->processJob($job);
+			$this->rollbackLeakedTransactions($baseLevel);
 			$processedJobs++;
 			$idleSince = time();
 
@@ -278,6 +280,58 @@ class JobQueue extends Base
 		$this->isProcessing = false;
 
 		return $processedJobs;
+	}
+
+	/**
+	 * Transaction level of the driver's connection, or null when the
+	 * driver has no transactional connection.
+	 *
+	 * @return int|null
+	 */
+	protected function driverTransactionLevel(): ?int
+	{
+		if (!method_exists($this->driver, 'transactionLevel'))
+		{
+			return null;
+		}
+
+		try
+		{
+			return $this->driver->transactionLevel();
+		}
+		catch (\Throwable)
+		{
+			return null;
+		}
+	}
+
+	/**
+	 * Undoes a transaction a job handler opened and never closed, so the
+	 * worker's next claims and status writes are not trapped inside it
+	 * (holding row locks until the reaper re-runs jobs).
+	 *
+	 * @param int|null $baseLevel Level when the worker started.
+	 * @return void
+	 */
+	protected function rollbackLeakedTransactions(?int $baseLevel): void
+	{
+		if ($baseLevel === null || !method_exists($this->driver, 'rollbackLeakedTransactions'))
+		{
+			return;
+		}
+
+		try
+		{
+			$leaked = $this->driver->rollbackLeakedTransactions($baseLevel);
+			if ($leaked > 0)
+			{
+				error_log("Job left {$leaked} transaction level(s) open; rolled back.");
+			}
+		}
+		catch (\Throwable $e)
+		{
+			error_log('Could not roll back a leaked job transaction: ' . $e->getMessage());
+		}
 	}
 
 	/**

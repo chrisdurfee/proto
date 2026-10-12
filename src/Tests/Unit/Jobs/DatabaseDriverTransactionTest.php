@@ -43,12 +43,12 @@ final class DatabaseDriverTransactionTest extends Test
 	}
 
 	/**
-	 * Inside an open transaction markFailed() joins it: no BEGIN, COMMIT
-	 * or ROLLBACK of its own.
+	 * Inside an open transaction markFailed() nests (a savepoint at the
+	 * adapter): its begin/commit pair never ends the outer transaction.
 	 *
 	 * @return void
 	 */
-	public function testMarkFailedJoinsAnOpenTransaction(): void
+	public function testMarkFailedNestsInsideAnOpenTransaction(): void
 	{
 		$db = new FakeConnection();
 		$db->outerTransaction = true;
@@ -57,8 +57,9 @@ final class DatabaseDriverTransactionTest extends Test
 		$driver = new DatabaseDriver([], $db);
 		$this->assertTrue($driver->markFailed('job_1', 'boom'));
 
-		$this->assertSame(['fetch', 'update', 'insert'], $db->kinds());
+		$this->assertSame(['begin', 'fetch', 'update', 'insert', 'commit'], $db->kinds());
 		$this->assertSame('boom', $db->calls('insert')[0][2]->error);
+		$this->assertTrue($db->inTransaction(), 'The outer transaction stays open.');
 	}
 
 	/**
@@ -94,15 +95,16 @@ final class DatabaseDriverTransactionTest extends Test
 		$outer->outerTransaction = true;
 		$driver = new DatabaseDriver([], $outer);
 		$this->assertFalse($driver->markFailed('nope', 'boom'));
-		$this->assertSame(['fetch'], $outer->kinds());
+		$this->assertSame(['begin', 'fetch', 'rollback'], $outer->kinds(), 'Only the nested unit is rolled back.');
+		$this->assertTrue($outer->inTransaction());
 	}
 
 	/**
-	 * retryFailedJob() also joins an open transaction.
+	 * retryFailedJob() also nests inside an open transaction.
 	 *
 	 * @return void
 	 */
-	public function testRetryFailedJobJoinsAnOpenTransaction(): void
+	public function testRetryFailedJobNestsInsideAnOpenTransaction(): void
 	{
 		$db = new FakeConnection();
 		$db->outerTransaction = true;
@@ -110,6 +112,7 @@ final class DatabaseDriverTransactionTest extends Test
 
 		$driver = new DatabaseDriver([], $db);
 		$this->assertTrue($driver->retryFailedJob('job_1'));
-		$this->assertSame(['fetch', 'fetch', 'insert', 'delete'], $db->kinds());
+		$this->assertSame(['begin', 'fetch', 'fetch', 'insert', 'delete', 'commit'], $db->kinds());
+		$this->assertTrue($db->inTransaction());
 	}
 }

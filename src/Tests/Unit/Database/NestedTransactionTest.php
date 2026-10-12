@@ -65,6 +65,51 @@ final class NestedTransactionTest extends Test
 	}
 
 	/**
+	 * A deadlock rolls back the whole transaction server-side, so the
+	 * savepoint is gone. The adapter must end the transaction and reset
+	 * its level instead of staying stuck at a phantom nesting level.
+	 *
+	 * @return void
+	 */
+	public function testLostSavepointAbortsWholeTransaction(): void
+	{
+		[$db, $conn] = $this->adapter();
+
+		$db->beginTransaction();
+		$db->beginTransaction();
+		$conn->failSavepoints = true;
+
+		$this->assertFalse($db->rollback());
+		$this->assertSame(0, $db->getTransactionLevel());
+		$this->assertSame('rollback', end($conn->calls));
+
+		$conn->failSavepoints = false;
+		$db->beginTransaction();
+		$db->beginTransaction();
+		$conn->failSavepoints = true;
+		$this->assertFalse($db->commit());
+		$this->assertSame(0, $db->getTransactionLevel());
+	}
+
+	/**
+	 * rollbackToLevel() unwinds only levels above the target.
+	 *
+	 * @return void
+	 */
+	public function testRollbackToLevelKeepsOuterTransaction(): void
+	{
+		[$db, $conn] = $this->adapter();
+
+		$db->beginTransaction();
+		$db->beginTransaction();
+		$db->beginTransaction();
+
+		$this->assertTrue($db->rollbackToLevel(1));
+		$this->assertSame(1, $db->getTransactionLevel());
+		$this->assertNotContains('rollback', $conn->calls);
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testTopLevelTransactionStillCommits(): void
@@ -110,6 +155,13 @@ final class RecordingMysqliConnection extends \mysqli
 	 * @var array
 	 */
 	public array $calls = [];
+
+	/**
+	 * When set, savepoint statements fail as after a server-side rollback.
+	 *
+	 * @var bool
+	 */
+	public bool $failSavepoints = false;
 
 	/**
 	 * Skips the real connection.
@@ -159,6 +211,10 @@ final class RecordingMysqliConnection extends \mysqli
 	public function query(string $query, int $result_mode = MYSQLI_STORE_RESULT): \mysqli_result|bool
 	{
 		$this->calls[] = $query;
+		if ($this->failSavepoints && str_contains($query, 'SAVEPOINT'))
+		{
+			throw new \mysqli_sql_exception('SAVEPOINT proto_sp_1 does not exist', 1305);
+		}
 		return true;
 	}
 }

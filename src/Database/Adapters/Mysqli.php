@@ -460,12 +460,16 @@ class Mysqli extends Adapter
 		// Nested: release the savepoint; the outer transaction stays open.
 		if ($this->transactionLevel > 1)
 		{
-			$result = (bool)$this->connection->query('RELEASE SAVEPOINT ' . $this->getSavepointName($this->transactionLevel - 1));
-			if ($result)
+			if ($this->savepointQuery('RELEASE SAVEPOINT ' . $this->getSavepointName($this->transactionLevel - 1)))
 			{
 				$this->transactionLevel--;
+				return true;
 			}
-			return $this->checkResult($result);
+
+			// The savepoint is gone: the server already rolled the whole
+			// transaction back (deadlock, lock wait timeout).
+			$this->abortTransaction();
+			return false;
 		}
 
 		$result = $this->connection->commit();
@@ -492,13 +496,17 @@ class Mysqli extends Adapter
 		if ($this->transactionLevel > 1)
 		{
 			$name = $this->getSavepointName($this->transactionLevel - 1);
-			$result = (bool)$this->connection->query('ROLLBACK TO SAVEPOINT ' . $name);
-			if ($result)
+			if ($this->savepointQuery('ROLLBACK TO SAVEPOINT ' . $name))
 			{
-				$this->connection->query('RELEASE SAVEPOINT ' . $name);
+				$this->savepointQuery('RELEASE SAVEPOINT ' . $name);
 				$this->transactionLevel--;
+				return true;
 			}
-			return $this->checkResult($result);
+
+			// Savepoint lost (the server rolled everything back): end the
+			// transaction so the connection is not stuck at a phantom level.
+			$this->abortTransaction();
+			return false;
 		}
 
 		$result = $this->connection->rollback();
@@ -507,6 +515,75 @@ class Mysqli extends Adapter
 			$this->transactionLevel--;
 		}
 		return $this->checkResult($result);
+	}
+
+	/**
+	 * Runs a savepoint statement, treating an exception as failure.
+	 *
+	 * @param string $sql
+	 * @return bool
+	 */
+	protected function savepointQuery(string $sql) : bool
+	{
+		try
+		{
+			$result = (bool)$this->connection->query($sql);
+		}
+		catch (\Throwable $e)
+		{
+			$this->setLastError($e->getMessage());
+			return false;
+		}
+
+		return $this->checkResult($result);
+	}
+
+	/**
+	 * Rolls back the whole transaction, whatever the nesting level, and
+	 * resets the level to zero.
+	 *
+	 * @return bool
+	 */
+	public function abortTransaction() : bool
+	{
+		$result = true;
+		if ($this->connected && $this->transactionLevel > 0)
+		{
+			try
+			{
+				$result = $this->connection->rollback();
+			}
+			catch (\Throwable $e)
+			{
+				$this->setLastError($e->getMessage());
+				$result = false;
+			}
+		}
+
+		$this->transactionLevel = 0;
+		return $result;
+	}
+
+	/**
+	 * Rolls back nested units of work until the given level remains
+	 * (e.g. undo whatever a job handler left open, but keep a caller's
+	 * outer transaction).
+	 *
+	 * @param int $level Level to return to.
+	 * @return bool
+	 */
+	public function rollbackToLevel(int $level) : bool
+	{
+		$level = max(0, $level);
+		while ($this->transactionLevel > $level)
+		{
+			if (!$this->rollback())
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
