@@ -18,3 +18,4 @@ error.log
 .phpunit.result.cache
 .env
 user-settings.txt
+.phpstan-cache/

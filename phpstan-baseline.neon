@@ -1,0 +1,247 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Api/ApiRouter.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Api/Validator.php
+
+		-
+			message: '#^Variable \$argv in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Automation/Process.php
+
+		-
+			message: '#^Variable \$routine in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Automation/Process.php
+
+		-
+			message: '#^Static call to instance method Proto\\Http\\Session\\Models\\UserSession\:\:getEmptySessions\(\)\.$#'
+			identifier: method.staticCall
+			count: 1
+			path: src/Automation/Processes/Session/CleanUpSessionRoutine.php
+
+		-
+			message: '#^Static call to instance method Proto\\Http\\Session\\Models\\UserSession\:\:getExpiredSessions\(\)\.$#'
+			identifier: method.staticCall
+			count: 1
+			path: src/Automation/Processes/Session/CleanUpSessionRoutine.php
+
+		-
+			message: '#^Constructor of class Proto\\Base has an unused parameter \$data\.$#'
+			identifier: constructor.unusedParameter
+			count: 1
+			path: src/Base.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Cache/EventBuffer.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Cache/Policies/ModelPolicy.php
+
+		-
+			message: '#^Variable \$key in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Config.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 5
+			path: src/Controllers/ModelController.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Controllers/ResourceController.php
+
+		-
+			message: '#^Variable \$data in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 5
+			path: src/Controllers/ResourceController.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Controllers/Response.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Database/QueryBuilder/QueryHandler.php
+
+		-
+			message: '#^Variable \$dispatch in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Dispatch/Controllers/Controller.php
+
+		-
+			message: '#^Variable \$dispatch in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Dispatch/Dispatcher.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Dispatch/Push/Controllers/WebPushController.php
+
+		-
+			message: '#^Variable \$clientId in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Dispatch/Push/Storage/WebPushUserStorage.php
+
+		-
+			message: '#^Variable \$userId in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: src/Dispatch/Push/Storage/WebPushUserStorage.php
+
+		-
+			message: '#^Variable \$settings in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: src/Generators/Generator.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Http/Cookie.php
+
+		-
+			message: '#^Class Proto\\Api\\Validator referenced with incorrect case\: Proto\\API\\Validator\.$#'
+			identifier: class.nameCase
+			count: 2
+			path: src/Http/ItemRequest.php
+
+		-
+			message: '#^Variable \$data on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Http/Loop/Message.php
+
+		-
+			message: '#^Cannot unset property Proto\\Http\\Rest\\Curl\:\:\$curl because it might have hooks in a subclass\.$#'
+			identifier: unset.possiblyHookedProperty
+			count: 1
+			path: src/Http/Rest/Curl.php
+
+		-
+			message: '#^Variable \$_REQUEST on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Http/Router/Request.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Http/Socket/Socket.php
+
+		-
+			message: '#^Class Proto\\Http\\Socket\\SocketHandler has an uninitialized readonly property \$socket\. Assign it in the constructor\.$#'
+			identifier: property.uninitializedReadonly
+			count: 1
+			path: src/Http/Socket/SocketHandler.php
+
+		-
+			message: '#^Class Proto\\Http\\Socket\\SocketService has an uninitialized readonly property \$socket\. Assign it in the constructor\.$#'
+			identifier: property.uninitializedReadonly
+			count: 1
+			path: src/Http/Socket/SocketService.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 4
+			path: src/Http/Socket/StreamSocket.php
+
+		-
+			message: '#^Variable \$failedJobs in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: src/Jobs/Drivers/DatabaseDriver.php
+
+		-
+			message: '#^Variable \$jobs in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 2
+			path: src/Jobs/Drivers/DatabaseDriver.php
+
+		-
+			message: '#^Cannot instantiate class Proto\\Events\\Events via protected constructor Proto\\Events\\Events\:\:__construct\(\)\.$#'
+			identifier: new.protectedConstructor
+			count: 1
+			path: src/Jobs/JobQueue.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Models/Factory.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Patterns/Creational/Singleton.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Services/ServiceResult.php
+
+		-
+			message: '#^Variable \$orderByColumns in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: src/Storage/Limit.php
+
+		-
+			message: '#^Variable \$search on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Storage/ModifierUtil.php
+
+		-
+			message: '#^Variable \$searchConditions in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: src/Storage/ModifierUtil.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Storage/UnionQuery.php
+
+		-
+			message: '#^Anonymous function has an unused use \$callbackExecuted\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: src/Tests/Unit/FactoryExampleTest.php
