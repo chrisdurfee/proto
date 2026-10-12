@@ -30,7 +30,7 @@ final class UnknownMethodTest extends Test
 	{
 		$this->expectException(\BadMethodCallException::class);
 		$this->expectExceptionMessage('fetchWher');
-		UnknownMethodModel::fetchWher(['id' => 1]);
+		UnknownMethodModel::fetchWher(['id' => 1]); // @phpstan-ignore staticMethod.notFound
 	}
 
 	/**

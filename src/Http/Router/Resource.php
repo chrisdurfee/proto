@@ -130,6 +130,7 @@ class Resource
 				return $this->call('update', [$request]);
 			default:
 				$this->notFound();
+				return null;
 		}
 	}
 }

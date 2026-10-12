@@ -25,18 +25,6 @@ parameters:
 			path: src/Automation/Process.php
 
 		-
-			message: '#^Static call to instance method Proto\\Http\\Session\\Models\\UserSession\:\:getEmptySessions\(\)\.$#'
-			identifier: method.staticCall
-			count: 1
-			path: src/Automation/Processes/Session/CleanUpSessionRoutine.php
-
-		-
-			message: '#^Static call to instance method Proto\\Http\\Session\\Models\\UserSession\:\:getExpiredSessions\(\)\.$#'
-			identifier: method.staticCall
-			count: 1
-			path: src/Automation/Processes/Session/CleanUpSessionRoutine.php
-
-		-
 			message: '#^Constructor of class Proto\\Base has an unused parameter \$data\.$#'
 			identifier: constructor.unusedParameter
 			count: 1
@@ -129,14 +117,8 @@ parameters:
 		-
 			message: '#^Unsafe usage of new static\(\)\.$#'
 			identifier: new.static
-			count: 2
+			count: 3
 			path: src/Http/Cookie.php
-
-		-
-			message: '#^Class Proto\\Api\\Validator referenced with incorrect case\: Proto\\API\\Validator\.$#'
-			identifier: class.nameCase
-			count: 2
-			path: src/Http/ItemRequest.php
 
 		-
 			message: '#^Variable \$data on left side of \?\? always exists and is not nullable\.$#'
@@ -189,14 +171,8 @@ parameters:
 		-
 			message: '#^Variable \$jobs in empty\(\) always exists and is not falsy\.$#'
 			identifier: empty.variable
-			count: 2
-			path: src/Jobs/Drivers/DatabaseDriver.php
-
-		-
-			message: '#^Cannot instantiate class Proto\\Events\\Events via protected constructor Proto\\Events\\Events\:\:__construct\(\)\.$#'
-			identifier: new.protectedConstructor
 			count: 1
-			path: src/Jobs/JobQueue.php
+			path: src/Jobs/Drivers/DatabaseDriver.php
 
 		-
 			message: '#^Unsafe usage of new static\(\)\.$#'
@@ -239,6 +215,18 @@ parameters:
 			identifier: new.static
 			count: 1
 			path: src/Storage/UnionQuery.php
+
+		-
+			message: '#^Parameter \#1 \$store \(Proto\\Tests\\Unit\\Dispatch\\FakeQueueStore\) of method Proto\\Tests\\Unit\\Dispatch\\FakeQueueModel\:\:__construct\(\) is not contravariant with parameter \#1 \$data \(object\|null\) of method Proto\\Models\\Model\:\:__construct\(\)\.$#'
+			identifier: method.childParameterType
+			count: 1
+			path: src/Tests/Unit/Dispatch/QueueRoutineTest.php
+
+		-
+			message: '#^Parameter \#1 \$store of method Proto\\Tests\\Unit\\Dispatch\\FakeQueueModel\:\:__construct\(\) is required but parameter \#1 \$data of method Proto\\Models\\Model\:\:__construct\(\) is optional\.$#'
+			identifier: parameter.notOptional
+			count: 1
+			path: src/Tests/Unit/Dispatch/QueueRoutineTest.php
 
 		-
 			message: '#^Anonymous function has an unused use \$callbackExecuted\.$#'
