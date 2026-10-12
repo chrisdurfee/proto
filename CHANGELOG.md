@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.36] - 2026-10-11
+
 ### Security
 - **Query-id binding on write routes without `:id`** — `bindRouteId()` previously only enforced a match against a path `:id`, so routes like `PATCH /api/resource?id=<owned>` still authorized the query id while `update()`/`setup()`/`merge()` wrote the body `id`. A client could pass an owned row in `?id=` and overwrite any other row via the body. Writes now bind to `getResourceId()` (route `:id`, else request `id`): a mismatched body `id` returns `400`, and a missing one is filled from the authorized id.
+
+## [2.0.35] - 2026-10-03
 
 ### Changed
 - **Writes no longer SCAN the cache** — every resource write ran several `SCAN MATCH` passes over the whole Redis keyspace (generic GET keys, then `get:{id}` and `get:{id}:*` for each id/slug/guid/uuid, before and after the write). Custom GET keys now carry the list generation, and `get()` keys carry a per-row generation (`Class:getgen:{identity}`), so a write is one `INCR` per token. Orphaned keys age out with their TTL. `deleteGenericMethodCaches()` stays for subclasses that want an eager sweep but is no longer called by `deleteAll()`.
