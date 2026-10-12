@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.37] - 2026-10-11
+
+### Security
+- **Empty CORS allow-list fails closed outside local/dev/testing** — `Headers::isAllowedOrigin()` previously treated an empty `cors.allowedOrigins` as "allow every Origin" in every environment, so a missing prod config reflected credentials-capable CORS for any site. Prod and staging now refuse every Origin until an allow-list is set; local/dev/testing keep the open fallback.
+- **Request secrets redacted from error logs** — `Error` stored `Request::all()` (and the request URL) on every logged error/exception, so a failing login or form write persisted passwords and tokens in `proto_error_log.query` / `url`. Sensitive keys are replaced with `[REDACTED]` before encode, and URL user-info / query values matching those keys are scrubbed too.
+
+### Fixed
+- **cURL timeouts by default** — `Proto\Http\Rest\Curl` had no `CURLOPT_CONNECTTIMEOUT` / `CURLOPT_TIMEOUT`, so a hung peer could pin an FPM worker until PHP's default socket timeout. Defaults are now 10s connect / 30s total, overridable via `connectTimeout()` / `timeout()`.
+
 ## [2.0.36] - 2026-10-11
 
 ### Security

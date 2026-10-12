@@ -54,6 +54,20 @@ class Curl
 	protected array $resolvePins = [];
 
 	/**
+	 * Total transfer timeout in seconds (CURLOPT_TIMEOUT).
+	 *
+	 * @var int
+	 */
+	protected int $timeoutSeconds = 30;
+
+	/**
+	 * Connect timeout in seconds (CURLOPT_CONNECTTIMEOUT).
+	 *
+	 * @var int
+	 */
+	protected int $connectTimeoutSeconds = 10;
+
+	/**
 	 * Initializes the cURL session.
 	 *
 	 * @param bool $debug Whether to enable debugging.
@@ -63,6 +77,30 @@ class Curl
 	)
 	{
 		$this->curl = curl_init();
+	}
+
+	/**
+	 * Sets the total transfer timeout in seconds.
+	 *
+	 * @param int $seconds
+	 * @return static
+	 */
+	public function timeout(int $seconds): static
+	{
+		$this->timeoutSeconds = max(1, $seconds);
+		return $this;
+	}
+
+	/**
+	 * Sets the connect timeout in seconds.
+	 *
+	 * @param int $seconds
+	 * @return static
+	 */
+	public function connectTimeout(int $seconds): static
+	{
+		$this->connectTimeoutSeconds = max(1, $seconds);
+		return $this;
 	}
 
 	/**
@@ -247,6 +285,8 @@ class Curl
 		curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, true);
 		curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, 2);
 		curl_setopt($this->curl, CURLOPT_ENCODING, 'gzip');
+		curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->connectTimeoutSeconds);
+		curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->timeoutSeconds);
 
 		return $this;
 	}

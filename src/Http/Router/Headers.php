@@ -10,7 +10,8 @@ use Proto\Utils\Filter\Input;
  *
  * Configure allowed origins in common/Config/.env under "cors.allowedOrigins"
  * as an array of domain strings (e.g. ["https://example.com", "https://app.example.com"]).
- * When not configured, falls back to reflecting the request origin (development mode).
+ * When not configured, local/dev/testing still reflect the request origin; prod
+ * and staging refuse every Origin until an allow-list is set.
  *
  * @package Proto\Http\Router
  */
@@ -112,8 +113,9 @@ class Headers
 	/**
 	 * Validates whether the given origin is allowed.
 	 *
-	 * When no allowed origins are configured, all origins are permitted
-	 * (development fallback). In production, configure allowedOrigins.
+	 * An empty allow-list is open only in local/dev/testing. In prod and
+	 * staging it fails closed — otherwise a missing cors.allowedOrigins
+	 * config reflects every Origin (including credentials).
 	 *
 	 * @param string $origin The request origin.
 	 * @return bool
@@ -123,10 +125,26 @@ class Headers
 		$allowed = static::getAllowedOrigins();
 		if (empty($allowed))
 		{
-			return true;
+			return static::allowsOpenCors();
 		}
 
 		return in_array($origin, $allowed, true);
+	}
+
+	/**
+	 * Whether an empty CORS allow-list may reflect any Origin.
+	 *
+	 * @return bool
+	 */
+	protected static function allowsOpenCors(): bool
+	{
+		if (!function_exists('env'))
+		{
+			return false;
+		}
+
+		$env = env('env');
+		return in_array($env, ['dev', 'development', 'local', 'testing'], true);
 	}
 
 	/**

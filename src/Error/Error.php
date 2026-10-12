@@ -354,8 +354,8 @@ namespace Proto\Error
 				'errorTrace' => '',
 				'backTrace' => static::redactBacktrace(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
 				'env' => env('env'),
-				'url' => Request::fullUrlWithScheme(),
-				'query' => JsonFormat::encode(Request::all()),
+				'url' => static::sanitizeUrl(Request::fullUrlWithScheme()),
+				'query' => JsonFormat::encode(static::redactRequestData(Request::all())),
 				'errorIp' => Request::ip()
 			];
 		}
@@ -407,6 +407,135 @@ namespace Proto\Error
 		}
 
 		/**
+		 * Redacts sensitive keys from request payload logged with errors.
+		 *
+		 * Error rows store `Request::all()`, which includes login and form
+		 * bodies. Without this, a password submitted on a failing request
+		 * was persisted in `proto_error_log.query`.
+		 *
+		 * @param mixed $data
+		 * @return mixed
+		 */
+		protected static function redactRequestData(mixed $data): mixed
+		{
+			if (is_array($data))
+			{
+				$out = [];
+				foreach ($data as $key => $value)
+				{
+					if (is_string($key) && static::isSensitiveRequestKey($key))
+					{
+						$out[$key] = '[REDACTED]';
+						continue;
+					}
+
+					$out[$key] = static::redactRequestData($value);
+				}
+
+				return $out;
+			}
+
+			if (is_object($data))
+			{
+				$out = new \stdClass();
+				foreach (get_object_vars($data) as $key => $value)
+				{
+					if (static::isSensitiveRequestKey($key))
+					{
+						$out->$key = '[REDACTED]';
+						continue;
+					}
+
+					$out->$key = static::redactRequestData($value);
+				}
+
+				return $out;
+			}
+
+			return $data;
+		}
+
+		/**
+		 * Whether a request key should be stripped from error logs.
+		 *
+		 * @param string $key
+		 * @return bool
+		 */
+		protected static function isSensitiveRequestKey(string $key): bool
+		{
+			$exact = [
+				'password' => true,
+				'passwordHash' => true,
+				'passwd' => true,
+				'pwd' => true,
+				'secret' => true,
+				'token' => true,
+				'apiKey' => true,
+				'apikey' => true,
+				'authorization' => true,
+				'creditCard' => true,
+				'cardNumber' => true,
+				'cvv' => true,
+				'cvc' => true,
+				'ssn' => true,
+				'privateKey' => true,
+				'accessToken' => true,
+				'refreshToken' => true,
+				'clientSecret' => true,
+			];
+
+			if (isset($exact[$key]))
+			{
+				return true;
+			}
+
+			$lower = strtolower($key);
+			foreach (['password', 'passwd', 'secret', 'token', 'apikey', 'authorization', 'creditcard', 'cardnumber', 'privatekey'] as $needle)
+			{
+				if (str_contains($lower, $needle))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Redacts sensitive query-string values from a logged URL.
+		 *
+		 * @param string $url
+		 * @return string
+		 */
+		protected static function sanitizeUrl(string $url): string
+		{
+			$parts = parse_url($url);
+			if ($parts === false)
+			{
+				return $url;
+			}
+
+			if (isset($parts['query']) && $parts['query'] !== '')
+			{
+				parse_str($parts['query'], $query);
+				$parts['query'] = http_build_query(static::redactRequestData($query));
+			}
+
+			$scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
+			$user = $parts['user'] ?? '';
+			$auth = ($user !== '' || isset($parts['pass']))
+				? $user . (isset($parts['pass']) ? ':[REDACTED]' : '') . '@'
+				: '';
+			$host = $parts['host'] ?? '';
+			$port = isset($parts['port']) ? ':' . $parts['port'] : '';
+			$path = $parts['path'] ?? '';
+			$queryString = isset($parts['query']) && $parts['query'] !== '' ? '?' . $parts['query'] : '';
+			$fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+			return $scheme . $auth . $host . $port . $path . $queryString . $fragment;
+		}
+
+		/**
 		 * Builds exception data object for logging.
 		 *
 		 * @param \Throwable $exception The exception object.
@@ -422,8 +551,8 @@ namespace Proto\Error
 				'errorTrace' => static::redactPath($exception->getTraceAsString()),
 				'backTrace' => static::redactBacktrace(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)),
 				'env' => env('env'),
-				'url' => Request::fullUrlWithScheme(),
-				'query' => JsonFormat::encode(Request::all()),
+				'url' => static::sanitizeUrl(Request::fullUrlWithScheme()),
+				'query' => JsonFormat::encode(static::redactRequestData(Request::all())),
 				'errorIp' => Request::ip()
 			];
 		}
