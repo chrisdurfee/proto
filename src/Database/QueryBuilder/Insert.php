@@ -123,7 +123,7 @@ class Insert extends Query
 	 */
 	protected function getDuplicateField(string $key, string $value): string
 	{
-		return "{$key} => VALUES({$value})";
+		return "{$key} = VALUES({$value})";
 	}
 
 	/**
