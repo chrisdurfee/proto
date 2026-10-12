@@ -187,7 +187,7 @@ class KafkaDriver extends Base implements DriverInterface
 			return $result === RD_KAFKA_RESP_ERR_NO_ERROR;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Kafka push error: " . $e->getMessage());
 			return false;
@@ -269,7 +269,7 @@ class KafkaDriver extends Base implements DriverInterface
 			}
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Kafka pop error: " . $e->getMessage());
 			return null;
@@ -309,7 +309,7 @@ class KafkaDriver extends Base implements DriverInterface
 			return true;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Kafka mark completed error: " . $e->getMessage());
 			return false;
@@ -363,7 +363,7 @@ class KafkaDriver extends Base implements DriverInterface
 			return true;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Kafka mark failed error: " . $e->getMessage());
 			return false;
@@ -404,7 +404,7 @@ class KafkaDriver extends Base implements DriverInterface
 			$producer->flush(5000);
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Failed to publish to dead-letter queue: " . $e->getMessage());
 		}
@@ -448,7 +448,7 @@ class KafkaDriver extends Base implements DriverInterface
 			return $result;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Kafka retry error: " . $e->getMessage());
 			return false;
@@ -503,7 +503,7 @@ class KafkaDriver extends Base implements DriverInterface
 			return true;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Kafka clear error: " . $e->getMessage());
 			return false;
@@ -565,7 +565,7 @@ class KafkaDriver extends Base implements DriverInterface
 			return $result;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			error_log("Kafka retry failed job error: " . $e->getMessage());
 			return false;
@@ -585,7 +585,7 @@ class KafkaDriver extends Base implements DriverInterface
             {
 				$this->consumer->close();
 			}
-            catch (\Exception $e)
+            catch (\Throwable $e)
             {
 				error_log("Error closing Kafka consumer: " . $e->getMessage());
 			}
