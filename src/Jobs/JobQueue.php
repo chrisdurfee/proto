@@ -269,12 +269,29 @@ class JobQueue extends Base
 	protected function handleJobFailure(array $jobData, \Throwable $exception): void
 	{
 		$attempts = (int) ($jobData['attempts'] ?? 0) + 1;
-		$job = $this->recreateJob($jobData);
 
 		$this->fireEvent('job.failed', array_merge($jobData, [
 			'exception' => $exception,
 			'attempts' => $attempts
 		]));
+
+		try
+		{
+			$job = $this->recreateJob($jobData);
+		}
+		catch (\Throwable $recreateError)
+		{
+			// A job that cannot be rebuilt (missing or invalid class) will
+			// never succeed, so fail it permanently instead of retrying.
+			$reason = 'Job could not be reconstructed: ' . $recreateError->getMessage();
+			if ($recreateError !== $exception)
+			{
+				$reason .= ' (original error: ' . $exception->getMessage() . ')';
+			}
+
+			$this->driver->markFailed((string) $jobData['id'], $reason);
+			return;
+		}
 
 		// Check if we should retry
 		if ($job->shouldRetry($attempts, $exception))
@@ -282,12 +299,20 @@ class JobQueue extends Base
 			// Retry the job
 			$delay = $job->getRetryDelay() * $attempts; // Exponential backoff
 			$this->driver->retry($jobData['id'], $attempts, $delay);
+			return;
 		}
-        else
-        {
-			// Mark as failed and call job's failed method
-			$this->driver->markFailed($jobData['id'], $exception->getMessage());
+
+		// Mark as failed and call job's failed method
+		$this->driver->markFailed($jobData['id'], $exception->getMessage());
+
+		try
+		{
 			$job->failed($exception, $jobData['data'] ?? null);
+		}
+		catch (\Throwable $hookError)
+		{
+			// A throwing failed() hook must not take the worker down.
+			error_log("Job {$job->getName()} failed() hook threw: " . $hookError->getMessage());
 		}
 	}
 
