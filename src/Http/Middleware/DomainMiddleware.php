@@ -2,7 +2,7 @@
 namespace Proto\Http\Middleware;
 
 use Proto\Http\Router\Request;
-use Proto\Http\Router\Response;
+use Proto\Http\HttpTerminationException;
 use Proto\Utils\Format\JsonFormat;
 
 /**
@@ -120,19 +120,18 @@ class DomainMiddleware
 	}
 
 	/**
-	 * This will exit the application with a 403 response.
+	 * Ends the request with an error response.
 	 *
-	 * @return void
+	 * @param string $msg Server-side reason (logged by callers if needed).
+	 * @param int $responseCode HTTP status code.
+	 * @return void Never returns normally.
+	 * @throws HttpTerminationException Always.
 	 */
 	protected function error(string $msg, int $responseCode): void
 	{
-		$message = (object)[
+		throw new HttpTerminationException((object)[
 			'message' => 'The domain is not allowed.',
 			'success' => false
-		];
-
-		(new Response())->json($message, $responseCode);
-
-		exit;
+		], $responseCode);
 	}
 }

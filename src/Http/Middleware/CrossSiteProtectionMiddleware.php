@@ -2,7 +2,7 @@
 namespace Proto\Http\Middleware;
 
 use Proto\Auth\Gates\CrossSiteRequestForgeryGate as CSRF;
-use Proto\Http\Router\Response;
+use Proto\Http\HttpTerminationException;
 use Proto\Http\Router\Request;
 
 /**
@@ -52,20 +52,16 @@ class CrossSiteProtectionMiddleware
 	}
 
     /**
-	 * This will exit the application with a 403 response.
+	 * Ends the request with a 403 response.
 	 *
-	 * @return void
+	 * @return void Never returns normally.
+	 * @throws HttpTerminationException Always.
 	 */
 	protected static function exitWithResponse(): void
 	{
-		$UNAUTHORIZED_CODE = 403;
-		$message = (object)[
+		throw new HttpTerminationException((object)[
 			'message' => 'The CSRF token is invalid.',
 			'success' => false
-		];
-
-		(new Response())->json($message, $UNAUTHORIZED_CODE);
-
-		exit;
+		], 403);
 	}
 }

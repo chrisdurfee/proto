@@ -3,6 +3,7 @@ namespace Proto\Http\Router;
 
 use Proto\Cache\Policies\Policy;
 use Proto\Controllers\ControllerInterface;
+use Proto\Http\HttpTerminationException;
 
 /**
  * Resource
@@ -79,24 +80,26 @@ class Resource
 		}
 
 		$this->notFound("Method not found in the resource.");
-		die;
 	}
 
 	/**
-	 * This will return a 404 response.
+	 * Ends the request with a 404 response.
 	 *
-	 * @return void
+	 * Throws instead of rendering and calling `die`, so the router (or the
+	 * global exception handler) renders it and `finally` blocks still run.
+	 *
+	 * @param string $message
+	 * @return void Never returns normally.
+	 * @throws HttpTerminationException Always.
 	 */
 	protected function notFound(
 		string $message = "Resource not found."
 	): void
 	{
-		$statusCode = 404;
-		$response = new Response();
-		$response->sendHeaders($statusCode)->json([
-			"message"=> $message,
-			"success"=> false
-		]);
+		throw new HttpTerminationException((object)[
+			'message' => $message,
+			'success' => false
+		], 404);
 	}
 
 	/**
@@ -127,7 +130,6 @@ class Resource
 				return $this->call('update', [$request]);
 			default:
 				$this->notFound();
-				die;
 		}
 	}
 }

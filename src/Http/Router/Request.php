@@ -2,6 +2,7 @@
 namespace Proto\Http\Router;
 
 use Proto\Http\Request as BaseRequest;
+use Proto\Http\HttpTerminationException;
 use Proto\Utils\Sanitize;
 use Proto\Utils\Format\JsonFormat;
 use Proto\Api\Validator;
@@ -141,13 +142,10 @@ class Request
 		$validator = Validator::create($data, $rules);
 		if (!$validator->isValid())
 		{
-			$statusCode = 400;
-			$response = new Response();
-			$response->sendHeaders($statusCode)->json([
-				"message"=> $validator->getMessage(),
-				"success"=> false
-			]);
-			die;
+			throw new HttpTerminationException((object)[
+				'message' => $validator->getMessage(),
+				'success' => false
+			], 400);
 		}
 
 		return $data;
@@ -173,13 +171,10 @@ class Request
 		$validator = Validator::create($data, $rules);
 		if (!$validator->isValid())
 		{
-			$statusCode = 400;
-			$response = new Response();
-			$response->sendHeaders($statusCode)->json([
-				"message"=> $validator->getMessage(),
-				"success"=> false
-			]);
-			die;
+			throw new HttpTerminationException((object)[
+				'message' => $validator->getMessage(),
+				'success' => false
+			], 400);
 		}
 
 		return $file;
@@ -202,13 +197,10 @@ class Request
 		$validator = Validator::create($files, $rules);
 		if (!$validator->isValid())
 		{
-			$statusCode = 400;
-			$response = new Response();
-			$response->sendHeaders($statusCode)->json([
-				"message"=> $validator->getMessage(),
-				"success"=> false
-			]);
-			die;
+			throw new HttpTerminationException((object)[
+				'message' => $validator->getMessage(),
+				'success' => false
+			], 400);
 		}
 
 		return $files;
@@ -303,13 +295,10 @@ class Request
 
 			if (!$validator->isValid())
 			{
-				$statusCode = 400;
-				$response = new Response();
-				$response->sendHeaders($statusCode)->json([
-					"message" => $validator->getMessage(),
-					"success" => false
-				]);
-				die;
+				throw new HttpTerminationException((object)[
+					'message' => $validator->getMessage(),
+					'success' => false
+				], 400);
 			}
 		}
 

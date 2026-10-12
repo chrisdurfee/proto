@@ -164,6 +164,70 @@ final class HttpTerminationExceptionTest extends Test
 	{
 		return new ExposingApiController();
 	}
+
+	/**
+	 * Router-level request validation throws a 400 termination instead
+	 * of calling die (which killed workers and skipped finally blocks).
+	 *
+	 * @return void
+	 */
+	public function testRouterRequestValidateThrowsInsteadOfDying(): void
+	{
+		$saved = $_REQUEST;
+		$_REQUEST = ['item' => json_encode(['name' => ''])];
+
+		try
+		{
+			(new Request())->validate(['name' => 'string:10|required'], 'item');
+			$this->fail('Expected HttpTerminationException');
+		}
+		catch (HttpTerminationException $exception)
+		{
+			$this->assertSame(400, $exception->getStatusCode());
+		}
+		finally
+		{
+			$_REQUEST = $saved;
+		}
+	}
+
+	/**
+	 * CSRF and domain middleware deny by throwing a 403 termination.
+	 *
+	 * @return void
+	 */
+	public function testMiddlewareDenialThrowsInsteadOfExiting(): void
+	{
+		$csrf = new class extends \Proto\Http\Middleware\CrossSiteProtectionMiddleware
+		{
+			public static function deny(): void
+			{
+				static::exitWithResponse();
+			}
+		};
+
+		try
+		{
+			$csrf::deny();
+			$this->fail('Expected HttpTerminationException');
+		}
+		catch (HttpTerminationException $exception)
+		{
+			$this->assertSame(403, $exception->getStatusCode());
+		}
+
+		$domain = new class extends \Proto\Http\Middleware\DomainMiddleware
+		{
+			public function deny(): void
+			{
+				$this->error('Domain not allowed', 403);
+			}
+		};
+
+		$this->expectException(HttpTerminationException::class);
+		$domain->deny();
+	}
+
 }
 
 /**

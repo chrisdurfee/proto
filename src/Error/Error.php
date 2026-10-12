@@ -2,6 +2,7 @@
 namespace Proto\Error
 {
 	use Proto\Error\Models\ErrorLog;
+	use Proto\Http\HttpTerminationException;
 	use Proto\Http\Request;
 	use Proto\Http\Response;
 	use Proto\Utils\Format\JsonFormat;
@@ -285,6 +286,13 @@ namespace Proto\Error
 		 */
 		public static function exceptionHandler(\Throwable $exception): bool
 		{
+			// An intentional early response thrown outside the router's
+			// dispatch (bootstrap, resource loading): render it as-is.
+			if ($exception instanceof HttpTerminationException)
+			{
+				$exception->respond();
+			}
+
 			static::reportException($exception);
 			static::renderServerError($exception);
 			return true;

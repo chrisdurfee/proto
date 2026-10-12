@@ -344,18 +344,18 @@ namespace Proto\Api
 		 *
 		 * @param string $message The error message.
 		 * @param int $httpCode The HTTP status code.
-		 * @return void
+		 * @return void Never returns normally.
+		 * @throws \Proto\Http\HttpTerminationException Always.
 		 */
 		public static function error(string $message, int $httpCode): void
 		{
-			new Response(
+			throw new \Proto\Http\HttpTerminationException(
 				(object)[
 					'message' => $message,
 					'success' => false
 				],
 				$httpCode
 			);
-			die;
 		}
 	}
 }
