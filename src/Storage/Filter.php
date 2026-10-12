@@ -132,8 +132,8 @@ class Filter
 			if ($valueCount === 3)
 			{
 				$operator = strtoupper(trim((string)$value[1]));
-				// If operator is != or <>, use IS NOT NULL, otherwise IS NULL
-				if (in_array($operator, ['!=', '<>', 'NOT']))
+				// If operator is a negation, use IS NOT NULL, otherwise IS NULL
+				if (in_array($operator, ['!=', '<>', 'NOT', 'IS NOT', 'IS NOT NULL'], true))
 				{
 					return $value[0] . ' IS NOT NULL';
 				}
@@ -167,6 +167,31 @@ class Filter
 				$params = array_merge($params, array_values($param));
 				return $value[0] . ' ' . $operator . ' (' . $placeholders . ')';
 			}
+
+			// ['field', 'BETWEEN', [low, high]] binds both bounds.
+			if (in_array($operator, ['BETWEEN', 'NOT BETWEEN'], true))
+			{
+				if (!is_array($param) || count($param) !== 2)
+				{
+					return '1 = 0';
+				}
+
+				$params = array_merge($params, array_values($param));
+				return $value[0] . ' ' . $operator . ' ? AND ?';
+			}
+
+			// The operand is part of the operator; nothing to bind.
+			if (in_array($operator, ['IS NULL', 'IS NOT NULL'], true))
+			{
+				return $value[0] . ' ' . $operator;
+			}
+		}
+
+		// Malformed tuples used to render '' while still binding a param,
+		// shifting every later placeholder onto the wrong value.
+		if ($valueCount < 2 || $valueCount > 3)
+		{
+			return '1 = 0';
 		}
 
 		// Replace value with placeholder for non-null values
@@ -181,11 +206,6 @@ class Filter
 			// Default operator
 			$value = [$value[0], '=', $value[1]];
 		}
-		else if ($valueCount > 3)
-		{
-			// Invalid format, reset value
-			$value = [];
-		}
 
 		$params[] = $param;
 		return join(' ', [...$value]);
@@ -199,6 +219,7 @@ class Filter
 	 */
 	protected static function filterOperator(string $operator): string
 	{
+		$operator = strtoupper(trim($operator));
 		return (in_array($operator, self::allowedOperators(), true))
 			? $operator
 			: '=';
