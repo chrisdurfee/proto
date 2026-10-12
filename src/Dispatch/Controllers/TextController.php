@@ -35,17 +35,26 @@ class TextController extends Controller
 	 */
 	public static function enqueue(object $settings, ?object $data = null): object
 	{
-		$template = static::createText($settings->template, $data);
+		$message = $settings->compiledTemplate ?? static::createText($settings->template, $data);
+
+		// The queue row has no subject column, so bake the prefix in now.
+		if (!empty($settings->subject))
+		{
+			$message = $settings->subject . ' - ' . $message;
+		}
 
 		return (object)[
 			'recipient' => $settings->to,
-			'session' => $settings->session,
-			'message' => (string) $template
+			'session' => $settings->session ?? null,
+			'message' => (string) $message
 		];
 	}
 
 	/**
 	 * Sends a text.
+	 *
+	 * A precompiled body (`compiledTemplate`, which the queue routine
+	 * sets from the stored row) always wins over re-rendering `template`.
 	 *
 	 * @param object $settings
 	 * @param object|null $data
@@ -53,7 +62,7 @@ class TextController extends Controller
 	 */
 	public static function dispatch(object $settings, ?object $data = null): Response
 	{
-		if (isset($settings->compiledTemplate) && !empty($settings->subject))
+		if (isset($settings->compiledTemplate))
 		{
 			$settings->message = $settings->compiledTemplate;
 		}
