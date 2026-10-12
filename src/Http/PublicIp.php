@@ -212,6 +212,7 @@ class PublicIp
 			return false;
 		}
 
+		$ip = static::unmapIpv4($ip);
 		$packed = @inet_pton($ip);
 		foreach ($proxies as $proxy)
 		{
@@ -305,8 +306,18 @@ class PublicIp
 	 */
 	protected static function ipInCidr(string $ip, string $cidr): bool
 	{
-		[$subnet, $bits] = explode('/', $cidr, 2);
-		$bits = (int) $bits;
+		[$subnet, $bitsText] = explode('/', $cidr, 2);
+
+		// A typo ("10.0.0.0/", "10.0.0.0/abc") used to read as /0 and
+		// trust every address. Malformed prefixes match nothing.
+		if (!preg_match('/^\d{1,3}$/', $bitsText))
+		{
+			return false;
+		}
+
+		$bits = (int) $bitsText;
+		$ip = static::unmapIpv4($ip);
+		$subnet = static::unmapIpv4($subnet);
 
 		// inet_pton handles IPv4 and IPv6 (Cloudflare and most clouds
 		// publish IPv6 ranges; ip2long silently never matched them).
@@ -337,6 +348,23 @@ class PublicIp
 
 		$mask = (0xFF << (8 - $remaining)) & 0xFF;
 		return (ord($ipBin[$fullBytes]) & $mask) === (ord($subnetBin[$fullBytes]) & $mask);
+	}
+
+	/**
+	 * Turns an IPv4-mapped IPv6 address (`::ffff:10.0.0.5`, as dual-stack
+	 * sockets report IPv4 peers) into plain IPv4 so IPv4 rules match it.
+	 *
+	 * @param string $ip
+	 * @return string
+	 */
+	protected static function unmapIpv4(string $ip): string
+	{
+		if (preg_match('/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i', $ip, $match))
+		{
+			return $match[1];
+		}
+
+		return $ip;
 	}
 
 	/**

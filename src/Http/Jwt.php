@@ -14,6 +14,14 @@ use Exception;
 class Jwt
 {
 	/**
+	 * Seconds of clock skew tolerated for `exp` and `nbf` between the
+	 * issuer and this server.
+	 *
+	 * @var int
+	 */
+	public const LEEWAY = 30;
+
+	/**
 	 * Creates a new JWT encoded token.
 	 *
 	 * @param array $payload Payload data.
@@ -133,7 +141,7 @@ class Jwt
 	protected static function isNotYetValid(array $payload): bool
 	{
 		return isset($payload['nbf']) && is_numeric($payload['nbf'])
-			&& (int)$payload['nbf'] > (new DateTimeImmutable())->getTimestamp();
+			&& (int)$payload['nbf'] > (new DateTimeImmutable())->getTimestamp() + self::LEEWAY;
 	}
 
 	/**
@@ -145,7 +153,7 @@ class Jwt
 	protected static function isTokenExpired(array $payload): bool
 	{
 		$currentTime = (new DateTimeImmutable())->getTimestamp();
-		return isset($payload['exp']) && (!is_numeric($payload['exp']) || (int)$payload['exp'] < $currentTime);
+		return isset($payload['exp']) && (!is_numeric($payload['exp']) || (int)$payload['exp'] + self::LEEWAY < $currentTime);
 	}
 
 	/**

@@ -124,6 +124,8 @@ A pool of worker processes (`amphp/parallel`) that bootstrap Proto normally. Blo
 | `upstreamMaxQueued` | 2048 | hydrate calls allowed to wait before shedding |
 | `maxConnections` | 20000 | open or authorizing streams per process; past this new streams get `503` + `Retry-After` |
 | `maxConnectionsPerIp` | 100 | open or authorizing streams per client IP (resolved through `trustedProxies`) |
+
+> **Behind a CDN or public load balancer** (Cloudflare, an ALB), add its ranges to `realtime.trustedProxies`. Otherwise every viewer appears to come from a few edge IPs and the per-IP cap (`maxConnectionsPerIp`) answers `503 Too many streams` for legitimate users. The default trusts private ranges only.
 | `retryMilliseconds` | 3000 | normal reconnect hint |
 | `trustedProxies` | private ranges | who may set `X-Forwarded-For` |
 

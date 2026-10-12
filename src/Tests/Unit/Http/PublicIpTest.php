@@ -269,4 +269,32 @@ final class PublicIpTest extends Test
 
 		$this->assertSame('2001:db8::7', PublicIp::get());
 	}
-}
+
+
+	/**
+	 * A malformed prefix length must not read as /0 (trust everything).
+	 *
+	 * @return void
+	 */
+	public function testMalformedCidrTrustsNothing(): void
+	{
+		setEnv('trustedProxies', ['10.0.0.0/', '10.0.0.0/abc']);
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.9';
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.2.3.4';
+
+		$this->assertSame('203.0.113.9', PublicIp::get());
+	}
+
+	/**
+	 * An IPv4-mapped IPv6 peer matches IPv4 proxy rules.
+	 *
+	 * @return void
+	 */
+	public function testIpv4MappedPeerMatchesIpv4Cidr(): void
+	{
+		setEnv('trustedProxies', ['10.0.0.0/8']);
+		$_SERVER['REMOTE_ADDR'] = '::ffff:10.1.2.3';
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.7';
+
+		$this->assertSame('198.51.100.7', PublicIp::get());
+	}}

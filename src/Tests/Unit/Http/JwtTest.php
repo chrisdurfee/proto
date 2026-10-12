@@ -98,4 +98,21 @@ final class JwtTest extends Test
 		$s = $b64(hash_hmac('sha256', "{$h}.{$p}", self::SECRET, true));
 		return "{$h}.{$p}.{$s}";
 	}
-}
+
+
+	/**
+	 * Small clock skew between issuer and server is tolerated.
+	 *
+	 * @return void
+	 */
+	public function testClockSkewLeeway(): void
+	{
+		$fresh = $this->sign(['typ' => 'JWT', 'alg' => 'HS256'], ['sub' => 1, 'exp' => time() + 60, 'nbf' => time() + 10]);
+		$this->assertNotNull(Jwt::decode($fresh, self::SECRET));
+
+		$justExpired = $this->sign(['typ' => 'JWT', 'alg' => 'HS256'], ['sub' => 1, 'exp' => time() - 5]);
+		$this->assertNotNull(Jwt::decode($justExpired, self::SECRET));
+
+		$longExpired = $this->sign(['typ' => 'JWT', 'alg' => 'HS256'], ['sub' => 1, 'exp' => time() - 600]);
+		$this->assertNull(Jwt::decode($longExpired, self::SECRET));
+	}}

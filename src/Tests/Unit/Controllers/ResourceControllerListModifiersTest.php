@@ -190,6 +190,22 @@ final class ResourceControllerListModifiersTest extends Test
 	}
 
 	/**
+	 * datetime-local values (no seconds) are accepted.
+	 *
+	 * @return void
+	 */
+	public function testDatetimeLocalValuesAreAccepted(): void
+	{
+		$_REQUEST = [
+			'dates' => json_encode(['field' => 'createdAt', 'start' => '2026-10-12T10:00', 'end' => '2026-10-12T18:30'])
+		];
+
+		$inputs = $this->controller()->getAllInputs(new Request());
+		$this->assertSame('2026-10-12 10:00:00', $inputs->dates->start);
+		$this->assertSame('2026-10-12 18:30:00', $inputs->dates->end);
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testGroupByDropsSensitiveColumns(): void
