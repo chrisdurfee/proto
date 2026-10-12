@@ -32,6 +32,24 @@ class RedisDriver extends Driver
 	protected bool $connected = false;
 
 	/**
+	 * When a failed or dropped connection may be retried (microtime).
+	 * Zero when connected.
+	 *
+	 * @var float
+	 */
+	protected float $retryAt = 0.0;
+
+	/**
+	 * Seconds to wait before reconnecting after a failure. Long-running
+	 * processes (workers, routines) recover from a Redis blip instead of
+	 * running without a cache (and skipping invalidations) for life,
+	 * while a single request does not pay the connect timeout per call.
+	 *
+	 * @var float
+	 */
+	protected const RECONNECT_COOLDOWN = 5.0;
+
+	/**
 	 * Optional connection settings. When set, this instance does not read
 	 * `env('cache')->connection`, so a session store can point at a
 	 * different Redis than the application cache.
@@ -69,7 +87,23 @@ class RedisDriver extends Driver
 		/**
 		 * @SuppressWarnings PHP0413
 		 */
+		$this->reconnectIfDue();
 		return class_exists(Redis::class) && $this->connected;
+	}
+
+	/**
+	 * Retries the connection once the cooldown after a failure passed.
+	 *
+	 * @return void
+	 */
+	protected function reconnectIfDue(): void
+	{
+		if ($this->connected || $this->retryAt <= 0.0 || microtime(true) < $this->retryAt)
+		{
+			return;
+		}
+
+		$this->connect();
 	}
 
 	/**
@@ -133,11 +167,13 @@ class RedisDriver extends Driver
 			}
 
 			$this->connected = true;
+			$this->retryAt = 0.0;
 		}
 		catch (\Throwable $e)
 		{
 			$this->connected = false;
 			$this->db = null;
+			$this->retryAt = microtime(true) + static::RECONNECT_COOLDOWN;
 			$this->setError(
 				$e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e)
 			);
@@ -156,6 +192,7 @@ class RedisDriver extends Driver
 	 */
 	protected function attempt(callable $operation, mixed $fallback): mixed
 	{
+		$this->reconnectIfDue();
 		if (!$this->connected || $this->db === null)
 		{
 			return $fallback;
@@ -169,13 +206,14 @@ class RedisDriver extends Driver
 		{
 			/**
 			 * A connection-level failure (timeout, reset, Redis restart)
-			 * marks the driver offline for the rest of the request, so
+			 * marks the driver offline for RECONNECT_COOLDOWN seconds, so
 			 * later calls return their fallback at once instead of each
-			 * waiting out the read timeout again.
+			 * waiting out the read timeout again; then it reconnects.
 			 */
 			if ($e instanceof \RedisException)
 			{
 				$this->connected = false;
+				$this->retryAt = microtime(true) + static::RECONNECT_COOLDOWN;
 			}
 
 			$this->setError(
@@ -466,6 +504,9 @@ class RedisDriver extends Driver
 
 		try
 		{
+			// Subscribing blocks waiting for messages: the command read
+			// timeout would end an idle subscription after a second.
+			$this->db->setOption(Redis::OPT_READ_TIMEOUT, -1);
 			$this->db->subscribe($channels, function ($redis, $channel, $message) use ($callback) {
 				$callback($channel, $message);
 			});
@@ -473,6 +514,10 @@ class RedisDriver extends Driver
 		catch (\Throwable $e)
 		{
 			$this->setError($e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e));
+		}
+		finally
+		{
+			$this->restoreReadTimeout();
 		}
 	}
 
@@ -495,6 +540,7 @@ class RedisDriver extends Driver
 
 		try
 		{
+			$this->db->setOption(Redis::OPT_READ_TIMEOUT, -1);
 			$this->db->psubscribe($patterns, function ($redis, $pattern, $channel, $message) use ($callback) {
 				$callback($pattern, $channel, $message);
 			});
@@ -502,6 +548,33 @@ class RedisDriver extends Driver
 		catch (\Throwable $e)
 		{
 			$this->setError($e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e));
+		}
+		finally
+		{
+			$this->restoreReadTimeout();
+		}
+	}
+
+	/**
+	 * Restores the command read timeout after a blocking subscribe.
+	 *
+	 * @return void
+	 */
+	protected function restoreReadTimeout(): void
+	{
+		if ($this->db === null)
+		{
+			return;
+		}
+
+		try
+		{
+			$readTimeout = (float)($this->getCacheSettings()->readTimeout ?? 1.0);
+			$this->db->setOption(Redis::OPT_READ_TIMEOUT, $readTimeout > 0 ? $readTimeout : -1);
+		}
+		catch (\Throwable)
+		{
+			// Connection already gone; the next attempt() reconnects.
 		}
 	}
 
