@@ -38,10 +38,13 @@ class DatabaseDriver extends Base implements DriverInterface
 	 * Constructor.
 	 *
 	 * @param array $config Driver configuration
+	 * @param Mysqli|null $connection Optional connection (defaults to the configured one)
 	 */
-	public function __construct(array $config = [])
+	public function __construct(array $config = [], ?Mysqli $connection = null)
 	{
 		parent::__construct();
+
+		$this->connection = $connection;
 
 		$this->config = array_merge([
 			'connection' => 'default',
@@ -107,6 +110,52 @@ class DatabaseDriver extends Base implements DriverInterface
 		}
 
 		return $this->connection;
+	}
+
+	/**
+	 * Runs a callback inside a transaction.
+	 *
+	 * When the connection already has a transaction open (a caller's unit of
+	 * work, or a test's isolation transaction) the callback joins it: no
+	 * nested BEGIN, and no COMMIT/ROLLBACK that would end the outer one.
+	 * The outer owner decides whether the work is kept.
+	 *
+	 * Otherwise a transaction is opened, committed when the callback returns
+	 * anything but false, and rolled back on false or on a thrown error.
+	 *
+	 * @param callable(Mysqli): mixed $callback Unit of work.
+	 * @return mixed The callback's result, or false when the transaction could not start or commit.
+	 */
+	protected function transactional(callable $callback): mixed
+	{
+		$db = $this->getConnection();
+		if ($db->inTransaction())
+		{
+			return $callback($db);
+		}
+
+		if (!$db->beginTransaction())
+		{
+			return false;
+		}
+
+		try
+		{
+			$result = $callback($db);
+		}
+		catch (\Throwable $e)
+		{
+			$db->rollback();
+			throw $e;
+		}
+
+		if ($result === false)
+		{
+			$db->rollback();
+			return false;
+		}
+
+		return $db->commit() ? $result : false;
 	}
 
 	/**
@@ -239,23 +288,14 @@ class DatabaseDriver extends Base implements DriverInterface
 	 */
 	public function markFailed(string $jobId, string $error): bool
 	{
-		$db = $this->getConnection();
-
-		// Start transaction
-		if (!$db->beginTransaction())
-        {
-			return false;
-		}
-
-		try
-        {
+		return $this->transactional(function (Mysqli $db) use ($jobId, $error): bool
+		{
 			// Get the job data
 			$sql = "SELECT * FROM {$this->jobsTable} WHERE id = ?";
 			$jobs = $db->fetch($sql, [$jobId]);
 
 			if (!$jobs || empty($jobs))
             {
-				$db->rollback();
 				return false;
 			}
 
@@ -270,38 +310,36 @@ class DatabaseDriver extends Base implements DriverInterface
 
 			if (!$db->update($this->jobsTable, $updateData))
             {
-				$db->rollback();
 				return false;
 			}
 
-			// Add to failed jobs table
-			$failedJobData = (object) [
-				'id' => uniqid('failed_', true),
-				'job_id' => $jobId,
-				'queue' => $job->queue,
-				'job_class' => $job->job_class,
-				'job_name' => $job->job_name,
-				'data' => $job->data,
-				'attempts' => $job->attempts,
-				'error' => $error,
-				'failed_at' => date('Y-m-d H:i:s'),
-			];
+			return $this->insertFailedRecord($db, $job, $error);
+		}) === true;
+	}
 
-			if (!$db->insert($this->failedJobsTable, $failedJobData))
-            {
-				$db->rollback();
-				return false;
-			}
+	/**
+	 * Copies a job row into the failed jobs table.
+	 *
+	 * @param Mysqli $db Connection
+	 * @param object $job Job row
+	 * @param string $error Error message
+	 * @return bool
+	 */
+	protected function insertFailedRecord(Mysqli $db, object $job, string $error): bool
+	{
+		$failedJobData = (object) [
+			'id' => uniqid('failed_', true),
+			'job_id' => $job->id,
+			'queue' => $job->queue,
+			'job_class' => $job->job_class,
+			'job_name' => $job->job_name,
+			'data' => $job->data,
+			'attempts' => $job->attempts,
+			'error' => $error,
+			'failed_at' => date('Y-m-d H:i:s'),
+		];
 
-			$db->commit();
-			return true;
-
-		}
-        catch (\Exception $e)
-        {
-			$db->rollback();
-			throw $e;
-		}
+		return $db->insert($this->failedJobsTable, $failedJobData);
 	}
 
 	/**
@@ -427,23 +465,14 @@ class DatabaseDriver extends Base implements DriverInterface
 	 */
 	public function retryFailedJob(string $jobId): bool
 	{
-		$db = $this->getConnection();
-
-		// Start transaction
-		if (!$db->beginTransaction())
-        {
-			return false;
-		}
-
-		try
-        {
+		return $this->transactional(function (Mysqli $db) use ($jobId): bool
+		{
 			// Get the failed job
 			$sql = "SELECT * FROM {$this->failedJobsTable} WHERE job_id = ?";
 			$failedJobs = $db->fetch($sql, [$jobId]);
 
 			if (!$failedJobs || empty($failedJobs))
             {
-				$db->rollback();
 				return false;
 			}
 
@@ -468,26 +497,12 @@ class DatabaseDriver extends Base implements DriverInterface
 
 			if (!$db->insert($this->jobsTable, $newJobData))
             {
-				$db->rollback();
 				return false;
 			}
 
 			// Remove from failed jobs
-			if (!$db->delete($this->failedJobsTable, $jobId, 'job_id'))
-            {
-				$db->rollback();
-				return false;
-			}
-
-			$db->commit();
-			return true;
-
-		}
-        catch (\Exception $e)
-        {
-			$db->rollback();
-			throw $e;
-		}
+			return $db->delete($this->failedJobsTable, $jobId, 'job_id');
+		}) === true;
 	}
 
 	/**

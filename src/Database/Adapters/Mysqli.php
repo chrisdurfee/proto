@@ -332,7 +332,8 @@ class Mysqli extends Adapter
 	 */
 	public function beginTransaction() : bool
 	{
-		if (!$this->connected)
+		// Connect lazily: a fresh adapter has not opened its link yet.
+		if (!$this->connected && !$this->connect())
 		{
 			return false;
 		}
@@ -343,6 +344,30 @@ class Mysqli extends Adapter
 			$this->transactionLevel++;
 		}
 		return $this->checkResult($result);
+	}
+
+	/**
+	 * Returns the current transaction nesting level.
+	 *
+	 * @return int Zero when no transaction is open.
+	 */
+	public function getTransactionLevel() : int
+	{
+		return $this->transactionLevel;
+	}
+
+	/**
+	 * Reports whether a transaction is open on this adapter.
+	 *
+	 * Callers that would otherwise begin/commit their own transaction should
+	 * join the open one instead, so they never commit an outer transaction
+	 * (e.g. a test's isolation transaction) early.
+	 *
+	 * @return bool
+	 */
+	public function inTransaction() : bool
+	{
+		return $this->getTransactionLevel() > 0;
 	}
 
 	/**
