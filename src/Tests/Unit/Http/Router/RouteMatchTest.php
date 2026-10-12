@@ -120,6 +120,95 @@ final class RouteMatchTest extends Test
 	}
 
 	/**
+	 * An optional parameter followed by more segments used to compile
+	 * without an end anchor and catch any longer URL.
+	 *
+	 * @return void
+	 */
+	public function testOptionalParamFollowedBySegmentIsAnchored(): void
+	{
+		$route = $this->route('/api/post/:id?/edit');
+
+		$this->assertEquals((object)['id' => '7'], $this->dispatch($route, '/api/post/7/edit'));
+		$this->assertTrue($route->match('/api/post/edit', 'GET'));
+		$this->assertFalse($route->match('/api/post/7/edit/delete', 'GET'));
+		$this->assertFalse($route->match('/api/post/7/other-edit', 'GET'));
+		$this->assertFalse($route->match('/api/post/7', 'GET'));
+	}
+
+	/**
+	 * A trailing slash after an optional parameter must not turn the
+	 * route into a prefix match.
+	 *
+	 * @return void
+	 */
+	public function testTrailingSlashAfterOptionalParamIsAnchored(): void
+	{
+		$route = $this->route('/api/post/:id?/');
+
+		$this->assertEquals((object)['id' => '7'], $this->dispatch($route, '/api/post/7'));
+		$this->assertTrue($route->match('/api/post', 'GET'));
+		$this->assertFalse($route->match('/api/post/7/comments', 'GET'));
+	}
+
+	/**
+	 * A dotted parameter matches one segment ending in the suffix.
+	 *
+	 * @return void
+	 */
+	public function testDottedParamIsAnchoredAndKeepsSuffix(): void
+	{
+		$route = $this->route('/files/:name.json');
+
+		$this->assertEquals((object)['name' => 'report.json'], $this->dispatch($route, '/files/report.json'));
+		$this->assertFalse($route->match('/files/report.json/../../secret', 'GET'));
+		$this->assertFalse($route->match('/files/report.txt', 'GET'));
+		$this->assertFalse($route->match('/files/a/b.json', 'GET'));
+	}
+
+	/**
+	 * Two optional parameters in a row.
+	 *
+	 * @return void
+	 */
+	public function testConsecutiveOptionalParams(): void
+	{
+		$route = $this->route('/a/:id?/:sub?');
+
+		$this->assertEquals((object)['id' => '1', 'sub' => '2'], $this->dispatch($route, '/a/1/2'));
+		$this->assertEquals((object)['id' => '1'], $this->dispatch($route, '/a/1'));
+		$this->assertTrue($route->match('/a', 'GET'));
+		$this->assertFalse($route->match('/a/1/2/3', 'GET'));
+	}
+
+	/**
+	 * A wildcard suffix inside a segment still matches any tail.
+	 *
+	 * @return void
+	 */
+	public function testSegmentWildcardSuffixMatchesTail(): void
+	{
+		$route = $this->route('/api/developer/migration*');
+
+		$this->assertTrue($route->match('/api/developer/migration', 'GET'));
+		$this->assertTrue($route->match('/api/developer/migrations/up', 'GET'));
+		$this->assertFalse($route->match('/api/developer/table', 'GET'));
+	}
+
+	/**
+	 * Literal regex characters in a route are matched literally.
+	 *
+	 * @return void
+	 */
+	public function testLiteralDotsAreEscaped(): void
+	{
+		$route = $this->route('/api/v1.0/status');
+
+		$this->assertTrue($route->match('/api/v1.0/status', 'GET'));
+		$this->assertFalse($route->match('/api/v1x0/status', 'GET'));
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testWildcardMatchesAnyTail(): void
