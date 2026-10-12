@@ -59,6 +59,7 @@ final class PublicIpTest extends Test
 	{
 		$_SERVER = $this->serverBackup;
 		setEnv('trustedProxies', $this->trustedProxiesBackup);
+		setEnv('trustedProxyHeaders', null);
 		PublicIp::reset();
 
 		parent::tearDown();
@@ -161,14 +162,15 @@ final class PublicIpTest extends Test
 	}
 
 	/**
-	 * The existing trusted-proxy CIDR configuration path continues to
-	 * work for the (still supported) single-value X-Real-IP header.
+	 * The trusted-proxy CIDR configuration path works for the
+	 * single-value X-Real-IP header once it is opted into.
 	 *
 	 * @return void
 	 */
 	public function testTrustedProxyCidrStillResolvesRealIpHeader(): void
 	{
 		setEnv('trustedProxies', ['10.0.0.0/8']);
+		setEnv('trustedProxyHeaders', ['X-Real-IP', 'X-Forwarded-For']);
 
 		$_SERVER['REMOTE_ADDR'] = '10.1.2.3';
 		$_SERVER['HTTP_X_REAL_IP'] = '198.51.100.42';
@@ -194,15 +196,15 @@ final class PublicIpTest extends Test
 	}
 
 	/**
-	 * CF-Connecting-IP takes priority over X-Forwarded-For when both
-	 * are present and the proxy is trusted (pre-existing header
-	 * priority, unaffected by the algorithm change).
+	 * When configured first, CF-Connecting-IP takes priority over
+	 * X-Forwarded-For (headers are tried in the configured order).
 	 *
 	 * @return void
 	 */
 	public function testCloudflareHeaderTakesPriorityOverForwardedFor(): void
 	{
 		setEnv('trustedProxies', ['10.0.0.1']);
+		setEnv('trustedProxyHeaders', ['CF-Connecting-IP', 'X-Forwarded-For']);
 
 		$_SERVER['REMOTE_ADDR'] = '10.0.0.1';
 		$_SERVER['HTTP_CF_CONNECTING_IP'] = '198.51.100.99';

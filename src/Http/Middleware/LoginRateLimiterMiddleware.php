@@ -22,6 +22,16 @@ class LoginRateLimiterMiddleware
 	private const ATTEMPT_LIMIT = 10;
 
 	/**
+	 * Maximum login attempts per account per hour, from any IP.
+	 *
+	 * Bounds password guessing spread across many addresses (botnets,
+	 * rotating proxies), which the per-IP limit alone cannot see.
+	 *
+	 * @var int
+	 */
+	private const ACCOUNT_ATTEMPT_LIMIT = 100;
+
+	/**
 	 * Handles login rate limiting.
 	 *
 	 * @param Request $request The incoming request.
@@ -31,6 +41,13 @@ class LoginRateLimiterMiddleware
 	public function handle(Request $request, callable $next): mixed
 	{
 		RateLimiter::check($this->getLimit($request));
+
+		$accountLimit = $this->getAccountLimit($request);
+		if ($accountLimit !== null)
+		{
+			RateLimiter::check($accountLimit);
+		}
+
 		return $next($request);
 	}
 
@@ -49,5 +66,24 @@ class LoginRateLimiterMiddleware
 	{
 		$rateLimitKey = $request->input('username') . ':' . $request->ip();
 		return Limit::perMinute(self::ATTEMPT_LIMIT)->by($rateLimitKey)->failClosed();
+	}
+
+	/**
+	 * Configures the per-account limit (independent of client IP), or
+	 * null when the request names no account.
+	 *
+	 * @param Request $request The incoming request.
+	 * @return Limit|null
+	 */
+	protected function getAccountLimit(Request $request): ?Limit
+	{
+		$username = $request->input('username');
+		if (!is_string($username) || trim($username) === '')
+		{
+			return null;
+		}
+
+		$key = 'login-account:' . hash('sha256', strtolower(trim($username)));
+		return Limit::perHour(self::ACCOUNT_ATTEMPT_LIMIT)->by($key)->failClosed();
 	}
 }
