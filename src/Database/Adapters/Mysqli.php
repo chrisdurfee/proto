@@ -326,7 +326,24 @@ class Mysqli extends Adapter
 	}
 
 	/**
+	 * Gets the savepoint name for a nesting depth.
+	 *
+	 * @param int $level The outer transaction level the savepoint sits in.
+	 * @return string
+	 */
+	protected function getSavepointName(int $level) : string
+	{
+		return 'proto_sp_' . $level;
+	}
+
+	/**
 	 * Begins a database transaction.
+	 *
+	 * When a transaction is already open (e.g. a test's wrapping
+	 * transaction, or a caller's unit of work), MySQL would implicitly
+	 * COMMIT it on a second START TRANSACTION. Nested calls therefore
+	 * open a SAVEPOINT instead, so inner commit/rollback never ends the
+	 * outer transaction.
 	 *
 	 * @return bool True on success, false on failure.
 	 */
@@ -335,6 +352,16 @@ class Mysqli extends Adapter
 		if (!$this->connected)
 		{
 			return false;
+		}
+
+		if ($this->transactionLevel > 0)
+		{
+			$result = (bool)$this->connection->query('SAVEPOINT ' . $this->getSavepointName($this->transactionLevel));
+			if ($result)
+			{
+				$this->transactionLevel++;
+			}
+			return $this->checkResult($result);
 		}
 
 		$result = $this->connection->begin_transaction();
@@ -403,6 +430,17 @@ class Mysqli extends Adapter
 			return false;
 		}
 
+		// Nested: release the savepoint; the outer transaction stays open.
+		if ($this->transactionLevel > 1)
+		{
+			$result = (bool)$this->connection->query('RELEASE SAVEPOINT ' . $this->getSavepointName($this->transactionLevel - 1));
+			if ($result)
+			{
+				$this->transactionLevel--;
+			}
+			return $this->checkResult($result);
+		}
+
 		$result = $this->connection->commit();
 		if ($result && $this->transactionLevel > 0)
 		{
@@ -421,6 +459,19 @@ class Mysqli extends Adapter
 		if (!$this->connected)
 		{
 			return false;
+		}
+
+		// Nested: undo only the inner unit of work.
+		if ($this->transactionLevel > 1)
+		{
+			$name = $this->getSavepointName($this->transactionLevel - 1);
+			$result = (bool)$this->connection->query('ROLLBACK TO SAVEPOINT ' . $name);
+			if ($result)
+			{
+				$this->connection->query('RELEASE SAVEPOINT ' . $name);
+				$this->transactionLevel--;
+			}
+			return $this->checkResult($result);
 		}
 
 		$result = $this->connection->rollback();
