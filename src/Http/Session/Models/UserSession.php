@@ -82,4 +82,41 @@ class UserSession extends Model
 					->where('data IS NULL')
 					->fetch();
 	}
+
+	/**
+	 * Deletes up to `$limit` sessions not updated in the last 6 months.
+	 *
+	 * @param int $limit Maximum rows to delete in this batch.
+	 * @return int Rows deleted (0 when none or on failure).
+	 */
+	public function deleteExpiredSessions(int $limit = 1000): int
+	{
+		$expirationDate = date('Y-m-d H:i:s', strtotime("-6 months"));
+		$deleted = $this->storage
+					->table()
+					->delete()
+					->where('updated_at < ?')
+					->limit(max(1, $limit))
+					->executeAffected([$expirationDate]);
+
+		return is_int($deleted) ? $deleted : 0;
+	}
+
+	/**
+	 * Deletes up to `$limit` sessions that hold no data.
+	 *
+	 * @param int $limit Maximum rows to delete in this batch.
+	 * @return int Rows deleted (0 when none or on failure).
+	 */
+	public function deleteEmptySessions(int $limit = 1000): int
+	{
+		$deleted = $this->storage
+					->table()
+					->delete()
+					->where('data IS NULL')
+					->limit(max(1, $limit))
+					->executeAffected();
+
+		return is_int($deleted) ? $deleted : 0;
+	}
 }

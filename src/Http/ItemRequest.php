@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Http;
 
-use Proto\API\Validator;
+use Proto\Api\Validator;
 
 /**
  * Class ItemRequest

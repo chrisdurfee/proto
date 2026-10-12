@@ -15,28 +15,56 @@ use Proto\Http\Session\Models\UserSession;
 class CleanUpSessionRoutine extends Routine
 {
 	/**
+	 * Rows deleted per statement, so a large backlog never holds a long
+	 * table lock.
+	 *
+	 * @var int
+	 */
+	protected const BATCH_SIZE = 1000;
+
+	/**
+	 * Upper bound on batches per run.
+	 *
+	 * @var int
+	 */
+	protected const MAX_BATCHES = 100;
+
+	/**
 	 * Performs the routine process.
+	 *
+	 * Deletes expired and empty sessions in bounded batches. (This used
+	 * to call the instance finders statically, which fatals, and then
+	 * removed one row per query.)
 	 *
 	 * @return void
 	 */
 	protected function process(): void
 	{
-		// Remove expired sessions
-		$expiredSessions = UserSession::getExpiredSessions();
-		foreach ($expiredSessions as $sessionId)
+		$sessions = new UserSession();
+
+		$this->drain(fn(): int => $sessions->deleteExpiredSessions(static::BATCH_SIZE));
+		$this->drain(fn(): int => $sessions->deleteEmptySessions(static::BATCH_SIZE));
+	}
+
+	/**
+	 * Runs a batch delete until a batch comes back short.
+	 *
+	 * @param callable(): int $deleteBatch
+	 * @return int Total rows deleted.
+	 */
+	protected function drain(callable $deleteBatch): int
+	{
+		$total = 0;
+		for ($i = 0; $i < static::MAX_BATCHES; $i++)
 		{
-			UserSession::remove((object) [
-				'id' => $sessionId,
-			]);
+			$deleted = $deleteBatch();
+			$total += $deleted;
+			if ($deleted < static::BATCH_SIZE)
+			{
+				break;
+			}
 		}
 
-		// Remove empty sessions
-		$emptySessions = UserSession::getEmptySessions();
-		foreach ($emptySessions as $sessionId)
-		{
-			UserSession::remove((object) [
-				'id' => $sessionId,
-			]);
-		}
+		return $total;
 	}
 }
