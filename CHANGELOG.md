@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.39] - 2026-10-12
+
+### Security
+- **`lastCursor` no longer leaks secret columns** — the compound cursor was built from raw rows (before `$fieldsBlacklist` is stripped), so `?orderBy={"password":"asc"}` returned the password hash (or any token/secret column) of the last row in `lastCursor`, and walking `offset` dumped every row. A sort on a sensitive column now falls back to the plain id cursor.
+- **Client sort/date/group columns are allow-listed** — `orderBy`, `groupBy` and `dates.field` only ran identifier sanitizing, so a client could sort or `BETWEEN`-filter on `reset_token`, `password`, etc. and recover values by binary search (a comparison oracle, also reachable through a forged compound cursor). `ApiController::getAllInputs()` now drops keys outside `requestSortColumns()`; `ResourceController` supplies the new `Model::sortableFields()` (fields minus blacklisted, secret and PII columns — audit timestamps and `id` stay sortable; override with `protected static ?array $sortableFields`). `dates.start` / `dates.end` must be plain dates or datetimes.
+- **`whereBetween()` / `whereJson()` bind their values** — the raw query builder spliced both into the SQL string. Through the table builder they are now bound; the raw `Query` methods reject non-numeric inline operands (pass `?` and bind) and validate JSON paths.
+
+### Fixed
+- **Uncaught errors return JSON** — `Router::activateRoute()` only caught `HttpTerminationException`, so any other exception produced a blank 500 (tracking off, and `error_reporting(0)` hid it from the PHP log) or a **200 with an empty body** (tracking on). It now renders `{"success":false,"message":…}` with 500, or 503 + `Retry-After` when the database is unreachable. Messages, SQL, paths and traces only appear in dev. The exception and fatal-shutdown handlers are installed even when `errorTracking` is off.
+- **Database outage is a typed error** — `AdapterProxy::fetch()` returned the adapter's `null` from an `array` method (a `TypeError` on every read when MySQL was down). It throws `Proto\Database\DatabaseUnavailableException` instead, rendered as a 503.
+- **Error tracker no longer echoes its payload** — when writing the error-log row failed, the 500 body contained the raw message, file, trace, URL and client IP. That now goes to the server log; the client gets a generic message outside dev.
+- **Production keeps logging** — non-dev `Error::enable(false)` reports `E_ALL` minus deprecations with `display_errors=0`, `log_errors=1` (was `error_reporting(0)`), and `errorHandler` honors `error_reporting()` / `@`.
+- **Redis read timeout** — `RedisDriver` sets `OPT_READ_TIMEOUT` (`cache.connection.readTimeout`, default 1s) and marks itself offline after a `RedisException`, so a hung Redis costs one timeout per request instead of up to 60s per call.
+- **INCR failure no longer bypasses fail-closed limits** — `incr()` returns 0 when Redis drops mid-request, which `RateLimiter` read as "zero requests". It is now treated as an outage, so `failClosed()` limits (login, reset, OTP) use the fallback counter.
+- **Paging is clamped** — `limit` is kept in `[1, maxLimit]` and `offset` ≥ 0 (a negative limit produced a SQL error); `lastCursor` / `since` must be scalars; a client `groupBy` no longer throws a `TypeError`.
+- **Lazy connect for transactions** — `Mysqli::beginTransaction()` returned false (and the following writes ran in autocommit) when it was the first statement of a request.
+
+### Upgrade notes
+- A client `orderBy` / `dates.field` naming a column outside `sortableFields()` is now ignored. Models that need to sort on such a column (rare) can list it in `$sortableFields`.
+- Code calling the raw `Query::whereBetween()` with string values, or `Query::whereJson()` with a value, must pass `?` and bind (or use the table builder).
+
 ## [2.0.38] - 2026-10-11
 
 ### Security
