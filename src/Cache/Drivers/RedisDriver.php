@@ -420,6 +420,22 @@ class RedisDriver extends Driver
 	}
 
 	/**
+	 * Atomically deletes a key only while it still holds `$value`.
+	 *
+	 * @param string $key
+	 * @param string $value
+	 * @return bool True when the key was deleted.
+	 */
+	public function deleteIfEquals(string $key, string $value): bool
+	{
+		return $this->attempt(function (object $db) use ($key, $value): bool
+		{
+			$script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+			return (int)$db->eval($script, [$key, $value], 1) === 1;
+		}, false);
+	}
+
+	/**
 	 * Publishes a message to a Redis channel.
 	 *
 	 * @param string $channel The channel name.

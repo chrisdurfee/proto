@@ -296,4 +296,18 @@ class Cache extends Singleton
 		$driver = static::driver();
 		return $driver ? $driver->add($key, $value, $expire) : false;
 	}
+
+	/**
+	 * Deletes a key only while it still holds `$value`, so a lock is
+	 * only released by the caller that took it.
+	 *
+	 * @param string $key The cache key.
+	 * @param string $value The owner token stored at acquire time.
+	 * @return bool True when the key was deleted.
+	 */
+	public static function deleteIfEquals(string $key, string $value): bool
+	{
+		$driver = static::driver();
+		return $driver ? $driver->deleteIfEquals($key, $value) : false;
+	}
 }

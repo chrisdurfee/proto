@@ -194,4 +194,23 @@ abstract class Driver
 		$this->set($key, $value, $expire);
 		return true;
 	}
+
+	/**
+	 * Deletes a key only while it still holds `$value` (lock release by
+	 * its owner). The default is check-then-delete; drivers with atomic
+	 * scripting override it.
+	 *
+	 * @param string $key
+	 * @param string $value
+	 * @return bool True when the key was deleted.
+	 */
+	public function deleteIfEquals(string $key, string $value): bool
+	{
+		if ($this->get($key) !== $value)
+		{
+			return false;
+		}
+
+		return $this->delete($key);
+	}
 }

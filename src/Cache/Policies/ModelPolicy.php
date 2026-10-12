@@ -490,17 +490,40 @@ class ModelPolicy extends Policy
 	 */
 	protected function acquireLock(string $key): bool
 	{
-		return Cache::add($key . ':lock', '1', $this->lockSeconds);
+		$token = bin2hex(random_bytes(8));
+		if (!Cache::add($key . ':lock', $token, $this->lockSeconds))
+		{
+			return false;
+		}
+
+		$this->lockTokens[$key] = $token;
+		return true;
 	}
 
 	/**
+	 * Releases a lock only if this caller still owns it: once the lock
+	 * expired (slow compute) another request may hold it, and deleting
+	 * it blindly let a third request stampede the backend.
+	 *
 	 * @param string $key
 	 * @return void
 	 */
 	protected function releaseLock(string $key): void
 	{
-		Cache::delete($key . ':lock');
+		$token = $this->lockTokens[$key] ?? null;
+		unset($this->lockTokens[$key]);
+		if ($token !== null)
+		{
+			Cache::deleteIfEquals($key . ':lock', $token);
+		}
 	}
+
+	/**
+	 * Owner tokens of the locks this instance holds, by cache key.
+	 *
+	 * @var array<string, string>
+	 */
+	protected array $lockTokens = [];
 
 	/**
 	 * In-process fallback when Cache::incr is unavailable (no driver / dev).
