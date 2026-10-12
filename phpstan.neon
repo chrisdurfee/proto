@@ -13,7 +13,6 @@ parameters:
 			# Sample code and ad-hoc scripts, not framework code.
 			- src/Tests/Examples
 			- src/Jobs/Examples
-			- src/Database/Migrations/test.php
 			- src/Http/ServerEvents/Example
 			- src/Http/Socket/Example
 	tmpDir: .phpstan-cache
