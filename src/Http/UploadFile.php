@@ -40,7 +40,18 @@ class UploadFile
 		'mp3' => 'audio/mpeg',
 		'woff' => 'font/woff',
 		'woff2' => 'font/woff2',
+		'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+		'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 	];
+
+	/**
+	 * Office Open XML files are zip containers; some libmagic builds
+	 * report them as application/zip.
+	 *
+	 * @var array<int, string>
+	 */
+	protected const OOXML_EXTENSIONS = ['docx', 'xlsx', 'pptx'];
 
 	/**
 	 * Holds the newly generated unique file name.
@@ -203,6 +214,10 @@ class UploadFile
 		if ($mime === '' || $mime === 'text/plain' || $mime === 'application/octet-stream')
 		{
 			$mime = static::mimeFromExtension($this->getOriginalName()) ?: $mime;
+		}
+		elseif ($mime === 'application/zip' && in_array(strtolower(pathinfo($this->getOriginalName(), PATHINFO_EXTENSION)), self::OOXML_EXTENSIONS, true))
+		{
+			$mime = static::mimeFromExtension($this->getOriginalName());
 		}
 
 		return $this->mime = $mime;

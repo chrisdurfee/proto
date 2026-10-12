@@ -73,6 +73,50 @@ final class FileValidatorTest extends Test
 	}
 
 	/**
+	 * CSV files (finfo: text/plain) still pass a CSV allow-list now that
+	 * the declared type is ignored.
+	 *
+	 * @return void
+	 */
+	public function testCsvPassesCsvAllowList(): void
+	{
+		$result = FileValidator::validate($this->upload('people.csv', 'text/csv', "name,email\nAda,ada@example.com\n"), null, ['text/csv']);
+		$this->assertTrue($result['valid'], implode('; ', $result['errors']));
+	}
+
+	/**
+	 * A docx (zip container) passes a docx allow-list even when libmagic
+	 * reports application/zip.
+	 *
+	 * @return void
+	 */
+	public function testDocxZipContainerPassesDocxAllowList(): void
+	{
+		if (!class_exists(\ZipArchive::class))
+		{
+			$this->markTestSkipped('ZipArchive not available.');
+		}
+
+		$path = (string)tempnam(sys_get_temp_dir(), 'docx');
+		$zip = new \ZipArchive();
+		$zip->open($path, \ZipArchive::OVERWRITE);
+		$zip->addFromString('word/document.xml', '<w:document/>');
+		$zip->close();
+		$this->uploadFiles[] = $path;
+
+		$mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+		$result = FileValidator::validate([
+			'name' => 'report.docx',
+			'type' => $mime,
+			'tmp_name' => $path,
+			'error' => UPLOAD_ERR_OK,
+			'size' => (int)filesize($path)
+		], null, [$mime]);
+
+		$this->assertTrue($result['valid'], implode('; ', $result['errors']));
+	}
+
+	/**
 	 * @param string $name
 	 * @param string $declaredType
 	 * @param string $contents
