@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Error
 {
+	use Proto\Database\DatabaseUnavailableException;
 	use Proto\Error\Models\ErrorLog;
 	use Proto\Http\Request;
 	use Proto\Http\Response;
@@ -57,6 +58,20 @@ namespace Proto\Error
 		 * @var bool
 		 */
 		private static bool $isHandling = false;
+
+		/**
+		 * Whether error details may be shown to the client (dev only).
+		 *
+		 * @var bool
+		 */
+		private static bool $displayErrors = false;
+
+		/**
+		 * Whether the fatal-error shutdown handler has been registered.
+		 *
+		 * @var bool
+		 */
+		private static bool $shutdownHandlerInstalled = false;
 
 		/**
 		 * Throttle window in seconds for identical errors.
@@ -156,9 +171,12 @@ namespace Proto\Error
 		 */
 		protected static function initializeTracking(bool $silent): void
 		{
-			static::$trackingEnabled = env('errorTracking');
+			static::$trackingEnabled = (bool)env('errorTracking');
 			if (!static::$trackingEnabled)
 			{
+				// No database logging, but uncaught errors must still get a
+				// JSON 500 and reach the PHP error log.
+				static::installResponseHandlers();
 				return;
 			}
 
@@ -185,6 +203,7 @@ namespace Proto\Error
 		 */
 		protected static function setErrorReporting(bool $displayErrors): void
 		{
+			static::$displayErrors = $displayErrors;
 			if ($displayErrors)
 			{
 				error_reporting(E_ALL);
@@ -193,9 +212,15 @@ namespace Proto\Error
 				return;
 			}
 
-			error_reporting(0);
+			/**
+			 * Never display errors outside dev, but keep reporting and
+			 * logging them: `error_reporting(0)` used to hide every
+			 * warning and fatal from the PHP error log as well.
+			 */
+			error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 			ini_set('display_errors', '0');
 			ini_set('display_startup_errors', '0');
+			ini_set('log_errors', '1');
 		}
 
 		/**
@@ -214,6 +239,13 @@ namespace Proto\Error
 			int $errline
 		): bool
 		{
+			// Honor error_reporting() (and the @ operator) so notices and
+			// deprecations excluded in production do not become log rows.
+			if ($errno > 0 && !(error_reporting() & $errno))
+			{
+				return false;
+			}
+
 			if (!static::shouldHandle())
 			{
 				return true;
@@ -245,15 +277,36 @@ namespace Proto\Error
 		}
 
 		/**
-		 * Handles exception logging.
+		 * Handles an uncaught exception: reports it, then renders a
+		 * generic JSON error response (503 when the database is down,
+		 * otherwise 500). Details are only included in dev.
 		 *
 		 * @param \Throwable $exception The exception object.
 		 * @return bool Whether the exception was handled.
 		 */
 		public static function exceptionHandler(\Throwable $exception): bool
 		{
+			static::reportException($exception);
+			static::renderServerError($exception);
+			return true;
+		}
+
+		/**
+		 * Reports an exception without producing any output: writes it to
+		 * the error log table when tracking is on, otherwise to the PHP
+		 * error log.
+		 *
+		 * @param \Throwable $exception The exception object.
+		 * @return bool Whether the exception was handled.
+		 */
+		public static function reportException(\Throwable $exception): bool
+		{
 			if (!static::shouldHandle())
 			{
+				if (!static::$isHandling && PHP_SAPI !== 'cli')
+				{
+					error_log(static::describeException($exception));
+				}
 				return true;
 			}
 
@@ -276,6 +329,102 @@ namespace Proto\Error
 			finally
 			{
 				static::$isHandling = false;
+			}
+		}
+
+		/**
+		 * One-line, path-redacted description of an exception for logs.
+		 *
+		 * @param \Throwable $exception
+		 * @return string
+		 */
+		protected static function describeException(\Throwable $exception): string
+		{
+			return 'Uncaught ' . $exception::class . ': '
+				. static::sanitizeErrorMessage($exception->getMessage())
+				. ' in ' . static::redactPath($exception->getFile()) . ':' . $exception->getLine();
+		}
+
+		/**
+		 * Renders a generic JSON error response for an unhandled failure.
+		 *
+		 * Outside dev the body never includes the exception message, SQL,
+		 * paths, or traces. In CLI processes (workers, realtime server,
+		 * tests) a one-line description goes to STDERR instead.
+		 *
+		 * @param \Throwable|null $exception The failure, or null for a fatal error.
+		 * @return void
+		 */
+		public static function renderServerError(?\Throwable $exception = null): void
+		{
+			if (static::isCli())
+			{
+				if ($exception !== null && defined('STDERR'))
+				{
+					fwrite(STDERR, static::describeException($exception) . PHP_EOL);
+				}
+				return;
+			}
+
+			if (static::headersSent())
+			{
+				return;
+			}
+
+			static::clearOutputBuffers();
+
+			$unavailable = $exception instanceof DatabaseUnavailableException;
+			$status = $unavailable ? 503 : 500;
+			$message = $unavailable
+				? 'The service is temporarily unavailable. Please try again shortly.'
+				: 'An unexpected error occurred. Please try again.';
+
+			if (static::$displayErrors && $exception !== null)
+			{
+				$message .= ' [' . $exception::class . ': ' . $exception->getMessage() . ']';
+			}
+
+			http_response_code($status);
+			header('Content-Type: application/json');
+			header('Cache-Control: no-store');
+			if ($unavailable)
+			{
+				header('Retry-After: 5');
+			}
+
+			echo json_encode(['success' => false, 'message' => $message]);
+		}
+
+		/**
+		 * Whether this is a CLI process (worker, realtime server, tests).
+		 *
+		 * @return bool
+		 */
+		protected static function isCli(): bool
+		{
+			return PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg';
+		}
+
+		/**
+		 * Whether response headers have already gone out.
+		 *
+		 * @return bool
+		 */
+		protected static function headersSent(): bool
+		{
+			return headers_sent();
+		}
+
+		/**
+		 * Discards partial output so the error body is valid JSON.
+		 *
+		 * @return void
+		 */
+		protected static function clearOutputBuffers(): void
+		{
+			while (ob_get_level() > 0)
+			{
+				ob_end_clean();
 			}
 		}
 
@@ -695,10 +844,19 @@ namespace Proto\Error
 		 */
 		protected static function outputErrorData(object $data): void
 		{
-			Response::error(
-				'Error tracker error: ' . json_encode($data),
-				500
-			);
+			/**
+			 * The error data holds the raw message (SQL text, credentials
+			 * in driver errors), file paths, the URL, and the client IP.
+			 * It goes to the server log only; the client gets a generic
+			 * body unless this is dev.
+			 */
+			error_log('Error tracker could not write the error log row: ' . json_encode($data));
+
+			$message = static::$displayErrors
+				? 'Error tracker error: ' . json_encode($data)
+				: 'An unexpected error occurred. Please try again.';
+
+			Response::error($message, 500);
 
 			die();
 		}
@@ -745,7 +903,25 @@ namespace Proto\Error
 			}
 
 			static::setErrorHandler();
+			static::installResponseHandlers();
+		}
+
+		/**
+		 * Installs the exception and fatal-shutdown handlers that turn an
+		 * unhandled failure into a JSON error response. The shutdown
+		 * function is registered once per process.
+		 *
+		 * @return void
+		 */
+		protected static function installResponseHandlers(): void
+		{
 			static::setExceptionHandler();
+			if (static::$shutdownHandlerInstalled)
+			{
+				return;
+			}
+
+			static::$shutdownHandlerInstalled = true;
 			static::setShutdownHandler();
 		}
 
@@ -764,17 +940,17 @@ namespace Proto\Error
 					return;
 				}
 
-				if (!static::shouldHandle())
+				if (static::shouldHandle())
 				{
-					return;
+					static::errorHandler(
+						$err['type'],
+						$err['message'],
+						$err['file'],
+						$err['line']
+					);
 				}
 
-				static::errorHandler(
-					$err['type'],
-					$err['message'],
-					$err['file'],
-					$err['line']
-				);
+				static::renderServerError();
 			});
 		}
 

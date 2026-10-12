@@ -318,6 +318,13 @@ class Headers
 	 */
 	public static function render(array $headers): void
 	{
+		// Output already started (streamed response, CLI, tests): header()
+		// would only emit "headers already sent" warnings.
+		if (headers_sent())
+		{
+			return;
+		}
+
 		foreach ($headers as $name => $value)
 		{
 			header("{$name}: {$value}");

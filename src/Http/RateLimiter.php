@@ -237,6 +237,11 @@ class RateLimiter
 	 */
 	private static function setRateHeaders(Limit $limit, int $requests): void
 	{
+		if (headers_sent())
+		{
+			return;
+		}
+
 		$maxRequests = $limit->getRequestLimit();
 		header('Retry-After: ' . $limit->getTimeLimit());
 		header('X-RateLimit-Limit: ' . $maxRequests);

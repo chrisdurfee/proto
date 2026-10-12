@@ -2,6 +2,7 @@
 namespace Proto\Http\Router;
 
 use Proto\Http\Middleware\RateLimiterMiddleware;
+use Proto\Error\Error;
 use Proto\Http\HttpTerminationException;
 use Proto\Http\Limit;
 
@@ -686,6 +687,16 @@ class Router
 		catch (HttpTerminationException $termination)
 		{
 			$termination->respond();
+		}
+		catch (\Throwable $exception)
+		{
+			/**
+			 * Any other failure gets a generic JSON 500 (503 when the
+			 * database is down) instead of a blank body or a 200 with
+			 * no content. Details only appear in dev.
+			 */
+			Error::exceptionHandler($exception);
+			exit;
 		}
 
 		if ($result !== null)

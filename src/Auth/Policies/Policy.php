@@ -117,7 +117,9 @@ abstract class Policy
 	 */
 	protected function validateTypeProperty(): void
 	{
-		if ($this->type === null)
+		// Anonymous classes (tests, inline policies) infer a type from
+		// their generated name, which is never camelCase.
+		if ($this->type === null || (new \ReflectionClass($this))->isAnonymous())
 		{
 			return;
 		}
