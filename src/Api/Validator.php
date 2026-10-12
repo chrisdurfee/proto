@@ -183,7 +183,23 @@ class Validator
 		// Skip sanitization for image and file uploads
 		if ($type[0] !== 'image' && $type[0] !== 'file')
 		{
+			// Arrays/objects (e.g. name[]=x or a JSON object) cannot satisfy
+			// a scalar rule; the sanitizers' typed signatures would throw.
+			if (!is_scalar($value))
+			{
+				$this->addError("The value {$key} is not correct.", $key, 'The value is not valid.');
+				return false;
+			}
+
 			$value = $this->sanitizeValue($key, $value, $type[0]);
+
+			// A sanitizer returns null when nothing valid remains
+			// (e.g. "abc" for int, "maybe" for bool).
+			if ($value === null)
+			{
+				$this->addError("The value {$key} is not correct.", $key, 'The value is not valid.');
+				return false;
+			}
 		}
 
 		return $this->validateByType($key, $value, $type, $details);
@@ -240,7 +256,9 @@ class Validator
 			return $value;
 		}
 
-		$value = Sanitize::$method($value);
+		// JSON bodies carry ints/floats/bools; the sanitizers take strings
+		// and this file is strict_types, so normalise scalars first.
+		$value = Sanitize::$method(is_string($value) ? $value : (string)$value);
 		$this->setValue($key, $value);
 		return $value;
 	}
@@ -291,7 +309,7 @@ class Validator
 		$limit = $type[1];
 		if ($limit > -1)
 		{
-			$result = (strlen($value) <= $limit);
+			$result = (strlen((string)$value) <= (int)$limit);
 			if ($result === false)
 			{
 				$this->addError("The value {$key} is over the max size.", $key, "Must be {$limit} characters or fewer.");

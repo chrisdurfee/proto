@@ -81,7 +81,8 @@ class Sanitize extends Filter
 	public static function int(int|string|null $int): ?int
 	{
 		$result = self::filter($int, FILTER_SANITIZE_NUMBER_INT);
-		return ($result !== null) ? (int)$result : null;
+		// "abc" sanitizes to "" (and "-" to "-"); (int) would turn that into 0.
+		return is_numeric($result) ? (int)$result : null;
 	}
 
 	/**
@@ -93,7 +94,7 @@ class Sanitize extends Filter
 	public static function float(float|string|null $number): ?float
 	{
 		$result = filter_var($number, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-		return ($result !== false) ? (float)$result : null;
+		return is_numeric($result) ? (float)$result : null;
 	}
 
 	/**
