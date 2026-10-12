@@ -210,4 +210,61 @@ final class PublicIpTest extends Test
 
 		$this->assertSame('198.51.100.99', PublicIp::get());
 	}
+
+	/**
+	 * A trusted hop that passes CF-Connecting-IP through untouched
+	 * (traffic that bypassed Cloudflare) must not let the client pick
+	 * its IP: only X-Forwarded-For is trusted by default.
+	 *
+	 * @return void
+	 */
+	public function testPassThroughHeadersAreIgnoredByDefault(): void
+	{
+		setEnv('trustedProxies', ['10.0.0.1']);
+		setEnv('trustedProxyHeaders', null);
+		$_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+		$_SERVER['HTTP_CF_CONNECTING_IP'] = '9.9.9.9';
+		$_SERVER['HTTP_X_REAL_IP'] = '8.8.8.8';
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.7';
+
+		$this->assertSame('198.51.100.7', PublicIp::get());
+	}
+
+	/**
+	 * An explicitly configured header list is honored in order.
+	 *
+	 * @return void
+	 */
+	public function testConfiguredProxyHeaderIsUsed(): void
+	{
+		setEnv('trustedProxies', ['10.0.0.1']);
+		setEnv('trustedProxyHeaders', ['CF-Connecting-IP']);
+		$_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+		$_SERVER['HTTP_CF_CONNECTING_IP'] = '198.51.100.9';
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.2.3.4';
+
+		try
+		{
+			$this->assertSame('198.51.100.9', PublicIp::get());
+		}
+		finally
+		{
+			setEnv('trustedProxyHeaders', null);
+		}
+	}
+
+	/**
+	 * IPv6 proxy ranges (e.g. Cloudflare's) are matched, so an IPv6 hop
+	 * is skipped instead of being reported as the client.
+	 *
+	 * @return void
+	 */
+	public function testIpv6TrustedRangesAreSkipped(): void
+	{
+		setEnv('trustedProxies', ['10.0.0.1', '2400:cb00::/32']);
+		$_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '2001:db8::7, 2400:cb00:2048:1::c629:d7a2';
+
+		$this->assertSame('2001:db8::7', PublicIp::get());
+	}
 }

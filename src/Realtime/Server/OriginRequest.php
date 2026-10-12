@@ -67,15 +67,32 @@ final class OriginRequest
 		// Pass-through headers (X-Real-IP, CF-Connecting-IP) are not
 		// forwarded: a client could set them when connecting directly.
 		$remoteIp = self::remoteIp($request->getClient()->getRemoteAddress()->toString());
-		if ($remoteIp !== '')
+		$forwardedFor = self::appendForwardedFor($headers['x-forwarded-for'] ?? null, $remoteIp);
+		if ($forwardedFor !== null)
 		{
-			$headers['x-forwarded-for'] = isset($headers['x-forwarded-for'])
-				? $headers['x-forwarded-for'] . ', ' . $remoteIp
-				: $remoteIp;
+			$headers['x-forwarded-for'] = $forwardedFor;
 		}
 
 		$uri = $request->getUri();
 		return new self($uri->getPath(), $uri->getQuery(), $headers);
+	}
+
+	/**
+	 * Appends the connecting address to an X-Forwarded-For chain.
+	 *
+	 * @param string|null $existing Header value the caller sent, if any.
+	 * @param string $remoteIp Address of the peer that connected to us.
+	 * @return string|null
+	 */
+	public static function appendForwardedFor(?string $existing, string $remoteIp): ?string
+	{
+		$existing = $existing !== null ? trim($existing) : '';
+		if ($remoteIp === '')
+		{
+			return $existing !== '' ? $existing : null;
+		}
+
+		return $existing !== '' ? $existing . ', ' . $remoteIp : $remoteIp;
 	}
 
 	/**

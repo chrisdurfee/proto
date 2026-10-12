@@ -171,6 +171,26 @@ final class RealtimeBridgeTest extends TestCase
 	}
 
 	/**
+	 * The realtime server must append its caller to X-Forwarded-For
+	 * (never pass a client's header through as-is) and must not
+	 * forward pass-through IP headers a client could set.
+	 *
+	 * @return void
+	 */
+	public function testForwardedForAppendsConnectingPeer(): void
+	{
+		$this->assertSame('1.2.3.4, 10.0.0.5', OriginRequest::appendForwardedFor('1.2.3.4', '10.0.0.5'));
+		$this->assertSame('10.0.0.5', OriginRequest::appendForwardedFor(null, '10.0.0.5'));
+		$this->assertSame('1.2.3.4', OriginRequest::appendForwardedFor('1.2.3.4', ''));
+		$this->assertNotContains('cf-connecting-ip', OriginRequest::FORWARDED_HEADERS);
+		$this->assertNotContains('x-real-ip', OriginRequest::FORWARDED_HEADERS);
+
+		$this->assertSame('10.0.0.5', OriginRequest::remoteIp('10.0.0.5:51234'));
+		$this->assertSame('2001:db8::1', OriginRequest::remoteIp('[2001:db8::1]:443'));
+		$this->assertSame('2001:db8::1', OriginRequest::remoteIp('2001:db8::1'));
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testConfigFromEnv(): void
