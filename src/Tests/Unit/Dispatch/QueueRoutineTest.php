@@ -71,13 +71,11 @@ final class QueueRoutineTest extends Test
 		]);
 
 		$routine = new FakeQueueRoutine($store);
-		$before = time();
 		$routine->run();
 
-		// third attempt failed: 60 * 2^2 = 240s
-		$next = strtotime($store->failed[0]['nextAttemptAt']);
-		$this->assertGreaterThanOrEqual($before + 240, $next);
-		$this->assertLessThanOrEqual(time() + 240, $next);
+		// third attempt failed: 60 * 2^2 = 240s, passed as a delay so the
+		// database computes the timestamp on its own clock
+		$this->assertSame(240, $store->failed[0]['nextAttemptAt']);
 
 		$this->assertSame(60, $routine->delayFor(1));
 		$this->assertSame(120, $routine->delayFor(2));

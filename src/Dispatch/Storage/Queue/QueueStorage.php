@@ -102,11 +102,15 @@ class QueueStorage extends Storage
 	 * @param int|string $id
 	 * @param string $agentId
 	 * @param int $maxAttempts
-	 * @param string $nextAttemptAt Y-m-d H:i:s
+	 * @param int|string $retryAfter Seconds from now (computed on the
+	 *        database clock, which claims compare against with NOW()), or a
+	 *        legacy Y-m-d H:i:s timestamp.
 	 * @return bool
 	 */
-	public function markFailed(int|string $id, string $agentId, int $maxAttempts, string $nextAttemptAt): bool
+	public function markFailed(int|string $id, string $agentId, int $maxAttempts, int|string $retryAfter): bool
 	{
+		$next = is_int($retryAfter) ? 'NOW() + INTERVAL ? SECOND' : '?';
+
 		// MySQL evaluates SET assignments left to right, so `status`
 		// must be computed before `attempts` is incremented.
 		$sql = $this->table()
@@ -114,11 +118,11 @@ class QueueStorage extends Storage
 			->setRaw('status = IF(attempts + 1 >= ?, "error", "pending")')
 			->setRaw('attempts = attempts + 1')
 			->setRaw('agent_id = NULL')
-			->setRaw('next_attempt_at = ?')
+			->setRaw('next_attempt_at = ' . $next)
 			->setRaw('updated_at = NOW()')
 			->where('id = ?', 'agent_id = ?');
 
-		return $this->execute($sql, [$maxAttempts, $nextAttemptAt, $id, $agentId]);
+		return $this->execute($sql, [$maxAttempts, $retryAfter, $id, $agentId]);
 	}
 
 	/**

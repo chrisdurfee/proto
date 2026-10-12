@@ -264,10 +264,12 @@ abstract class QueueRoutine extends Routine
 	protected function markFailed(object $item): bool
 	{
 		$attempt = ((int)($item->attempts ?? 0)) + 1;
-		$nextAttemptAt = date('Y-m-d H:i:s', time() + $this->getRetryDelay($attempt));
 
+		// Pass the delay, not a PHP timestamp: claims compare
+		// next_attempt_at with the database's NOW(), and PHP and MySQL
+		// time zones are not guaranteed to match.
 		$model = $this->getModel();
-		return (bool)$model->markFailed($item->id, $this->agentId, $this->maxAttempts, $nextAttemptAt);
+		return (bool)$model->markFailed($item->id, $this->agentId, $this->maxAttempts, $this->getRetryDelay($attempt));
 	}
 
 	/**
