@@ -435,12 +435,11 @@ abstract class ApiController extends Controller
 		}
 
 		$field = $dates->field ?? null;
-		$start = $dates->start ?? null;
-		$end = $dates->end ?? null;
+		$start = $this->normalizeDateBound($dates->start ?? null);
+		$end = $this->normalizeDateBound($dates->end ?? null);
 		if (
 			!is_string($field) || !Filter::isAllowedRequestColumn($field, $allowed)
-			|| !is_string($start) || !Filter::isSafeTimestamp($start)
-			|| !is_string($end) || !Filter::isSafeTimestamp($end)
+			|| $start === null || $end === null
 		)
 		{
 			return null;
@@ -451,6 +450,44 @@ abstract class ApiController extends Controller
 			'start' => $start,
 			'end' => $end
 		];
+	}
+
+	/**
+	 * Accepts a plain date/datetime as-is, or an ISO 8601 timestamp with
+	 * `Z` or a UTC offset (what `Date.prototype.toISOString()` sends),
+	 * converted to the app timezone as `Y-m-d H:i:s`. Anything else is
+	 * rejected (null).
+	 *
+	 * @param mixed $value
+	 * @return string|null
+	 */
+	protected function normalizeDateBound(mixed $value): ?string
+	{
+		if (!is_string($value))
+		{
+			return null;
+		}
+
+		if (Filter::isSafeTimestamp($value))
+		{
+			return $value;
+		}
+
+		if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:?\d{2})$/', $value))
+		{
+			return null;
+		}
+
+		try
+		{
+			$date = new \DateTimeImmutable($value);
+		}
+		catch (\Exception)
+		{
+			return null;
+		}
+
+		return $date->setTimezone(new \DateTimeZone(date_default_timezone_get()))->format('Y-m-d H:i:s');
 	}
 
 	/**

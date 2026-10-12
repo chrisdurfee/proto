@@ -132,6 +132,33 @@ final class ResourceControllerListModifiersTest extends Test
 	}
 
 	/**
+	 * ISO timestamps from JavaScript (Z or offset) are accepted and
+	 * converted to the app timezone.
+	 *
+	 * @return void
+	 */
+	public function testIsoTimestampsAreNormalized(): void
+	{
+		$saved = date_default_timezone_get();
+		date_default_timezone_set('UTC');
+		$_REQUEST = [
+			'dates' => json_encode(['field' => 'createdAt', 'start' => '2026-01-01T05:30:00.000Z', 'end' => '2026-01-02T00:00:00+02:00'])
+		];
+
+		try
+		{
+			$inputs = $this->controller()->getAllInputs(new Request());
+		}
+		finally
+		{
+			date_default_timezone_set($saved);
+		}
+
+		$this->assertSame('2026-01-01 05:30:00', $inputs->dates->start);
+		$this->assertSame('2026-01-01 22:00:00', $inputs->dates->end);
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testGroupByDropsSensitiveColumns(): void
