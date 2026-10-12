@@ -62,7 +62,7 @@ final class BoundConditionsTest extends TestCase
 		$proxy->whereBetween('a.created_at', "x' OR 1=1 -- ", '2026-01-01');
 
 		$this->assertStringContainsString('a.created_at BETWEEN ? AND ?', (string)$proxy);
-		$this->assertSame(["x' OR 1=1 -- ", '2026-01-01'], $proxy->getParams());
+		$this->assertSame(["x' OR 1=1 -- ", '2026-01-01'], $proxy->params());
 	}
 
 	/**
@@ -74,7 +74,7 @@ final class BoundConditionsTest extends TestCase
 		$proxy->whereJson('a.tags', ['id' => "1'"], '$.list');
 
 		$this->assertStringContainsString("JSON_CONTAINS(a.tags, ?, '$.list')", (string)$proxy);
-		$this->assertSame([json_encode(['id' => "1'"])], $proxy->getParams());
+		$this->assertSame([json_encode(['id' => "1'"])], $proxy->params());
 	}
 
 	/**
