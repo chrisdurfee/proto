@@ -232,9 +232,9 @@ try {
             break;
         }
 
-        // Process one job
-        Jobs::work($queueName, 1);
-        $processedCount++;
+        // Process one job (returns 0 immediately when none is available)
+        $processed = Jobs::work($queueName, 1);
+        $processedCount += $processed;
 
         // Check if we've reached max jobs
         if ($maxJobs > 0 && $processedCount >= $maxJobs) {
@@ -242,9 +242,11 @@ try {
             break;
         }
 
-        // Sleep between jobs (if configured)
-        $sleepTime = Jobs::queue()->getConfig()['sleep'] ?? 3;
-        sleep($sleepTime);
+        // Sleep only while the queue is empty
+        if ($processed === 0) {
+            $sleepTime = Jobs::queue()->getConfig()['sleep'] ?? 3;
+            sleep($sleepTime);
+        }
     }
 
     $duration = time() - $startTime;

@@ -149,21 +149,17 @@ class JobWorkerRoutine extends Routine
 		$startTime = time();
 
 		while ($this->maxJobs === 0 || $processedJobs < $this->maxJobs) {
-			// Check if there are jobs available
-			$driver = $this->queue->getDriver();
-			$stats = $driver->getStats($this->queueName);
-			$availableJobs = $stats['pending'] ?? 0;
-
-			if ($availableJobs === 0) {
-				if ($this->verbose) {
-					echo "No jobs available in '{$this->queueName}' queue\n";
-				}
-				break;
-			}
-
-			// Process one job
+			// Process one job. work() returns 0 when no job is available
+			// right now; delayed/retrying jobs (available_at in the future)
+			// are not counted, so they cannot keep this routine spinning.
 			try {
-				$this->queue->work($this->queueName, 1);
+				if ($this->queue->work($this->queueName, 1) === 0) {
+					if ($this->verbose) {
+						echo "No jobs available in '{$this->queueName}' queue\n";
+					}
+					break;
+				}
+
 				$processedJobs++;
 
 				if ($this->verbose) {

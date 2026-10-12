@@ -90,11 +90,19 @@ $queue->push($job, $data);
 ### 4. Processing Jobs
 
 ```php
-// Process jobs continuously
+// Process every available job, then return (returns the processed count)
 $queue->work('emails'); // Process emails queue
 
 // Process a specific number of jobs
 $queue->work('emails', 10); // Process up to 10 jobs
+
+// Long-running worker: keep polling when the queue is empty
+$daemon = new JobQueue([
+	'stop_when_empty' => false,
+	'max_idle' => 0,   // seconds without work before returning (0 = never)
+	'max_time' => 3600 // return after an hour so a supervisor can restart it
+]);
+$daemon->work('emails');
 
 // Process all queues
 $queue->work(); // Defaults to 'default' queue

@@ -72,6 +72,13 @@ class JobQueue extends Base
 			'sleep' => 3,
 			'max_tries' => 3,
 			'retry_delay' => 60,
+			// Return from work() as soon as no job is available right now.
+			'stop_when_empty' => true,
+			// Long-running mode (stop_when_empty = false): return after this
+			// many seconds without a job. 0 waits forever.
+			'max_idle' => 0,
+			// Return from work() after this many seconds. 0 = no limit.
+			'max_time' => 0,
 		];
 	}
 
@@ -169,33 +176,70 @@ class JobQueue extends Base
 	/**
 	 * Process jobs from the queue.
 	 *
+	 * Returns when `$maxJobs` jobs have been processed, when no job is
+	 * available right now (default, `stop_when_empty`), after `max_idle`
+	 * seconds without work (long-running mode), after `max_time` seconds,
+	 * when the memory limit is exceeded, or when stop() is called.
+	 *
+	 * Delayed and retrying jobs whose `available_at` is in the future are
+	 * not available, so they never keep a stop-when-empty worker alive.
+	 *
 	 * @param string $queue Queue name
 	 * @param int $maxJobs Maximum number of jobs to process (0 = unlimited)
-	 * @return void
+	 * @return int Number of jobs processed
 	 */
-	public function work(string $queue = 'default', int $maxJobs = 0): void
+	public function work(string $queue = 'default', int $maxJobs = 0): int
 	{
 		$this->isProcessing = true;
 		$processedJobs = 0;
+
+		$stopWhenEmpty = (bool) ($this->config['stop_when_empty'] ?? true);
+		$maxIdle = max(0, (int) ($this->config['max_idle'] ?? 0));
+		$maxTime = max(0, (int) ($this->config['max_time'] ?? 0));
+		$sleep = max(0, (int) ($this->config['sleep'] ?? 3));
+
+		$startedAt = time();
+		$idleSince = $startedAt;
+		$reason = 'stopped';
 
 		$this->fireEvent('worker.starting', ['queue' => $queue]);
 
 		while ($this->isProcessing)
         {
+			if ($maxTime > 0 && (time() - $startedAt) >= $maxTime)
+			{
+				$reason = 'max_time';
+				break;
+			}
+
 			$job = $this->pop($queue);
 			if ($job === null)
             {
-				// No jobs available, sleep and continue
-				sleep($this->config['sleep']);
+				if ($stopWhenEmpty)
+				{
+					$reason = 'empty';
+					break;
+				}
+
+				if ($maxIdle > 0 && (time() - $idleSince) >= $maxIdle)
+				{
+					$reason = 'max_idle';
+					break;
+				}
+
+				// Long-running mode: wait for new or delayed jobs.
+				$this->idle($sleep);
 				continue;
 			}
 
 			$this->processJob($job);
 			$processedJobs++;
+			$idleSince = time();
 
 			// Check if we've reached the maximum job limit
 			if ($maxJobs > 0 && $processedJobs >= $maxJobs)
             {
+				$reason = 'max_jobs';
 				break;
 			}
 
@@ -203,12 +247,33 @@ class JobQueue extends Base
 			if (memory_get_usage() > $this->config['memory_limit'] * 1024 * 1024)
             {
 				$this->fireEvent('worker.memory_exceeded', ['memory' => memory_get_usage()]);
+				$reason = 'memory';
 				break;
 			}
 		}
 
-		$this->fireEvent('worker.stopped', ['queue' => $queue, 'processed' => $processedJobs]);
+		$this->fireEvent('worker.stopped', [
+			'queue' => $queue,
+			'processed' => $processedJobs,
+			'reason' => $reason
+		]);
 		$this->isProcessing = false;
+
+		return $processedJobs;
+	}
+
+	/**
+	 * Waits between polls while the queue is empty.
+	 *
+	 * @param int $seconds Seconds to sleep
+	 * @return void
+	 */
+	protected function idle(int $seconds): void
+	{
+		if ($seconds > 0)
+		{
+			sleep($seconds);
+		}
 	}
 
 	/**

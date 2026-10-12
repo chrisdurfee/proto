@@ -299,7 +299,7 @@ Jobs::scheduleEvery($job, $interval, $data, $queue): ScheduledJob
 Jobs::scheduleDaily($job, $data, $queue, $time): ScheduledJob
 
 // Processing
-Jobs::work($queue, $maxJobs): void
+Jobs::work($queue, $maxJobs): int
 Jobs::stop(): void
 
 // Monitoring
