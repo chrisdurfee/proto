@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.40] - 2026-10-12
+
+### Security
+- **File sessions rotate ids and set cookie flags** — `FileSession::refreshId()` never regenerated the id (the session is closed right after `init()`), so login rotation silently kept the pre-login id. Native sessions now use `session.use_strict_mode` and the framework's cookie attributes (HttpOnly; Secure + SameSite=Strict outside dev) via the new `Cookie::sessionCookieParams()`.
+- **Session store outage fails closed** — `Session::init()` silently fell back to per-server, unflagged file sessions when Redis/DB was unreachable. It now throws `SessionUnavailableException` (503). Set `"sessionFallback": "file"` to restore the old fallback.
+- **Client IP only from `X-Forwarded-For` by default** — `PublicIp` gave pass-through headers (`CF-Connecting-IP`, `X-Real-IP`, `Client-IP`) priority, so a request reaching a trusted hop without going through the proxy could pick its own IP and rotate past the login limit. Only `X-Forwarded-For` (right-to-left trusted walk) is read unless `trustedProxyHeaders` lists others. Trusted-proxy CIDRs now match IPv6 (Cloudflare's IPv6 ranges never matched). The realtime server appends its peer to `X-Forwarded-For` instead of passing a client's header through, and no longer forwards `X-Real-IP` / `CF-Connecting-IP`.
+- **Per-account login limit** — `LoginRateLimiterMiddleware` adds a fail-closed 100/hour limit per username from any IP, on top of the per-IP limit.
+- **Uploads judged by detected type** — `FileValidator` trusted the client-declared MIME type and skipped the content check with the default MIME list, so an SVG/HTML file labeled `image/png` passed. `svg`/`svgz` are no longer in the default `supportedFileTypes` and are treated as active content (renamed `.txt` without an explicit allow-list). Stored names use 128-bit random `File::randomName()` instead of guessable `uniqid()`.
+- **Realtime connection caps** — `realtime.maxConnections` (20000) and `realtime.maxConnectionsPerIp` (100) are reserved before the upstream authorize, so a connect flood cannot queue without bound behind PHP.
+- **Scratch scripts removed** — `src/Database/Migrations/test.php` (ran every migration when executed) and `src/Http/Test/index.php` no longer ship.
+
+### Fixed
+- **Jobs subsystem starts** — `JobQueue` instantiated the `Events` singleton with `new` (fatal on every `Jobs::dispatch()`, queue, scheduler and worker). Workers and routines catch `\Throwable`.
+- **Jobs run once** — `DatabaseDriver::pop()` claims with a guarded `UPDATE … WHERE status='pending'` and checks affected rows; `releaseStaleJobs()` returns jobs stuck in `processing` past `reserve_timeout` (default 900s, reaped every `reap_interval` = 60s). Jobs whose class is missing go straight to `markFailed()` instead of killing the worker. `markFailed()` / `retryFailedJob()` join an open transaction; retries keep the job's own `max_retries` / `timeout`.
+- **Scheduler dispatches** — `JobSchedulerRoutine` built an empty `Scheduler` each tick. Schedules now come from `jobs.schedule` config (`job` + `every` / `daily` / `weekly` / `at`) or an overridden `schedule(Scheduler)` hook; `Scheduler::dispatchDue()` queues each run once per cron minute. `JobCleanupRoutine` uses `processed_at` / `failed_at` (it filtered on a nonexistent column and deleted nothing). Kafka re-publishes delayed messages instead of dropping them.
+- **Dispatch queue retries** — one failed email/SMS/push left the whole batch in `sending` forever. Items now settle individually: sent rows are removed, failures return to `pending` with backoff (60s doubling to 1h) and become `error` after 5 attempts, and rows stuck in `sending` over 30 minutes are reclaimed. Tunable on `QueueRoutine` (`$maxAttempts`, `$retryDelaySeconds`, `$maxRetryDelaySeconds`, `$staleMinutes`).
+- **Dispatch correctness** — `WebPush::send()` reported success as error; queued SMS ignored its stored body; a per-message SMS `customDriver` replaced the shared driver for later messages; dispatch controllers call hooks via `static::` so app overrides apply; the PHPMailer SMTP timeout is bounded (`email.smtp.timeout`, default 15s, was 300s).
+- **Nested transactions use savepoints** — a second `beginTransaction()` issued `START TRANSACTION`, which made MySQL commit the open one (including a test's isolation transaction). Nested calls use `SAVEPOINT` / `RELEASE` / `ROLLBACK TO`. New `Mysqli::inTransaction()` / `getTransactionLevel()`.
+- **No `die`/`exit` in library code** — router request validation, resource 404s, CSRF/domain middleware and `ApiRouter::error()` throw `HttpTerminationException` (same status and body); `JwtService` throws `IntegrationException`. They killed workers and the realtime bridge. `Process::__destruct()` called `die()`, ending the PHP process (exit code 0) whenever a routine object was destroyed.
+- **Session cleanup routine** — `CleanUpSessionRoutine` called instance methods statically (fatal); it now deletes expired and empty sessions in bounded batches.
+- **`fetchWhereWithoutJoins()` returns rows** — it ran the storage's `setOrderBy()` / `setCustomWhere()` hooks, which apps write against joined aliases (e.g. `ConversationParticipant`'s `ORDER BY c.last_message_at`), so the join-free query failed and returned nothing. New `Storage::fetchWithoutHooks()`.
+- **`find()` / `findAll()` callbacks bind by reference** — `Storage::callBack()` passed `$params` by value, so values a `function ($sql, array &$params)` callback appended were lost.
+- **Realtime stays up** — an exception in a stream's periodic reauthorize (e.g. Redis subscribe failing) escaped the event loop and killed the process; it now closes that stream with a reconnect hint, and the loop logs uncaught errors.
+- **Redis session writes merge** — `__set` / `__unset` re-read the stored session and apply only the changed key, so parallel requests no longer erase each other's writes (e.g. CSRF rotation vs login).
+- **Owned cache locks** — stampede locks carry an owner token and are released with an atomic compare-and-delete (`Cache::deleteIfEquals()`).
+- **Typos fail loudly** — unknown methods on models, storage proxies and the query builder did nothing visible: `Model::fetchWher()` returned `null` and `->wher(...)` silently dropped the clause. They now throw `BadMethodCallException`. `Model` documents forwarded storage methods with `@method` tags.
+- **`ItemRequest`** imported `Proto\API\Validator` (wrong case; fatal on Linux).
+
+### Changed
+- **`ThrottleMiddleware` rate-limits instead of sleeping** — it slept 1s per request (pinning a worker, limiting no one); it now applies a non-blocking per-caller, per-route limit (`$requestsPerMinute`, default 60) with 429 + `Retry-After`.
+- **Storage events only built for listeners** — `StorageProxy` re-converted every result to publish events nobody subscribed to, doubling row conversion cost on list reads. New `Events::listening()`.
+- `Rest\Request` gains fluent `connectTimeout()` / `timeout()`.
+- **Tooling** — PHPStan 2 with `phpstan.neon` (level 1 + baseline) so `composer analyze` works; GitHub Actions CI (PHP 8.4, MySQL 8, Redis 7) runs `composer validate`, PHPUnit and PHPStan; `phpunit.xml` drops Laravel leftovers; unused `web-token/jwt-library` pin removed; branch alias `2.0.x-dev`.
+- **Docs** — the AI agent guide (`.github/copilot-instructions.md`) is corrected against the code (policy signatures, gates, storage access, factories, PHP 8.4); root `copilot.md` is replaced by `AGENTS.md` / `CLAUDE.md` pointers; README fixes and a new `CONTRIBUTING.md`; old audit reports move to `docs/history/` with a `docs/README.md` index.
+
+### Upgrade notes
+- **Run migrations**: `AddRetryColumnsToDispatchQueues` adds `attempts` and `next_attempt_at` to `email_queue`, `sms_queue` and `web_push_queue`. Queue routines fail without them.
+- **`JobQueue::work()` / `Jobs::work()` return when no job is available** (and now return the number processed). Long-running workers must pass `stop_when_empty => false` (optionally `max_idle`, `max_time`). The stored `attempts` now counts runs started.
+- **Sessions fail closed** when the configured store is down (503) unless `"sessionFallback": "file"`.
+- **Client IP**: if you relied on `CF-Connecting-IP` / `X-Real-IP` without `X-Forwarded-For`, set `"trustedProxyHeaders": ["CF-Connecting-IP", "X-Forwarded-For"]`. Cloudflare → proxy chains that append `X-Forwarded-For` need no change as long as both ranges are in `trustedProxies`.
+- **SVG uploads** need an explicit allow-list (`supportedFileTypes` / `$allowedExtensions`) and should be served from a separate origin.
+- **Unknown model/storage/query-builder methods now throw** `BadMethodCallException` instead of returning `null`; run your test suite to catch code that relied on that.
+
 ## [2.0.39] - 2026-10-12
 
 ### Security
