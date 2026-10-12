@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.42] - 2026-10-12
+
+### Security
+- **Every route pattern is anchored** — `UriQuery` dropped the end-of-path anchor whenever the compiled regex contained `*`, which an optional parameter followed by more segments (`/:id?/edit`), a trailing slash after an optional parameter (`/:id?/`) and dotted parameters (`/:name.json`) all produced. Those routes matched any longer URL with the same prefix (`/api/post/7/edit/delete` reached `/api/post/:id?/edit`), so a request could land on the wrong controller and policy. Routes now compile segment by segment and are always anchored.
+
+### Fixed
+- `composer analyze` failed on a fresh checkout: `phpstan.neon` still excluded the scratch script removed in 2.0.40.
+
+### Upgrade notes
+- **Route matching is stricter.** Routes that relied on prefix matching must say so with `*` (`files/*`, `migration*`, which still match any tail). What changes:
+  - `:name?` followed by more segments, or by a trailing slash, matches only that exact shape (`/api/post/:id?/edit` matches `/api/post/edit` and `/api/post/7/edit`, nothing longer).
+  - `:name.json` matches a single segment ending in `.json` (the value still includes the suffix).
+  - A trailing slash on a route is ignored, as it already was on request paths (`/api/user/` now matches `/api/user`; before it matched nothing).
+  - Literal characters such as `.` are matched literally.
+  - The root route `/` matches both `/` and the empty path.
+  - Plain `:id` / `:id?` routes and resources were already anchored and are unchanged.
+
 ## [2.0.41] - 2026-10-12
 
 ### Security
