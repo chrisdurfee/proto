@@ -335,7 +335,7 @@ class RedisSession extends Adapter
 	public function __set(string $key, mixed $value): void
 	{
 		$this->data[$key] = $value;
-		$this->saveData();
+		$this->saveChange($key, true, $value);
 	}
 
 	/**
@@ -369,7 +369,42 @@ class RedisSession extends Adapter
 	public function __unset(string $key): void
 	{
 		unset($this->data[$key]);
-		$this->saveData();
+		$this->saveChange($key, false);
+	}
+
+	/**
+	 * Persists one key's change on top of the latest stored session.
+	 *
+	 * Writing this request's whole in-memory copy clobbered keys another
+	 * concurrent request (a parallel SPA call) had written since this
+	 * request loaded the session, e.g. a CSRF rotation racing a login.
+	 * Re-reading and applying only the changed key narrows that window
+	 * to the read-modify-write itself.
+	 *
+	 * @param string $key
+	 * @param bool $isSet True to set $value, false to remove the key.
+	 * @param mixed $value
+	 * @return bool
+	 */
+	protected function saveChange(string $key, bool $isSet, mixed $value = null): bool
+	{
+		$raw = $this->storeGet($this->cacheKey());
+		if ($raw !== null)
+		{
+			$latest = (array)JsonFormat::decode($raw) ?: [];
+			if ($isSet)
+			{
+				$latest[$key] = $value;
+			}
+			else
+			{
+				unset($latest[$key]);
+			}
+
+			$this->data = $latest;
+		}
+
+		return $this->saveData();
 	}
 
 	/**
