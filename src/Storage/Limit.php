@@ -284,7 +284,7 @@ class Limit
 		 */
 		foreach ($orderByColumns as $col)
 		{
-			if ($col['resultKey'] !== $idField && $model::isSensitiveField($col['resultKey']))
+			if ($col['resultKey'] !== $idField && !$model::isCursorSafeField($col['resultKey']))
 			{
 				return $last->{$idField} ?? null;
 			}

@@ -1663,10 +1663,36 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 	}
 
 	/**
+	 * Whole words that mark a column as secret or PII.
+	 *
+	 * @var array<int, string>
+	 */
+	protected const SENSITIVE_WORDS = ['pwd', 'key', 'salt', 'otp', 'ssn', 'email', 'phone', 'mobile'];
+
+	/**
+	 * Fragments that mark a column as secret even inside a compound word
+	 * (`passwordhash`, `apitoken`, `clientsecret`).
+	 *
+	 * @var array<int, string>
+	 */
+	protected const SENSITIVE_FRAGMENTS = ['password', 'passwd', 'secret', 'token', 'apikey'];
+
+	/**
+	 * Trailing words that describe *about* a sensitive value rather than
+	 * hold it (`emailVerified`, `tokenCount`, `phoneVerifiedAt`).
+	 *
+	 * @var array<int, string>
+	 */
+	protected const BENIGN_SUFFIX_WORDS = ['verified', 'count', 'enabled', 'disabled', 'at', 'status', 'type', 'id', 'confirmed', 'required'];
+
+	/**
 	 * Whether a field holds a secret or PII value that must never be
-	 * echoed, compared, or sorted on by a client: blacklisted fields
-	 * plus anything whose name contains password, token, secret, key,
-	 * email, phone, mobile, or ssn.
+	 * echoed, compared, or sorted on by a client: blacklisted fields,
+	 * plus names containing password/secret/token anywhere, or the whole
+	 * word key, salt, otp, ssn, email, phone or mobile (`resetToken`,
+	 * `api_key`, `emailAddress`), unless the last word only describes the
+	 * value (`emailVerified`, `tokenCount`). Whole-word matching keeps
+	 * `businessName` (ssn) and `keyword` (key) sortable.
 	 *
 	 * @param string $field camelCase or snake_case field name.
 	 * @return bool
@@ -1687,16 +1713,64 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 			}
 		}
 
-		$lower = strtolower($field);
-		foreach (['email', 'phone', 'mobile', 'secret', 'token', 'key', 'ssn', 'password'] as $needle)
+		$words = static::fieldWords($field);
+		$hit = array_intersect($words, self::SENSITIVE_WORDS) !== [];
+		foreach ($words as $word)
 		{
-			if (str_contains($lower, $needle))
+			foreach (self::SENSITIVE_FRAGMENTS as $fragment)
 			{
-				return true;
+				if (str_contains($word, $fragment))
+				{
+					$hit = true;
+					break 2;
+				}
 			}
 		}
 
-		return false;
+		if (!$hit)
+		{
+			return false;
+		}
+
+		$last = end($words);
+		return !in_array($last, self::BENIGN_SUFFIX_WORDS, true);
+	}
+
+	/**
+	 * Whether a sort column's raw value may be echoed in a compound
+	 * cursor: listed explicitly in `$sortableFields`, or not sensitive.
+	 *
+	 * @param string $field camelCase or snake_case field name.
+	 * @return bool
+	 */
+	public static function isCursorSafeField(string $field): bool
+	{
+		if (static::$sortableFields !== null)
+		{
+			$camel = Strings::camelCase($field);
+			foreach (static::$sortableFields as $sortable)
+			{
+				if (is_string($sortable) && Strings::camelCase($sortable) === $camel)
+				{
+					return true;
+				}
+			}
+		}
+
+		return !static::isSensitiveField($field);
+	}
+
+	/**
+	 * Splits a camelCase or snake_case name into lowercase words.
+	 *
+	 * @param string $field
+	 * @return array<int, string>
+	 */
+	protected static function fieldWords(string $field): array
+	{
+		$spaced = preg_replace('/(?<=[a-z0-9])(?=[A-Z])/', '_', $field) ?? $field;
+		$parts = preg_split('/[^A-Za-z0-9]+/', strtolower($spaced)) ?: [];
+		return array_values(array_filter($parts, fn(string $part): bool => $part !== ''));
 	}
 
 	/**

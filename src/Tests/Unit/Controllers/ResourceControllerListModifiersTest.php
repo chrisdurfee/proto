@@ -65,6 +65,37 @@ final class ResourceControllerListModifiersTest extends Test
 	}
 
 	/**
+	 * Word-based matching: lookalike names stay sortable, secrets don't.
+	 *
+	 * @return void
+	 */
+	public function testSensitiveDetectionIsWordBased(): void
+	{
+		foreach (['businessName', 'processName', 'keyword', 'hockeyTeam', 'tokenCount', 'emailVerified', 'phoneVerifiedAt'] as $field)
+		{
+			$this->assertFalse(ListModifiersModel::isSensitiveField($field), $field . ' should be sortable');
+		}
+
+		foreach (['password', 'passwordhash', 'resetToken', 'api_key', 'apikey', 'clientSecret', 'emailAddress', 'mobileNumber', 'ssn', 'otpCode'] as $field)
+		{
+			$this->assertTrue(ListModifiersModel::isSensitiveField($field), $field . ' should be sensitive');
+		}
+	}
+
+	/**
+	 * A field the app explicitly lists as sortable keeps a compound cursor.
+	 *
+	 * @return void
+	 */
+	public function testExplicitSortableFieldIsCursorSafe(): void
+	{
+		$this->assertFalse(ListModifiersModel::isCursorSafeField('sortKey'));
+		$this->assertTrue(ExplicitSortModel::isCursorSafeField('sortKey'));
+		$this->assertTrue(ExplicitSortModel::isCursorSafeField('sort_key'));
+		$this->assertFalse(ExplicitSortModel::isCursorSafeField('password'));
+	}
+
+	/**
 	 * @return void
 	 */
 	public function testOrderByDropsSensitiveColumns(): void
@@ -301,4 +332,25 @@ final class ExportCaptureModel extends Model
 		self::$modifiers = $modifiers;
 		return (object)['rows' => []];
 	}
+}
+
+/**
+ * @package Proto\Tests\Unit\Controllers
+ */
+final class ExplicitSortModel extends Model
+{
+	/**
+	 * @var string|null
+	 */
+	protected static ?string $tableName = 'explicit_sort';
+
+	/**
+	 * @var array
+	 */
+	protected static array $fields = ['id', 'sortKey', 'password'];
+
+	/**
+	 * @var array<int, string>|null
+	 */
+	protected static ?array $sortableFields = ['id', 'sortKey'];
 }
