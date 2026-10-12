@@ -84,7 +84,7 @@ class JobWorkerRoutine extends Routine
 			if ($this->verbose) {
 				echo "Job queue initialized successfully\n";
 			}
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			$message = "Failed to initialize job queue: " . $e->getMessage();
 			error_log($message);
 
@@ -125,7 +125,7 @@ class JobWorkerRoutine extends Routine
 				error_log($message);
 			}
 
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			$message = "Proto Job Worker routine error at " . date('Y-m-d H:i:s') . ": " . $e->getMessage();
 			error_log($message);
 
@@ -168,7 +168,7 @@ class JobWorkerRoutine extends Routine
 					echo "[" . date('Y-m-d H:i:s') . "] Processed job #{$processedJobs} (Rate: {$rate} jobs/sec)\n";
 				}
 
-			} catch (\Exception $e) {
+			} catch (\Throwable $e) {
 				$message = "Error processing job from '{$this->queueName}' queue: " . $e->getMessage();
 				error_log($message);
 
@@ -200,7 +200,7 @@ class JobWorkerRoutine extends Routine
 			echo "  Processing: " . $stats['processing'] . "\n";
 			echo "  Completed: " . $stats['completed'] . "\n";
 			echo "  Failed: " . $stats['failed'] . "\n";
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			echo "Failed to retrieve queue stats: " . $e->getMessage() . "\n";
 		}
 	}

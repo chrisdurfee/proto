@@ -253,7 +253,7 @@ try {
     $rate = $duration > 0 ? number_format($processedCount / $duration, 2) : 0;
     workerLog("Worker stopped after processing {$processedCount} jobs in {$duration}s ({$rate} jobs/sec)");
 
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     workerLog("Worker crashed: " . $e->getMessage(), 'CRITICAL');
     workerLog("Stack trace: " . $e->getTraceAsString(), 'CRITICAL');
     exit(1);

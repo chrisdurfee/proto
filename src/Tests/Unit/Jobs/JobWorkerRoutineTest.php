@@ -108,4 +108,39 @@ final class JobWorkerRoutineTest extends Test
 		$this->assertLessThan(5.0, microtime(true) - $started);
 		$this->assertSame(['now'], RecordingJob::$handled);
 	}
+
+	/**
+	 * An \Error (not an \Exception) from the driver is caught and logged
+	 * by the routine's per-job handler instead of escaping it.
+	 *
+	 * @return void
+	 */
+	public function testErrorFromDriverIsCaughtAndLogged(): void
+	{
+		$driver = new class extends InMemoryDriver
+		{
+			/**
+			 * @param string $queue
+			 * @return array|null
+			 */
+			public function pop(string $queue = 'default'): ?array
+			{
+				throw new \Error('driver exploded');
+			}
+		};
+
+		$log = tempnam(sys_get_temp_dir(), 'jobs-log');
+		$previous = ini_set('error_log', $log);
+
+		try
+		{
+			$this->assertSame(0, $this->routine($driver)->runJobs());
+			$this->assertStringContainsString('driver exploded', (string) file_get_contents($log));
+		}
+		finally
+		{
+			ini_set('error_log', $previous === false ? '' : $previous);
+			@unlink($log);
+		}
+	}
 }
