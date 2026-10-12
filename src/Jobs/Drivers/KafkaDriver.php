@@ -61,6 +61,11 @@ class KafkaDriver extends Base implements DriverInterface
 	protected const MAX_STATS_ENTRIES = 1000;
 
 	/**
+	 * @var int MAX_SKIPPED_PER_POP Messages one pop() call may skip (delayed or invalid) before giving up.
+	 */
+	protected const MAX_SKIPPED_PER_POP = 100;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array $config Driver configuration
@@ -197,6 +202,13 @@ class KafkaDriver extends Base implements DriverInterface
 	/**
 	 * Pop a job from the queue.
 	 *
+	 * A message that is not due yet (`available_at` in the future) is
+	 * re-published to the end of its topic and the original committed, so
+	 * it is neither lost nor run early, and consumption continues with the
+	 * next message. pop() only returns null when no ready message is left:
+	 * the topic is drained, or every remaining message is one this call
+	 * already re-published (i.e. only delayed jobs remain).
+	 *
 	 * @param string $queue Queue name
      * @suppresswarnings PHP0415
 	 * @return array|null
@@ -204,76 +216,138 @@ class KafkaDriver extends Base implements DriverInterface
 	public function pop(string $queue = 'default'): ?array
 	{
 		try {
-			$consumer = $this->getConsumer();
 			$topicName = $this->getTopicName($queue);
+			$requeued = [];
 
-			// Subscribe to topic if not already subscribed
-			if (empty($consumer->getSubscription()))
-            {
-				$consumer->subscribe([$topicName]);
-			}
+			for ($i = 0; $i < static::MAX_SKIPPED_PER_POP; $i++)
+			{
+				$message = $this->consumeMessage($topicName);
+				if ($message === null)
+				{
+					return null;
+				}
 
-			// Consume message
-			$message = $consumer->consume($this->config['timeout_ms']);
+				switch ($message->err)
+				{
+					case RD_KAFKA_RESP_ERR_NO_ERROR:
+						break;
 
-			if ($message === null)
-            {
-				return null;
-			}
+					case RD_KAFKA_RESP_ERR__PARTITION_EOF:
+					case RD_KAFKA_RESP_ERR__TIMED_OUT:
+						// No more messages
+						return null;
 
-			switch ($message->err)
-            {
-				case RD_KAFKA_RESP_ERR_NO_ERROR:
-					$payload = json_decode($message->payload, true);
+					default:
+						error_log("Kafka consume error: " . $message->errstr());
+						return null;
+				}
 
-					if (!$payload)
-                    {
-						error_log("Invalid JSON payload in Kafka message");
-						$consumer->commit($message);
+				$payload = json_decode((string) $message->payload, true);
+				if (!is_array($payload) || !isset($payload['id']))
+				{
+					// Unusable message: drop it and keep looking.
+					error_log("Invalid JSON payload in Kafka message");
+					$this->commitMessage($message);
+					continue;
+				}
+
+				$availableAt = strtotime((string) ($payload['available_at'] ?? 'now'));
+				if ($availableAt !== false && $availableAt > time())
+				{
+					if (isset($requeued[$payload['id']]))
+					{
+						// We have come back round to a job this call already
+						// re-published: only delayed jobs remain. It has been
+						// read, so publish it again before stopping.
+						$this->requeueDelayed($message, $payload, $queue, $availableAt);
 						return null;
 					}
 
-					// Check if job is delayed
-					$availableAt = strtotime($payload['available_at'] ?? 'now');
-					if ($availableAt > time())
-                    {
-						// Job is not ready yet, skip it
-						// Note: This is a limitation of Kafka - delayed jobs aren't perfectly supported
-						// Consider using a separate delayed jobs topic or database for delayed jobs
+					if (!$this->requeueDelayed($message, $payload, $queue, $availableAt))
+					{
 						return null;
 					}
 
-					// Mark as processing
-					$payload['status'] = 'processing';
-					$payload['reserved_at'] = date('Y-m-d H:i:s');
+					$requeued[$payload['id']] = true;
+					continue;
+				}
 
-					// Store in processing jobs (for tracking)
-					$this->processingJobs[$payload['id']] = [
-						'payload' => $payload,
-						'message' => $message,
-					];
+				// Mark as processing
+				$payload['status'] = 'processing';
+				$payload['reserved_at'] = date('Y-m-d H:i:s');
 
-					return $payload;
+				// Store in processing jobs (for tracking)
+				$this->processingJobs[$payload['id']] = [
+					'payload' => $payload,
+					'message' => $message,
+				];
 
-				case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-					// No more messages
-					return null;
-
-				case RD_KAFKA_RESP_ERR__TIMED_OUT:
-					// Timeout
-					return null;
-
-				default:
-					error_log("Kafka consume error: " . $message->errstr());
-					return null;
+				return $payload;
 			}
 
+			return null;
 		}
         catch (\Throwable $e)
         {
 			error_log("Kafka pop error: " . $e->getMessage());
 			return null;
 		}
+	}
+
+	/**
+	 * Re-publishes a delayed message and commits the original.
+	 *
+	 * The original is committed only after the copy was produced, so a
+	 * failed re-publish leaves the message uncommitted for redelivery.
+	 *
+	 * @param object $message Consumed message
+	 * @param array $payload Decoded payload
+	 * @param string $queue Queue name
+	 * @param int $availableAt When the job becomes due
+	 * @return bool True when re-published and committed
+	 */
+	protected function requeueDelayed(object $message, array $payload, string $queue, int $availableAt): bool
+	{
+		$delay = max(1, $availableAt - time());
+		if (!$this->push($payload, $payload['queue'] ?? $queue, $delay))
+		{
+			error_log("Kafka: could not re-publish delayed job {$payload['id']}; leaving it uncommitted.");
+			return false;
+		}
+
+		$this->commitMessage($message);
+		return true;
+	}
+
+	/**
+	 * Consumes the next message from a topic, subscribing on first use.
+	 *
+	 * @param string $topicName Topic name
+     * @suppresswarnings PHP0415
+	 * @return object|null The message, or null when none arrived
+	 */
+	protected function consumeMessage(string $topicName): ?object
+	{
+		$consumer = $this->getConsumer();
+
+		// Subscribe to topic if not already subscribed
+		if (empty($consumer->getSubscription()))
+		{
+			$consumer->subscribe([$topicName]);
+		}
+
+		return $consumer->consume($this->config['timeout_ms']);
+	}
+
+	/**
+	 * Commits a consumed message's offset.
+	 *
+	 * @param object $message Consumed message
+	 * @return void
+	 */
+	protected function commitMessage(object $message): void
+	{
+		$this->getConsumer()->commit($message);
 	}
 
 	/**
@@ -293,8 +367,7 @@ class KafkaDriver extends Base implements DriverInterface
 			$jobData = $this->processingJobs[$jobId];
 
 			// Commit the message to Kafka
-			$consumer = $this->getConsumer();
-			$consumer->commit($jobData['message']);
+			$this->commitMessage($jobData['message']);
 
 			// Track completed job for stats
 			$this->completedJobs[$jobId] = [
@@ -335,8 +408,7 @@ class KafkaDriver extends Base implements DriverInterface
 			$payload = $jobData['payload'];
 
 			// Commit the original message
-			$consumer = $this->getConsumer();
-			$consumer->commit($jobData['message']);
+			$this->commitMessage($jobData['message']);
 
 			// Store in failed jobs
 			$failedJob = [
@@ -347,6 +419,8 @@ class KafkaDriver extends Base implements DriverInterface
 				'job_name' => $payload['job_name'],
 				'data' => json_encode($payload['data']),
 				'attempts' => $payload['attempts'],
+				'max_retries' => $payload['max_retries'] ?? 3,
+				'timeout' => $payload['timeout'] ?? 300,
 				'error' => $error,
 				'failed_at' => date('Y-m-d H:i:s'),
 			];
@@ -436,8 +510,7 @@ class KafkaDriver extends Base implements DriverInterface
 			$payload['reserved_at'] = null;
 
 			// Commit the original message
-			$consumer = $this->getConsumer();
-			$consumer->commit($jobData['message']);
+			$this->commitMessage($jobData['message']);
 
 			// Re-queue the job
 			$result = $this->push($payload, $payload['queue'] ?? 'default', $delay);
@@ -548,8 +621,8 @@ class KafkaDriver extends Base implements DriverInterface
 				'job_name' => $failedJob['job_name'],
 				'data' => json_decode($failedJob['data'], true),
 				'attempts' => 0,
-				'max_retries' => 3,
-				'timeout' => 300,
+				'max_retries' => (int) ($failedJob['max_retries'] ?? 3),
+				'timeout' => (int) ($failedJob['timeout'] ?? 300),
 				'created_at' => date('Y-m-d H:i:s'),
 			];
 
