@@ -35,7 +35,11 @@ class StorageWrapper
 	{
 		if (!$this->isCallable($this->storage, $method))
 		{
-			return null;
+			throw new \BadMethodCallException(sprintf(
+				'Call to undefined method %s::%s()',
+				$this->storage::class,
+				$method
+			));
 		}
 
 		$result = \call_user_func_array([$this->storage, $method], $arguments);

@@ -88,6 +88,11 @@ trait ModelTrait
 	{
 		if (!in_array($method, $this->allowedModelMethods, true))
 		{
+			error_log(sprintf(
+				"%s::%s() is not defined and is not listed in \$allowedModelMethods.",
+				static::class,
+				$method
+			));
 			return $this->error('The method is not callable.');
 		}
 

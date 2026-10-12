@@ -33,8 +33,15 @@ class EventProxy
 	public function __call(string $method, array $arguments): mixed
 	{
 		if (!$this->isCallable($method))
-        {
-			return null;
+		{
+			// Returning null made a typo (e.g. fetchWher()) look like
+			// "not found"; fail loudly so it is caught in development.
+			throw new \BadMethodCallException(sprintf(
+				'Call to undefined method %s::%s() (via %s proxy)',
+				$this->object::class,
+				$method,
+				$this->target
+			));
 		}
 
 		$result = \call_user_func_array([$this->object, $method], $arguments);

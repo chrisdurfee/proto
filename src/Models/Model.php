@@ -30,6 +30,14 @@ use Proto\Storage\Filter;
  *
  * @property int|null $id Primary key (auto-set on add)
  *
+ * Storage methods forwarded through __call / __callStatic (unknown names
+ * throw BadMethodCallException):
+ * @method static mixed find(?callable $callBack = null) First row of a query built in the callback: fn(object $sql, array &$params).
+ * @method static mixed findAll(?callable $callBack = null) All rows of a query built in the callback.
+ * @method static bool insert(object $data) Insert a raw row (no model hooks).
+ * @method static bool replace(object $data) REPLACE INTO a raw row.
+ * @method static array fetchWithoutHooks(mixed $filter = null) Rows by filter, own columns only, skipping storage hooks.
+ *
  * @example
  * ```php
  * /**
@@ -326,6 +334,13 @@ abstract class Model extends Base implements \JsonSerializable, ModelInterface
 
 		$modelClassName = static::class;
 		$builder->setForeignKeyByModel($modelClassName);
+
+		// Models without joins() used to reach __callStatic() and a
+		// storage lookup that silently returned null.
+		if (!method_exists(static::class, 'joins'))
+		{
+			return $joins;
+		}
 
 		$callback = static::class . '::joins';
 		\call_user_func($callback, $builder);

@@ -100,7 +100,13 @@ class AdapterProxy
 	{
 		if (!$this->isCallable($this->sql, $method))
 		{
-			return $this;
+			// Silently returning $this dropped the clause (a typo such as
+			// ->wher(...) ran the query without its condition).
+			throw new \BadMethodCallException(sprintf(
+				'Call to undefined method %s::%s()',
+				is_object($this->sql) ? $this->sql::class : 'null',
+				$method
+			));
 		}
 
 		\call_user_func_array([$this->sql, $method], $arguments);
