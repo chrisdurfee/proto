@@ -187,8 +187,9 @@ class Router
 	 */
 	protected function filterPath(string $path): string
 	{
-		$path = rtrim($path, '/');
-		return explode('?', $path)[0];
+		// Strip the query first so "/user/5/?tab=x" loses its trailing slash too.
+		$path = explode('?', $path)[0];
+		return rtrim($path, '/');
 	}
 
 	/**
