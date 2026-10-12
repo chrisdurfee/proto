@@ -465,7 +465,7 @@ class Request
 		}
 
 		$config = Config::getInstance();
-		return (self::$allowed = ($config->supportedFileTypes ?? ['gif', 'csv', 'jpg', 'jpeg', 'png', 'webp', 'svg', 'txt', 'pdf', 'doc', 'docx', 'mp4', 'mp3', 'wav']));
+		return (self::$allowed = ($config->supportedFileTypes ?? ['gif', 'csv', 'jpg', 'jpeg', 'png', 'webp', 'txt', 'pdf', 'doc', 'docx', 'mp4', 'mp3', 'wav']));
 	}
 
 	/**

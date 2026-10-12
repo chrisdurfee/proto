@@ -161,11 +161,10 @@ class FileValidator
 	 */
 	protected static function validateMimeType(UploadFile $file, array $allowedMimes): bool
 	{
-		$fileMime = $file->getType();
+		// Only the detected type counts: the declared type is whatever the
+		// client chose to send (e.g. an SVG or HTML file labeled image/png).
 		$actualMime = static::resolveMimeType($file);
-
-		// Check if either the declared or actual MIME type is in the allowed list
-		return in_array($fileMime, $allowedMimes, true) || in_array($actualMime, $allowedMimes, true);
+		return $actualMime !== '' && in_array($actualMime, $allowedMimes, true);
 	}
 
 	/**
@@ -224,8 +223,8 @@ class FileValidator
 			return false;
 		}
 
-		// If no specific MIME types are enforced, skip content validation
-		if (empty($allowedMimes) || $allowedMimes === static::$defaultMimeTypes)
+		// No allow-list at all: only the dangerous-content check applies
+		if (empty($allowedMimes))
 		{
 			return true;
 		}

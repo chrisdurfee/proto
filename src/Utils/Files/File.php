@@ -152,7 +152,7 @@ class File extends Util
 		}
 
 		$ext = preg_replace('/[^a-zA-Z0-9]/', '', (string)$ext) ?: 'bin';
-		return uniqid() . '.' . $ext;
+		return self::randomName() . '.' . $ext;
 	}
 
 	/**
@@ -164,7 +164,9 @@ class File extends Util
 		'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'pht', 'phps',
 		'cgi', 'pl', 'py', 'sh', 'bash', 'exe', 'dll', 'bat', 'cmd', 'com',
 		'jsp', 'asp', 'aspx', 'htaccess', 'htpasswd',
-		'html', 'htm', 'xhtml', 'xht', 'shtml', 'xml', 'xsl', 'js', 'mjs'
+		'html', 'htm', 'xhtml', 'xht', 'shtml', 'xml', 'xsl', 'js', 'mjs',
+		// SVG runs script (onload, <script>) when opened from the app origin
+		'svg', 'svgz'
 	];
 
 	/**
@@ -330,7 +332,25 @@ class File extends Util
 	public static function generateFileName(UploadFile $file, string $prefix = ''): string
 	{
 		$ext = strtolower(pathinfo($file->getOriginalName(), PATHINFO_EXTENSION));
-		return uniqid($prefix) . '.' . $ext;
+		if (self::isActiveContentExtension($ext))
+		{
+			$ext = 'txt';
+		}
+
+		$ext = preg_replace('/[^a-z0-9]/', '', $ext) ?: 'bin';
+		return $prefix . self::randomName() . '.' . $ext;
+	}
+
+	/**
+	 * Unguessable file name stem (32 hex chars). uniqid() is derived
+	 * from the clock, so files on a publicly served disk could be
+	 * enumerated.
+	 *
+	 * @return string
+	 */
+	public static function randomName(): string
+	{
+		return bin2hex(random_bytes(16));
 	}
 
 	/**

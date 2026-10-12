@@ -30,7 +30,33 @@ final class FileExtensionAllowlistTest extends Test
 	public function testCreateNewNameWithoutAllowlistKeepsOrdinaryExtension(): void
 	{
 		$this->assertStringEndsWith('.jpg', File::createNewName('photo.jpg'));
-		$this->assertStringEndsWith('.svg', File::createNewName('logo.svg'));
+		$this->assertStringEndsWith('.pdf', File::createNewName('doc.pdf'));
+	}
+
+	/**
+	 * SVG runs script when served from the app origin, so without an
+	 * allowlist it is neutralized like HTML. An explicit allowlist can
+	 * still accept it.
+	 *
+	 * @return void
+	 */
+	public function testSvgIsNeutralizedWithoutAllowlist(): void
+	{
+		$this->assertStringEndsWith('.txt', File::createNewName('logo.svg'));
+		$this->assertStringEndsWith('.txt', File::createNewName('logo.SVGZ'));
+		$this->assertStringEndsWith('.svg', File::createNewName('logo.svg', ['svg']));
+	}
+
+	/**
+	 * Stored names are random, not clock-derived.
+	 *
+	 * @return void
+	 */
+	public function testNewNamesAreUnguessable(): void
+	{
+		$name = File::createNewName('photo.jpg');
+		$this->assertMatchesRegularExpression('/^[0-9a-f]{32}\.jpg$/', $name);
+		$this->assertNotSame($name, File::createNewName('photo.jpg'));
 	}
 
 	/**
