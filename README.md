@@ -2,7 +2,7 @@
 
 ## Introduction to Proto
 
-Proto is an open-source modular monolith framework for building scalable server applications quickly and securely. It's secure, performant, and designed for developer productivity. It includes an AI document to help agents build with Proto.
+Proto is an open-source modular monolith framework for building scalable server applications quickly and securely. It's secure, performant, and designed for developer productivity. It requires **PHP 8.4 or newer**. AI coding agents should read [.github/copilot-instructions.md](.github/copilot-instructions.md), the canonical guide to building with Proto.
 
 ## Overview
 
@@ -27,7 +27,7 @@ Proto includes a comprehensive set of features for creating complex applications
 - **Models** with complex relationships (eager and lazy)
 - **Collections** for data manipulation
 - **Storage Layers** to abstract data storage from data sources
-- **Session Management** (database and file support)
+- **Session Management** (file, database, and Redis support)
 - **Services & Service Providers**
 - **Events, Event Loops** with async support
 - **Jobs** with event queues (database, Kafka support)
@@ -103,7 +103,6 @@ modules/
 An example Module class:
 
 ```php
-<?php declare(strict_types=1);
 <?php declare(strict_types=1);
 namespace Modules\User;
 
@@ -698,40 +697,30 @@ Supported validation types:
 - `bool`: Boolean
 - `url`: URL
 - `domain`: Domain name
+- `image` / `file`: Uploaded file (max size in KB, e.g. `image:2048`), with an optional `mimes:jpeg,png` sub-rule
 
 Validation modifiers:
 
 - `required`: Field is required
 - `:number`: Set max length (e.g., `string:255`)
 
-Custom validation in methods:
+Custom validation in methods. `validateRules()` validates `$data` (an object is sanitized in place) and returns `true`; on failure it stops the request with a `422` error response that includes per-field errors, so the code after it only runs for valid data:
 
 ```php
 public function addUser(Request $request): object
 {
-	// Validate using custom rules
-	$data = $this->validateRules(
-		$this->getRequestItem($request),
-		[
-			'username' => 'string:50|required',
-			'email' => 'email|required',
-			'age' => 'int'
-		]
-	);
-
-	// Or use shorthand from request
-	$data = $request->validate([
+	$data = $this->getRequestItem($request);
+	$this->validateRules($data, [
 		'username' => 'string:50|required',
 		'email' => 'email|required',
 		'age' => 'int'
 	]);
 
-	// If validation passes, data is sanitized and validated
-	// If validation fails, error response is returned and execution stops
-
 	return $this->addItem($data);
 }
 ```
+
+`$request->validate($rules)` is a shorthand that returns the validated item object (or `null` when no item was sent). On failure it sends a `400` response itself and exits, without per-field errors. Prefer `validateRules()` in controllers.
 
 #### Getting Resource ID
 
@@ -766,41 +755,40 @@ Controllers can instantiate their associated model and access storage:
 $model = $this->model($data);
 $result = $model->update();
 
-// Access model storage directly for complex queries
-$users = $this->storage()->findAll(function($sql, &$params) {
-	$params[] = 'active';
-	$sql->where('status = ?')
+// Access model storage directly for complex queries.
+// Bind values with [column, value] tuples (or $sql->addParam()): the
+// callback receives $params by value, so pushing onto it has no effect.
+$users = $this->storage()->findAll(function($sql) {
+	$sql->where(['status', 'active'])
 		->orderBy('created_at DESC')
-		->groupBy('user_id')
 		->limit(50);
 });
 
 // Single row with custom query
-$user = $this->storage()->find(function($sql, &$params) {
-	$params[] = 'john@example.com';
-	$sql->where('email = ?')
-		->limit(1);
+$user = $this->storage()->find(function($sql) {
+	$sql->where(['email', 'john@example.com']);
 });
 ```
 
-#### Pass-Through Responses
+#### Pass-Through Model Methods
 
-Controllers automatically wrap the result of any undeclared method called on their model or model's storage in a Response object. This allows empty controllers to automatically have access to the model's public methods:
+`ModelController` and `ResourceController` forward calls to methods the controller does not declare to the model, but only for methods listed in `$allowedModelMethods`. The default list is `get`, `getBy`, `fetchWhere`, `all`, `search`, and `count`. Any other undeclared method returns an error response (`The method is not callable.`); it is never forwarded.
 
 ```php
-// If UserController doesn't define getUsersByRole(),
-// it will automatically call User::getUsersByRole() and wrap the response
+class UserController extends ResourceController
+{
+	// Add model methods that may be called through the controller.
+	protected array $allowedModelMethods = ['get', 'getBy', 'fetchWhere', 'all', 'search', 'count', 'getUsersByRole'];
+}
+
+// Instance call: the model result is wrapped as ['rows' => ...] (array) or ['row' => ...] and returned as a response
 $result = $controller->getUsersByRole('admin');
+
+// Static call: returns the raw model result, still limited to the allow-list
+$rows = UserController::getUsersByRole('admin');
 ```
 
-To bypass response wrapping and get raw results, call the method statically:
-
-```php
-// Get raw result without response wrapper
-$result = static::$controllerType::methodName();
-```
-
-This feature makes it faster to add new resources without rewriting response logic for every method.
+Methods the controller declares itself (for example `ResourceController::get()` or `all()`) are always called directly. Prefer a declared controller method over widening the allow-list when the endpoint needs validation or authorization logic.
 
 #### Resource Controller Conventions
 
@@ -866,28 +854,37 @@ if ($since !== null)
 
 **Search.** Model `$searchableFields` defaults to `[]` (off). Set `['*']` to infer from `$fields` minus blacklist, audit, and secret columns (`email`, `phone`, `token`, `apiKey`, and similar). An explicit list is used as-is.
 
+**Sorting.** Client `orderBy`, `groupBy`, and `dates.field` are limited to `Model::sortableFields()`: by default `$fields` minus blacklisted, secret, and PII columns (`id` and audit timestamps stay sortable). Columns outside the list are silently dropped. Set `protected static ?array $sortableFields = [...]` on the model to use an explicit list.
+
+**Errors.** Uncaught exceptions in a route return JSON `{"success": false, "message": "..."}` with status 500, or 503 with `Retry-After` when the database is unreachable (`Proto\Database\DatabaseUnavailableException`). Exception details appear in the message only in dev.
+
 **Other helpers.** `UserJoinFields` presets keep email/mobile off public user joins. `BatchMap` is the service-layer version of `BatchEnrichmentTrait`. `UnionFeed`, `PreferenceScorer`, and `SeenDemotion` merge and rank heterogeneous feeds in PHP. `Model::countGroupedBy()` issues `SELECT fk, COUNT(*) … GROUP BY fk`. Resource generation also scaffolds factory, seeder, and service files.
 
 ## Developer Tools
 
-Proto includes a developer application located in `public/developer` that offers:
-- Error tracking
-- Migration management
-- Generator system for scaffolding modules, gateways, APIs, controllers, and models
+The framework package ships the building blocks that a developer dashboard uses. The dashboard UI itself is not part of this repository (an app may install one under `public/developer`, which is gitignored here).
 
-Use this tool to quickly scaffold new features or manage existing ones without needing a fully distributed microservices setup.
+- **Error tracking**: set `"errorTracking": true` in `common/Config/.env` to record errors in the `proto_error_log` table (`Proto\Error\Models\ErrorLog`).
+- **Migrations**: `Proto\Database\Migrations\Guide` applies (`run()`) and reverts (`revert()`) migrations from the framework (`vendor/protoframework/proto/src/Migrations`), `common/Migrations`, and `modules/*/Migrations`.
+- **Generators**: `Proto\Generators\Generator` scaffolds resources (`createResource()` writes the model, controller, API, and storage files, plus a factory, seeder, and service when they do not exist yet). It also creates migrations, tests, and tables.
+- **Realtime server**: `vendor/bin/proto-realtime` starts the standalone SSE server (see [docs/REALTIME_SERVER.md](docs/REALTIME_SERVER.md)).
+
+More guides are indexed in [docs/README.md](docs/README.md).
 
 ## Getting Started
 
 ### Installation
 
-1. Install package using Composer:
+Proto requires PHP 8.4 or newer.
+
+1. Add the package to your application with Composer:
 ```sh
-cd proto
-composer install protoframework/proto
+composer require protoframework/proto
 ```
 
-or start your PHP server.
+2. Create `common/Config/.env` (JSON, not dotenv) in your application root. The framework's [common/Config/.env-example](common/Config/.env-example) shows the expected keys (`env`, `domain`, `connections`, `modules`, `services`, `session`, `cache`, and so on).
+
+3. Point your web server at a front controller that includes `vendor/autoload.php` and calls `Proto\Api\ApiRouter::initialize()` (see [Bootstrapping](#bootstrapping)).
 
 ## Contributing
 
@@ -895,12 +892,13 @@ Contributions are welcome! To contribute:
 
 1. Fork the Repository on GitHub
 2. Create a Branch for your feature or bug fix
-3. Commit Your Changes with clear, descriptive messages
-4. Submit a Pull Request with a detailed description of your changes
+3. Commit Your Changes using Conventional Commits (e.g. `fix(security): ...`)
+4. Run `php vendor/bin/phpunit` and `composer analyze`
+5. Submit a Pull Request with a detailed description of your changes
 
 **Releases:** Packagist uses git tags for versioning; do not set a `"version"` field in `composer.json`.
 
-Please follow our `CONTRIBUTING.md` for coding standards and guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, and the changelog policy.
 
 ## License
 
