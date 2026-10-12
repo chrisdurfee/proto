@@ -490,10 +490,11 @@ abstract class ApiController extends Controller
 	 * Sets the group by modifier for the request.
 	 *
 	 * @param Request $request The request object.
-	 * @return object|null The group by modifier object or null.
+	 * @return array|object|null The group by field list or null.
 	 */
-	protected function setGroupByModifier(Request $request): ?object
+	protected function setGroupByModifier(Request $request): array|object|null
 	{
-		return $request->json('groupBy') ?? null;
+		$groupBy = $request->json('groupBy');
+		return (is_array($groupBy) || is_object($groupBy)) ? $groupBy : null;
 	}
 }
