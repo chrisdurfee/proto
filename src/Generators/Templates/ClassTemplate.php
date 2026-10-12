@@ -260,7 +260,9 @@ abstract class ClassTemplate extends Template
 		$final = $this->getFinal();
 		$abstract = $this->getAbstract();
 		$className = $this->getClassName();
-		$extends = $this->getExtends();
+		// Subclasses return "extends X" with or without a leading space.
+		$extends = trim($this->getExtends());
+		$extends = $extends !== '' ? ' ' . $extends : '';
 
 		return <<<EOT
 <?php {$useStrict}
@@ -271,7 +273,7 @@ abstract class ClassTemplate extends Template
  * {$className}
  * {$package}
  */
-{$final}{$abstract}class {$className} {$extends}
+{$final}{$abstract}class {$className}{$extends}
 {
 {$this->getClassContent()}
 }

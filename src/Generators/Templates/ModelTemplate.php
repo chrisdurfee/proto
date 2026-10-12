@@ -146,7 +146,7 @@ EOT;
 	 * @param object \$builder
 	 * @return void
 	 */
-	protected static function joins(\$builder)
+	protected static function joins(object \$builder): void
 	{
 		{$joins}
 	}
