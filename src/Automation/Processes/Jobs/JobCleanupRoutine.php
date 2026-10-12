@@ -105,7 +105,7 @@ class JobCleanupRoutine extends Routine
 			}
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			$message = "Proto Job Cleanup routine error at " . date('Y-m-d H:i:s') . ": " . $e->getMessage();
 			error_log($message);
@@ -171,7 +171,7 @@ class JobCleanupRoutine extends Routine
 			return $count;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			if ($this->verbose)
             {
@@ -231,7 +231,7 @@ class JobCleanupRoutine extends Routine
 			return $count;
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			if ($this->verbose)
             {

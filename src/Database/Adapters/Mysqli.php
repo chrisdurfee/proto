@@ -349,6 +349,30 @@ class Mysqli extends Adapter
 	}
 
 	/**
+	 * Returns the current transaction nesting level.
+	 *
+	 * @return int Zero when no transaction is open.
+	 */
+	public function getTransactionLevel() : int
+	{
+		return $this->transactionLevel;
+	}
+
+	/**
+	 * Reports whether a transaction is open on this adapter.
+	 *
+	 * Callers that would otherwise begin/commit their own transaction should
+	 * join the open one instead, so they never commit an outer transaction
+	 * (e.g. a test's isolation transaction) early.
+	 *
+	 * @return bool
+	 */
+	public function inTransaction() : bool
+	{
+		return $this->getTransactionLevel() > 0;
+	}
+
+	/**
 	 * Checks the result of a database operation.
 	 *
 	 * @param bool $result The result to check.

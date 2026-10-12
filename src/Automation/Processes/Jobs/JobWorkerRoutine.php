@@ -84,7 +84,7 @@ class JobWorkerRoutine extends Routine
 			if ($this->verbose) {
 				echo "Job queue initialized successfully\n";
 			}
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			$message = "Failed to initialize job queue: " . $e->getMessage();
 			error_log($message);
 
@@ -125,7 +125,7 @@ class JobWorkerRoutine extends Routine
 				error_log($message);
 			}
 
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			$message = "Proto Job Worker routine error at " . date('Y-m-d H:i:s') . ": " . $e->getMessage();
 			error_log($message);
 
@@ -149,21 +149,17 @@ class JobWorkerRoutine extends Routine
 		$startTime = time();
 
 		while ($this->maxJobs === 0 || $processedJobs < $this->maxJobs) {
-			// Check if there are jobs available
-			$driver = $this->queue->getDriver();
-			$stats = $driver->getStats($this->queueName);
-			$availableJobs = $stats['pending'] ?? 0;
-
-			if ($availableJobs === 0) {
-				if ($this->verbose) {
-					echo "No jobs available in '{$this->queueName}' queue\n";
-				}
-				break;
-			}
-
-			// Process one job
+			// Process one job. work() returns 0 when no job is available
+			// right now; delayed/retrying jobs (available_at in the future)
+			// are not counted, so they cannot keep this routine spinning.
 			try {
-				$this->queue->work($this->queueName, 1);
+				if ($this->queue->work($this->queueName, 1) === 0) {
+					if ($this->verbose) {
+						echo "No jobs available in '{$this->queueName}' queue\n";
+					}
+					break;
+				}
+
 				$processedJobs++;
 
 				if ($this->verbose) {
@@ -172,7 +168,7 @@ class JobWorkerRoutine extends Routine
 					echo "[" . date('Y-m-d H:i:s') . "] Processed job #{$processedJobs} (Rate: {$rate} jobs/sec)\n";
 				}
 
-			} catch (\Exception $e) {
+			} catch (\Throwable $e) {
 				$message = "Error processing job from '{$this->queueName}' queue: " . $e->getMessage();
 				error_log($message);
 
@@ -204,7 +200,7 @@ class JobWorkerRoutine extends Routine
 			echo "  Processing: " . $stats['processing'] . "\n";
 			echo "  Completed: " . $stats['completed'] . "\n";
 			echo "  Failed: " . $stats['failed'] . "\n";
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			echo "Failed to retrieve queue stats: " . $e->getMessage() . "\n";
 		}
 	}

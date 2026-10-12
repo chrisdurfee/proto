@@ -232,9 +232,9 @@ try {
             break;
         }
 
-        // Process one job
-        Jobs::work($queueName, 1);
-        $processedCount++;
+        // Process one job (returns 0 immediately when none is available)
+        $processed = Jobs::work($queueName, 1);
+        $processedCount += $processed;
 
         // Check if we've reached max jobs
         if ($maxJobs > 0 && $processedCount >= $maxJobs) {
@@ -242,16 +242,18 @@ try {
             break;
         }
 
-        // Sleep between jobs (if configured)
-        $sleepTime = Jobs::queue()->getConfig()['sleep'] ?? 3;
-        sleep($sleepTime);
+        // Sleep only while the queue is empty
+        if ($processed === 0) {
+            $sleepTime = Jobs::queue()->getConfig()['sleep'] ?? 3;
+            sleep($sleepTime);
+        }
     }
 
     $duration = time() - $startTime;
     $rate = $duration > 0 ? number_format($processedCount / $duration, 2) : 0;
     workerLog("Worker stopped after processing {$processedCount} jobs in {$duration}s ({$rate} jobs/sec)");
 
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     workerLog("Worker crashed: " . $e->getMessage(), 'CRITICAL');
     workerLog("Stack trace: " . $e->getTraceAsString(), 'CRITICAL');
     exit(1);

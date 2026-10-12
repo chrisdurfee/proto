@@ -227,13 +227,16 @@ class Jobs extends Base
 	/**
 	 * Work the queue (process jobs).
 	 *
+	 * Returns once the queue has no available job unless the queue is
+	 * configured with `stop_when_empty => false` (see JobQueue::work()).
+	 *
 	 * @param string $queue Queue name
 	 * @param int $maxJobs Maximum number of jobs to process
-	 * @return void
+	 * @return int Number of jobs processed
 	 */
-	public static function work(string $queue = 'default', int $maxJobs = 0): void
+	public static function work(string $queue = 'default', int $maxJobs = 0): int
 	{
-		static::queue()->work($queue, $maxJobs);
+		return static::queue()->work($queue, $maxJobs);
 	}
 
 	/**

@@ -80,7 +80,7 @@ class JobSchedulerRoutine extends Routine
 				echo "Job system initialized successfully\n";
 			}
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			$message = "Failed to initialize job system: " . $e->getMessage();
 			error_log($message);
@@ -144,7 +144,7 @@ class JobSchedulerRoutine extends Routine
 			}
 
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			$message = "Proto Job Scheduler routine error at " . date('Y-m-d H:i:s') . ": " . $e->getMessage();
 			error_log($message);
@@ -177,7 +177,7 @@ class JobSchedulerRoutine extends Routine
 			echo "  Completed: " . $stats['completed'] . "\n";
 			echo "  Failed: " . $stats['failed'] . "\n";
 		}
-        catch (\Exception $e)
+        catch (\Throwable $e)
         {
 			echo "Failed to retrieve queue stats: " . $e->getMessage() . "\n";
 		}

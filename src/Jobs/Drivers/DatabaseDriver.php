@@ -12,8 +12,23 @@ use Proto\Database\Adapters\Mysqli;
  *
  * @package Proto\Jobs\Drivers
  */
-class DatabaseDriver extends Base implements DriverInterface
+class DatabaseDriver extends Base implements DriverInterface, ReleasesStaleJobs
 {
+	/**
+	 * @var int CLAIM_BATCH Candidates read per claim round in pop().
+	 */
+	protected const CLAIM_BATCH = 5;
+
+	/**
+	 * @var int CLAIM_ROUNDS Re-reads in pop() when every candidate was taken by another worker.
+	 */
+	protected const CLAIM_ROUNDS = 3;
+
+	/**
+	 * @var int REAP_BATCH Stale jobs handled per releaseStaleJobs() call.
+	 */
+	protected const REAP_BATCH = 100;
+
 	/**
 	 * @var array $config Driver configuration
 	 */
@@ -38,10 +53,13 @@ class DatabaseDriver extends Base implements DriverInterface
 	 * Constructor.
 	 *
 	 * @param array $config Driver configuration
+	 * @param Mysqli|null $connection Optional connection (defaults to the configured one)
 	 */
-	public function __construct(array $config = [])
+	public function __construct(array $config = [], ?Mysqli $connection = null)
 	{
 		parent::__construct();
+
+		$this->connection = $connection;
 
 		$this->config = array_merge([
 			'connection' => 'default',
@@ -110,6 +128,52 @@ class DatabaseDriver extends Base implements DriverInterface
 	}
 
 	/**
+	 * Runs a callback inside a transaction.
+	 *
+	 * When the connection already has a transaction open (a caller's unit of
+	 * work, or a test's isolation transaction) the callback joins it: no
+	 * nested BEGIN, and no COMMIT/ROLLBACK that would end the outer one.
+	 * The outer owner decides whether the work is kept.
+	 *
+	 * Otherwise a transaction is opened, committed when the callback returns
+	 * anything but false, and rolled back on false or on a thrown error.
+	 *
+	 * @param callable(Mysqli): mixed $callback Unit of work.
+	 * @return mixed The callback's result, or false when the transaction could not start or commit.
+	 */
+	protected function transactional(callable $callback): mixed
+	{
+		$db = $this->getConnection();
+		if ($db->inTransaction())
+		{
+			return $callback($db);
+		}
+
+		if (!$db->beginTransaction())
+		{
+			return false;
+		}
+
+		try
+		{
+			$result = $callback($db);
+		}
+		catch (\Throwable $e)
+		{
+			$db->rollback();
+			throw $e;
+		}
+
+		if ($result === false)
+		{
+			$db->rollback();
+			return false;
+		}
+
+		return $db->commit() ? $result : false;
+	}
+
+	/**
 	 * Push a job onto the queue.
 	 *
 	 * @param array $payload Job payload
@@ -144,6 +208,15 @@ class DatabaseDriver extends Base implements DriverInterface
 	/**
 	 * Pop a job from the queue.
 	 *
+	 * Claims are atomic without a transaction: candidates are read, then
+	 * each is claimed with a guarded `UPDATE … WHERE id = ? AND status =
+	 * 'pending'`. Only the worker whose UPDATE changed the row owns the
+	 * job; a worker that lost the race moves on to the next candidate.
+	 *
+	 * The returned `attempts` is the count before this run; the stored
+	 * count is incremented by the claim so a crashed run still counts
+	 * against the retry budget when the reaper recovers it.
+	 *
 	 * @param string $queue Queue name
 	 * @return array|null
 	 */
@@ -151,64 +224,131 @@ class DatabaseDriver extends Base implements DriverInterface
 	{
 		$db = $this->getConnection();
 
-		// Start transaction to prevent race conditions
-		if (!$db->beginTransaction())
-        {
-			return null;
-		}
+		$select = "SELECT * FROM {$this->jobsTable}
+				WHERE queue = ? AND status = 'pending' AND available_at <= ?
+				ORDER BY created_at ASC
+				LIMIT " . static::CLAIM_BATCH;
 
-		try
-        {
-			// Find the next available job
-			$sql = "SELECT * FROM {$this->jobsTable}
-					WHERE queue = ? AND status = 'pending' AND available_at <= ?
-					ORDER BY created_at ASC
-					LIMIT 1";
+		$claim = "UPDATE {$this->jobsTable}
+				SET status = 'processing', reserved_at = ?, attempts = attempts + 1
+				WHERE id = ? AND status = 'pending' AND available_at <= ?";
 
-			$jobs = $db->fetch($sql, [$queue, date('Y-m-d H:i:s')]);
-			if (!$jobs || empty($jobs))
+		for ($round = 0; $round < static::CLAIM_ROUNDS; $round++)
+		{
+			$now = date('Y-m-d H:i:s');
+			$jobs = $db->fetch($select, [$queue, $now]);
+			if (!$jobs)
             {
-				$db->rollback();
 				return null;
 			}
 
-			$job = $jobs[0];
-
-			// Reserve the job
-			$updateData = (object) [
-				'id' => $job->id,
-				'status' => 'processing',
-				'reserved_at' => date('Y-m-d H:i:s'),
-			];
-
-			if (!$db->update($this->jobsTable, $updateData))
-            {
-				$db->rollback();
-				return null;
+			foreach ($jobs as $job)
+			{
+				$claimed = $db->executeAffected($claim, [$now, $job->id, $now]);
+				if ($claimed === 1)
+				{
+					return $this->formatJob($job, $now);
+				}
 			}
 
-			$db->commit();
-
-			// Return job data
-			return [
-				'id' => $job->id,
-				'queue' => $job->queue,
-				'job_class' => $job->job_class,
-				'job_name' => $job->job_name,
-				'data' => json_decode($job->data, true),
-				'attempts' => (int) $job->attempts,
-				'max_retries' => (int) $job->max_retries,
-				'timeout' => (int) $job->timeout,
-				'created_at' => $job->created_at,
-				'reserved_at' => $job->reserved_at,
-			];
-
+			// Every candidate was claimed by another worker; look again.
 		}
-        catch (\Exception $e)
-        {
-			$db->rollback();
-			throw $e;
+
+		return null;
+	}
+
+	/**
+	 * Converts a claimed job row into the queue's job array.
+	 *
+	 * @param object $job Job row as read before the claim
+	 * @param string $reservedAt Reservation timestamp
+	 * @return array
+	 */
+	protected function formatJob(object $job, string $reservedAt): array
+	{
+		return [
+			'id' => $job->id,
+			'queue' => $job->queue,
+			'job_class' => $job->job_class,
+			'job_name' => $job->job_name,
+			'data' => json_decode((string) $job->data, true),
+			'attempts' => (int) $job->attempts,
+			'max_retries' => (int) $job->max_retries,
+			'timeout' => (int) $job->timeout,
+			'created_at' => $job->created_at,
+			'reserved_at' => $reservedAt,
+		];
+	}
+
+	/**
+	 * Returns jobs stuck in `processing` to the queue.
+	 *
+	 * A worker that dies mid-job (fatal, OOM, kill) leaves its row in
+	 * `processing` forever. Rows reserved longer than
+	 * max(`$timeout`, the job's own timeout) are released: back to
+	 * `pending` when retries remain, otherwise marked failed and copied to
+	 * the failed jobs table. Each release is guarded on the row still
+	 * being reserved at the same time, so a worker finishing concurrently
+	 * wins.
+	 *
+	 * @param int $timeout Seconds a reservation may last (default 15 minutes)
+	 * @return int Number of jobs released or failed
+	 */
+	public function releaseStaleJobs(int $timeout = 900): int
+	{
+		$db = $this->getConnection();
+		$now = date('Y-m-d H:i:s');
+
+		$sql = "SELECT * FROM {$this->jobsTable}
+				WHERE status = 'processing' AND reserved_at IS NOT NULL
+				AND reserved_at < DATE_SUB(?, INTERVAL GREATEST(COALESCE(timeout, 0), ?) SECOND)
+				ORDER BY reserved_at ASC
+				LIMIT " . static::REAP_BATCH;
+
+		$stale = $db->fetch($sql, [$now, max(1, $timeout)]);
+		if (!$stale)
+		{
+			return 0;
 		}
+
+		$released = 0;
+		foreach ($stale as $job)
+		{
+			if ((int) $job->attempts < (int) $job->max_retries)
+			{
+				$affected = $db->executeAffected(
+					"UPDATE {$this->jobsTable}
+					SET status = 'pending', reserved_at = NULL, available_at = ?
+					WHERE id = ? AND status = 'processing' AND reserved_at = ?",
+					[$now, $job->id, $job->reserved_at]
+				);
+
+				$released += $affected === 1 ? 1 : 0;
+				continue;
+			}
+
+			$error = "Job exceeded its reservation timeout after {$job->attempts} attempt(s); the worker likely died.";
+			$failed = $this->transactional(function (Mysqli $db) use ($job, $now, $error): bool
+			{
+				$affected = $db->executeAffected(
+					"UPDATE {$this->jobsTable}
+					SET status = 'failed', processed_at = ?
+					WHERE id = ? AND status = 'processing' AND reserved_at = ?",
+					[$now, $job->id, $job->reserved_at]
+				);
+
+				if ($affected !== 1)
+				{
+					return false;
+				}
+
+				return $this->insertFailedRecord($db, $job, $error);
+			});
+
+			$released += $failed === true ? 1 : 0;
+		}
+
+		return $released;
 	}
 
 	/**
@@ -239,23 +379,14 @@ class DatabaseDriver extends Base implements DriverInterface
 	 */
 	public function markFailed(string $jobId, string $error): bool
 	{
-		$db = $this->getConnection();
-
-		// Start transaction
-		if (!$db->beginTransaction())
-        {
-			return false;
-		}
-
-		try
-        {
+		return $this->transactional(function (Mysqli $db) use ($jobId, $error): bool
+		{
 			// Get the job data
 			$sql = "SELECT * FROM {$this->jobsTable} WHERE id = ?";
 			$jobs = $db->fetch($sql, [$jobId]);
 
 			if (!$jobs || empty($jobs))
             {
-				$db->rollback();
 				return false;
 			}
 
@@ -270,38 +401,36 @@ class DatabaseDriver extends Base implements DriverInterface
 
 			if (!$db->update($this->jobsTable, $updateData))
             {
-				$db->rollback();
 				return false;
 			}
 
-			// Add to failed jobs table
-			$failedJobData = (object) [
-				'id' => uniqid('failed_', true),
-				'job_id' => $jobId,
-				'queue' => $job->queue,
-				'job_class' => $job->job_class,
-				'job_name' => $job->job_name,
-				'data' => $job->data,
-				'attempts' => $job->attempts,
-				'error' => $error,
-				'failed_at' => date('Y-m-d H:i:s'),
-			];
+			return $this->insertFailedRecord($db, $job, $error);
+		}) === true;
+	}
 
-			if (!$db->insert($this->failedJobsTable, $failedJobData))
-            {
-				$db->rollback();
-				return false;
-			}
+	/**
+	 * Copies a job row into the failed jobs table.
+	 *
+	 * @param Mysqli $db Connection
+	 * @param object $job Job row
+	 * @param string $error Error message
+	 * @return bool
+	 */
+	protected function insertFailedRecord(Mysqli $db, object $job, string $error): bool
+	{
+		$failedJobData = (object) [
+			'id' => uniqid('failed_', true),
+			'job_id' => $job->id,
+			'queue' => $job->queue,
+			'job_class' => $job->job_class,
+			'job_name' => $job->job_name,
+			'data' => $job->data,
+			'attempts' => $job->attempts,
+			'error' => $error,
+			'failed_at' => date('Y-m-d H:i:s'),
+		];
 
-			$db->commit();
-			return true;
-
-		}
-        catch (\Exception $e)
-        {
-			$db->rollback();
-			throw $e;
-		}
+		return $db->insert($this->failedJobsTable, $failedJobData);
 	}
 
 	/**
@@ -427,23 +556,14 @@ class DatabaseDriver extends Base implements DriverInterface
 	 */
 	public function retryFailedJob(string $jobId): bool
 	{
-		$db = $this->getConnection();
-
-		// Start transaction
-		if (!$db->beginTransaction())
-        {
-			return false;
-		}
-
-		try
-        {
+		return $this->transactional(function (Mysqli $db) use ($jobId): bool
+		{
 			// Get the failed job
 			$sql = "SELECT * FROM {$this->failedJobsTable} WHERE job_id = ?";
 			$failedJobs = $db->fetch($sql, [$jobId]);
 
 			if (!$failedJobs || empty($failedJobs))
             {
-				$db->rollback();
 				return false;
 			}
 
@@ -468,26 +588,12 @@ class DatabaseDriver extends Base implements DriverInterface
 
 			if (!$db->insert($this->jobsTable, $newJobData))
             {
-				$db->rollback();
 				return false;
 			}
 
 			// Remove from failed jobs
-			if (!$db->delete($this->failedJobsTable, $jobId, 'job_id'))
-            {
-				$db->rollback();
-				return false;
-			}
-
-			$db->commit();
-			return true;
-
-		}
-        catch (\Exception $e)
-        {
-			$db->rollback();
-			throw $e;
-		}
+			return $db->delete($this->failedJobsTable, $jobId, 'job_id');
+		}) === true;
 	}
 
 	/**

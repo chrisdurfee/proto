@@ -149,6 +149,8 @@ use Proto\Jobs\Jobs;
 Jobs::configure([
     'driver' => 'database',
     'connection' => 'default',
+    // Keep waiting for new jobs instead of returning when the queue is empty
+    'stop_when_empty' => false,
 ]);
 
 // Handle graceful shutdown

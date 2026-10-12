@@ -4,6 +4,7 @@ namespace Proto\Jobs;
 use Proto\Base;
 use Proto\Jobs\Drivers\DriverInterface;
 use Proto\Jobs\Drivers\DatabaseDriver;
+use Proto\Jobs\Drivers\ReleasesStaleJobs;
 use Proto\Jobs\Events\JobEvent;
 use Proto\Events\Events;
 
@@ -32,6 +33,11 @@ class JobQueue extends Base
 	protected bool $isProcessing = false;
 
 	/**
+	 * @var int|null $lastReapAt When the stale-job reaper last ran (kept across work() calls)
+	 */
+	protected ?int $lastReapAt = null;
+
+	/**
 	 * @var Events $events Event dispatcher
 	 */
 	protected Events $events;
@@ -51,7 +57,7 @@ class JobQueue extends Base
 
 		$this->config = array_merge($this->getDefaultConfig(), $config);
 		$this->driver = $driver ?? $this->createDefaultDriver();
-		$this->events = new Events();
+		$this->events = Events::getInstance();
 	}
 
 	/**
@@ -72,6 +78,18 @@ class JobQueue extends Base
 			'sleep' => 3,
 			'max_tries' => 3,
 			'retry_delay' => 60,
+			// Return from work() as soon as no job is available right now.
+			'stop_when_empty' => true,
+			// Long-running mode (stop_when_empty = false): return after this
+			// many seconds without a job. 0 waits forever.
+			'max_idle' => 0,
+			// Return from work() after this many seconds. 0 = no limit.
+			'max_time' => 0,
+			// Seconds a job may stay reserved (processing) before the
+			// reaper returns it to the queue; a job's own longer timeout wins.
+			'reserve_timeout' => 900,
+			// Seconds between reaper passes while work() runs. 0 disables.
+			'reap_interval' => 60,
 		];
 	}
 
@@ -169,33 +187,77 @@ class JobQueue extends Base
 	/**
 	 * Process jobs from the queue.
 	 *
+	 * Returns when `$maxJobs` jobs have been processed, when no job is
+	 * available right now (default, `stop_when_empty`), after `max_idle`
+	 * seconds without work (long-running mode), after `max_time` seconds,
+	 * when the memory limit is exceeded, or when stop() is called.
+	 *
+	 * Delayed and retrying jobs whose `available_at` is in the future are
+	 * not available, so they never keep a stop-when-empty worker alive.
+	 *
 	 * @param string $queue Queue name
 	 * @param int $maxJobs Maximum number of jobs to process (0 = unlimited)
-	 * @return void
+	 * @return int Number of jobs processed
 	 */
-	public function work(string $queue = 'default', int $maxJobs = 0): void
+	public function work(string $queue = 'default', int $maxJobs = 0): int
 	{
 		$this->isProcessing = true;
 		$processedJobs = 0;
+
+		$stopWhenEmpty = (bool) ($this->config['stop_when_empty'] ?? true);
+		$maxIdle = max(0, (int) ($this->config['max_idle'] ?? 0));
+		$maxTime = max(0, (int) ($this->config['max_time'] ?? 0));
+		$sleep = max(0, (int) ($this->config['sleep'] ?? 3));
+		$reapInterval = max(0, (int) ($this->config['reap_interval'] ?? 60));
+
+		$startedAt = time();
+		$idleSince = $startedAt;
+		$reason = 'stopped';
 
 		$this->fireEvent('worker.starting', ['queue' => $queue]);
 
 		while ($this->isProcessing)
         {
+			if ($maxTime > 0 && (time() - $startedAt) >= $maxTime)
+			{
+				$reason = 'max_time';
+				break;
+			}
+
+			if ($reapInterval > 0 && ($this->lastReapAt === null || (time() - $this->lastReapAt) >= $reapInterval))
+			{
+				$this->releaseStaleJobs();
+				$this->lastReapAt = time();
+			}
+
 			$job = $this->pop($queue);
 			if ($job === null)
             {
-				// No jobs available, sleep and continue
-				sleep($this->config['sleep']);
+				if ($stopWhenEmpty)
+				{
+					$reason = 'empty';
+					break;
+				}
+
+				if ($maxIdle > 0 && (time() - $idleSince) >= $maxIdle)
+				{
+					$reason = 'max_idle';
+					break;
+				}
+
+				// Long-running mode: wait for new or delayed jobs.
+				$this->idle($sleep);
 				continue;
 			}
 
 			$this->processJob($job);
 			$processedJobs++;
+			$idleSince = time();
 
 			// Check if we've reached the maximum job limit
 			if ($maxJobs > 0 && $processedJobs >= $maxJobs)
             {
+				$reason = 'max_jobs';
 				break;
 			}
 
@@ -203,12 +265,60 @@ class JobQueue extends Base
 			if (memory_get_usage() > $this->config['memory_limit'] * 1024 * 1024)
             {
 				$this->fireEvent('worker.memory_exceeded', ['memory' => memory_get_usage()]);
+				$reason = 'memory';
 				break;
 			}
 		}
 
-		$this->fireEvent('worker.stopped', ['queue' => $queue, 'processed' => $processedJobs]);
+		$this->fireEvent('worker.stopped', [
+			'queue' => $queue,
+			'processed' => $processedJobs,
+			'reason' => $reason
+		]);
 		$this->isProcessing = false;
+
+		return $processedJobs;
+	}
+
+	/**
+	 * Returns jobs abandoned in `processing` by dead workers to the queue.
+	 *
+	 * Called by work() on start and every `reap_interval` seconds; safe to
+	 * call from a cron routine as well. Drivers that do not reserve jobs
+	 * in shared storage are skipped.
+	 *
+	 * @param int|null $timeout Reservation timeout in seconds (default: `reserve_timeout`)
+	 * @return int Number of jobs released or failed
+	 */
+	public function releaseStaleJobs(?int $timeout = null): int
+	{
+		if (!$this->driver instanceof ReleasesStaleJobs)
+		{
+			return 0;
+		}
+
+		$timeout ??= (int) ($this->config['reserve_timeout'] ?? 900);
+		$released = $this->driver->releaseStaleJobs($timeout);
+		if ($released > 0)
+		{
+			$this->fireEvent('worker.released_stale', ['released' => $released]);
+		}
+
+		return $released;
+	}
+
+	/**
+	 * Waits between polls while the queue is empty.
+	 *
+	 * @param int $seconds Seconds to sleep
+	 * @return void
+	 */
+	protected function idle(int $seconds): void
+	{
+		if ($seconds > 0)
+		{
+			sleep($seconds);
+		}
 	}
 
 	/**
@@ -269,12 +379,29 @@ class JobQueue extends Base
 	protected function handleJobFailure(array $jobData, \Throwable $exception): void
 	{
 		$attempts = (int) ($jobData['attempts'] ?? 0) + 1;
-		$job = $this->recreateJob($jobData);
 
 		$this->fireEvent('job.failed', array_merge($jobData, [
 			'exception' => $exception,
 			'attempts' => $attempts
 		]));
+
+		try
+		{
+			$job = $this->recreateJob($jobData);
+		}
+		catch (\Throwable $recreateError)
+		{
+			// A job that cannot be rebuilt (missing or invalid class) will
+			// never succeed, so fail it permanently instead of retrying.
+			$reason = 'Job could not be reconstructed: ' . $recreateError->getMessage();
+			if ($recreateError !== $exception)
+			{
+				$reason .= ' (original error: ' . $exception->getMessage() . ')';
+			}
+
+			$this->driver->markFailed((string) $jobData['id'], $reason);
+			return;
+		}
 
 		// Check if we should retry
 		if ($job->shouldRetry($attempts, $exception))
@@ -282,12 +409,20 @@ class JobQueue extends Base
 			// Retry the job
 			$delay = $job->getRetryDelay() * $attempts; // Exponential backoff
 			$this->driver->retry($jobData['id'], $attempts, $delay);
+			return;
 		}
-        else
-        {
-			// Mark as failed and call job's failed method
-			$this->driver->markFailed($jobData['id'], $exception->getMessage());
+
+		// Mark as failed and call job's failed method
+		$this->driver->markFailed($jobData['id'], $exception->getMessage());
+
+		try
+		{
 			$job->failed($exception, $jobData['data'] ?? null);
+		}
+		catch (\Throwable $hookError)
+		{
+			// A throwing failed() hook must not take the worker down.
+			error_log("Job {$job->getName()} failed() hook threw: " . $hookError->getMessage());
 		}
 	}
 
