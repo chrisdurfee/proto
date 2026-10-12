@@ -425,6 +425,33 @@ final class Connection
 	 */
 	private function reauthorize(): void
 	{
+		/**
+		 * Runs inside an event-loop timer: an exception here (e.g. a Redis
+		 * subscribe failing in Hub::join) would escape the loop and take
+		 * down every stream in the process. Close just this stream with a
+		 * reconnect hint instead.
+		 */
+		try
+		{
+			$this->checkAccess();
+		}
+		catch (\Throwable $e)
+		{
+			$this->logger->warning('Reauthorize failed', [
+				'connection' => $this->connectionId,
+				'error' => $e->getMessage()
+			]);
+			$this->close('reauthorize failed', true);
+		}
+	}
+
+	/**
+	 * Re-checks access and applies the current channel list.
+	 *
+	 * @return void
+	 */
+	private function checkAccess(): void
+	{
 		if ($this->closed)
 		{
 			return;

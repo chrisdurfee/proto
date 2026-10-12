@@ -8,6 +8,7 @@ use Amp\Http\Server\Middleware\ForwardedHeaderType;
 use Amp\Http\Server\SocketHttpServer;
 use Amp\Redis\RedisSubscriber;
 use Psr\Log\LoggerInterface;
+use Revolt\EventLoop;
 use Revolt\EventLoop\UnsupportedFeatureException;
 use function Amp\Redis\createRedisClient;
 use function Amp\Redis\createRedisConnector;
@@ -82,6 +83,16 @@ final class RealtimeServer
 	 */
 	public function start(): string
 	{
+		// A callback that throws must not stop the loop (and every open
+		// stream with it): log it and keep serving.
+		EventLoop::setErrorHandler(function (\Throwable $e): void
+		{
+			$this->logger->error('Uncaught error in realtime event loop', [
+				'error' => $e->getMessage(),
+				'type' => $e::class
+			]);
+		});
+
 		$metrics = new Metrics();
 		$hub = new Hub(
 			new RedisSubscriber(createRedisConnector($this->config->redisUri)),

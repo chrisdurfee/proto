@@ -62,4 +62,51 @@ final class RealtimeConfigTest extends TestCase
 		$this->expectException(\InvalidArgumentException::class);
 		new RealtimeConfig(secret: self::SECRET, upstream: 'http://web', redisUri: 'redis://r:6379', upstreamConcurrency: 0);
 	}
+
+	/**
+	 * Connection caps default on and are read from env (clamped >= 1).
+	 *
+	 * @return void
+	 */
+	public function testConnectionCapsDefaultAndClamp(): void
+	{
+		$config = RealtimeConfig::fromEnv((object)['secret' => self::SECRET, 'upstream' => 'http://web'], null);
+		$this->assertSame(20000, $config->maxConnections);
+		$this->assertSame(100, $config->maxConnectionsPerIp);
+
+		$config = RealtimeConfig::fromEnv((object)[
+			'secret' => self::SECRET,
+			'upstream' => 'http://web',
+			'maxConnections' => 0,
+			'maxConnectionsPerIp' => 5
+		], null);
+		$this->assertSame(1, $config->maxConnections);
+		$this->assertSame(5, $config->maxConnectionsPerIp);
+	}
+
+	/**
+	 * The handler refuses new streams past the per-IP and global caps
+	 * and frees slots on release.
+	 *
+	 * @return void
+	 */
+	public function testStreamSlotsEnforcePerIpAndGlobalCaps(): void
+	{
+		$config = new RealtimeConfig(self::SECRET, 'http://web', 'redis://localhost:6379', maxConnections: 3, maxConnectionsPerIp: 2);
+		$ref = new \ReflectionClass(\Proto\Realtime\Server\SseRequestHandler::class);
+		$handler = $ref->newInstanceWithoutConstructor();
+		$ref->getProperty('config')->setValue($handler, $config);
+
+		$acquire = $ref->getMethod('acquireSlot');
+		$release = $ref->getMethod('releaseSlot');
+
+		$this->assertTrue($acquire->invoke($handler, '1.1.1.1'));
+		$this->assertTrue($acquire->invoke($handler, '1.1.1.1'));
+		$this->assertFalse($acquire->invoke($handler, '1.1.1.1'), 'Per-IP cap.');
+		$this->assertTrue($acquire->invoke($handler, '2.2.2.2'));
+		$this->assertFalse($acquire->invoke($handler, '3.3.3.3'), 'Global cap.');
+
+		$release->invoke($handler, '1.1.1.1');
+		$this->assertTrue($acquire->invoke($handler, '3.3.3.3'));
+	}
 }

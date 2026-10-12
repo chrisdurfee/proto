@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace Proto\Realtime\Server;
 
+use Amp\Http\Server\Middleware\Forwarded;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\RequestHandler;
 use Amp\Http\Server\Response;
@@ -28,6 +29,20 @@ final class SseRequestHandler implements RequestHandler
 	 * @var bool
 	 */
 	private bool $draining = false;
+
+	/**
+	 * Streams open or still authorizing.
+	 *
+	 * @var int
+	 */
+	private int $slots = 0;
+
+	/**
+	 * Streams open or authorizing, per client IP.
+	 *
+	 * @var array<string, int>
+	 */
+	private array $slotsByIp = [];
 
 	/**
 	 * @param RealtimeConfig $config
@@ -81,10 +96,33 @@ final class SseRequestHandler implements RequestHandler
 			return $this->json(503, ['message' => 'Restarting'], ['retry-after' => '1']);
 		}
 
-		$origin = OriginRequest::fromServerRequest($request);
-		$result = $this->upstream->authorize($origin);
+		/**
+		 * Cap streams per process and per client before calling PHP:
+		 * every connect costs an upstream authorize, so an unauthenticated
+		 * flood would otherwise queue without bound behind the upstream
+		 * semaphore and starve legitimate connects.
+		 */
+		$ip = self::clientIp($request);
+		if (!$this->acquireSlot($ip))
+		{
+			return $this->json(503, ['message' => 'Too many streams'], ['retry-after' => (string)random_int(2, 10)]);
+		}
+
+		try
+		{
+			$origin = OriginRequest::fromServerRequest($request);
+			$result = $this->upstream->authorize($origin);
+		}
+		catch (\Throwable $e)
+		{
+			$this->releaseSlot($ip);
+			$this->logger->error('Authorize failed', ['error' => $e->getMessage()]);
+			return $this->json(503, ['message' => 'Stream unavailable'], ['retry-after' => '3']);
+		}
+
 		if ($result->descriptor === null)
 		{
+			$this->releaseSlot($ip);
 			return new Response($result->status, ['content-type' => $result->contentType], $result->body);
 		}
 
@@ -97,9 +135,13 @@ final class SseRequestHandler implements RequestHandler
 			$this->config,
 			$this->metrics,
 			$this->logger,
-			function (Connection $closed): void
+			function (Connection $closed) use ($ip): void
 			{
-				unset($this->connections[$closed->id]);
+				if (isset($this->connections[$closed->id]))
+				{
+					unset($this->connections[$closed->id]);
+				}
+				$this->releaseSlot($ip);
 			}
 		);
 
@@ -116,6 +158,62 @@ final class SseRequestHandler implements RequestHandler
 
 		$this->connections[$connection->id] = $connection;
 		return $response;
+	}
+
+	/**
+	 * Reserves a stream slot for a client, or returns false when the
+	 * process or that client is at its limit.
+	 *
+	 * @param string $ip
+	 * @return bool
+	 */
+	private function acquireSlot(string $ip): bool
+	{
+		if ($this->slots >= $this->config->maxConnections || ($this->slotsByIp[$ip] ?? 0) >= $this->config->maxConnectionsPerIp)
+		{
+			return false;
+		}
+
+		$this->slots++;
+		$this->slotsByIp[$ip] = ($this->slotsByIp[$ip] ?? 0) + 1;
+		return true;
+	}
+
+	/**
+	 * @param string $ip
+	 * @return void
+	 */
+	private function releaseSlot(string $ip): void
+	{
+		$this->slots = max(0, $this->slots - 1);
+		$count = ($this->slotsByIp[$ip] ?? 0) - 1;
+		if ($count > 0)
+		{
+			$this->slotsByIp[$ip] = $count;
+			return;
+		}
+
+		unset($this->slotsByIp[$ip]);
+	}
+
+	/**
+	 * Client IP as resolved by the trusted-proxy middleware, else the peer.
+	 *
+	 * @param Request $request
+	 * @return string
+	 */
+	private static function clientIp(Request $request): string
+	{
+		if ($request->hasAttribute(Forwarded::class))
+		{
+			$forwarded = $request->getAttribute(Forwarded::class);
+			if ($forwarded instanceof Forwarded)
+			{
+				return $forwarded->getFor()->getAddress();
+			}
+		}
+
+		return OriginRequest::remoteIp($request->getClient()->getRemoteAddress()->toString());
 	}
 
 	/**

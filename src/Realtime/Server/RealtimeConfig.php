@@ -38,6 +38,8 @@ final class RealtimeConfig
 	 * @param int $idleTimeoutSeconds Connection dropped after this long with no bytes written. Must exceed $heartbeatSeconds.
 	 * @param int $upstreamConcurrency Calls into PHP (authorize + hydrate) in flight at once; the rest wait.
 	 * @param int $upstreamMaxQueued Hydrate calls allowed to wait; past this, messages are dropped instead of piling up.
+	 * @param int $maxConnections Open (or authorizing) streams per process; past this, new streams get 503.
+	 * @param int $maxConnectionsPerIp Open (or authorizing) streams per client IP.
 	 */
 	public function __construct(
 		public readonly string $secret,
@@ -55,9 +57,16 @@ final class RealtimeConfig
 		public readonly array $trustedProxies = ['127.0.0.1', '::1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'],
 		public readonly int $idleTimeoutSeconds = 60,
 		public readonly int $upstreamConcurrency = 32,
-		public readonly int $upstreamMaxQueued = 2048
+		public readonly int $upstreamMaxQueued = 2048,
+		public readonly int $maxConnections = 20000,
+		public readonly int $maxConnectionsPerIp = 100
 	)
 	{
+		if ($maxConnections < 1 || $maxConnectionsPerIp < 1)
+		{
+			throw new \InvalidArgumentException('realtime.maxConnections and maxConnectionsPerIp must be at least 1.');
+		}
+
 		if ($upstreamConcurrency < 1 || $upstreamMaxQueued < 0)
 		{
 			throw new \InvalidArgumentException('realtime.upstreamConcurrency must be at least 1 and upstreamMaxQueued at least 0.');
@@ -126,7 +135,9 @@ final class RealtimeConfig
 			// Default: four heartbeats of slack, never under 60s.
 			idleTimeoutSeconds: max($heartbeat + 1, (int)($realtime->idleTimeoutSeconds ?? max(60, $heartbeat * 4))),
 			upstreamConcurrency: max(1, (int)($realtime->upstreamConcurrency ?? 32)),
-			upstreamMaxQueued: max(0, (int)($realtime->upstreamMaxQueued ?? 2048))
+			upstreamMaxQueued: max(0, (int)($realtime->upstreamMaxQueued ?? 2048)),
+			maxConnections: max(1, (int)($realtime->maxConnections ?? 20000)),
+			maxConnectionsPerIp: max(1, (int)($realtime->maxConnectionsPerIp ?? 100))
 		);
 	}
 }
