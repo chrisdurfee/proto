@@ -367,8 +367,7 @@ class KafkaDriver extends Base implements DriverInterface
 			$jobData = $this->processingJobs[$jobId];
 
 			// Commit the message to Kafka
-			$consumer = $this->getConsumer();
-			$consumer->commit($jobData['message']);
+			$this->commitMessage($jobData['message']);
 
 			// Track completed job for stats
 			$this->completedJobs[$jobId] = [
@@ -409,8 +408,7 @@ class KafkaDriver extends Base implements DriverInterface
 			$payload = $jobData['payload'];
 
 			// Commit the original message
-			$consumer = $this->getConsumer();
-			$consumer->commit($jobData['message']);
+			$this->commitMessage($jobData['message']);
 
 			// Store in failed jobs
 			$failedJob = [
@@ -421,6 +419,8 @@ class KafkaDriver extends Base implements DriverInterface
 				'job_name' => $payload['job_name'],
 				'data' => json_encode($payload['data']),
 				'attempts' => $payload['attempts'],
+				'max_retries' => $payload['max_retries'] ?? 3,
+				'timeout' => $payload['timeout'] ?? 300,
 				'error' => $error,
 				'failed_at' => date('Y-m-d H:i:s'),
 			];
@@ -510,8 +510,7 @@ class KafkaDriver extends Base implements DriverInterface
 			$payload['reserved_at'] = null;
 
 			// Commit the original message
-			$consumer = $this->getConsumer();
-			$consumer->commit($jobData['message']);
+			$this->commitMessage($jobData['message']);
 
 			// Re-queue the job
 			$result = $this->push($payload, $payload['queue'] ?? 'default', $delay);
@@ -622,8 +621,8 @@ class KafkaDriver extends Base implements DriverInterface
 				'job_name' => $failedJob['job_name'],
 				'data' => json_decode($failedJob['data'], true),
 				'attempts' => 0,
-				'max_retries' => 3,
-				'timeout' => 300,
+				'max_retries' => (int) ($failedJob['max_retries'] ?? 3),
+				'timeout' => (int) ($failedJob['timeout'] ?? 300),
 				'created_at' => date('Y-m-d H:i:s'),
 			];
 

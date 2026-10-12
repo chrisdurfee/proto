@@ -568,6 +568,7 @@ class DatabaseDriver extends Base implements DriverInterface, ReleasesStaleJobs
 			}
 
 			$failedJob = $failedJobs[0];
+			[$maxRetries, $timeout] = $this->resolveRetrySettings($db, $failedJob);
 
 			// Create new job entry
 			$newJobData = (object) [
@@ -577,8 +578,8 @@ class DatabaseDriver extends Base implements DriverInterface, ReleasesStaleJobs
 				'job_name' => $failedJob->job_name,
 				'data' => $failedJob->data,
 				'attempts' => 0,
-				'max_retries' => 3, // Reset to default
-				'timeout' => 300, // Reset to default
+				'max_retries' => $maxRetries,
+				'timeout' => $timeout,
 				'status' => 'pending',
 				'created_at' => date('Y-m-d H:i:s'),
 				'available_at' => date('Y-m-d H:i:s'),
@@ -594,6 +595,46 @@ class DatabaseDriver extends Base implements DriverInterface, ReleasesStaleJobs
 			// Remove from failed jobs
 			return $db->delete($this->failedJobsTable, $jobId, 'job_id');
 		}) === true;
+	}
+
+	/**
+	 * Works out the retry budget and timeout for a re-queued failed job.
+	 *
+	 * The failed_jobs table does not store them, so they come from the
+	 * original jobs row (kept with status `failed`). If cleanup already
+	 * removed it, the job class's own defaults are used, then 3 / 300.
+	 *
+	 * @param Mysqli $db Connection
+	 * @param object $failedJob Failed job row
+	 * @return array{0: int, 1: int} [max_retries, timeout]
+	 */
+	protected function resolveRetrySettings(Mysqli $db, object $failedJob): array
+	{
+		$original = $db->fetch(
+			"SELECT max_retries, timeout FROM {$this->jobsTable} WHERE id = ?",
+			[$failedJob->job_id ?? null]
+		);
+
+		if ($original)
+		{
+			return [(int) $original[0]->max_retries, (int) $original[0]->timeout];
+		}
+
+		$class = (string) $failedJob->job_class;
+		if (class_exists($class) && is_subclass_of($class, \Proto\Jobs\JobInterface::class))
+		{
+			try
+			{
+				$job = new $class();
+				return [$job->getMaxRetries(), $job->getTimeout()];
+			}
+			catch (\Throwable $e)
+			{
+				// Fall through to the defaults.
+			}
+		}
+
+		return [3, 300];
 	}
 
 	/**

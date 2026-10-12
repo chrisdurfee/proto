@@ -33,6 +33,7 @@ final class DatabaseDriverTransactionTest extends Test
 	{
 		return (object) [
 			'id' => 'job_1',
+			'job_id' => 'job_1',
 			'queue' => 'default',
 			'job_class' => 'App\\Jobs\\Example',
 			'job_name' => 'Example',
@@ -109,6 +110,6 @@ final class DatabaseDriverTransactionTest extends Test
 
 		$driver = new DatabaseDriver([], $db);
 		$this->assertTrue($driver->retryFailedJob('job_1'));
-		$this->assertSame(['fetch', 'insert', 'delete'], $db->kinds());
+		$this->assertSame(['fetch', 'fetch', 'insert', 'delete'], $db->kinds());
 	}
 }
