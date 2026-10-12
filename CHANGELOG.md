@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.41] - 2026-10-12
+
+### Security
+- **Join-free lookups keep tenant/visibility scopes** — 2.0.40's `Storage::fetchWithoutHooks()` (used by `fetchWhereWithoutJoins()`, `BatchMap` and batch enrichment) skipped `setCustomWhere()`, so scopes apps put there (tenant, visibility, soft delete) were not applied to enrichment queries. It now runs `setCustomWhere()` with no modifiers and skips only `setOrderBy()` / `setGroupBy()`.
+- **CSV export uses the sort/date allow-lists** — `CsvExportTrait` passed raw `orderBy` / `dates` / `groupBy`, leaving the comparison oracle closed in 2.0.39 open on export routes.
+- **`Jwt::decode()` hardening** — tokens without `exp` are rejected (pass `$requireExp = false` to allow), the header must declare `HS256`, `nbf` is honored, malformed payloads return `null` instead of a `TypeError`, and 30s of clock skew is tolerated (`Jwt::LEEWAY`). `encode()` always advertises `HS256`.
+- **`Cipher` v2 format** — new ciphertexts (prefixed `v2.`) use HKDF-derived encryption/MAC keys and authenticate the IV; the MAC is checked before decrypting. Legacy values still decrypt. `Encryption::encrypt()` / `decrypt()` honor their `$key` argument, and a plaintext of `"0"` no longer decrypts to `null`.
+- **Strict trusted-proxy CIDRs** — a malformed prefix (`10.0.0.0/`, `10.0.0.0/abc`) read as `/0` and trusted every address; it now matches nothing. IPv4-mapped IPv6 peers (`::ffff:a.b.c.d`) match IPv4 rules.
+- **Validator rejects bad input** — non-scalar values and values the sanitizer cannot use are field errors: `"abc"` for `int` used to become `0` and pass, `"maybe"` for `bool` passed as `null`, and arrays / JSON numbers / length-limited non-string rules (`int:11`) threw a `TypeError` (500).
+
+### Fixed
+- **Sensitive-field detection matches words** — 2.0.39's substring match made `businessName`, `processName` (ssn), `keyword`, `hockeyTeam` (key), `tokenCount` and `emailVerified` unsortable. password/passwd/secret/token/apikey still match anywhere; key, salt, otp, ssn, email, phone, mobile, pwd match as whole words; names ending in verified/count/at/status/… are metadata. Columns listed in `$sortableFields` keep a compound cursor (`Model::isCursorSafeField()`) instead of falling back to an id cursor that skipped or repeated rows.
+- **`dates` accepts browser formats** — ISO timestamps with `Z` or an offset (`Date.toISOString()`) are converted to the app timezone, and `datetime-local` values without seconds are accepted. They were silently dropped in 2.0.39/2.0.40.
+- **Uploads match their real type** — with the declared type no longer trusted, libmagic aliases (`audio/x-wav`, `application/x-rar`, `image/x-ms-bmp`, `application/x-gzip`) and Office files reported as `application/zip` or `application/vnd.ms-office` / CDFV2 failed allow-lists. `UploadFile::canonicalMime()` normalizes them and Office containers map by extension.
+- **Redis recovers** — after a failure the driver stays offline 5s, then reconnects (it stayed offline for the life of a worker, silently skipping cache invalidation). `subscribe()` / `psubscribe()` lift the read timeout while blocking, so idle subscriptions are not dropped after 1s.
+- **Transactions recover** — when a savepoint is lost (the server rolled back on a deadlock) the adapter rolls back fully and resets its level (`Mysqli::abortTransaction()`, `rollbackToLevel()`). `JobQueue::work()` rolls back transactions a job handler left open. `DatabaseDriver::transactional()` nests via a savepoint instead of joining, so a failed unit undoes only its own writes.
+- **Dispatch timing** — retry times are computed on the database clock (`NOW() + INTERVAL ? SECOND`; PHP/MySQL time zones may differ), and a batch stops at half the stale window and releases unsent items so they cannot be reclaimed and sent twice.
+- **Query builder / filters** — `Insert::onDuplicate()` rendered invalid SQL; `AdapterProxy::set('raw clause')` rendered `0 = raw clause`; `Filter::format()` turned lower-case `like` into `=`, `['col','IS NOT',null]` into `IS NULL`, bound `BETWEEN` arrays as one value, and let malformed tuples shift later placeholders.
+- **Router** — `/user/5/?tab=x` matched no route (the trailing slash was trimmed before the query string was removed).
+- **Generators** — generated models declare `joins(object $builder): void`, and class templates no longer emit `class X  extends Y` / `class Xextends Y`.
+
+### Changed
+- `LoginRateLimiterMiddleware`'s per-account limit is configurable (`$accountAttemptsPerHour`, `null` disables). It counts every attempt, so a known username can be locked out for up to an hour; tune it or count failures in your auth flow.
+- Realtime docs: add your CDN / load balancer ranges to `realtime.trustedProxies`, or `maxConnectionsPerIp` treats everyone behind the edge as one client.
+- About 170 new unit tests (Validator, policies, query builder rendering, router matching, events, filters, transactions).
+
+### Upgrade notes
+- **Cipher v2 is one-way for rollbacks**: values encrypted by 2.0.41 cannot be decrypted by 2.0.40 or earlier, and are 3 characters longer (check exact-width columns).
+- **Validator is stricter**: requests that sent non-numeric strings to `int`/`float` rules or non-boolean strings to `bool` rules now get a 422 instead of a silently coerced value.
+- **`Jwt::decode()`** rejects tokens without `exp` unless `$requireExp` is false.
+
 ## [2.0.40] - 2026-10-12
 
 ### Security
