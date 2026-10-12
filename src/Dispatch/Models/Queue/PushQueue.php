@@ -35,7 +35,9 @@ class PushQueue extends Queue
 		'message',
 		'attachments',
 		'priority',
-		'status'
+		'status',
+		'attempts',
+		'nextAttemptAt'
 	];
 
 	/**

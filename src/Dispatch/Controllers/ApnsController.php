@@ -71,11 +71,11 @@ class ApnsController extends Controller
 	 */
 	public static function enqueue(object $settings, ?object $data = null): object
 	{
-		$template = $settings->compiledTemplate ?? self::createPush($settings->template, $data);
+		$template = $settings->compiledTemplate ?? static::createPush($settings->template, $data);
 
 		return (object)[
 			'tokens' => $settings->tokens,
-			'message' => self::buildPayload($template)
+			'message' => static::buildPayload($template)
 		];
 	}
 
@@ -88,7 +88,7 @@ class ApnsController extends Controller
 	 */
 	public static function dispatch(object $settings, ?object $data = null): Response
 	{
-		$template = $settings->compiledTemplate ?? self::createPush($settings->template, $data);
-		return self::send(new Apns($settings->tokens, self::buildPayload($template)));
+		$template = $settings->compiledTemplate ?? static::createPush($settings->template, $data);
+		return static::send(new Apns($settings->tokens, static::buildPayload($template)));
 	}
 }

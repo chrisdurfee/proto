@@ -100,6 +100,13 @@ class Email extends Dispatch
 	private const BLOCKED_RECIPIENTS = [];
 
 	/**
+	 * Default SMTP connect/read timeout in seconds.
+	 *
+	 * @var int
+	 */
+	public const DEFAULT_TIMEOUT = 15;
+
+	/**
 	 * Email constructor.
 	 *
 	 * @param string $to Recipient email address.
@@ -127,6 +134,18 @@ class Email extends Dispatch
 		$this->fromName = $fromName;
 		$this->addAttachments($attachments);
 		$this->initializeMailer();
+	}
+
+	/**
+	 * Resolves the SMTP timeout in seconds from `email.smtp.timeout`.
+	 *
+	 * @param object $settings The SMTP settings.
+	 * @return int
+	 */
+	protected static function resolveTimeout(object $settings): int
+	{
+		$timeout = (int)($settings->timeout ?? self::DEFAULT_TIMEOUT);
+		return ($timeout > 0) ? $timeout : self::DEFAULT_TIMEOUT;
 	}
 
 	/**
@@ -160,6 +179,10 @@ class Email extends Dispatch
 			$this->mailer->SMTPAuth = true;
 			$this->mailer->Username = $settings->username ?? '';
 			$this->mailer->Password = $settings->password ?? '';
+
+			// PHPMailer defaults to a 300s SMTP timeout, which can pin a
+			// request or queue worker for minutes on a dead relay.
+			$this->mailer->Timeout = static::resolveTimeout($settings);
 
 			// Encryption and port
 			$encryption = $settings->encryption ?? 'tls';

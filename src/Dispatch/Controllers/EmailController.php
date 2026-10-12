@@ -43,7 +43,7 @@ class EmailController extends Controller
 			'from' => $settings->from ?? $email->default,
 			'fromName' => $settings->fromName ?? $email->fromName,
 			'subject' => $settings->subject,
-			'unsubscribeUrl' => self::resolveHeaderUnsubscribeUrl($settings),
+			'unsubscribeUrl' => static::resolveHeaderUnsubscribeUrl($settings),
 			'attachments' => $settings->attachments ?? null
 		];
 	}
@@ -79,8 +79,8 @@ class EmailController extends Controller
 	 */
 	public static function enqueue(object $settings, ?object $data = null): object
 	{
-		$data = self::setEmailData($data, $settings);
-		$template = self::createEmail($settings->template, $data);
+		$data = static::setEmailData($data, $settings);
+		$template = static::createEmail($settings->template, $data);
 		$email = env('email');
 
 		return (object)[
@@ -89,7 +89,7 @@ class EmailController extends Controller
 			'fromName' => $settings->fromName ?? $email->fromName,
 			'subject' => $settings->subject,
 			'message' => (string) $template,
-			'unsubscribeUrl' => self::resolveHeaderUnsubscribeUrl($settings),
+			'unsubscribeUrl' => static::resolveHeaderUnsubscribeUrl($settings),
 			'attachments' => $settings->attachments ?? null
 		];
 	}
@@ -140,10 +140,10 @@ class EmailController extends Controller
 	 */
 	public static function dispatch(object $settings, ?object $data = null): Response
 	{
-		$data = self::setEmailData($data, $settings);
+		$data = static::setEmailData($data, $settings);
 
-		$template = $settings->compiledTemplate ?? self::createEmail($settings->template, $data);
-		$settings = self::getEmailDefaults($settings);
+		$template = $settings->compiledTemplate ?? static::createEmail($settings->template, $data);
+		$settings = static::getEmailDefaults($settings);
 
 		$attachments = !empty($settings->attachments) ? $settings->attachments : null;
 		$email = new Email($settings->to, 'html', $settings->from, $settings->subject, $template, $attachments, $settings->fromName);
@@ -153,6 +153,6 @@ class EmailController extends Controller
 			$email->setUnsubscribeUrl($settings->unsubscribeUrl);
 		}
 
-		return self::send($email);
+		return static::send($email);
 	}
 }

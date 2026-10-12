@@ -31,6 +31,16 @@ class Request
 	protected bool $debug = false;
 
 	/**
+	 * Total transfer timeout override in seconds (null = Curl default).
+	 */
+	protected ?int $timeoutSeconds = null;
+
+	/**
+	 * Connect timeout override in seconds (null = Curl default).
+	 */
+	protected ?int $connectTimeoutSeconds = null;
+
+	/**
 	 * Initializes a new request instance.
 	 *
 	 * @param string $baseUrl The base URL for the request.
@@ -72,6 +82,16 @@ class Request
 		mixed $params = null
 	): object
 	{
+		return $this->buildCurl()->request($url, $method, $params);
+	}
+
+	/**
+	 * Builds a configured cURL instance (headers, auth, timeouts).
+	 *
+	 * @return Curl
+	 */
+	protected function buildCurl(): Curl
+	{
 		$curl = new Curl($this->debug);
 		$curl->addHeaders($this->headers);
 
@@ -80,7 +100,45 @@ class Request
 			$curl->setAuthentication($this->username, $this->password);
 		}
 
-		return $curl->request($url, $method, $params);
+		if ($this->connectTimeoutSeconds !== null)
+		{
+			$curl->connectTimeout($this->connectTimeoutSeconds);
+		}
+
+		if ($this->timeoutSeconds !== null)
+		{
+			$curl->timeout($this->timeoutSeconds);
+		}
+
+		return $curl;
+	}
+
+	/**
+	 * Sets the total transfer timeout in seconds for later requests.
+	 *
+	 * Unset, the {@see Curl} default (30s) applies.
+	 *
+	 * @param int $seconds
+	 * @return static
+	 */
+	public function timeout(int $seconds): static
+	{
+		$this->timeoutSeconds = max(1, $seconds);
+		return $this;
+	}
+
+	/**
+	 * Sets the connect timeout in seconds for later requests.
+	 *
+	 * Unset, the {@see Curl} default (10s) applies.
+	 *
+	 * @param int $seconds
+	 * @return static
+	 */
+	public function connectTimeout(int $seconds): static
+	{
+		$this->connectTimeoutSeconds = max(1, $seconds);
+		return $this;
 	}
 
 	/**

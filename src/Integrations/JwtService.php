@@ -46,6 +46,7 @@ abstract class JwtService extends Oauth2Service
 	 *
 	 * @param string|null $clientSecret The client secret.
 	 * @return void
+	 * @throws IntegrationException When the JWT cannot be obtained.
 	 */
 	public function __construct(?string $clientSecret = null)
 	{
@@ -83,6 +84,7 @@ abstract class JwtService extends Oauth2Service
 	 * Gets the JWT and sets it for future requests.
 	 *
 	 * @return void
+	 * @throws IntegrationException When the upstream token request fails.
 	 */
 	protected function getJwt(): void
 	{
@@ -110,18 +112,24 @@ abstract class JwtService extends Oauth2Service
 	 *
 	 * @param object $result The result object.
 	 * @return void
+	 * @throws IntegrationException When the upstream token request fails.
 	 */
 	protected function setupJwt(object $result): void
 	{
-		if ($result->code === 201 || $result->code === 200)
+		$code = (int)($result->code ?? 0);
+		$token = $result->data->token ?? null;
+		if (($code === 201 || $code === 200) && is_string($token) && $token !== '')
 		{
-			$this->jwt = $result->data->token;
+			$this->jwt = $token;
+			return;
 		}
-		else
-		{
-			$this->reportError($result);
-			die();
-		}
+
+		// Previously die()d here, which killed long-running workers.
+		$this->reportError($result);
+		throw new IntegrationException(
+			static::class . ': JWT token request failed (HTTP ' . $code . ').',
+			$code
+		);
 	}
 
 	/**
@@ -132,8 +140,11 @@ abstract class JwtService extends Oauth2Service
 	 */
 	protected function reportError(object $result): void
 	{
+		$message = $result->message
+			?? ('JWT token request failed (HTTP ' . (int)($result->code ?? 0) . ').');
+
 		error(
-			$result->message,
+			(string)$message,
 			__FILE__,
 			__LINE__
 		);

@@ -39,7 +39,9 @@ class EmailQueue extends Queue
 		'unsubscribeUrl',
 		'attachments',
 		'priority',
-		'status'
+		'status',
+		'attempts',
+		'nextAttemptAt'
 	];
 
 	/**

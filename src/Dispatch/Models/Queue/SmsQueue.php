@@ -36,7 +36,9 @@ class SmsQueue extends Queue
 		'message',
 		'attachments',
 		'priority',
-		'status'
+		'status',
+		'attempts',
+		'nextAttemptAt'
 	];
 
 	/**
