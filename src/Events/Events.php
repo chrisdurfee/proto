@@ -172,6 +172,36 @@ class Events extends Singleton
 	}
 
 	/**
+	 * Whether anything listens for an event key in this process. Redis
+	 * keys always count as listened to (subscribers live elsewhere).
+	 *
+	 * Lets publishers skip building expensive payloads nobody reads.
+	 *
+	 * @param string $key The event identifier.
+	 * @return bool
+	 */
+	public function hasListeners(string $key): bool
+	{
+		if ($this->isRedisEvent($key) && $this->redisAdapter !== null)
+		{
+			return true;
+		}
+
+		return $this->pubSub->getSubscribers($key) !== [];
+	}
+
+	/**
+	 * Static wrapper for `hasListeners()`.
+	 *
+	 * @param string $key The event identifier.
+	 * @return bool
+	 */
+	public static function listening(string $key): bool
+	{
+		return static::getInstance()->hasListeners($key);
+	}
+
+	/**
 	 * Subscribes to an event (static wrapper for `subscribe()`).
 	 *
 	 * @param string $key The event identifier.

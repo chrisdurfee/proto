@@ -83,17 +83,36 @@ class StorageProxy extends EventProxy implements StorageInterface
 	 */
 	protected function publish(string $method, mixed $payload): void
 	{
-		$response = $this->getResponse($payload->args, $payload->data);
 		$name = $this->getEventName($method);
-		Events::update($name, $response);
+		$targetListening = Events::listening($name);
+		$globalListening = Events::listening('Storage');
 
-		// Broadcast each action to the storage target to be used as a global event.
-		Events::update('Storage', (object)[
-			'target' => $this->target,
-			'method' => $method,
-			'args' => $response->args,
-			'data' => $response->data
-		]);
+		/**
+		 * Building the payload re-converts every returned row (augment,
+		 * casts, JSON decode, format), which doubled the conversion cost
+		 * of each list read. Skip it when no one is subscribed.
+		 */
+		if (!$targetListening && !$globalListening)
+		{
+			return;
+		}
+
+		$response = $this->getResponse($payload->args, $payload->data);
+		if ($targetListening)
+		{
+			Events::update($name, $response);
+		}
+
+		if ($globalListening)
+		{
+			// Broadcast each action to the storage target to be used as a global event.
+			Events::update('Storage', (object)[
+				'target' => $this->target,
+				'method' => $method,
+				'args' => $response->args,
+				'data' => $response->data
+			]);
+		}
 	}
 
 	/**
