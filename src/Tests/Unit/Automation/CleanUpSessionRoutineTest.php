@@ -47,7 +47,7 @@ final class CleanUpSessionRoutineTest extends Test
 	{
 		$sql = (string)(new Delete('user_sessions'))->where('updated_at < ?')->limit(1000);
 		$this->assertStringContainsString('DELETE FROM user_sessions', $sql);
-		$this->assertStringContainsString('WHERE updated_at < ?', $sql);
+		$this->assertMatchesRegularExpression('/WHERE\s+updated_at < \?/', $sql);
 		$this->assertStringContainsString('LIMIT 1000', $sql);
 	}
 }

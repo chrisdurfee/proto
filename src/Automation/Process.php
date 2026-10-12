@@ -158,12 +158,4 @@ abstract class Process extends Base
 		}
 		return true;
 	}
-
-	/**
-	 * Destructor to stop the process if it's still running.
-	 */
-	public function __destruct()
-	{
-		die();
-	}
 }
