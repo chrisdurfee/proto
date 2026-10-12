@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: PHPUnit + PHPStan (PHP 8.4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: proto
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      APP_ENV: testing
+      # Opt-in realtime end-to-end tests (src/Tests/Unit/Realtime) skip unless set.
+      PROTO_REALTIME_REDIS_URI: redis://127.0.0.1:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mysqli, redis, apcu, intl, mbstring, imagick
+          coverage: none
+          tools: composer:v2
+        # imagick is optional; setup-php warns rather than fails if it cannot install it.
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # Proto reads JSON config from common/Config/.env (gitignored). Build it
+      # from the committed example and point every environment at the MySQL
+      # service. The cache block is dropped so tests run without the Redis
+      # cache driver, matching a default local setup; Redis is only used by
+      # the realtime tests via PROTO_REALTIME_REDIS_URI.
+      - name: Write test config
+        run: |
+          php -r '
+            $c = json_decode(file_get_contents("common/Config/.env-example"), true);
+            $db = ["host" => "127.0.0.1", "database" => "proto", "username" => "root", "password" => "root", "port" => 3306];
+            foreach (["dev", "testing", "prod"] as $env) { $c["connections"]["default"][$env] = $db; }
+            unset($c["cache"]);
+            $c["env"] = "testing";
+            file_put_contents("common/Config/.env", json_encode($c, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+          '
+
+      - name: Load test schema
+        run: mysql -h 127.0.0.1 -uroot -proot proto < .github/ci/test-schema.sql
+
+      - name: PHPUnit
+        run: php vendor/bin/phpunit
+
+      - name: PHPStan
+        run: composer analyze -- --no-progress

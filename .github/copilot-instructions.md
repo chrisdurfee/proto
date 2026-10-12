@@ -1,20 +1,21 @@
-# Copilot Instructions for Proto Framework
+# Proto Framework Guide for AI Agents
 
-**Goal**: Enable AI agents to build resilient, scalable, maintainable, and secure code with minimal errors and without human intervention.
+**Goal**: Enable AI agents to build resilient, scalable, maintainable, and secure code with minimal errors and without human intervention. This file is the canonical agent guide (root `AGENTS.md` and `CLAUDE.md` point here). Framework APIs named here exist in `src/`; `Modules\*` / `Common\*` classes and helper methods in the examples are app code.
 
 ## 1. Project Overview & Architecture
 
 We strive to maintain high code quality and consistency. The code should be resilient, scalable, maintainable, and secure. Functions and methods should adhere to single responsibility principle, and classes should follow SOLID principles. Fail gracefully with proper error handling and logging.
 
 ### Overview
-- This is the Proto framework (modular monolith for PHP ≥ 8.1). Core lives under `src/` and is installed as a Composer package; apps using Proto keep app code in `modules/` and shared config in `common/Config/.env` (JSON).
-- Bootstrapping happens via `Proto\Base` → `Proto\System` + `Config`, then `ModuleManager::activate(env('modules'))` and `ServiceManager::activate(env('services'))`.
+- This is the Proto framework (modular monolith for **PHP 8.4+**; `composer.json` requires `php >= 8.4`). Core lives under `src/` and is installed as a Composer package; apps using Proto keep app code in `modules/` and shared config in `common/Config/.env` (JSON).
+- Bootstrapping happens via `Proto\Base` → `Proto\System` + `Config`, then `Proto\Module\ModuleManager::activate(env('modules'))` and `Proto\Providers\ServiceManager::activate(env('services'))`.
 - HTTP stack: `src/Http/Router/*` implements a lightweight router with middleware, request/response wrappers, and a resource pattern that maps HTTP verbs to controller methods.
 - API front door: `src/Api/ApiRouter.php` sets up global helpers and routes. It dynamically includes `modules/<Module>/Api/**/api.php` via `ResourceHelper` for URLs like `/user/account/...`.
 
 ### Autoloading
-- PSR-4: `Modules\` → `modules/`, `Common\` → `common/`.
-- Migrations: classmapped from `common/Migrations` and `modules/*/Migrations`.
+- Framework: PSR-4 `Proto\` → `src/`; framework migrations are classmapped from `src/Migrations`.
+- Host app (configured in the app's own `composer.json`): PSR-4 `Modules\` → `modules/`, `Common\` → `common/`; migrations from `common/Migrations` and `modules/*/Migrations`.
+- Classes in the `Common\` namespace (e.g. `Common\Auth\Policies\Policy`) belong to the host app, not to this repository.
 
 ## 2. Code Style & Conventions (CRITICAL)
 
@@ -74,7 +75,7 @@ if (!$article)
 // ❌ WRONG
 $article = Article::get($articleId);
 
-if (!$carProfile)
+if (!$article)
 {
     return false;
 }
@@ -83,11 +84,10 @@ if (!$carProfile)
 ## 3. Global Helpers & Core Patterns
 
 ### Global Helpers
-Defined in `Config.php` and `Api/ApiRouter.php`:
-- `env($key)` returns config (from `common/Config/.env`). `envUrl()` gives the base URL. `ENV_URL` is a constant.
-- `router()` returns the singleton `Proto\Http\Router\Router` instance; use it to register routes.
-- `session()` gets the session; `modules()` accesses gateways registered by modules; `registerModule($key, $factory)` registers gateways.
-- `getSession('key')` / `setSession('key', 'value')` for session access.
+- `src/Config.php`: `env($key)` returns config (from `common/Config/.env`), `setEnv($key, $value)` sets it at runtime, `envUrl()` gives the base URL, `ENV_URL` is a constant, `events()` returns the global event bus.
+- `src/Api/ApiRouter.php`: `router()` returns the singleton `Proto\Http\Router\Router` instance (use it to register routes); `session()` gets the session; `getSession('key')` / `setSession('key', 'value')` for session access.
+- `src/Module/Modules.php`: `modules()` accesses gateways registered by modules; `registerModule($key, $factory)` registers gateways.
+- `src/Auth.php`: `auth()` returns the `Proto\Auth` registry of gates (`auth()->user`, `auth()->role`, ...).
 
 ### Session Access
 The api router sets up global session access:
@@ -171,6 +171,8 @@ router()->group('auth/crm', function(Router $router)
     $router->post('mfa/verify', [AuthController::class, 'verifyAuthCode']);
 });
 ```
+
+**Middleware**: any class with `public function handle(Request $request, callable $next): mixed` can be registered with `router()->middleware([...])`, as the third argument of a route method, or on a `group()`. Built-ins live in `Proto\Http\Middleware`: `ApiRateLimiterMiddleware`, `CrossSiteProtectionMiddleware`, `DomainMiddleware`, `LoginRateLimiterMiddleware`, `RateLimiterMiddleware`, `ThrottleMiddleware`.
 
 **CRITICAL**:
 - Module routes MUST start with module name: `'article/...'` NOT `'user/:id/article/...'`
@@ -511,12 +513,28 @@ protected function modifyUpdateItem(object &$data, Request $request): void
 }
 ```
 
+`setError()` and `validateRules()` stop the request by throwing `Proto\Http\HttpTerminationException`, which the router renders as the intended error response. Never catch it.
+
+#### Uncaught exceptions and database outages
+
+As a safety net, `Router::activateRoute()` passes any other uncaught `\Throwable` to `Proto\Error\Error::exceptionHandler()`, which logs it and renders JSON (`Error::renderServerError()`); fatal errors caught by the shutdown handler get the same body:
+
+```json
+{"success": false, "message": "An unexpected error occurred. Please try again."}
+```
+
+- Status `500`, with `Content-Type: application/json` and `Cache-Control: no-store`.
+- `Proto\Database\DatabaseUnavailableException` (thrown by the query builder's `fetch()` when the adapter cannot connect, instead of returning `[]`) renders status `503` with `Retry-After: 5` and the message `The service is temporarily unavailable. Please try again shortly.`
+- Only in dev (`errorReporting` on) is ` [ExceptionClass: message]` appended to the message. Production never echoes SQL, paths, or traces.
+
+Do not rely on this for expected failures; return `$this->error(...)` / `setError(...)`. Do not catch `DatabaseUnavailableException` just to return an empty list: an outage must not look like "no rows".
+
 ### Authentication Pattern
 **CRITICAL**:
-- **Policies handle authentication** - Use `protected ?string $policy = YourPolicy::class;` in controllers
-- **Controllers assume user authenticated** - After policy check, `session()->user->id` is available
-- **DO NOT check auth in controllers** - No `if (!$userId)` checks needed
-- **Use session data directly** - `$userId = session()->user->id;` (no null check)
+- **Policies handle authentication** - Use `protected ?string $policy = YourPolicy::class;` in controllers. The router always wraps a controller that declares `$policy` in a `PolicyProxy` (`src/Http/Router/ControllerHelper.php`), in every environment.
+- **Controllers assume user authenticated** - Once a policy that denies guests has passed (e.g. its action methods return `$this->isSignedIn()` or an ownership check such as `$this->ownsResource(...)`), `session()->user->id` is available
+- **DO NOT check auth in controllers** - No `if (!$userId)` checks needed behind such a policy
+- **Use session data directly** - `$userId = session()->user->id;` (no null check) behind such a policy. Public actions (no policy, or a policy that allows guests) must use `session()->user->id ?? null`.
 
 ```php
 // ✅ CORRECT - Policy enforces auth, controller uses session
@@ -555,14 +573,40 @@ public function join(Request $request): object
 - `delete(Request $request)` → calls `deleteItem(object $data)`
 - `get(Request $request)`, `all(Request $request)`, `search(Request $request)`
 
-The `all()` method is used to list multiple items with optional filtering, sorting, and pagination. It accepts a filter object, optional offset and limit or last cursor and since for pagination, dates object, and optional modifiers for sorting, grouping, searching, and cursor.
+The `all()` method is used to list multiple items with optional filtering, sorting, and pagination. It reads a filter object, optional offset and limit or `lastCursor` and `since` for pagination, a `dates` object, and modifiers for sorting, grouping, searching, and cursor. Simplified, the built-in implementation (`src/Controllers/ResourceController.php`) is:
 
 ```php
 public function all(Request $request): object
 {
-    $inputs = $this->getAllInputs($request);
-    $result = $this->model::all($inputs->filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
-    return $this->response($result);
+    $inputs = $this->getAllInputs($request);                       // sanitized filter, paging, modifiers
+    $filter = $this->applyListScopes($inputs->filter, $request);   // model + controller $scopes + Policy::scope()
+    $inputs->modifiers['scopesApplied'] = true;
+    $result = $this->model::all($filter, $inputs->offset, $inputs->limit, $inputs->modifiers);
+    if ($result !== false && !empty($result->rows))
+    {
+        $this->applyDeclaredEnrichments($result->rows, $request);  // $currentUserFlags / $enrichments
+        $this->enrichRows($result->rows, $request);
+    }
+
+    return $this->response($result ? (array)$result : false);
+}
+```
+
+Do not override `all()` with a direct `Model::all($inputs->filter, ...)` call: that skips list scopes, `Policy::scope()`, and enrichments. Use the hooks and properties instead.
+
+#### Client sort/group/date columns (`sortableFields`)
+
+Client `orderBy`, `groupBy`, and `dates.field` modifiers are allow-listed. `getAllInputs()` keeps only columns returned by the controller's `requestSortColumns()`, which `ResourceController` takes from `Model::sortableFields()`:
+
+- Default (`protected static ?array $sortableFields = null`): every name in `$fields` (computed fields use their alias) except sensitive ones: anything in `$fieldsBlacklist` and any name containing `email`, `phone`, `mobile`, `secret`, `token`, `key`, `ssn`, or `password`. `id` and audit timestamps stay sortable.
+- Explicit list: used as-is. `[]` makes nothing sortable. `['*']` is **not** a wildcard (it also allows nothing).
+- Disallowed columns are silently dropped (no error); if none remain the modifier is ignored. A bad `dates.field` or a `dates.start`/`dates.end` that is not a plain date/datetime drops the whole `dates` modifier. `dates.field` defaults to `createdAt`, so that column must be sortable for date ranges to work.
+
+```php
+class Post extends Model
+{
+    // Only these columns may appear in client orderBy / groupBy / dates.field
+    protected static ?array $sortableFields = ['id', 'createdAt', 'updatedAt', 'title', 'score'];
 }
 ```
 
@@ -885,22 +929,28 @@ public static function getActiveUsers(): array
         ->fetch(['active']);
 }
 
-// Using closures (compact syntax)
-$users = User::storage()->findAll(
-    fn($sql, &$p) => (
-        $p[] = 'active',
-        $sql->where('status = ?')->orderBy('created_at DESC')
-    )
-);
+// Using closures (compact syntax). Undeclared static calls on a model are
+// forwarded to its storage, so static::findAll() / static::find() reach
+// Storage::findAll() / Storage::find(). Bind values with [column, value]
+// tuples or $sql->addParam(): the callback's $params argument is passed by
+// value, so `fn($sql, &$p) => $p[] = ...` silently loses the parameter.
+public static function getActiveUsers(): array
+{
+    return static::findAll(
+        fn($sql) => $sql->where(['status', 'active'])->orderBy('created_at DESC')
+    );
+}
 ```
 
+`storage()` is an **instance** method (`$user->storage()`); `User::storage()` is an error. From outside a model, prefer a static model method like the one above.
+
 ### CRITICAL Storage Patterns
-- DO NOT specify `$tableName` or `$connection` (unless non-default DB)
+- The **model** declares `$tableName`. Storage classes DO NOT redeclare `$tableName` (Storage reads it from the model) and only declare `protected string $connection = '...'` for a non-default DB
 - Use builder's `fetch()` directly: `->fetch($params)` NOT `$this->fetch($sql, $params)`
 - Chain multiple where conditions in single call
-- Use `first()` not `fetchOne()`
+- Use `first()` not `fetchOne()` (`fetchOne()` does not exist)
 - ALWAYS use builder methods, NEVER raw SQL with table names
-- NO `getTableName()` method exists - always use builder
+- Storage has no `getTableName()` method - use `$this->table()` / the builder (the model has static `table()` and instance `getTableName()` if you really need the name)
 
 ## 9. Migrations
 
@@ -1023,7 +1073,7 @@ class CarMaintenanceRecord extends Migration
 
 ## 10. Services
 
-**Base**: `Common\Services\Service`
+**Base**: `Proto\Services\Service` (an app may add its own `Common\Services\Service` that extends it)
 
 **Pattern**: Services coordinate business logic, models handle data access.
 
@@ -1225,12 +1275,21 @@ class StoreService extends Service
 
 **Format**: `'type[:max]|required'`
 
-**Types**: `int`, `float`, `string`, `email`, `ip`, `phone`, `mac`, `bool`, `url`, `domain`
+**Types**: `int`, `float`, `string`, `email`, `ip`, `phone`, `mac`, `bool`, `url`, `domain`, plus `image` / `file` for uploads (max size in KB, optional `mimes:` sub-rule). Validator class: `Proto\Api\Validator`.
 
 **Examples**:
 - `'string:255|required'`
 - `'email|required'`
 - `'int|required'`
+- `'image:2048|required|mimes:jpeg,png'`
+
+**In controllers**: `$this->validateRules($data, $rules)` returns `true` or stops the request with a `422` response containing per-field errors (it never returns `false`, so don't assign its result as data). `$request->validate($rules)` returns the validated item object, but on failure sends a `400` and exits without field errors; prefer `validateRules()`.
+
+```php
+$data = $this->getRequestItem($request);
+$this->validateRules($data, ['title' => 'string:200|required']);
+return $this->addItem($data);
+```
 
 ## 12. Auth & Policies
 
@@ -1247,13 +1306,15 @@ class UserGate extends Gate
 {
     public function isUser(int $userId): bool
     {
-        $sessionUserId = $this->session->get('user')->id ?? null;
-        return $sessionUserId === $userId;
+        // Gate reads the session through protected static helpers:
+        // static::get($key), static::set($key, $value), static::getSession()
+        $sessionUserId = static::get('user')->id ?? null;
+        return (int)$sessionUserId === $userId;
     }
 
     public function isAdmin(): bool
     {
-        return $this->session->get('role') === 'admin';
+        return static::get('role') === 'admin';
     }
 }
 
@@ -1264,61 +1325,68 @@ $auth->user->isUser(1); // Use anywhere
 ```
 
 ### Policies (Authorization)
-The Common policy adds a type property to identify the policy type and uses a request method to check if the user is authorized to perform the action by the type and request action method.
+Policies extend `Proto\Auth\Policies\Policy` (many apps add a `Common\Auth\Policies\Policy` base that extends it). `$type` is optional: when null it is inferred from the class name (`UserPolicy` → `user`, `GroupPostPolicy` → `groupPost`).
 
-Module policies extend the Common policy and define per-action methods as needed.
+How `PolicyProxy` (`src/Auth/PolicyProxy.php`) dispatches a controller action such as `get`:
+1. `before(...)` if defined. Returning `true` allows the action immediately; `false` (or no `before()`) falls through.
+2. The per-action method (`get`, `add`, `update`, `delete`, `all`, `search`, `count`, `setup`, `merge`, or a custom action name), called with the **same arguments as the controller method**, i.e. `(Request $request)`. If there is no per-action method, `default(...)` is called; **if `default()` is missing too, the action is denied**.
+3. After the controller runs: `after<Action>($result)` (e.g. `afterGet`) and `after($result)` if defined; returning `false` replaces the result with a 403.
+
+A denial returns a 403 error response.
+
+**CRITICAL**: per-action methods must take `(Request $request)` or no parameters. A signature such as `get(int $id)` is **never dispatched** (the call falls through to `default()`); `Policy::validateMethodSignatures()` warns about it in dev and logs it in production. `before()`, `default()`, the action methods, and the `after*()` hooks must be **public**: the proxy checks them with `is_callable()` from outside the class, so a `protected function before()` silently never runs.
 
 ```php
-// Create in Modules/ModuleName/Auth/Policies extending Common\Auth\Policies\Policy
+// Create in Modules/ModuleName/Auth/Policies
 <?php declare(strict_types=1);
 
 namespace Modules\User\Auth\Policies;
 
-use Common\Auth\Policies\Policy;
+use Proto\Auth\Policies\Policy;
+use Proto\Http\Router\Request;
 
 class UserPolicy extends Policy
 {
     /**
-     * The type of the policy.
+     * The type of the policy (optional; inferred as 'user').
      *
      * @var string|null
      */
     protected ?string $type = 'user';
 
-    // Runs before all methods
-    protected function before(): bool
+    // Runs before every action; true allows, false falls through
+    public function before(): bool
     {
-        return (auth()->user->isAdmin());
+        return auth()->user->isAdmin();
     }
 
-    // Override this to add a default policy for all actions if no per-action method exists
-    protected function default(): bool
+    // Used for actions without their own method. Omitting it denies them.
+    public function default(): bool
     {
         return false;
     }
 
-    // Per-action methods
-    public function get(int $id): bool
+    // Per-action methods receive the controller's arguments: the Request
+    public function get(Request $request): bool
     {
-        return auth()->user->isUser($id);
+        return $this->ownsResource($request->getInt('id'));
     }
 
-    // After method hook example
+    public function update(Request $request): bool
+    {
+        return $this->ownsResource($request->getInt('id'));
+    }
+
+    // After hook: inspect the controller result
     public function afterGet(mixed $result): bool
     {
-        // Check the result object if needed
-        $userId = session()->user->id ?? null;
+        $userId = $this->getUserId();
         if (!$userId)
         {
             return false;
         }
 
-        return ($result->id === $userId);
-    }
-
-    public function update(int $id): bool
-    {
-        return auth()->user->isUser($id);
+        return ((int)($result->row->id ?? 0) === $userId);
     }
 }
 ```
@@ -1421,7 +1489,7 @@ protected function createUser(): User
 ```
 
 ### Factories
-**Location**: `modules/*/Factories` or `common/Factories`
+**Location**: next to the model. `Model::factory()` (from the `Proto\Models\HasFactory` trait) looks for `{ModelClass}Factory` in the model's namespace, then in a `Factories` sub-namespace, e.g. `Modules\User\Models\UserFactory` or `Modules\User\Models\Factories\UserFactory`. Elsewhere, override the model's `protected static function factoryClass(): string`.
 **Purpose**: Generate test data for models using the Proto Simple Faker class. Check Proto composer package in `\src\Tests\SimpleFaker.php` for available methods.
 
 **Usage**:
@@ -1438,38 +1506,45 @@ $users = User::factory()->count(5)->create();
 // With custom attributes
 $user = User::factory()->create(['email' => 'test@example.com']);
 
-// States for variations
-$admin = User::factory()->admin()->create();
+// States for variations: state('admin') calls the factory's stateAdmin()
+$admin = User::factory()->state('admin')->create();
+
+// Or an inline state callback
+$user = User::factory()->state(fn(array $attributes) => ['status' => 'busy'])->create();
 ```
 
 **Factory Structure**:
 ```php
 <?php declare(strict_types=1);
 
-namespace Modules\User\Factories;
+namespace Modules\User\Models\Factories;
 
 use Proto\Models\Factory;
 use Modules\User\Models\User;
 
 class UserFactory extends Factory
 {
-    protected static ?string $model = User::class;
-
-    protected function definition(): array
+    protected function model(): string
     {
+        return User::class;
+    }
+
+    public function definition(): array
+    {
+        $faker = $this->faker();
         return [
-            'username' => $this->faker->userName(),
-            'email' => $this->faker->email(),
+            'username' => $faker->email(),
+            'email' => $faker->email(),
             'password' => password_hash('password', PASSWORD_DEFAULT),
-            'firstName' => $this->faker->firstName(),
-            'lastName' => $this->faker->lastName()
+            'firstName' => $faker->firstName(),
+            'lastName' => $faker->lastName()
         ];
     }
 
-    // State methods
-    public function admin(): static
+    // State methods are named state{Name} and return attribute overrides
+    public function stateAdmin(): array
     {
-        return $this->state(['role' => 'admin']);
+        return ['role' => 'admin'];
     }
 }
 ```
@@ -1477,7 +1552,7 @@ class UserFactory extends Factory
 ### Seeders
 **Location**: `modules/*/Seeders` or `common/Seeders`
 **Purpose**: Populate database with initial/test data
-**Run**: `php vendor/bin/phpunit --filter SeederTest` or programmatically
+**Run**: from a test (`protected array $seeders = [...]` or `$this->seedDatabase([...])`) or programmatically with `SeederManager` (`Proto\Database\Seeders`)
 
 **Usage**:
 ```php
@@ -1485,8 +1560,12 @@ class UserFactory extends Factory
 $seeder = new UserSeeder();
 $seeder->run();
 
-// Via SeederManager
-SeederManager::run([UserSeeder::class, GroupSeeder::class]);
+// Via SeederManager (instance methods)
+$manager = new SeederManager();
+$manager->runMany([UserSeeder::class, GroupSeeder::class]);
+
+// Inside a Proto\Tests\Test
+$this->seedDatabase([UserSeeder::class]);
 ```
 
 **Seeder Structure**:
@@ -1496,7 +1575,7 @@ SeederManager::run([UserSeeder::class, GroupSeeder::class]);
 namespace Modules\User\Seeders;
 
 use Proto\Database\Seeders\Seeder;
-use Modules\User\Factories\UserFactory;
+use Modules\User\Models\User;
 
 class UserSeeder extends Seeder
 {
@@ -1706,13 +1785,14 @@ Vault::disk('s3')->delete('/tmp/file.txt');
 ## 15. Build, Test, Debug
 
 - Install deps: `composer install`.
-- Run tests: `composer test` (see `phpunit.xml`; test roots: `src/Tests/Unit`, `src/Tests/Feature`).
-- Static analysis: `composer analyze` (phpstan).
-- For local HTTP handling, include `vendor/autoload.php`, ensure `new Proto\Base()` is constructed (e.g., via `Api\ApiRouter`), and set `env('router')->basePath` in `common/Config/.env` if you need an API prefix.
+- Run tests: `php vendor/bin/phpunit` or `composer test` (see `phpunit.xml`; test root: `src/Tests/Unit`). DB-backed tests use the `connections.default.testing` settings in `common/Config/.env`; realtime end-to-end tests skip unless `PROTO_REALTIME_REDIS_URI` is set.
+- Static analysis: `composer analyze` (PHPStan level 1, `phpstan.neon`). Pre-existing errors live in `phpstan-baseline.neon`; fix new errors rather than adding them to the baseline.
+- CI (`.github/workflows/ci.yml`) runs `composer validate --strict`, PHPUnit, and `composer analyze` on PHP 8.4.
+- For local HTTP handling, include `vendor/autoload.php` and call `Proto\Api\ApiRouter::initialize()` (it constructs `Proto\Base`). Set `"router": {"basePath": "/api/"}` in `common/Config/.env` if you need an API prefix (defaults to `/`).
 
 ## 16. Integration Points
 
-- External deps in `composer.json`: AWS SDK, Twilio, PHPMailer, Web Push, JWT, OpenAI. Higher-level wrappers live under `src/Dispatch/*`, `src/Integrations/*`.
+- External deps in `composer.json`: amphp (HTTP client/server, Redis, sync), AWS SDK, Twilio, PHPMailer, and minishlink/web-push (which brings in web-token/jwt-library). Higher-level wrappers live under `src/Dispatch/*`, `src/Integrations/*`.
 - Database access is abstracted in `src/Database/*` and `src/Storage/*` with query builders and policies.
 
 ## 17. Batch Enrichment Pattern
@@ -1862,39 +1942,18 @@ public static function enrichWithUserData(array $rows, ?int $userId): void
 }
 ```
 
-### Controller Override
+### Controller Hook
 
-Override `get()` and `all()` to call the enrichment after delegating to the parent:
+Call the enrichment from `enrichRows()` instead of overriding `get()` / `all()`. `ResourceController` passes the already-formatted plain-object rows to it on `all()`, and on `get()` through `enrichRow()`:
 
 ```php
-public function get(Request $request): object
+protected function enrichRows(array &$rows, Request $request): void
 {
-    $result = parent::get($request);
-    $row = $result->row?->getData();
-    if (!$row)
-    {
-        return $result;
-    }
-
-    Article::enrichWithUserData([$row], session()->user->id);
-    $result->row = $row;
-    return $result;
-}
-
-public function all(Request $request): object
-{
-    $result = parent::all($request);
-    $rows = array_map(fn($item) => $item->getData(), $result->rows ?? []);
-    if (empty($rows))
-    {
-        return $result;
-    }
-
-    Article::enrichWithUserData($rows, session()->user->id);
-    $result->rows = $rows;
-    return $result;
+    Article::enrichWithUserData($rows, session()->user->id ?? null);
 }
 ```
+
+If you do override `get()` / `all()`, note the return shapes: `parent::get()` returns a response whose `row` is already a plain object (`$result->row`, no `getData()` call), and `parent::all()` returns `rows` as plain objects (`$result->rows`).
 
 **Result**: Always 3 queries — 1 main + 1 per related table — whether the list contains 1 item or 10,000.
 
@@ -1963,7 +2022,7 @@ class PostController extends ResourceController
 **Services and gateways**
 - Extend `Proto\Services\Service` (`success`, `failure`, `restrictFields`, `generateUuid`).
 - `$serviceClass = PostService::class` — do not `new` the service in the constructor.
-- Memoize child gateways with `$this->gateway(Child::class)`.
+- Memoize child gateways with `$this->gateway(Child::class)` (available on gateways extending `Proto\Module\Gateway`, or any class using `Proto\Module\Traits\LazyGatewayTrait`).
 - Can't extend `Proto\Services\Service` (e.g. its own `success()` collides)? `use Proto\Services\Traits\ServiceResultFactory;` for `ok()` / `fail()` instead of copying `ServiceResult` construction by hand.
 
 **Generators**
@@ -1988,11 +2047,18 @@ class PostController extends ResourceController
 | Duplicate `enrichRow`/`enrichRows` logic | Only implement `enrichRows()` — `enrichRow()` auto-delegates |
 | Manual file loop for batch uploads | Use `$this->handleMediaUpload(...)` |
 | Custom MIME fallback methods | Built into `UploadFile::getMimeType()` automatically |
-| `protected function modifyAddItem()` | `protected function modifyAddItem()` (typo) |
+| `protected function modifyAddItem(object $data)` | `protected function modifyAddItem(object &$data, Request $request): void` (by reference, with the Request) |
+| Policy `get(int $id)` / `update(int $id)` | `get(Request $request)` / `update(Request $request)` (int signatures are never dispatched) |
+| `protected function before()` in a policy | `public function before()` (protected hooks are never called) |
+| `$this->session->get('user')` in a Gate | `static::get('user')` |
+| `User::storage()->findAll(...)` | `static::findAll(fn($sql) => ...)` in the model, or `$user->storage()` |
+| `$data = $this->validateRules(...)` | `$this->validateRules($data, $rules);` then use `$data` |
+| `fn($sql, &$params) => $params[] = $v` in `find()`/`findAll()` | `$sql->where(['column', $v])` or `$sql->addParam($v)` |
+| Catch `DatabaseUnavailableException` and return `[]` | Let it propagate (renders a 503) |
 | `\Modules\User\Models\User::get()` | `use Modules\User\Models\User; User::get()` |
 | `$request->route('id')` | `$request->getInt('id')` or `$request->input('id')` |
 | `if (!$userId) return error()` in controller | Remove check - policy handles auth |
-| `$userId = session()->user->id ?? null;` | `$userId = session()->user->id;` after policy |
+| `$userId = session()->user->id ?? null;` behind a sign-in policy | `$userId = session()->user->id;` |
 | `throw new \Exception()` in controller | `$this->setError()` or `$this->error()` |
 | `$m = new Model(); $m->x = 1; $m->add();` | `$m = new Model((object)['x' => 1]); $m->add();` |
 | `$_FILES['upload']` in controller | `$request->file('upload')` |
@@ -2015,8 +2081,9 @@ class PostController extends ResourceController
 
 ## 19. Configuration & Gotchas
 
-- `common/Config/.env` is JSON (not dotenv). It must at least define `domain` (production/development) and optional `modules`/`services` arrays.
-- In `dev` env, `ControllerHelper` skips policy/caching proxies for easier development. Production enables them.
+- `common/Config/.env` is JSON (not dotenv). It must at least define `domain` (`production`/`development`, optional `staging`/`testing`) and optional `modules`/`services` arrays. See `common/Config/.env-example`.
+- The runtime env (`env('env')`) is `dev`, `staging`, `prod`, or `testing`, detected from `APP_ENV`, a `DOCKER_CONTAINER` flag, or the request host matched against `domain.*`.
+- `src/Http/Router/ControllerHelper.php` wraps controllers: a controller with `$policy` is **always** wrapped in `PolicyProxy`, in every environment. Only caching is env-dependent: `CacheProxy` is added when the controller sets `$cacheable = true` and `Cache::isSupported()` (cache enabled and the driver reachable). Caching is enabled by `env('cache')->enabled` when set, otherwise in every env except `dev`.
 - `Router::resource()` automatically adds `/:id?` to your URI; your controller can read `id` via `$req->params()->id` or `$req->getInt('id')`. Use `resourceStrict()` when a literal child path shares the prefix. In `api.php` (via ResourceHelper) static segments outrank `:id` regardless of order.
 
 Questions or gaps: confirm how your app autoloads `Modules\*` namespaces (Composer PSR-4 in the host app) and how you want policies/caching configured by default in non-dev.

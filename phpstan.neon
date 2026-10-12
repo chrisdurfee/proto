@@ -1,0 +1,19 @@
+includes:
+	- phpstan-baseline.neon
+
+parameters:
+	level: 1
+	phpVersion: 80400
+	paths:
+		- src
+	bootstrapFiles:
+		- phpstan-bootstrap.php
+	excludePaths:
+		analyse:
+			# Sample code and ad-hoc scripts, not framework code.
+			- src/Tests/Examples
+			- src/Jobs/Examples
+			- src/Database/Migrations/test.php
+			- src/Http/ServerEvents/Example
+			- src/Http/Socket/Example
+	tmpDir: .phpstan-cache

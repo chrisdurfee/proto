@@ -298,9 +298,9 @@ public function testTransactionIsolation(): void
 
 ## Related Documentation
 
-- [docs/TESTING_BEST_PRACTICES.md](TESTING_BEST_PRACTICES.md)
-- [docs/TEST_QUICK_REFERENCE.md](TEST_QUICK_REFERENCE.md)
-- [docs/TESTING_DATABASE_SETUP.md](TESTING_DATABASE_SETUP.md)
+- [docs/TESTING_BEST_PRACTICES.md](../TESTING_BEST_PRACTICES.md)
+- [docs/TEST_QUICK_REFERENCE.md](../TEST_QUICK_REFERENCE.md)
+- [docs/TESTING_DATABASE_SETUP.md](../TESTING_DATABASE_SETUP.md)
 
 ## Troubleshooting
 
