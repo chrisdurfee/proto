@@ -51,7 +51,7 @@ class JobQueue extends Base
 
 		$this->config = array_merge($this->getDefaultConfig(), $config);
 		$this->driver = $driver ?? $this->createDefaultDriver();
-		$this->events = new Events();
+		$this->events = Events::getInstance();
 	}
 
 	/**
