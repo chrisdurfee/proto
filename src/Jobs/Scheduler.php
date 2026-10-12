@@ -48,9 +48,15 @@ class Scheduler extends Base
 	public function at(JobInterface|string $job, string $time, mixed $data = null, ?string $queue = null): ScheduledJob
 	{
 		$timestamp = is_numeric($time) ? (int) $time : strtotime($time);
+		if ($timestamp === false)
+		{
+			throw new \InvalidArgumentException("Invalid schedule time \"{$time}\".");
+		}
+
 		$delay = max(0, $timestamp - time());
 
-		$scheduledJob = new ScheduledJob($job, $data, $queue, $delay);
+		// Anchor to the requested time so a stateless tick runs it once.
+		$scheduledJob = new ScheduledJob($job, $data, $queue, $delay, null, $timestamp);
 		$this->scheduledJobs[] = $scheduledJob;
 
 		return $scheduledJob;
@@ -84,7 +90,9 @@ class Scheduler extends Base
 	 */
 	public function every(JobInterface|string $job, int $interval, mixed $data = null, ?string $queue = null): ScheduledJob
 	{
-		$scheduledJob = new ScheduledJob($job, $data, $queue, 0, $interval);
+		// Align to the epoch so stateless ticks agree on run times
+		// (e.g. everyFiveMinutes() runs at :00, :05, :10 ...).
+		$scheduledJob = new ScheduledJob($job, $data, $queue, 0, $interval, 0);
 		$this->scheduledJobs[] = $scheduledJob;
 
 		return $scheduledJob;
@@ -263,6 +271,101 @@ class Scheduler extends Base
 	public function clearSchedule(): void
 	{
 		$this->scheduledJobs = [];
+	}
+
+	/**
+	 * Dispatch every job with a run time in the current tick window.
+	 *
+	 * Built for cron: each run rebuilds the schedule, so this keeps no
+	 * state. The window ends at `now` rounded down to a multiple of
+	 * `$window`, which absorbs cron start-up jitter; with ticks `$window`
+	 * seconds apart each run time is dispatched once.
+	 *
+	 * @param int $window Tick period in seconds (60 for a per-minute cron)
+	 * @param int|null $now Current timestamp (defaults to time())
+	 * @return int Number of jobs queued
+	 */
+	public function dispatchDue(int $window = 60, ?int $now = null): int
+	{
+		$window = max(1, $window);
+		$now ??= time();
+		$tickEnd = intdiv($now, $window) * $window;
+
+		$queuedCount = 0;
+		foreach ($this->scheduledJobs as $scheduledJob)
+		{
+			if (!$scheduledJob->isDueWithin($tickEnd, $window))
+			{
+				continue;
+			}
+
+			$this->queue->push(
+				$scheduledJob->getJob(),
+				$scheduledJob->getData(),
+				$scheduledJob->getQueue(),
+				0
+			);
+			$queuedCount++;
+		}
+
+		return $queuedCount;
+	}
+
+	/**
+	 * Register scheduled jobs from configuration entries.
+	 *
+	 * Each entry is an array or object with a `job` class name, optional
+	 * `data` and `queue`, and one timing key:
+	 * - `every`: interval in seconds (epoch-aligned, e.g. 300 = every 5 minutes)
+	 * - `daily`: "HH:MM"
+	 * - `weekly`: [dayOfWeek (0 = Sunday), "HH:MM"]
+	 * - `at`: a date/time string or timestamp (runs once)
+	 *
+	 * @param iterable $entries Schedule entries
+	 * @return int Number of entries registered
+	 * @throws \InvalidArgumentException When an entry is missing `job` or a timing key.
+	 */
+	public function load(iterable $entries): int
+	{
+		$count = 0;
+		foreach ($entries as $entry)
+		{
+			$entry = json_decode((string) json_encode($entry), true);
+			$job = $entry['job'] ?? null;
+			if (!is_string($job) || $job === '')
+			{
+				throw new \InvalidArgumentException('Scheduled job entry is missing "job".');
+			}
+
+			$data = $entry['data'] ?? null;
+			$queue = $entry['queue'] ?? null;
+
+			if (isset($entry['every']))
+			{
+				$this->every($job, (int) $entry['every'], $data, $queue);
+			}
+			elseif (isset($entry['daily']))
+			{
+				$this->daily($job, $data, $queue, (string) $entry['daily']);
+			}
+			elseif (isset($entry['weekly']))
+			{
+				$weekly = (array) $entry['weekly'];
+				$this->weekly($job, $data, $queue, (int) ($weekly[0] ?? 0), (string) ($weekly[1] ?? '00:00'));
+			}
+			elseif (isset($entry['at']))
+			{
+				$this->at($job, (string) $entry['at'], $data, $queue);
+			}
+			else
+			{
+				throw new \InvalidArgumentException("Scheduled job \"{$job}\" needs one of: every, daily, weekly, at.");
+			}
+
+			$count++;
+		}
+
+		return $count;
 	}
 
 	/**

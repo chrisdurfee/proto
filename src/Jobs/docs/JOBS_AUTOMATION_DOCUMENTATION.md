@@ -30,6 +30,44 @@ $scheduler = $routine->getScheduler();
 $queue = $routine->getQueue();
 ```
 
+**Defining schedules**: each cron run builds a fresh schedule and calls
+`Scheduler::dispatchDue(60)`, which queues every job whose run time falls in
+the current minute. No state is kept between runs, so each run time is
+dispatched once as long as cron runs the routine every minute.
+
+Schedules come from the routine's `schedule(Scheduler $scheduler)` hook. The
+default reads `jobs.schedule` from your environment config:
+
+```json
+"jobs": {
+    "schedule": [
+        { "job": "App\\Jobs\\SyncJob", "every": 300 },
+        { "job": "App\\Jobs\\ReportJob", "daily": "03:00", "queue": "reports" },
+        { "job": "App\\Jobs\\DigestJob", "weekly": [1, "08:00"], "data": { "type": "weekly" } },
+        { "job": "App\\Jobs\\LaunchJob", "at": "2026-12-01 09:00:00" }
+    ]
+}
+```
+
+`every` intervals are aligned to the Unix epoch (`300` runs at :00, :05, :10
+...; `3600` runs at the top of each UTC hour). `weekly` takes
+`[dayOfWeek (0 = Sunday), "HH:MM"]`; `at` runs once.
+
+To register jobs in code instead, subclass the routine, override the hook,
+and point cron at your subclass:
+
+```php
+class AppSchedulerRoutine extends JobSchedulerRoutine
+{
+	protected function schedule(Scheduler $scheduler): void
+	{
+		parent::schedule($scheduler); // keep config entries (optional)
+		$scheduler->hourly(CleanupJob::class);
+		$scheduler->daily(ReportJob::class, null, 'reports', '03:00');
+	}
+}
+```
+
 ### JobWorkerRoutine
 
 Processes jobs from the job queue. This routine can be run to process a specific number of jobs or run continuously as a background worker.

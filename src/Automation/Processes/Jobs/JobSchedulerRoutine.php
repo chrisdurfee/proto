@@ -48,6 +48,11 @@ class JobSchedulerRoutine extends Routine
 	protected bool $verbose = false;
 
 	/**
+	 * @var int $tickWindow Seconds between cron runs of this routine
+	 */
+	protected int $tickWindow = 60;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string|null $date The date for the process.
@@ -109,8 +114,12 @@ class JobSchedulerRoutine extends Routine
 				echo "Checking for due scheduled jobs...\n";
 			}
 
-			// Process due jobs
-			$dueJobs = $this->scheduler->tick();
+			// Build this tick's schedule, then dispatch whatever is due in
+			// the current window. The schedule is rebuilt on every run, so
+			// due checks are stateless (see Scheduler::dispatchDue()).
+			$this->scheduler->clearSchedule();
+			$this->schedule($this->scheduler);
+			$dueJobs = $this->scheduler->dispatchDue($this->tickWindow);
 
 			if ($this->verbose)
             {
@@ -156,6 +165,27 @@ class JobSchedulerRoutine extends Routine
 			}
 
 			throw $e;
+		}
+	}
+
+	/**
+	 * Registers the application's scheduled jobs.
+	 *
+	 * The default reads `jobs.schedule` from the environment config (see
+	 * Scheduler::load() for the entry format). Override this in a subclass
+	 * to register jobs in code, e.g. `$scheduler->daily(ReportJob::class,
+	 * null, null, '03:00');`, and point cron at the subclass.
+	 *
+	 * @param Scheduler $scheduler Scheduler to register jobs on
+	 * @return void
+	 */
+	protected function schedule(Scheduler $scheduler): void
+	{
+		$config = env('jobs');
+		$entries = is_object($config) ? ($config->schedule ?? []) : ($config['schedule'] ?? []);
+		if (is_iterable($entries))
+		{
+			$scheduler->load($entries);
 		}
 	}
 
