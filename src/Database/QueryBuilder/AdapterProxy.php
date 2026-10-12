@@ -2,6 +2,7 @@
 namespace Proto\Database\QueryBuilder;
 
 use Proto\Database\Adapters\Adapter;
+use Proto\Database\DatabaseUnavailableException;
 use Proto\Database\QueryBuilder\Select;
 use Proto\Database\QueryBuilder\Insert;
 use Proto\Database\QueryBuilder\Replace;
@@ -198,6 +199,7 @@ class AdapterProxy
 	 *
 	 * @param array $params The query parameters.
 	 * @return array
+	 * @throws DatabaseUnavailableException When the connection cannot be opened.
 	 */
 	public function fetch(array $params = []): array
 	{
@@ -207,7 +209,20 @@ class AdapterProxy
 		}
 
 		$params = array_merge($this->params, $params);
-		return $this->db->fetch((string) $this->sql, $params);
+		$rows = $this->db->fetch((string) $this->sql, $params);
+		if ($rows === null)
+		{
+			/**
+			 * The adapter returns null only when it could not connect.
+			 * Returning [] would make an outage look like "no rows"
+			 * (and used to TypeError on this array return type).
+			 */
+			throw new DatabaseUnavailableException(
+				'Database unavailable: ' . ($this->db->getLastError() ?? 'unable to connect.')
+			);
+		}
+
+		return $rows;
 	}
 
 	/**

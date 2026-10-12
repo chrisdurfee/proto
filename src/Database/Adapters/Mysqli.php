@@ -332,7 +332,10 @@ class Mysqli extends Adapter
 	 */
 	public function beginTransaction() : bool
 	{
-		if (!$this->connected)
+		// Open the connection lazily: a transaction is often the first
+		// statement of a request, and silently skipping it would run the
+		// following writes in autocommit mode.
+		if (!$this->connected && $this->connect() === null)
 		{
 			return false;
 		}
