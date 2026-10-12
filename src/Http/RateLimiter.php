@@ -60,7 +60,7 @@ class RateLimiter
 	 */
 	protected static function increment(string $key): int
 	{
-		$cache = self::cache();
+		$cache = static::cache();
 		return isset($cache) ? $cache::incr($key) : 1;
 	}
 
@@ -79,7 +79,7 @@ class RateLimiter
 	 */
 	protected static function ensureTtl(string $key, int $expiration, int $requests): void
 	{
-		$cache = self::cache();
+		$cache = static::cache();
 		if (!$cache)
 		{
 			return;
@@ -131,6 +131,22 @@ class RateLimiter
 
 		$id = 'rate-limit:' . $limit->id();
 		$requests = static::increment($id);
+
+		/**
+		 * INCR never legitimately returns less than 1; 0 means the cache
+		 * dropped mid-request. Treat it as an outage instead of "zero
+		 * requests so far", which silently bypassed fail-closed limits.
+		 */
+		if ($requests < 1)
+		{
+			static::logCacheOutage($limit);
+			if ($limit->isFailClosed())
+			{
+				static::checkFallback($limit);
+			}
+			return;
+		}
+
 		static::ensureTtl($id, $limit->getTimeLimit(), $requests);
 
 		if ($limit->isOverLimit($requests))

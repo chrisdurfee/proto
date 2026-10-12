@@ -92,6 +92,75 @@ final class RateLimiterTest extends Test
 		$limit->failClosed();
 		$this->assertTrue($limit->isFailClosed());
 	}
+
+	/**
+	 * When the cache drops mid-request, INCR returns 0. That must be
+	 * treated as an outage, so a fail-closed limiter still denies
+	 * instead of reading 0 as "under the limit" forever.
+	 *
+	 * @return void
+	 */
+	public function testFailClosedLimiterDeniesWhenIncrReturnsZero(): void
+	{
+		$limit = Limit::perMinute(1)->by('dropped-cache-actor')->failClosed();
+
+		DroppedCacheRateLimiter::exposeCheck($limit);
+
+		$this->expectException(HttpTerminationException::class);
+		DroppedCacheRateLimiter::exposeCheck($limit);
+	}
+
+	/**
+	 * A fail-open limiter stays open when INCR returns 0.
+	 *
+	 * @return void
+	 */
+	public function testFailOpenLimiterAllowsWhenIncrReturnsZero(): void
+	{
+		$limit = Limit::perMinute(1)->by('dropped-cache-open-actor');
+
+		for ($i = 0; $i < 3; $i++)
+		{
+			DroppedCacheRateLimiter::exposeCheck($limit);
+		}
+
+		$this->assertTrue(true);
+	}
+}
+
+/**
+ * Test double whose cache looks available but whose INCR fails (returns
+ * 0), as when Redis drops after the connection check.
+ *
+ * @package Proto\Tests\Unit\Http
+ */
+final class DroppedCacheRateLimiter extends RateLimiter
+{
+	/**
+	 * @return string|null
+	 */
+	protected static function cache(): ?string
+	{
+		return \Proto\Cache\Cache::class;
+	}
+
+	/**
+	 * @param string $key
+	 * @return int
+	 */
+	protected static function increment(string $key): int
+	{
+		return 0;
+	}
+
+	/**
+	 * @param Limit $limit
+	 * @return void
+	 */
+	public static function exposeCheck(Limit $limit): void
+	{
+		static::check($limit);
+	}
 }
 
 /**

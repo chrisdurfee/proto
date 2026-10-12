@@ -118,6 +118,14 @@ class RedisDriver extends Driver
 				throw new \RuntimeException('Failed to connect to Redis server.');
 			}
 
+			// Bound every command too: without a read timeout a hung Redis
+			// blocks each call for default_socket_timeout (60s).
+			$readTimeout = (float)($connection->readTimeout ?? 1.0);
+			if ($readTimeout > 0)
+			{
+				$this->db->setOption(Redis::OPT_READ_TIMEOUT, $readTimeout);
+			}
+
 			// Authenticate if a password is set
 			if (!empty($connection->password) && !$this->db->auth($connection->password))
 			{
@@ -159,6 +167,17 @@ class RedisDriver extends Driver
 		}
 		catch (\Throwable $e)
 		{
+			/**
+			 * A connection-level failure (timeout, reset, Redis restart)
+			 * marks the driver offline for the rest of the request, so
+			 * later calls return their fallback at once instead of each
+			 * waiting out the read timeout again.
+			 */
+			if ($e instanceof \RedisException)
+			{
+				$this->connected = false;
+			}
+
 			$this->setError(
 				$e instanceof \Exception ? $e : new \RuntimeException($e->getMessage(), (int) $e->getCode(), $e)
 			);
