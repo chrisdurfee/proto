@@ -863,13 +863,14 @@ class Storage extends TableStorage
 
 	/**
 	 * Fetches rows by filter with the model's own columns only, skipping
-	 * the storage's `setCustomWhere()` / `setOrderBy()` / `setGroupBy()`
-	 * hooks.
+	 * the storage's `setOrderBy()` / `setGroupBy()` hooks.
 	 *
 	 * Used by join-free lookups (Model::fetchWhereWithoutJoins(),
-	 * BatchMap): app hooks often reference aliases of joined tables
-	 * (e.g. `ORDER BY c.last_message_at`), which do not exist without the
-	 * joins and made the query fail and return nothing.
+	 * BatchMap): app order/group hooks often reference aliases of joined
+	 * tables (e.g. `ORDER BY c.last_message_at`), which do not exist
+	 * without the joins and made the query fail and return nothing.
+	 * `setCustomWhere()` still runs (with no modifiers) because apps put
+	 * tenant, visibility and soft-delete scopes there.
 	 *
 	 * @param mixed $filter Filter criteria.
 	 * @return array
@@ -881,6 +882,7 @@ class Storage extends TableStorage
 
 		$where = $this->getWhere($params, $filter, null);
 		$sql->where(...$where);
+		$this->setCustomWhere($sql, null, $params);
 
 		return $sql->fetch();
 	}

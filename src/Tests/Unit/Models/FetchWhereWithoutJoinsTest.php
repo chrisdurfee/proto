@@ -101,12 +101,12 @@ final class FetchWhereWithoutJoinsTest extends Test
 
 	/**
 	 * Storage::fetchWithoutHooks() must not run setOrderBy() /
-	 * setCustomWhere() / setGroupBy(), which apps write against joined
-	 * aliases (e.g. ORDER BY c.last_message_at).
+	 * setGroupBy(), which apps write against joined aliases (e.g. ORDER
+	 * BY c.last_message_at), but must keep setCustomWhere() scopes.
 	 *
 	 * @return void
 	 */
-	public function testFetchWithoutHooksSkipsOrderAndCustomWhereHooks(): void
+	public function testFetchWithoutHooksSkipsOrderButKeepsCustomWhere(): void
 	{
 		$adapter = $this->getMockBuilder(\Proto\Database\Adapters\Adapter::class)
 			->disableOriginalConstructor()
@@ -124,6 +124,7 @@ final class FetchWhereWithoutJoinsTest extends Test
 		$this->assertCount(1, $rows);
 		$this->assertStringNotContainsString('last_message_at', HookedStorage::$sql);
 		$this->assertStringContainsString('user_id', HookedStorage::$sql);
+		$this->assertStringContainsString('h.tenant_id = 5', HookedStorage::$sql, 'Tenant/visibility scopes in setCustomWhere must still apply.');
 	}
 
 	/**
@@ -291,7 +292,12 @@ final class HookedStorage extends Storage
 	 */
 	protected function setCustomWhere(object $sql, ?array $modifiers = null, ?array &$params = null): void
 	{
-		$sql->where('c.last_message_at IS NOT NULL');
+		// Own-table scope (always) plus a join-dependent one (only with modifiers)
+		$sql->where('h.tenant_id = 5');
+		if (!empty($modifiers['search']))
+		{
+			$sql->where('c.last_message_at IS NOT NULL');
+		}
 	}
 }
 
