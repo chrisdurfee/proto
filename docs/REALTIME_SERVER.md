@@ -122,6 +122,8 @@ A pool of worker processes (`amphp/parallel`) that bootstrap Proto normally. Blo
 | `upstreamTimeoutSeconds` | 5.0 | per PHP call |
 | `upstreamConcurrency` | 32 | PHP calls in flight at once |
 | `upstreamMaxQueued` | 2048 | hydrate calls allowed to wait before shedding |
+| `maxConnections` | 20000 | open or authorizing streams per process; past this new streams get `503` + `Retry-After` |
+| `maxConnectionsPerIp` | 100 | open or authorizing streams per client IP (resolved through `trustedProxies`) |
 | `retryMilliseconds` | 3000 | normal reconnect hint |
 | `trustedProxies` | private ranges | who may set `X-Forwarded-For` |
 
