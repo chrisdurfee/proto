@@ -202,11 +202,14 @@ class WebPush extends Dispatch
 	/**
 	 * Sends the web push notifications and returns a response.
 	 *
+	 * Response::create() takes an *error* flag, so a fully successful
+	 * batch must pass false.
+	 *
 	 * @return Response
 	 */
 	public function send() : Response
 	{
 		$result = $this->batch();
-		return Response::create($result->success, '', $result->rows);
+		return Response::create(!$result->success, '', $result->rows);
 	}
 }
