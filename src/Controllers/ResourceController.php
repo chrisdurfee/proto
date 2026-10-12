@@ -769,32 +769,32 @@ abstract class ResourceController extends ApiController
 	}
 
 	/**
-	 * Binds a write payload to the route `:id`.
+	 * Binds a write payload to the id policies authorize.
 	 *
-	 * Policies authorize the route id, so the payload must act on the same
-	 * row. When the route has an `:id`, a payload `id` that differs from it
-	 * is rejected and a missing one is filled from the route. Routes
-	 * without an `:id` are left unchanged.
+	 * Policies authorize getResourceId() (route `:id`, else request `id`),
+	 * so the payload must act on that same row. A body `id` that differs is
+	 * rejected; a missing one is filled from the authorized id. Without an
+	 * authorized id the payload is left unchanged.
 	 *
 	 * @param object $data The request item.
 	 * @param Request $request The request object.
-	 * @return bool False when the payload id conflicts with the route id.
+	 * @return bool False when the payload id conflicts with the authorized id.
 	 */
 	protected function bindRouteId(object $data, Request $request): bool
 	{
-		$routeId = $this->getRouteId($request);
-		if ($routeId === null)
+		$resourceId = $this->getResourceId($request);
+		if ($resourceId === null)
 		{
 			return true;
 		}
 
 		$bodyId = $data->id ?? null;
-		if ($bodyId !== null && $bodyId !== '' && (string)$bodyId !== (string)$routeId)
+		if ($bodyId !== null && $bodyId !== '' && (string)$bodyId !== (string)$resourceId)
 		{
 			return false;
 		}
 
-		$data->id = $routeId;
+		$data->id = $resourceId;
 		return true;
 	}
 

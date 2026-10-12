@@ -149,6 +149,76 @@ final class ResourceControllerRouteIdTest extends Test
 	}
 
 	/**
+	 * Routes without `:id` still reject a body id that differs from `?id=`.
+	 *
+	 * Policies authorize the query id on those routes; a mismatched body
+	 * id must not redirect the write to another row.
+	 *
+	 * @return void
+	 */
+	public function testUpdateRejectsMismatchedBodyIdAgainstQueryId(): void
+	{
+		$this->setQueryId(5);
+		$controller = $this->controller();
+		$controller->payload = (object)['id' => 9, 'title' => 'x'];
+
+		$response = $controller->update($this->routeRequest(null));
+
+		$this->assertFalse($response->success);
+		$this->assertNull($controller->written);
+	}
+
+	/**
+	 * Routes without `:id` bind the write to `?id=` when the body omits id.
+	 *
+	 * @return void
+	 */
+	public function testUpdateUsesQueryIdWhenBodyOmitsId(): void
+	{
+		$this->setQueryId(5);
+		$controller = $this->controller();
+		$controller->payload = (object)['title' => 'x'];
+
+		$controller->update($this->routeRequest(null));
+
+		$this->assertSame(5, $controller->written->id ?? null);
+	}
+
+	/**
+	 * Setup (PUT) on a no-`:id` route rejects a body id that differs from `?id=`.
+	 *
+	 * @return void
+	 */
+	public function testSetupRejectsMismatchedBodyIdAgainstQueryId(): void
+	{
+		$this->setQueryId(5);
+		$controller = $this->controller();
+		$controller->payload = (object)['id' => 9, 'title' => 'x'];
+
+		$response = $controller->setup($this->routeRequest(null));
+
+		$this->assertFalse($response->success);
+		$this->assertNull($controller->written);
+	}
+
+	/**
+	 * Merge on a no-`:id` route rejects a body id that differs from `?id=`.
+	 *
+	 * @return void
+	 */
+	public function testMergeRejectsMismatchedBodyIdAgainstQueryId(): void
+	{
+		$this->setQueryId(5);
+		$controller = $this->controller();
+		$controller->payload = (object)['id' => 9, 'title' => 'x'];
+
+		$response = $controller->merge($this->routeRequest(null));
+
+		$this->assertFalse($response->success);
+		$this->assertNull($controller->written);
+	}
+
+	/**
 	 * Setup (PUT) rejects a body id that differs from the route id.
 	 *
 	 * @return void
