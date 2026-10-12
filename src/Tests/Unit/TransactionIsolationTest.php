@@ -102,15 +102,18 @@ final class TransactionIsolationTest extends Test
 	{
 		$db = $this->getTestDatabase();
 
-		// Check if we're in a transaction (MySQL specific)
-		// This will return 1 if we're in a transaction
-		$result = $db->first("SELECT @@in_transaction as active");
-
-		$this->assertEquals(
-			1,
-			$result->active ?? 0,
+		$this->assertTrue(
+			$db->inTransaction(),
 			'Should be in an active transaction during tests'
 		);
+
+		// MariaDB also reports it server-side; MySQL has no @@in_transaction
+		// (the query fails there), so only check it when the server has it.
+		$result = $db->first("SELECT @@in_transaction as active");
+		if ($result !== null)
+		{
+			$this->assertEquals(1, $result->active, 'The server should report an open transaction');
+		}
 	}
 
 	/**

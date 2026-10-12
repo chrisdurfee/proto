@@ -120,7 +120,14 @@ class RedisDriver extends Driver
 				: (object)(array)$this->connectionOverride;
 		}
 
-		return env('cache')->connection;
+		$connection = env('cache')?->connection ?? null;
+		if (!is_object($connection))
+		{
+			// connect() catches this and leaves the driver offline.
+			throw new \RuntimeException('No cache connection is configured.');
+		}
+
+		return $connection instanceof stdClass ? $connection : (object)(array)$connection;
 	}
 
 	/**
